@@ -6,6 +6,7 @@ import { SchrittRahmen } from "@/components/einrichtung/schritt-rahmen";
 import { FormMeldung } from "@/components/formular/felder";
 import { holeAbo } from "@/lib/abo";
 import { einzelwert } from "@/lib/auth-meldungen";
+import { holeRechnungsangaben } from "@/lib/betrieb";
 import { betreteSchritt } from "@/lib/einrichtung";
 import { plaene, TESTPHASE_TAGE } from "@/lib/site";
 import {
@@ -14,7 +15,12 @@ import {
   pruefePreisGleichstand,
   zusammenfassungSchritt,
 } from "@/lib/abo-konditionen";
-import { aboKonditionen, erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
+import {
+  aboKonditionen,
+  erstelleSetupIntent,
+  holeAboFuerBetrieb,
+  holeUid,
+} from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { planOderBasic } from "@/lib/validierung";
 
@@ -73,6 +79,7 @@ export default async function ZahlungSeite({
 
   const supabase = await createClient();
   const abo = await holeAbo(supabase, betriebId);
+  const rechnung = await holeRechnungsangaben(supabase, betriebId);
   const gewaehlt = planOderBasic(abo?.plan);
   const planName = plaene.find((p) => p.id === gewaehlt)?.name ?? "Low";
 
@@ -152,6 +159,25 @@ export default async function ZahlungSeite({
   /* Ansicht 1: Plan wählen                                            */
   /* ---------------------------------------------------------------- */
 
+  /*
+   * Das UID-Feld nur für österreichische Betriebe. Eine schon hinterlegte
+   * Nummer wird vorbelegt; kommt Stripe gerade nicht zurück, bleibt das
+   * Feld eben leer — dafür soll die Planwahl nicht ausfallen.
+   */
+  let uidFeld: { vorbelegt: string | null } | null = null;
+  if (rechnung?.land === "AT") {
+    let vorbelegt: string | null = null;
+    if (abo?.stripe_customer_id) {
+      try {
+        vorbelegt = await holeUid(abo.stripe_customer_id);
+      } catch (ursache) {
+        const text = ursache instanceof Error ? ursache.message : String(ursache);
+        console.error(`[zahlung] holeUid: ${text}`);
+      }
+    }
+    uidFeld = { vorbelegt };
+  }
+
   return (
     <SchrittRahmen
       schritt="zahlung"
@@ -173,6 +199,7 @@ export default async function ZahlungSeite({
         grenzen={t.planGrenzen}
         proMonat={t.landing.proMonat}
         ustHinweis={t.landing.preiseUstAlle}
+        uidFeld={uidFeld}
       />
     </SchrittRahmen>
   );

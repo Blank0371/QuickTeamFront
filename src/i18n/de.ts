@@ -310,6 +310,7 @@ export const de = {
       "Ohne Abschluss von AGB und AVV und die Kenntnisnahme der Datenschutzerklärung geht es nicht weiter.",
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
+    "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
 
     "v.telefon.kurz": "Die Telefonnummer braucht mindestens {min} Ziffern.",
     "v.einladung.kontakt":

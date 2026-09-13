@@ -801,6 +801,31 @@ Anzeigepreis ab, landet `[preise] …` im Protokoll.
 Die Expo-App hat kein Gegenstück, und das ist kein Paritätsbruch: Abo und Zahlung
 liegen ohnehin nur hier.
 
+### Änderung vom 2026-09-13: Umsatzsteuer über Stripe Tax
+
+**Vorher:** Kein Abo trug `automatic_tax`, kein Steuersatz war gesetzt. Stripe buchte
+den Nettopreis als Bruttobetrag ab, obwohl AGB § 5 Abs. 1, `/preise` und die
+Zahlungsansicht „zzgl. USt." sagen.
+
+**Jetzt:** `erstelleAbo()`, `wechslePlan()` und `uebernimmZahlungsmittel()` setzen
+`automatic_tax: { enabled: true }`. Stripe Tax braucht dafür einen Standort des
+Kunden; für AT/DE genügt das Land, und das kommt aus `betriebe.land`
+(`holeRechnungsangaben()` in `src/lib/betrieb.ts`, `stelleSteuerstandortSicher()` in
+`src/lib/stripe.ts`). Ein im Kundenportal gepflegtes Land wird nicht überschrieben.
+
+**Österreichische Betriebe** bekommen in Schritt 2 ein freiwilliges Feld „UID-Nummer";
+sie geht als `eu_vat` an den Stripe-Kunden und entscheidet über Reverse Charge.
+Deutsche Betriebe bekommen kein Feld — für einen Inlandsumsatz ändert die Nummer
+nichts. Zod-Regel `feldSchemata.uid`, doppelt geprüft wie jedes Feld.
+
+**Voraussetzung im Stripe-Dashboard, sonst geht nichts oder es wird 0 % aufgeschlagen:**
+Stripe Tax aktiv, eine **Registrierung für Deutschland** (am 2026-09-13 im Live-Konto:
+aktiv, aber ohne jede Registrierung) und Preise mit `tax_behavior: exclusive`.
+`pruefePreisGleichstand()` schreibt `[preise] …` ins Protokoll, wenn ein Preis nicht
+netto angelegt ist oder ein Abo ohne `automatic_tax` läuft. Welcher Satz bei
+österreichischen Betrieben **ohne** UID gilt, hängt an der OSS-Einstellung in Stripe Tax
+und ist eine Frage an die Steuerberatung, keine an den Code.
+
 **Ein Chef, mehrere Standorte ist nicht unterstützt.** Der Stepper geht durchgehend
 von einem Betrieb pro Anmeldung aus: `holeChefBetriebId()` liefert den ersten, für den
 `ist_chef` wahr ist, und die ganze Ableitung hängt daran. `stelleBetriebSicher()` hat

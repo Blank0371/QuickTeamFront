@@ -322,6 +322,7 @@ export const en: Dictionary = {
       "To continue, you have to accept the Terms and the DPA and take note of the Privacy Policy.",
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
+    "v.uid.form": "An Austrian VAT ID (UID) consists of ATU and 8 digits, e.g. ATU12345678.",
 
     "v.telefon.kurz": "The phone number needs at least {min} digits.",
     "v.einladung.kontakt":

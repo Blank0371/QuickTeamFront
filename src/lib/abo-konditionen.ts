@@ -111,6 +111,24 @@ export function zusammenfassungFortsetzen(k: AboKonditionen): string[] {
  * Beschwerde.
  */
 export function pruefePreisGleichstand(plan: PlanId, k: AboKonditionen): void {
+  /*
+   * Seit dem 2026-09-13 auch die Umsatzsteuer: „zzgl. USt." stimmt nur,
+   * wenn der Price netto angelegt ist und Stripe Tax auf dem Abo läuft.
+   * Ein Price mit `inclusive` oder ohne Angabe würde bei aktiver Steuer
+   * falsch oder gar nicht aufschlagen — das fällt sonst erst auf der
+   * ersten echten Rechnung auf.
+   */
+  if (k.steuerverhalten !== "exclusive") {
+    console.error(
+      `[preise] Plan ${plan}: Stripe-Price hat tax_behavior "${k.steuerverhalten ?? "unspecified"}", erwartet "exclusive" — im Stripe-Dashboard am Preis umstellen.`,
+    );
+  }
+  if (!k.steuerAutomatisch) {
+    console.error(
+      `[preise] Plan ${plan}: automatic_tax ist auf dem Abo aus — es wird keine Umsatzsteuer aufgeschlagen.`,
+    );
+  }
+
   const anzeige = plaene.find((p) => p.id === plan)?.preis;
   if (anzeige === undefined || k.betragCent === null) return;
   if (anzeige * 100 !== k.betragCent) {

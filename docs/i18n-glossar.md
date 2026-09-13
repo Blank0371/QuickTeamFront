@@ -37,6 +37,7 @@ Abweichung zwischen Web und App.
 | ------- | -------- | ----- |
 | Betrieb | Business | `A: manager.tabBusiness` · `W: dashboard.gruppeBetrieb` |
 | Betriebsname | Business name | `W: validierung.bez.betriebName` |
+| UID-Nummer (österr. USt-IdNr.) | VAT ID (UID) | `W: validierung.v.uid.form` — web-eigen, die App kennt keine Abrechnung |
 | Betriebseinstellungen | Business settings | `A: manager.businessSettings` |
 | Mitarbeiter (als Liste/Bereich) | Employees | `A: manager.tabEmployees` |
 | Mitarbeiter (einzelne Person) | **Employee** | `A: manager.denyReasonPlaceholder` („shown to employee") |

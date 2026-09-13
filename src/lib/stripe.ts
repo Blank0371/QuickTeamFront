@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 
+import type { Rechnungsangaben } from "@/lib/betrieb";
 import { plaene, TESTPHASE_TAGE, type PlanId } from "@/lib/site";
 import { verlangeSoftLaunchFrei } from "@/lib/soft-launch-riegel";
 
@@ -208,28 +209,131 @@ export async function sucheKunde({
  * Der Idempotenz-Schlüssel fängt ab, was die Suche nicht kann: zwei
  * Anfragen im selben Augenblick, bei denen beide die Liste noch leer
  * gesehen haben.
+ *
+ * Neu angelegte Kunden tragen seit dem 2026-09-13 Betriebsname und Land
+ * (siehe `stelleSteuerstandortSicher`); vorhandene bekommen beides
+ * nachgetragen, falls es fehlt.
  */
 export async function holeOderErstelleKunde({
   betriebId,
   email,
   kundeId = null,
+  rechnung,
 }: {
   betriebId: string;
   email: string;
   kundeId?: string | null;
+  rechnung: Rechnungsangaben | null;
 }): Promise<Stripe.Customer> {
   const stripe = stripeKlient();
 
   const passend = await sucheKunde({ betriebId, email, kundeId });
-  if (passend) return passend;
+  if (passend) return stelleSteuerstandortSicher(passend, rechnung);
+
+  if (!rechnung) {
+    throw new Error(
+      `Betrieb ${betriebId}: ohne Name und Land lässt sich kein Stripe-Kunde mit Steuerstandort anlegen.`,
+    );
+  }
 
   return stripe.customers.create(
     {
       email,
+      name: rechnung.name,
+      address: { country: rechnung.land },
+      preferred_locales: ["de"],
       metadata: { [BETRIEB_SCHLUESSEL]: betriebId },
     },
-    { idempotencyKey: `betrieb:${betriebId}:kunde` },
+    /*
+     * `:steuer` im Schlüssel, weil sich die Parameter am 2026-09-13
+     * geändert haben: ein Schlüssel aus den 24 Stunden davor mit den alten
+     * Parametern würde sonst mit einem Idempotenzfehler abgelehnt.
+     */
+    { idempotencyKey: `betrieb:${betriebId}:kunde:steuer` },
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Umsatzsteuer (Stripe Tax)                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Sorgt dafür, dass Stripe Tax den Kunden verorten kann.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das Land genügt
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Stripe Tax braucht für Rechnungen einen Standort des Kunden, sonst
+ * lehnt es ein Abo mit `automatic_tax` ab (`customer_tax_location_invalid`).
+ * Für Deutschland und Österreich genügt dafür das Land; eine Postleitzahl
+ * verlangt Stripe nur in den USA und Kanada. Das Land steht ohnehin fest:
+ * `betriebe.land`, per CHECK `AT` oder `DE`.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum ein vorhandenes Land nicht überschrieben wird
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Im Kundenportal kann der Kunde seine Rechnungsadresse selbst pflegen.
+ * Steht dort schon ein Land, ist es entweder unseres oder seins — in
+ * beiden Fällen ist es neuer als ein Nachtrag von hier. Nachgetragen wird
+ * nur, wo gar nichts steht: bei Kunden aus der Zeit vor Stripe Tax.
+ */
+export async function stelleSteuerstandortSicher(
+  kunde: Stripe.Customer | string,
+  rechnung: Rechnungsangaben | null,
+): Promise<Stripe.Customer> {
+  const stripe = stripeKlient();
+  const vorhanden =
+    typeof kunde === "string" ? await stripe.customers.retrieve(kunde) : kunde;
+
+  if (vorhanden.deleted) {
+    throw new Error(`Stripe-Kunde ${vorhanden.id} ist gelöscht.`);
+  }
+  if (vorhanden.address?.country) return vorhanden;
+
+  if (!rechnung) {
+    throw new Error(
+      `Stripe-Kunde ${vorhanden.id} hat kein Land, und die Betriebsdaten sind nicht lesbar — Stripe Tax kann ihn nicht verorten.`,
+    );
+  }
+
+  return stripe.customers.update(vorhanden.id, {
+    address: { country: rechnung.land },
+    ...(vorhanden.name ? {} : { name: rechnung.name }),
+  });
+}
+
+/** Die hinterlegte EU-USt-IdNr. des Kunden, oder `null`. */
+export async function holeUid(kundeId: string): Promise<string | null> {
+  const ids = await stripeKlient().customers.listTaxIds(kundeId, { limit: 10 });
+  return ids.data.find((id) => id.type === "eu_vat")?.value ?? null;
+}
+
+/**
+ * Hinterlegt die UID-Nummer als Steuer-ID am Kunden.
+ *
+ * Daran entscheidet Stripe Tax, ob ein grenzüberschreitender Umsatz an
+ * einen österreichischen Betrieb nach dem Reverse-Charge-Verfahren läuft.
+ * Stripe prüft die Nummer danach selbst gegen VIES.
+ *
+ * `null` heisst „keine Angabe" und ändert nichts — eine im Kundenportal
+ * gepflegte Nummer bleibt stehen. Eine abweichende wird ersetzt, damit
+ * nicht zwei EU-Nummern nebeneinander stehen und Stripe die falsche nimmt.
+ */
+export async function setzeUid(kundeId: string, uid: string | null): Promise<void> {
+  if (!uid) return;
+
+  const stripe = stripeKlient();
+  const ids = await stripe.customers.listTaxIds(kundeId, { limit: 10 });
+  const euIds = ids.data.filter((id) => id.type === "eu_vat");
+
+  if (euIds.some((id) => id.value === uid)) return;
+
+  for (const alt of euIds) {
+    await stripe.customers.deleteTaxId(kundeId, alt.id);
+  }
+  await stripe.customers.createTaxId(kundeId, { type: "eu_vat", value: uid });
 }
 
 /* ------------------------------------------------------------------ */
@@ -303,17 +407,26 @@ export async function holeAboFuerBetrieb({
  *
  * Ist bereits ein Abo da, wird keins angelegt. Der Aufrufer bekommt das
  * vorhandene zurück und kann darauf `wechslePlan` anwenden.
+ *
+ * `automatic_tax` seit dem 2026-09-13: vorher schlug nichts die
+ * Umsatzsteuer auf, obwohl AGB § 5 Abs. 1 und jede Preisangabe „zzgl. USt."
+ * sagen — abgebucht wurde der Nettopreis als Bruttobetrag. Setzt voraus,
+ * dass Stripe Tax im Dashboard aktiviert ist und die Preise als
+ * „exklusive Steuern" angelegt sind (`pruefePreisGleichstand` meldet es,
+ * wenn nicht).
  */
 export async function erstelleAbo({
   betriebId,
   plan,
   email,
   kundeId = null,
+  rechnung,
 }: {
   betriebId: string;
   plan: PlanId;
   email: string;
   kundeId?: string | null;
+  rechnung: Rechnungsangaben | null;
 }): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
   const preis = priceIdFuer(plan);
@@ -321,7 +434,7 @@ export async function erstelleAbo({
   const vorhanden = await holeAboFuerBetrieb({ betriebId, email, kundeId });
   if (vorhanden) return vorhanden;
 
-  const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId });
+  const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
 
   return stripe.subscriptions.create(
     {
@@ -330,6 +443,7 @@ export async function erstelleAbo({
       trial_period_days: TESTPHASE_TAGE,
       trial_settings: { end_behavior: { missing_payment_method: "pause" } },
       payment_settings: { save_default_payment_method: "on_subscription" },
+      automatic_tax: { enabled: true },
       metadata: { [BETRIEB_SCHLUESSEL]: betriebId },
     },
     /*
@@ -338,8 +452,9 @@ export async function erstelleAbo({
      * einen Fehler werfen, weil die Parameter nicht mehr passen. Mit ihm
      * schützt der Schlüssel genau das, wogegen er schützen soll — den
      * Doppelklick — und steht einem echten Planwechsel nicht im Weg.
+     * `:steuer` aus demselben Grund wie beim Kunden.
      */
-    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}` },
+    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}:steuer` },
   );
 }
 
@@ -350,6 +465,10 @@ export async function erstelleAbo({
  * berechnet wird und der Wechsel hier immer in Schritt 2 stattfindet —
  * eine anteilige Verrechnung über 0,00 wäre nur Rauschen in der
  * Rechnungshistorie.
+ *
+ * Schaltet dabei `automatic_tax` ein, falls das Abo aus der Zeit davor
+ * stammt. Der Kunde muss dafür schon ein Land tragen — der Aufrufer ruft
+ * vorher `holeOderErstelleKunde`, das es nachträgt.
  */
 export async function wechslePlan(
   abo: Stripe.Subscription,
@@ -362,11 +481,12 @@ export async function wechslePlan(
   if (!posten) {
     throw new Error(`Abo ${abo.id} hat keinen Posten, den man wechseln könnte.`);
   }
-  if (posten.price.id === preis) return abo;
+  if (posten.price.id === preis && abo.automatic_tax.enabled) return abo;
 
   return stripe.subscriptions.update(abo.id, {
     items: [{ id: posten.id, price: preis }],
     proration_behavior: "none",
+    automatic_tax: { enabled: true },
   });
 }
 
@@ -419,6 +539,13 @@ export type AboKonditionen = {
   periodeEnde: Date | null;
   /** Gesetzt, wenn das Abo gekündigt ist und zu diesem Zeitpunkt endet. */
   endetAm: Date | null;
+  /**
+   * Ob der Preis netto (`exclusive`) angelegt ist. Nur dann stimmt
+   * „zzgl. USt." neben `betragCent`.
+   */
+  steuerverhalten: Stripe.Price.TaxBehavior | null;
+  /** Ob Stripe Tax auf diesem Abo die Umsatzsteuer aufschlägt. */
+  steuerAutomatisch: boolean;
 };
 
 export function aboKonditionen(abo: Stripe.Subscription): AboKonditionen {
@@ -436,6 +563,8 @@ export function aboKonditionen(abo: Stripe.Subscription): AboKonditionen {
     testphaseEnde: abo.status === "trialing" ? alsDatum(abo.trial_end) : null,
     periodeEnde,
     endetAm: abo.cancel_at_period_end ? periodeEnde : alsDatum(abo.cancel_at),
+    steuerverhalten: preis?.tax_behavior ?? null,
+    steuerAutomatisch: abo.automatic_tax.enabled,
   };
 }
 
@@ -594,17 +723,26 @@ export async function erstelleSetupIntent(kundeId: string): Promise<{
  * auf das Abo und erst dann auf den Kunden; nur am Kunden zu setzen
  * genügt, solange das Abo keine eigene Methode trägt, und das ist eine
  * Bedingung, auf die man sich nicht verlassen sollte.
+ *
+ * Hier wird auch `automatic_tax` nachgezogen. Jedes Abo, das je etwas
+ * abbucht, kommt durch diese Funktion — ein Abo aus der Zeit vor Stripe
+ * Tax bekommt die Steuer damit spätestens hier, und zwar bevor
+ * `nimmAboWiederAuf` die erste Rechnung erzeugt.
  */
 export async function uebernimmZahlungsmittel({
   kundeId,
   aboId,
   zahlungsmittelId,
+  rechnung,
 }: {
   kundeId: string;
   aboId: string;
   zahlungsmittelId: string;
+  rechnung: Rechnungsangaben | null;
 }): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
+
+  await stelleSteuerstandortSicher(kundeId, rechnung);
 
   await stripe.customers.update(kundeId, {
     invoice_settings: { default_payment_method: zahlungsmittelId },
@@ -612,6 +750,7 @@ export async function uebernimmZahlungsmittel({
 
   const abo = await stripe.subscriptions.update(aboId, {
     default_payment_method: zahlungsmittelId,
+    automatic_tax: { enabled: true },
   });
 
   /*

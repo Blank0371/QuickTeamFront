@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { holeAbo } from "@/lib/abo";
-import { holeChefBetriebId } from "@/lib/betrieb";
+import { holeChefBetriebId, holeRechnungsangaben, type Rechnungsangaben } from "@/lib/betrieb";
 import {
   holeAboFuerBetrieb,
   stripeKlient,
@@ -38,7 +38,13 @@ function protokolliere(stelle: string, ursache: unknown): void {
  * falschen — oder gar keinen — Kunden, liefe die Prüfung gegen die
  * falsche Bezugsgrösse.
  */
-type Kontext = { betriebId: string; email: string; kundeId: string | null };
+type Kontext = {
+  betriebId: string;
+  email: string;
+  kundeId: string | null;
+  /** Land und Name für Stripe Tax — siehe `stelleSteuerstandortSicher`. */
+  rechnung: Rechnungsangaben | null;
+};
 
 async function kontext(): Promise<Kontext> {
   const supabase = await createClient();
@@ -57,6 +63,7 @@ async function kontext(): Promise<Kontext> {
     betriebId,
     email: user.email ?? "",
     kundeId: abo?.stripe_customer_id ?? null,
+    rechnung: await holeRechnungsangaben(supabase, betriebId),
   };
 }
 
@@ -86,7 +93,7 @@ export async function zahlungsmittelUebernehmen(
    * zweite hereingereichte Angabe statt gegen den Stand bei Stripe — und
    * genau das soll die Prüfung ja ausschliessen.
    */
-  const { betriebId, email, kundeId: gespeicherteKundeId } = await kontext();
+  const { betriebId, email, kundeId: gespeicherteKundeId, rechnung } = await kontext();
 
   try {
     const abo = await holeAboFuerBetrieb({
@@ -141,6 +148,7 @@ export async function zahlungsmittelUebernehmen(
       kundeId,
       aboId: abo.id,
       zahlungsmittelId,
+      rechnung,
     });
 
     return { ok: true };

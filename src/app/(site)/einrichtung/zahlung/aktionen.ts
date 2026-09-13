@@ -2,12 +2,19 @@
 
 import { redirect } from "next/navigation";
 
+import { holeValidierung } from "@/i18n/server";
 import { holeAbo } from "@/lib/abo";
-import { holeChefBetriebId } from "@/lib/betrieb";
-import type { FormZustand } from "@/lib/formular";
-import { erstelleAbo, holeAboFuerBetrieb, wechslePlan } from "@/lib/stripe";
+import { holeChefBetriebId, holeRechnungsangaben, type Rechnungsangaben } from "@/lib/betrieb";
+import { feldFehler, type FormZustand } from "@/lib/formular";
+import {
+  erstelleAbo,
+  holeAboFuerBetrieb,
+  holeOderErstelleKunde,
+  setzeUid,
+  wechslePlan,
+} from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { planOderBasic } from "@/lib/validierung";
+import { planOderBasic, uidSchema } from "@/lib/validierung";
 
 /**
  * Server Actions von Schritt 2.
@@ -34,6 +41,11 @@ type Kontext = {
    * jemand seine Anmelde-Adresse geändert hat.
    */
   kundeId: string | null;
+  /**
+   * Name und Land des Betriebs. Stripe Tax braucht das Land als
+   * Steuerstandort; ohne es lehnt Stripe ein Abo mit `automatic_tax` ab.
+   */
+  rechnung: Rechnungsangaben | null;
 };
 
 /** Session und Betrieb — ohne beides gibt es hier nichts zu tun. */
@@ -54,6 +66,7 @@ async function kontext(): Promise<Kontext> {
     betriebId,
     email: user.email ?? "",
     kundeId: abo?.stripe_customer_id ?? null,
+    rechnung: await holeRechnungsangaben(supabase, betriebId),
   };
 }
 
@@ -73,16 +86,44 @@ function protokolliere(stelle: string, ursache: unknown): void {
  * „Später hinterlegen". Der Unterschied ist allein das Ziel danach: das
  * Abonnement entsteht in beiden Fällen, weil es der Träger der Testphase
  * ist und nicht der Beleg einer Zahlung.
+ *
+ * Seit dem 2026-09-13 steht der Kunde vor dem Abo fest: erst Land und
+ * gegebenenfalls UID-Nummer an den Stripe-Kunden, dann das Abo mit
+ * `automatic_tax`. In umgekehrter Reihenfolge berechnete Stripe Tax die
+ * Steuer auf einem Kunden ohne Standort oder ohne Reverse-Charge-Grundlage.
  */
 export async function planWaehlen(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { betriebId, email, kundeId } = await kontext();
+  const { betriebId, email, kundeId, rechnung } = await kontext();
   const plan = planOderBasic(formData.get("plan"));
   const ueberspringen = formData.get("absicht") === "ueberspringen";
 
+  /*
+   * Die UID wird nur für österreichische Betriebe angenommen — dasselbe
+   * Kriterium, nach dem die Seite das Feld zeigt. Ein hereingereichter
+   * Wert eines deutschen Betriebs wird nicht geprüft, sondern ignoriert.
+   */
+  let uid: string | null = null;
+  if (rechnung?.land === "AT") {
+    const roh = String(formData.get("uid") ?? "");
+    const geprueft = uidSchema.safeParse({ uid: roh });
+    if (!geprueft.success) {
+      return {
+        status: "fehler",
+        nachricht: null,
+        felder: feldFehler(geprueft.error, await holeValidierung()),
+        werte: { uid: roh, plan },
+      };
+    }
+    uid = geprueft.data.uid || null;
+  }
+
   try {
+    const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
+    await setzeUid(kunde.id, uid);
+
     const vorhanden = await holeAboFuerBetrieb({ betriebId, email, kundeId });
 
     if (vorhanden) {
@@ -90,7 +131,7 @@ export async function planWaehlen(
       // sondern höchstens den Posten umstellen.
       await wechslePlan(vorhanden, plan);
     } else {
-      await erstelleAbo({ betriebId, plan, email, kundeId });
+      await erstelleAbo({ betriebId, plan, email, kundeId, rechnung });
     }
   } catch (ursache) {
     protokolliere("planWaehlen", ursache);

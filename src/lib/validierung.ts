@@ -144,6 +144,24 @@ export const feldSchemata = {
           vm("v.code.ziffern", { anzahl: CODE_LAENGE }),
         ),
     ),
+  /*
+   * Österreichische UID-Nummer, freiwillig — abgefragt in Schritt 2, nur
+   * für Betriebe mit `land = 'AT'`. Sie entscheidet bei Stripe Tax über
+   * das Reverse-Charge-Verfahren; ohne sie behandelt Stripe den Betrieb
+   * wie einen Privatkunden. Für deutsche Betriebe ändert sie nichts
+   * (Inlandsumsatz), deshalb gibt es dort kein Feld.
+   *
+   * Leerzeichen, Punkte und Bindestriche aus dem Kopieren werden entfernt,
+   * statt daraus einen Fehler zu machen. Leer heisst „keine Angabe" und
+   * ist gültig. Ob die Nummer tatsächlich vergeben ist, prüft Stripe
+   * danach gegen VIES — hier geht es nur um die Form.
+   */
+  uid: z
+    .string()
+    .transform((wert) => wert.replace(/[\s.-]/gu, "").toUpperCase())
+    .refine((wert) => wert === "" || /^ATU\d{8}$/u.test(wert), {
+      error: vm("v.uid.form"),
+    }),
 } as const;
 
 export type FeldName = keyof typeof feldSchemata;
@@ -280,6 +298,9 @@ export type BetriebsMetadaten = z.infer<typeof betriebsMetadatenSchema>;
  * steht jetzt unmittelbar vor dem Anlegen des Abos, in derselben Sitzung.
  */
 export const planSchema = z.enum(["basic", "pro", "business"]).catch("basic");
+
+/** Schritt 2: die freiwillige UID-Nummer neben der Planwahl. */
+export const uidSchema = z.object({ uid: feldSchemata.uid });
 
 /** Prüft einen Wert aus einem Formularfeld oder Query-Parameter. */
 export function planOderBasic(wert: unknown): "basic" | "pro" | "business" {

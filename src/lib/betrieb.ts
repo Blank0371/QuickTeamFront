@@ -1,7 +1,39 @@
 import type { createClient } from "@/lib/supabase/server";
-import { betriebsMetadatenSchema } from "@/lib/validierung";
+import { betriebsMetadatenSchema, feldSchemata, type LandCode } from "@/lib/validierung";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Was Stripe über den Betrieb wissen muss: das Land als Steuerstandort
+ * für Stripe Tax, der Name als Rechnungsempfänger.
+ */
+export type Rechnungsangaben = { name: string; land: LandCode };
+
+/**
+ * Liest Name und Land des Betriebs. `null`, wenn die Zeile nicht lesbar
+ * ist oder ein Land trägt, das der CHECK gar nicht zuliesse — dann wird
+ * lieber nichts an Stripe geschickt als ein geratener Steuerstandort.
+ */
+export async function holeRechnungsangaben(
+  supabase: SupabaseServerClient,
+  betriebId: string,
+): Promise<Rechnungsangaben | null> {
+  const { data, error } = await supabase
+    .from("betriebe")
+    .select("name, land")
+    .eq("id", betriebId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`[betrieb] betriebe(${betriebId}): ${error.message}`);
+    return null;
+  }
+
+  const land = feldSchemata.land.safeParse(data?.land);
+  if (!data || !land.success) return null;
+
+  return { name: String(data.name), land: land.data };
+}
 
 /**
  * Bei Erfolg kommt die `betrieb_id` mit — der Aufrufer braucht sie

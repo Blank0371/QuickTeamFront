@@ -4,7 +4,8 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { AbsendenButton } from "@/components/formular/absenden-button";
-import { FormMeldung } from "@/components/formular/felder";
+import { FormMeldung, TextFeld } from "@/components/formular/felder";
+import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
 import { WahlKarte } from "@/components/formular/wahl";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { leererZustand } from "@/lib/formular";
@@ -59,16 +60,23 @@ export function PlanAuswahl({
   grenzen,
   proMonat,
   ustHinweis,
+  uidFeld,
 }: {
   aktuell: PlanId;
   grenzen: Dictionary["planGrenzen"];
   proMonat: string;
   ustHinweis: string;
+  /**
+   * Gesetzt nur für Betriebe in Österreich — dort entscheidet die UID über
+   * Reverse Charge. `vorbelegt` ist die bei Stripe hinterlegte Nummer.
+   */
+  uidFeld: { vorbelegt: string | null } | null;
 }) {
   const [zustand, aktion] = useActionState(planWaehlen, leererZustand);
+  const { beiVerlassen, fehlerFuer } = useFeldPruefung(["uid"]);
 
   return (
-    <form action={aktion} className="flex flex-col gap-6">
+    <form action={aktion} onBlur={beiVerlassen} className="flex flex-col gap-6">
       {zustand.nachricht ? <FormMeldung art="fehler">{zustand.nachricht}</FormMeldung> : null}
 
       <fieldset>
@@ -99,6 +107,20 @@ export function PlanAuswahl({
 
         <p className="mt-3 text-xs text-muted">{ustHinweis}</p>
       </fieldset>
+
+      {uidFeld ? (
+        <TextFeld
+          id="uid"
+          name="uid"
+          label="UID-Nummer (optional)"
+          required={false}
+          autoComplete="off"
+          maxLength={20}
+          defaultValue={zustand.werte?.uid ?? uidFeld.vorbelegt ?? ""}
+          fehler={fehlerFuer("uid", zustand.felder)}
+          hinweis="Mit gültiger UID rechnen wir ohne Umsatzsteuer ab (Reverse Charge), ohne UID mit. Später änderbar unter Einstellungen → Abo verwalten."
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-start">
         <span className="sm:w-auto">
