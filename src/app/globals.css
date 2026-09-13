@@ -1,0 +1,735 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ═══════════════════════════════════════════════════════════════════
+   QuickTeam — Design-Tokens
+
+   Ebene 1: die Kernpalette aus `docs/Farbpalette.html`, wörtlich
+            übernommen. Hier wird nichts frei gewählt — wer einen Wert
+            ändern will, ändert zuerst das Palettendokument.
+   Ebene 2: semantische Rollen. Komponenten benutzen ausschliesslich
+            diese, nie einen Hex-Wert aus Ebene 1.
+   Ebene 3: @theme inline haengt die Tailwind-Utilities daran.
+
+   Mengenverhältnis laut Palette: ~70 % dunkle Basis, 20 % Grün,
+   8 % Bronze, 2 % Rot. Rot ist Warnungen und destruktiven Aktionen
+   vorbehalten — nicht für Hervorhebungen.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ── Ebene 1: Kernpalette (dunkle Achse) ────────────────────────── */
+  --qt-c-carbon: #0d100e; /* Grund, tiefste Ebene */
+  --qt-c-graphite: #1a1f1c; /* Karten, Panels */
+  --qt-c-green: #2a4034; /* Markenfläche, Hero, Bänder */
+  --qt-c-green-deep: #16241c; /* Sektionsboden */
+  --qt-c-green-light: #4a6b58; /* Hover, Icons */
+  --qt-c-bronze: #a8874f; /* Akzent: Linien, Labels, Buttons */
+  --qt-c-bronze-lo: #7a6238; /* Ränder, Divider */
+  --qt-c-bronze-hi: #d4b478; /* Akzent-Hover, Text auf Dunkel */
+  --qt-c-red: #c1442d; /* Danger — nur destruktiv */
+  --qt-c-red-hi: #e2583a; /* Danger-Hover */
+  --qt-c-muted: #6e736c; /* Muted Stone, Sekundärtext */
+  --qt-c-bone: #ede9e0; /* Primärtext auf Dunkel */
+
+  /* ── Ebene 1: Kernpalette (helle Achse) ─────────────────────────────
+     Eigene Werte statt umgedrehter dunkler — so steht es in der Palette,
+     weil sich die Rollen zwischen den Modi sonst überkreuzen. */
+  --qt-c-paper: #f3f0e8; /* Seitengrund hell */
+  --qt-c-paper-sunk: #e9e2d0; /* Karten, Panels hell */
+  --qt-c-paper-line: #d9cfb6; /* Trennlinien hell */
+  --qt-c-stone: #5b564a; /* Sekundärtext hell */
+  --qt-c-bronze-mid: #8a6b3c; /* Akzent hell */
+  --qt-c-bronze-dark: #6e5228; /* Akzent-Hover hell */
+  --qt-c-red-mid: #a83824; /* Danger hell */
+  --qt-c-red-dark: #8b2c1b; /* Danger-Hover hell */
+  --qt-c-ivory: #faf7f0; /* Text auf Bronze-Buttons hell */
+
+  /* ── Ebene 2: semantisch, hell ──────────────────────────────────── */
+  --qt-bg: var(--qt-c-paper);
+  --qt-surface: color-mix(in oklab, var(--qt-c-paper) 55%, #fff);
+  --qt-surface-sunk: var(--qt-c-paper-sunk);
+  --qt-band: var(--qt-c-green);
+  --qt-band-text: var(--qt-c-bone);
+
+  --qt-text: var(--qt-c-green-deep);
+  /*
+   * Sekundärtext, auf **allen** Flächen. Im Hellmodus war das nie strittig:
+   * Muted Stone misst auf Paper 6.41:1, auf der aufgehellten Kartenfläche
+   * 6.81:1 und auf Paper Sunk 5.65:1 — überall komfortabel über AA. Ein
+   * Wert genügt, und deshalb steht hier auch nur einer.
+   */
+  --qt-muted: var(--qt-c-stone);
+  --qt-border: color-mix(in oklab, var(--qt-c-paper-line) 70%, transparent);
+  --qt-border-strong: color-mix(in oklab, var(--qt-c-bronze-lo) 45%, transparent);
+  /* Gegenstück zum Dunkelmodus, Begründung steht dort. Im Hellmodus
+     trägt Bronze-Lo den Kontrast — Paper Line ist zu blass dafür. */
+  --qt-border-control: color-mix(in oklab, var(--qt-c-bronze-lo) 85%, transparent);
+
+  /*
+   * Der reine Akzentwert #8A6B3C kommt auf dem Seitengrund nur auf
+   * 4.34:1 — knapp unter AA für Fliesstext, und dieses Token trägt
+   * Links. Ein Viertel Richtung Hover-Ton hebt ihn auf 4.75:1, ohne
+   * dass sich der Farbeindruck sichtbar verschiebt.
+   */
+  --qt-signal: color-mix(in oklab, var(--qt-c-bronze-mid) 75%, var(--qt-c-bronze-dark));
+  --qt-signal-hover: var(--qt-c-bronze-dark);
+  --qt-signal-ink: var(--qt-c-ivory);
+  --qt-signal-weak: color-mix(in oklab, var(--qt-c-bronze-mid) 12%, var(--qt-surface));
+
+  /*
+   * ─────────────────────────────────────────────────────────────────
+   *  Wochenendfläche im Monatsraster — 2026-09-09
+   * ─────────────────────────────────────────────────────────────────
+   *
+   * Freitag bis Sonntag sind in der Gastronomie die Kernspalten. Bis
+   * hierher trug das allein die Kopfzeile (drei bronzene Striche) plus
+   * eine kräftigere Zellenkante; die Fläche selbst war identisch zu
+   * einem Dienstag. Der Mockup arbeitet an dieser Stelle mit einem
+   * eigenen Flächenton (`--weekend`), und mit echtem Inhalt ist das
+   * spürbar besser überfliegbar.
+   *
+   * **Warum nicht `--qt-surface-sunk`**, der naheliegende Kandidat: die
+   * Schicht-Kacheln im Normalzustand sitzen selbst auf `surface-sunk`.
+   * Als Zellengrund liesse er sie verschwinden — genau die Begründung,
+   * die in `monats-raster.tsx` bisher gegen eine Wochenendfläche stand.
+   *
+   * Deshalb ein eigener, sehr flacher Ton: die Zelle bleibt heller als
+   * die Kachel darauf, aber dunkler als eine Werktagszelle. Kein neuer
+   * Ebene-1-Wert — gemischt aus vorhandenen Palettenfarben, wie
+   * `--qt-signal-weak` daneben. Die Palette bleibt unangetastet.
+   */
+  --qt-surface-weekend: color-mix(in oklab, var(--qt-c-paper-sunk) 45%, var(--qt-surface));
+
+  /*
+   * ─────────────────────────────────────────────────────────────────
+   *  Rollenkennfarben für die Monatsindikatoren — 2026-09-09
+   * ─────────────────────────────────────────────────────────────────
+   *
+   * Vier Töne, zyklisch über den sortierten Rollenindex vergeben. Vorher
+   * gab es im ganzen Tokensystem **keine** Rollenfarbe — Rollen-Chips in
+   * Team und Planung rendern neutral, und der Mockup kommt nur deshalb
+   * mit vier festen Farben aus, weil er statisch ist.
+   *
+   * **Warum ein zyklisches Set und keine Farbe je Rolle.** `rollen` ist
+   * eine frei benannte Tabelle ohne Obergrenze; eine Farbe je Rolle
+   * hiesse, Farben zur Laufzeit zu erzeugen, und das verlässt die
+   * Palette. Vier aus der Palette gemischte Töne decken den Normalfall
+   * eines Gastrobetriebs (Küche, Service, Bar, Runner) ab; ein fünfter
+   * Eintrag wiederholt den ersten. Das ist eine bewusste Grenze und
+   * keine Panne — sie steht so auch an `rollenFarbe()`.
+   *
+   * **Rot fehlt mit Absicht**: `CLAUDE.md` behält es Fehlern und
+   * destruktiven Aktionen vor. Eine Rolle ist keins von beidem.
+   *
+   * **Die Farbe trägt die Auskunft nicht allein.** Jeder Punkt führt den
+   * Rollennamen als `title` und als `sr-only`-Text, und die Zahl daneben
+   * steht als Text da. Ohne das wäre es eine Auskunft, die für
+   * Farbenblinde verschwindet.
+   */
+  --qt-rolle-1: var(--qt-c-bronze-mid);
+  --qt-rolle-2: var(--qt-c-green-light);
+  --qt-rolle-3: var(--qt-c-bronze-dark);
+  --qt-rolle-4: var(--qt-c-stone);
+
+  --qt-schicht: var(--qt-c-bronze);
+  --qt-ok: var(--qt-c-green);
+  --qt-stop: var(--qt-c-red-mid);
+  --qt-stop-hover: var(--qt-c-red-dark);
+
+  --qt-shadow-card: 0 1px 2px color-mix(in oklab, var(--qt-c-green-deep) 10%, transparent),
+    0 8px 24px -12px color-mix(in oklab, var(--qt-c-green-deep) 26%, transparent);
+
+  /* ── Ebene 2b: shadcn/ui, auf unsere Tokens gelegt ──────────────────
+     Die shadcn-Komponenten sprechen ihre eigenen Variablennamen
+     (`--primary`, `--border`, `--ring` …). Statt daneben ein zweites
+     Farbsystem zu stellen, bekommen sie hier unsere Werte — es bleibt
+     bei einer Quelle, und die ist `docs/Farbpalette.html`.
+
+     Der Nebeneffekt ist der eigentliche Gewinn: weil Ebene 2 weiter
+     unten per `prefers-color-scheme` umschaltet, schaltet shadcn
+     lautlos mit. Deshalb gibt es hier weder einen `.dark`-Block noch
+     `next-themes` noch die `@custom-variant dark`-Zeile, die der
+     Initialisierer eingesetzt hatte. Ein Umschalter, den niemand
+     bedient, waere eine zweite Wahrheit ueber dieselbe Frage. */
+  --background: var(--qt-bg);
+  --foreground: var(--qt-text);
+
+  --card: var(--qt-surface);
+  --card-foreground: var(--qt-text);
+  --popover: var(--qt-surface);
+  --popover-foreground: var(--qt-text);
+
+  /* Bronze ist unsere Handlungsfarbe — Gruen traegt Flaechen, nicht
+     Knoepfe. `--primary-foreground` ist genau dafuer da: der Ton, der
+     auf Bronze noch lesbar ist. */
+  --primary: var(--qt-signal);
+  --primary-foreground: var(--qt-signal-ink);
+
+  --secondary: var(--qt-surface-sunk);
+  --secondary-foreground: var(--qt-text);
+
+  /* Achtung, zwei verschiedene Dinge mit fast demselben Namen:
+     `--muted` ist bei shadcn eine *Flaeche*, `--muted-foreground` der
+     Sekundaertext. Unser `text-muted` ist der Sekundaertext. Die
+     Aufloesung dieser Kollision steht unten in Ebene 3. */
+  --muted: var(--qt-surface-sunk);
+  --muted-foreground: var(--qt-muted);
+
+  --accent: var(--qt-signal-weak);
+  --accent-foreground: var(--qt-text);
+
+  /* Rot bleibt destruktiv. Die Palette gibt dafuer genau ein Token
+     her, und shadcn benutzt es nur fuer Loeschen und Fehler. */
+  --destructive: var(--qt-stop);
+
+  --border: var(--qt-border);
+  /* Feldraender duerfen kraeftiger sein als Trennlinien — dieselbe
+     Unterscheidung, die `TextFeld` schon von Hand trifft. */
+  --input: var(--qt-border-strong);
+  /* Deckt sich mit dem globalen `:focus-visible` weiter unten. */
+  --ring: var(--qt-signal);
+
+  /* Noch kein Diagramm im Projekt. Die Reihenfolge folgt trotzdem dem
+     Mengenverhaeltnis der Palette, damit ein spaeteres Diagramm nicht
+     mit fuenf Grautoenen anfaengt. */
+  --chart-1: var(--qt-schicht);
+  --chart-2: var(--qt-ok);
+  --chart-3: var(--qt-signal);
+  --chart-4: var(--qt-muted);
+  --chart-5: var(--qt-stop);
+
+  /* Identisch mit `--radius-blk`. Bewusst als Literal und nicht als
+     `var(--radius-blk)`: das Token entsteht in `@theme inline`, und
+     `inline` heisst, dass Tailwind es in die Utilities einsetzt statt
+     es als Custom Property auszugeben — hier waere es leer. */
+  --radius: 0.625rem;
+
+  /* Kein Sidebar-Layout im Projekt; die Werte stehen nur da, damit
+     ein `shadcn add` mit Sidebar-Bezug nicht ins Leere greift. */
+  --sidebar: var(--qt-surface);
+  --sidebar-foreground: var(--qt-text);
+  --sidebar-primary: var(--qt-signal);
+  --sidebar-primary-foreground: var(--qt-signal-ink);
+  --sidebar-accent: var(--qt-signal-weak);
+  --sidebar-accent-foreground: var(--qt-text);
+  --sidebar-border: var(--qt-border);
+  --sidebar-ring: var(--qt-signal);
+}
+
+/* ── Ebene 2: semantisch, dunkel ───────────────────────────────────
+   Die Zielgruppe liest das um 23 Uhr nach Schichtende auf dem Handy.
+   Dark Mode ist hier kein Extra, sondern der wahrscheinlichere Fall —
+   und die Palette ist ohnehin dunkel gedacht. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --qt-bg: var(--qt-c-carbon);
+    --qt-surface: var(--qt-c-graphite);
+    --qt-surface-sunk: color-mix(in oklab, var(--qt-c-graphite) 62%, var(--qt-c-carbon));
+    --qt-band: var(--qt-c-green-deep);
+    --qt-band-text: var(--qt-c-bone);
+
+    --qt-text: var(--qt-c-bone);
+    /*
+     * ─────────────────────────────────────────────────────────────
+     *  Ein Ton für alle drei dunklen Flächen. Vereinheitlicht am
+     *  2026-09-05, gemessen im Browser.
+     * ─────────────────────────────────────────────────────────────
+     *
+     * Hier standen bis dahin **drei** Token: `--qt-muted` gegen den
+     * Seitengrund gerechnet, `--qt-muted-sunk` gegen die versenkte
+     * Fläche, `--qt-muted-surface` gegen die Kartenfläche. Jedes einzeln
+     * begründet, jedes einzeln gemessen — und trotzdem war es die
+     * falsche Konstruktion: sie verlangt von jeder Komponente zu wissen,
+     * auf welcher Fläche sie gerade sitzt.
+     *
+     * Genau daran ist es zweimal gescheitert. Erst fiel die Sidebar auf
+     * 4.04:1 auf, weil `--qt-muted` gegen Carbon getunt war und die
+     * Navigation auf Graphite steht. Nach dem Beheben meldete Lighthouse
+     * dieselbe Zahl erneut — diesmal für den Fliesstext **in** den
+     * `bg-surface`-Karten. Rund 180 Vorkommen von `text-muted` im
+     * Dashboard, und für jedes hätte jemand die darunterliegende Fläche
+     * nachsehen müssen. Ein Regelwerk, das man bei jedem Aufruf richtig
+     * anwenden muss, wird irgendwann falsch angewendet.
+     *
+     * Ein einziger Wert, der auf der **hellsten** dunklen Fläche besteht,
+     * besteht dann auch auf allen dunkleren. 80 % Muted Stone auf 20 %
+     * Bone ergibt #868982 und misst:
+     *
+     *   Carbon  #0d100e  (--qt-bg)            5.41
+     *   Sunk    #151917  (--qt-surface-sunk)  5.01
+     *   Graphite #1a1f1c (--qt-surface)       4.72  ← die knappste
+     *
+     * Alle drei über AA, die engste Stelle mit +0.22 Reserve. Der
+     * vorherige Wert (90 %, #7a7e77) lag auf Carbon bei 4.63 und fiel auf
+     * Graphite auf 4.04 — er war nie für die Fläche gedacht, auf der die
+     * meisten Karten dieses Dashboards stehen.
+     *
+     * **Der Ton wird dadurch heller, und zwar auch auf der öffentlichen
+     * Seite.** Das ist gewollt und abgestimmt. Gedämpft bleibt er
+     * deutlich: `--qt-text` (Bone) misst auf Carbon 15.9:1, also fast das
+     * Dreifache — der Abstand zwischen Haupt- und Sekundärtext trägt
+     * weiterhin die Hierarchie.
+     *
+     * Wer diesen Wert wieder absenkt, senkt ihn für Graphite mit ab und
+     * bricht die Karten. Die Messung gehört dann neu gemacht, nicht die
+     * Zahl geschätzt.
+     */
+    --qt-muted: color-mix(in oklab, var(--qt-c-muted) 80%, var(--qt-c-bone));
+    --qt-border: color-mix(in oklab, var(--qt-c-bronze) 26%, transparent);
+    /* Gegenstück zur Wochenendfläche oben, gegen den dunklen Grund gemischt. */
+    --qt-surface-weekend: color-mix(in oklab, var(--qt-c-carbon) 45%, var(--qt-surface));
+    /* Rollenkennfarben, gegen den dunklen Grund gewählt — Begründung oben. */
+    --qt-rolle-1: var(--qt-c-bronze);
+    --qt-rolle-2: var(--qt-c-green-light);
+    --qt-rolle-3: var(--qt-c-bronze-hi);
+    --qt-rolle-4: var(--qt-c-muted);
+    /*
+     * ─────────────────────────────────────────────────────────────
+     *  Grenze eines Bedienelements — eng gefasste Ausnahme,
+     *  freigegeben am 2026-08-29.
+     * ─────────────────────────────────────────────────────────────
+     *
+     * `--qt-border` trägt Kartenkanten und Trennlinien. Die sind
+     * Dekoration, und für Dekoration verlangt WCAG nichts. Bei den
+     * Auswahl-Chips ist derselbe Rahmen aber die **einzige** Grenze
+     * des Bedienelements — ihre Fläche unterscheidet sich vom
+     * Seitengrund nur um 1.28:1. Dafür gilt 1.4.11 mit 3:1, und
+     * gemessen wurden 1.45:1.
+     *
+     * 70 % Bronze ist der kleinste Anteil, der alle drei dunklen
+     * Flächen über 3:1 bringt (bg 3.34, surface 3.12, sunk 3.23);
+     * bei 65 % bleibt `surface` mit 2.85:1 darunter.
+     *
+     * **Warum ein eigenes Token und nicht `--qt-border` selbst.**
+     * Am 2026-08-29 ausprobiert und im Browser nachgemessen: mit 70 %
+     * auf `--qt-border` bekommt jede Karte und jede Trennlinie eine
+     * deutlich goldene Kante — auf der Übersicht allein 21 Elemente —,
+     * und das Mengenverhältnis der Palette (~8 % Bronze) kippt. Dazu
+     * kommt ein handfester Fehler: `--qt-border-strong` liegt bei
+     * 48 % und wäre damit **schwächer** als die gewöhnliche Linie,
+     * ein Feldrahmen also zurückhaltender als ein Trennstrich.
+     *
+     * Getrennt gehalten bleibt beides heil: Dekoration ruhig,
+     * Bedienelement kontrastreich, Rangfolge intakt.
+     */
+    --qt-border-strong: color-mix(in oklab, var(--qt-c-bronze) 48%, transparent);
+    --qt-border-control: color-mix(in oklab, var(--qt-c-bronze) 70%, transparent);
+
+    --qt-signal: var(--qt-c-bronze);
+    --qt-signal-hover: var(--qt-c-bronze-hi);
+    --qt-signal-ink: var(--qt-c-carbon);
+    --qt-signal-weak: color-mix(in oklab, var(--qt-c-bronze) 18%, var(--qt-surface));
+
+    --qt-schicht: var(--qt-c-bronze-hi);
+    /* Green Light pur schafft auf Carbon nur 3.22:1. */
+    --qt-ok: color-mix(in oklab, var(--qt-c-green-light) 80%, var(--qt-c-bone));
+    /* Signal Red pur schafft auf Carbon nur 3.76:1 — Red Hi trägt den Text. */
+    --qt-stop: var(--qt-c-red-hi);
+    --qt-stop-hover: var(--qt-c-red);
+
+    --qt-shadow-card: 0 1px 2px color-mix(in oklab, #000 45%, transparent),
+      0 8px 24px -12px color-mix(in oklab, #000 65%, transparent);
+  }
+}
+
+/* ── Ebene 3: Tailwind-Anbindung ───────────────────────────────────
+   `inline` statt `@theme`, damit die Utilities die Live-Variablen
+   lesen und der Dark-Mode-Wechsel ohne doppelte Klassen funktioniert. */
+@theme inline {
+  --color-bg: var(--qt-bg);
+  --color-surface: var(--qt-surface);
+  --color-surface-sunk: var(--qt-surface-sunk);
+  --color-surface-weekend: var(--qt-surface-weekend);
+  --color-rolle-1: var(--qt-rolle-1);
+  --color-rolle-2: var(--qt-rolle-2);
+  --color-rolle-3: var(--qt-rolle-3);
+  --color-rolle-4: var(--qt-rolle-4);
+  --color-band: var(--qt-band);
+  --color-band-text: var(--qt-band-text);
+
+  --color-text: var(--qt-text);
+  --color-muted: var(--qt-muted);
+  --color-line: var(--qt-border);
+  --color-line-strong: var(--qt-border-strong);
+  --color-line-control: var(--qt-border-control);
+
+  --color-signal: var(--qt-signal);
+  --color-signal-hover: var(--qt-signal-hover);
+  --color-signal-ink: var(--qt-signal-ink);
+  --color-signal-weak: var(--qt-signal-weak);
+
+  --color-schicht: var(--qt-schicht);
+  --color-ok: var(--qt-ok);
+  --color-stop: var(--qt-stop);
+  --color-stop-hover: var(--qt-stop-hover);
+
+  /* Drei Schriftrollen, drei Familien. Mono ist keine Deko, sondern
+     traegt Uhrzeiten und Preise — dort zaehlt Ziffernbreite. */
+  --font-display: var(--font-qt-display), "Segoe UI", system-ui, sans-serif;
+  --font-sans: var(--font-qt-sans), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-qt-mono), ui-monospace, "Cascadia Mono", monospace;
+
+  /* Radien: bewusst weich. Gegenentwurf zum 0px-Zeitungslayout. */
+  --radius-blk: 0.625rem;
+  --radius-card: 0.875rem;
+  --radius-panel: 1.25rem;
+
+  --shadow-card: var(--qt-shadow-card);
+
+  --font-heading: var(--font-sans);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+  --color-sidebar-accent: var(--sidebar-accent);
+
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+
+  --color-sidebar-primary: var(--sidebar-primary);
+
+  --color-sidebar-foreground: var(--sidebar-foreground);
+
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-5: var(--chart-5);
+
+  --color-chart-4: var(--chart-4);
+
+  --color-chart-3: var(--chart-3);
+
+  --color-chart-2: var(--chart-2);
+
+  --color-chart-1: var(--chart-1);
+
+  --color-ring: var(--ring);
+
+  --color-input: var(--input);
+
+  --color-border: var(--border);
+
+  --color-destructive: var(--destructive);
+
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-accent: var(--accent);
+
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-secondary: var(--secondary);
+
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-primary: var(--primary);
+
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-popover: var(--popover);
+
+  --color-card-foreground: var(--card-foreground);
+
+  --color-card: var(--card);
+
+  --color-foreground: var(--foreground);
+
+  --color-background: var(--background);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+
+  --radius-md: calc(var(--radius) * 0.8);
+
+  --radius-lg: var(--radius);
+
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  --radius-3xl: calc(var(--radius) * 2.2);
+
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ═══ Basisschicht ═════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--qt-bg);
+    color: var(--qt-text);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.021em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /*
+   * Von shadcn erwartet: seit Tailwind v4 gibt es keine Standard-
+   * Rahmenfarbe mehr, und die kopierten Komponenten schreiben nur
+   * `border` ohne Farbe. `--border` zeigt oben auf `--qt-border`, das
+   * ist also dieselbe Linie wie `border-line`.
+   *
+   * Die Fokusfarbe daraus gilt nur, bis die Regel darunter greift —
+   * die ist spezifischer und bleibt die eine Quelle fuer Fokus.
+   */
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  /* Sichtbarer Keyboard-Fokus, ueberall, ohne Ausnahme. */
+  :focus-visible {
+    outline: 2px solid var(--qt-signal);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  ::selection {
+    background-color: var(--qt-signal);
+    color: var(--qt-signal-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      /*
+       * Die Verzoegerung gehoert dazu, nicht nur die Dauer. Ohne diese
+       * Zeile bliebe eine gestaffelt eingeblendete Flaeche fuer die
+       * Dauer ihrer laengsten Verzoegerung unsichtbar, obwohl jede
+       * einzelne Animation in 0.01ms durch ist. Der Effekt waere
+       * dann nicht abgeschaltet, sondern in ein Flackern verwandelt.
+       */
+      animation-delay: 0ms !important;
+      transition-delay: 0ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* ── Auswahl-Karten ────────────────────────────────────────────────
+     Die Karte ist der Indikator; einen Radio-Kreis gibt es nicht mehr.
+
+     Drei Mechanismen teilen sich diese eine Definition, und das ist
+     nicht Bequemlichkeit, sondern Notwendigkeit — am 2026-08-29 gegen
+     den Dev-Server geprueft:
+
+       [data-state="checked"]  Radix-Radiogruppe (Plan-Auswahl). Radix
+                               liefert dazu ein verstecktes echtes
+                               <input type="radio">, das Formular
+                               funktioniert also weiter.
+       :checked                natives <input type="checkbox"> (Rollen
+                               beim Einladen). Hier *muss* es nativ
+                               sein: ToggleGroup rendert ueberhaupt
+                               kein Feld, die angehakten Rollen kaemen
+                               nie am Server an.
+       [aria-pressed="true"]   <button type="submit"> (Rolle an einer
+                               bestehenden Person umschalten). Jede
+                               Zeile ist ein eigenes Formular, damit es
+                               ohne JavaScript funktioniert.
+
+     In Tailwind-Klassen waere das dreimal derselbe Satz Regeln mit drei
+     Praefixen — und dynamisch zusammengesetzte Klassennamen findet der
+     Scanner von Tailwind nicht, die Regeln entstuenden gar nicht. */
+  .wahl {
+    position: relative;
+    display: flex;
+    text-align: left;
+    cursor: pointer;
+    /* Nicht `--qt-border`: hier ist der Rahmen die einzige Grenze des
+       Bedienelements, und dafuer gilt WCAG 1.4.11 mit 3:1. Die
+       Begruendung samt Messung steht bei `--qt-border-control`. */
+    border: 1px solid var(--qt-border-control);
+    background-color: var(--qt-surface-sunk);
+    /* `--qt-muted` genuegt hier wieder. Der Ton war frueher gegen den
+       Seitengrund gerechnet und fiel auf dieser helleren, versenkten
+       Flaeche auf 4.29:1 — dafuer gab es `--qt-muted-sunk`. Seit
+       `--qt-muted` gegen die hellste dunkle Flaeche getunt ist, misst er
+       hier 5.01:1, und das Sondertoken ist entfallen. Begruendung samt
+       Messreihe steht bei `--qt-muted` in Ebene 2. */
+    color: var(--qt-muted);
+    transition-property: color, background-color, border-color, box-shadow,
+      transform;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  .wahl:hover {
+    border-color: var(--qt-border-strong);
+    color: var(--qt-text);
+  }
+
+  /* Die Karte traegt den Fokus, nicht das versteckte Feld darin. Ohne
+     diese Zeile waere die Tastaturbedienung unsichtbar — der eine
+     Nachteil eines sr-only-Eingabefeldes. */
+  .wahl:focus-visible,
+  .wahl:has(:focus-visible) {
+    outline: 2px solid var(--qt-signal);
+    outline-offset: 2px;
+  }
+
+  .wahl[data-state="checked"],
+  .wahl[aria-pressed="true"],
+  .wahl:has(:checked) {
+    border-color: var(--qt-signal);
+    background-color: var(--qt-signal-weak);
+    color: var(--qt-text);
+    box-shadow: var(--qt-shadow-card);
+    /* Hebt die gewaehlte Karte ueber ihre Nachbarn, damit der Schatten
+       nicht unter der naechsten verschwindet. */
+    z-index: 1;
+    transform: scale(var(--wahl-skala, 1.02));
+  }
+
+  /* Der Haken ist die zweite, farbunabhaengige Auskunft darueber, was
+     gewaehlt ist — Groesse und Farbe allein genuegen WCAG 1.4.1 nicht. */
+  .wahl-haken {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 160ms, transform 160ms;
+  }
+
+  .wahl[data-state="checked"] .wahl-haken,
+  .wahl[aria-pressed="true"] .wahl-haken,
+  .wahl:has(:checked) .wahl-haken {
+    opacity: 1;
+    transform: scale(1);
+    color: var(--qt-signal);
+  }
+
+  /* ── Das Kaestchen der Chips ───────────────────────────────────────
+     Der Haken muss seinen Platz auch unsichtbar belegen, sonst aendert
+     der Chip beim Anhaken seine Breite und schiebt die ganze Reihe zur
+     Seite. Mit `opacity: 0` allein blieb dort aber eine leere dunkle
+     Flaeche stehen — als Loch im Chip sichtbar, ohne Bedeutung.
+
+     Der Umriss fuellt denselben Platz und sagt zugleich, dass hier
+     etwas an- und abwaehlbar ist. `--qt-border-control` statt
+     `--qt-border`, aus demselben Grund wie beim Chiprahmen: das
+     Kaestchen ist Teil eines Bedienelements, WCAG 1.4.11 verlangt 3:1.
+
+     Die Plan-Auswahl (`WahlKarte`) bekommt bewusst keins — dort ist die
+     Karte selbst der Indikator, und ein Kaestchen an einer von drei
+     sich ausschliessenden Karten laese sie wie mehrfach waehlbar
+     aussehen. */
+  .wahl-kasten {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--qt-border-control);
+    border-radius: 5px;
+    transition: background-color 160ms, border-color 160ms;
+  }
+
+  .wahl-kasten .wahl-haken {
+    width: 100%;
+    height: 100%;
+    /* Der Haken sitzt jetzt in einem 16px-Kaestchen statt frei im Chip.
+       Die vorgegebene Strichstaerke von Lucide verschwaende darin. */
+    stroke-width: 3.25;
+  }
+
+  .wahl:hover .wahl-kasten {
+    border-color: var(--qt-border-strong);
+  }
+
+  .wahl[data-state="checked"] .wahl-kasten,
+  .wahl[aria-pressed="true"] .wahl-kasten,
+  .wahl:has(:checked) .wahl-kasten {
+    border-color: var(--qt-signal);
+    background-color: var(--qt-signal);
+  }
+
+  /* Im gefuellten Kaestchen ist der Haken die Aussparung, nicht die
+     Farbflaeche — gruen auf gruen waere er unsichtbar. */
+  .wahl[data-state="checked"] .wahl-kasten .wahl-haken,
+  .wahl[aria-pressed="true"] .wahl-kasten .wahl-haken,
+  .wahl:has(:checked) .wahl-kasten .wahl-haken {
+    color: var(--qt-signal-ink);
+  }
+
+  /* Die nativen Pfeile eines `type="number"` weichen eigenen Knoepfen.
+     Sie sind browseruebergreifend nicht verlaesslich stylebar: Safari
+     setzt sie ueber die Ziffer, Firefox blendet sie erst beim Schweben
+     ein, und ihre Trefferflaeche liegt weit unter den 44 Pixeln, die
+     wir sonst ueberall einhalten. `appearance: textfield` raeumt sie
+     weg, ohne den Zahlentyp aufzugeben — Ziffernblock auf dem Handy
+     und `min`/`max` bleiben also erhalten. */
+  .zahl-feld {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .zahl-feld::-webkit-outer-spin-button,
+  .zahl-feld::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  /* Fliesstext-Skala fuer Rechtstexte und lange Absaetze. */
+  .prose-qt {
+    max-width: 68ch;
+  }
+
+  .prose-qt h2 {
+    font-size: 1.375rem;
+    line-height: 1.3;
+    margin-block: 2.25rem 0.75rem;
+  }
+
+  .prose-qt h3 {
+    font-size: 1.0625rem;
+    line-height: 1.4;
+    margin-block: 1.5rem 0.5rem;
+  }
+
+  .prose-qt p,
+  .prose-qt ul {
+    color: var(--qt-muted);
+    line-height: 1.7;
+    margin-block: 0.75rem;
+  }
+
+  .prose-qt ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+
+  .prose-qt li {
+    margin-block: 0.25rem;
+  }
+
+}
+

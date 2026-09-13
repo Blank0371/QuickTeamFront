@@ -1,0 +1,43 @@
+# QuickTeam
+
+> Web-Anwendung für Schicht- und Dienstplanung in Gastronomiebetrieben in
+> Österreich und Deutschland. Betriebsinhaber erstellen Wochenpläne, das Team
+> sieht seine Schichten am Handy, Arbeitsstunden werden automatisch summiert.
+
+## Stand
+
+QuickTeam befindet sich in einem eingeschränkten Start. Die Website ist
+öffentlich, aber es können zurzeit keine Konten angelegt, keine Anmeldungen
+durchgeführt und keine Verträge geschlossen werden. Registrierung, Anmeldung,
+Einrichtung, Dashboard und Zahlung sind vorübergehend abgeschaltet.
+
+## Was QuickTeam ist
+
+QuickTeam richtet sich an Restaurants, Cafés, Bars und Hotelgastronomie mit
+wechselnden Schichten und Teilzeitkräften. Ein Betrieb wird von einem Chef
+angelegt; Mitarbeiterinnen und Mitarbeiter werden eingeladen und greifen mobil
+auf ihren Plan zu. Die Anwendung ist auf Deutsch und auf die Gegebenheiten in
+Österreich und Deutschland ausgelegt.
+
+## Funktionsumfang
+
+- Wochenplanung: Schichten anlegen, Personen zuteilen, Plan veröffentlichen
+- Team: Mitarbeitende einladen, Rollen und Status pflegen
+- Zeiten: geplante Stunden je Person und Woche im Überblick
+- Mobil: Der veröffentlichte Plan ist am Telefon abrufbar
+
+## Pläne
+
+Drei Pläne — Low (29 €), Medium (49 €) und Business (69 €), jeweils pro Monat
+und pro Betrieb. Buchen ist während des eingeschränkten Starts nicht möglich.
+
+## Seiten
+
+- /: Startseite mit Produktübersicht, Versprechen und Preisen
+- /preise: Die drei Pläne im Vergleich
+- /impressum, /datenschutz, /agb: Rechtliches
+
+## Hinweis
+
+Diese Website ist der öffentliche Teil von QuickTeam. Die Planungsanwendung
+selbst liegt hinter einer Anmeldung, die zurzeit nicht geöffnet ist.

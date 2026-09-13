@@ -1,0 +1,29 @@
+node_modules/
+.next/
+.next-build/
+out/
+build/
+
+.env
+.env.local
+.env*.local
+
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+.DS_Store
+Thumbs.db
+
+# Lokale Launch-Checkliste, nicht eingecheckt
+quickteam-launch-checkliste-2026-09-12.md
+
+# Netlify: lokaler Ordner der CLI und die Deno-Lockdatei, die beim
+# Buendeln der Edge Function (Middleware) entsteht. Beides ist
+# Build-Ausgabe, kein Quellcode.
+.netlify
+deno.lock

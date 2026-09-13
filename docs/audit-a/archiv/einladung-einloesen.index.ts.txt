@@ -1,0 +1,147 @@
+/*
+ * ARCHIV — Edge Function `einladung-einloesen`, Version 1.
+ *
+ * Gesichert am 2026-09-11 aus dem deployten Artefakt von
+ * jqpfuotwsgnqihspsmmf, unmittelbar vor dem Löschen der Funktion.
+ *   slug          einladung-einloesen
+ *   id            66d73dfd-56fa-4b4b-af6c-f32412f05a4d
+ *   version       1
+ *   verify_jwt    true
+ *   ezbr_sha256   869347da2020426954ade34af1e8d260ed656e635fc431aa71b9471e5ebc329d
+ *   created_at    1784448865972
+ *
+ * WARUM DIESE DATEI EXISTIERT
+ * Der Quellcode dieser Funktion lag in keinem der beiden Repositories —
+ * weder in quickteam-web noch in QuickTeamMobile (`supabase/functions/`
+ * enthält dort nur `plan-generieren` und `push-versenden`). Das deployte
+ * Artefakt war die einzige Kopie. Löschen ohne Sicherung hätte sie
+ * endgültig vernichtet; deshalb steht sie hier.
+ *
+ * DIESE DATEI IST KEIN BAUSTEIN, SONDERN EIN BELEG.
+ * Sie wird nicht kompiliert, nicht importiert und nicht deployed. Wer die
+ * Funktion je wieder braucht, darf sie NICHT unverändert deployen — sie
+ * enthält zwei Fehler, die genau der Grund für die Löschung waren:
+ *
+ *   1. Der Guard am Ende (`.is("eingeloest_am", null)`) ist wirkungslos.
+ *      Geprüft wird nur `updErr`, nicht ob überhaupt eine Zeile getroffen
+ *      wurde. Zwei gleichzeitige Aufrufe liefern BEIDE ein gültiges
+ *      Token-Paar; beim zweiten trifft das UPDATE null Zeilen, und niemand
+ *      merkt es.
+ *
+ *   2. Die Reihenfolge ist falsch. Die Sitzung wird gemintet und
+ *      zurückgegeben, BEVOR die Einladung verbraucht ist. Schlägt der
+ *      Verbrauch danach fehl, ist die Sitzung trotzdem in der Welt.
+ *
+ * Ausserdem schreibt sie `mitarbeiter.auth_id` selbst, statt
+ * `einladung_annehmen(p_mitarbeiter_id)` aufzurufen — seit dem 2026-09-11
+ * ist das die einzige Stelle, die eine Anstellung mit einem Konto
+ * verknüpft, und sie tut es atomar.
+ *
+ * Die korrigierte Fassung (erst atomar verbrauchen, Ablauf und
+ * Einmaligkeit in DERSELBEN WHERE-Klausel, Session nur bei getroffener
+ * Zeile) steht in docs/audit-a/app-entwickler-handover.md, Abschnitt 4,
+ * und in docs/backend-befunde-2026-09-11.md, Abschnitt 2.
+ *
+ * Unveränderter Originalinhalt ab hier.
+ * ---------------------------------------------------------------------
+ */
+
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+Deno.serve(async (req) => {
+  try {
+    const { hash } = await req.json();
+    if (!hash) return json({ error: "hash erforderlich" }, 400);
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // --- validate invite ---
+    const { data: einladung } = await admin
+      .from("einladungen")
+      .select("hash, betrieb_id, mitarbeiter_id, ablaufdatum, eingeloest_am")
+      .eq("hash", hash)
+      .maybeSingle();
+
+    if (!einladung) return json({ error: "Einladung ungültig" }, 404);
+    if (einladung.eingeloest_am) return json({ error: "Einladung bereits eingelöst" }, 409);
+    if (new Date(einladung.ablaufdatum) < new Date()) {
+      return json({ error: "Einladung abgelaufen" }, 410);
+    }
+
+    // --- find or create the auth user for this Mitarbeiter ---
+    const { data: ma } = await admin
+      .from("mitarbeiter")
+      .select("id, auth_id")
+      .eq("id", einladung.mitarbeiter_id)
+      .single();
+
+    const email = `mitarbeiter-${einladung.mitarbeiter_id}@invite.local`;
+    let authId = ma?.auth_id as string | null;
+
+    if (!authId) {
+      const { data: created, error: cErr } = await admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: {
+          rolle: "mitarbeiter",
+          mitarbeiter_id: einladung.mitarbeiter_id,
+          betrieb_id: einladung.betrieb_id,
+        },
+      });
+      if (cErr || !created.user) return json({ error: cErr?.message ?? "User-Anlage fehlgeschlagen" }, 500);
+      authId = created.user.id;
+
+      await admin.from("mitarbeiter")
+        .update({ auth_id: authId })
+        .eq("id", einladung.mitarbeiter_id);
+    }
+
+    // --- mint a session (magiclink → verifyOtp) ---
+    const { data: link, error: lErr } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+    });
+    if (lErr || !link.properties?.hashed_token) {
+      return json({ error: lErr?.message ?? "Token-Erzeugung fehlgeschlagen" }, 500);
+    }
+
+    const anon = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!
+    );
+    const { data: session, error: vErr } = await anon.auth.verifyOtp({
+      token_hash: link.properties.hashed_token,
+      type: "email",
+    });
+    if (vErr || !session.session) {
+      return json({ error: vErr?.message ?? "Session-Erzeugung fehlgeschlagen" }, 500);
+    }
+
+    // --- mark redeemed (only after the session exists) ---
+    const { error: updErr } = await admin
+      .from("einladungen")
+      .update({ eingeloest_am: new Date().toISOString() })
+      .eq("hash", hash)
+      .is("eingeloest_am", null);   // guards against a double-redeem race
+    if (updErr) return json({ error: updErr.message }, 500);
+
+    return json({
+      access_token: session.session.access_token,
+      refresh_token: session.session.refresh_token,
+      mitarbeiter_id: einladung.mitarbeiter_id,
+      betrieb_id: einladung.betrieb_id,
+    });
+  } catch (e) {
+    return json({ error: String(e) }, 500);
+  }
+});
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}

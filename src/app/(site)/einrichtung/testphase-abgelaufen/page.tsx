@@ -1,0 +1,124 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { Container } from "@/components/container";
+import { ZahlungsFormular } from "@/components/einrichtung/zahlungs-formular";
+import { FormMeldung } from "@/components/formular/felder";
+import { holeAbo } from "@/lib/abo";
+import { einzelwert } from "@/lib/auth-meldungen";
+import { ermittleStand, pfadFuer } from "@/lib/einrichtung";
+import { plaene, TESTPHASE_TAGE } from "@/lib/site";
+import { erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
+import { planOderBasic } from "@/lib/validierung";
+import { zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
+
+export const metadata: Metadata = {
+  title: "Testphase abgelaufen",
+  description:
+    "Deine Testphase ist vorbei. Hinterleg ein Zahlungsmittel, dann läuft dein Betrieb weiter — deine Daten bleiben erhalten.",
+  robots: { index: false, follow: false },
+};
+
+export const dynamic = "force-dynamic";
+
+/**
+ * Die einzige Seite, die website-seitig wirklich sperrt.
+ *
+ * Erreichbar über `status = 'pausiert'`. Der Wert kommt nicht aus einer
+ * Datumsrechnung, sondern von Stripe: mit
+ * `trial_settings.end_behavior.missing_payment_method = "pause"` geht das
+ * Abo beim Ablauf ohne Karte auf `paused`, der Webhook schreibt daraus
+ * `pausiert`. `betrieb_abonnements` hat gar keine Spalte für das Ende der
+ * Testphase — wir könnten es selbst also nicht ausrechnen.
+ *
+ * Das Formular ist dasselbe Bauteil wie in Schritt 2. Nach erfolgreicher
+ * Hinterlegung setzt `uebernimmZahlungsmittel` die Methode als Standard
+ * **und** nimmt das pausierte Abo per `resume` wieder auf — dafür ist
+ * `pause` gegenüber `cancel` gewählt worden: es entsteht kein neues Abo,
+ * es läuft dasselbe weiter.
+ */
+export default async function TestphaseAbgelaufenSeite({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const stand = await ermittleStand();
+  if (stand === "nicht-angemeldet") redirect("/login");
+
+  // Wer nicht gesperrt ist, hat hier nichts zu lesen.
+  if (!stand.gesperrt || stand.betriebId === null) redirect(pfadFuer(stand));
+
+  const params = await searchParams;
+
+  /*
+   * Rückkehr aus 3DS — dieselbe Behandlung wie in Schritt 2. Geht das
+   * Übernehmen durch, entscheidet die Ableitung erneut, und die Sperre
+   * ist dann weg.
+   */
+  const zurueckVon3ds = einzelwert(params["setup_intent"]);
+  let uebernahmeFehler: string | null = null;
+
+  if (zurueckVon3ds) {
+    const ergebnis = await zahlungsmittelUebernehmen(zurueckVon3ds);
+    if (ergebnis.ok) redirect("/einrichtung");
+    uebernahmeFehler = ergebnis.nachricht;
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const abo = await holeAbo(supabase, stand.betriebId);
+  const planName =
+    plaene.find((p) => p.id === planOderBasic(abo?.plan))?.name ?? "Low";
+
+  const stripeAbo = await holeAboFuerBetrieb({
+    betriebId: stand.betriebId,
+    email: user?.email ?? "",
+    kundeId: abo?.stripe_customer_id ?? null,
+  });
+  if (!stripeAbo) redirect("/einrichtung/zahlung");
+
+  const kundeId =
+    typeof stripeAbo.customer === "string" ? stripeAbo.customer : stripeAbo.customer.id;
+  const intent = await erstelleSetupIntent(kundeId);
+
+  return (
+    <Container className="py-12 sm:py-16">
+      <div className="mx-auto w-full max-w-2xl">
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">
+          Testphase
+        </p>
+
+        <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">
+          Deine Testphase ist abgelaufen
+        </h1>
+
+        <p className="mt-4 text-base leading-relaxed text-muted">
+          Die {TESTPHASE_TAGE} Tage sind vorbei, und es ist kein Zahlungsmittel
+          hinterlegt. Dein Betrieb, dein Team und deine Schichtvorlagen bleiben
+          gespeichert — sobald du eine Zahlungsmethode hinterlegst, läuft dein Plan{" "}
+          <strong className="font-semibold text-text">{planName}</strong> weiter, wo er
+          aufgehört hat.
+        </p>
+
+        <div className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8">
+          {uebernahmeFehler ? (
+            <div className="mb-6">
+              <FormMeldung art="fehler">{uebernahmeFehler}</FormMeldung>
+            </div>
+          ) : null}
+
+          <ZahlungsFormular clientSecret={intent.clientSecret} />
+        </div>
+
+        <p className="mt-6 text-sm leading-relaxed text-muted">
+          Es entsteht kein neues Abonnement — dein bestehendes wird fortgesetzt. Die
+          erste Abbuchung erfolgt unmittelbar danach.
+        </p>
+      </div>
+    </Container>
+  );
+}
