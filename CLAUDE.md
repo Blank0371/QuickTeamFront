@@ -769,12 +769,37 @@ arbeitet, ist zulässig; würde „mindestens eine Einladung" zur Bedingung, kä
 aus Schritt 3 heraus. Eine Vorlage ohne Mindestbesetzung zählt nicht mit — sie wäre in
 der App ohnehin unsichtbar.
 
-**Offen, nicht vergessen:** `status = 'gekuendigt'` hat in dieser Tabelle noch keine
-eigene Zeile. Solange Kündigungen im Flow nicht vorkommen, fällt der Fall durch bis
-bis ins Dashboard. Sobald aktive Kündigungen realistisch werden — eigene
-Kündigen-Funktion, Kundenportal, oder `unpaid` durch eine geänderte
-Dashboard-Einstellung — braucht er eine eigene Zeile und ein eigenes Ziel. Jetzt nicht
-bauen, aber beim nächsten Anfassen dieser Tabelle prüfen.
+**`status = 'gekuendigt'` ist behandelt, auch wenn er in der Tabelle oben keine
+eigene Zeile hat.** `ermittleStandFuer()` behandelt ihn wie „kein Abo“ und
+`pruefeSperre()` leitet Chefs auf `/einrichtung/zahlung`, wo sich ein neues Abo
+abschliessen lässt. Hier stand bis zum 2026-09-13, der Fall falle bis ins
+Dashboard durch; das war zu dem Zeitpunkt schon nicht mehr wahr.
+
+### Änderung vom 2026-09-13: Kündigung über das Stripe-Kundenportal
+
+**Vorher:** Es gab keine Oberfläche zum Kündigen. AGB § 6 Abs. 2 nannte die
+Kündigung „über die im Dienst oder beim Zahlungsdienstleister dafür vorgesehene
+Funktion“, aber keine davon existierte, und es blieb nur die E-Mail.
+
+**Jetzt:** In `/dashboard/einstellungen` steht für Chefs „Abo verwalten“
+(`aboVerwalten()` in `einstellungen/aktionen.ts`). Der Knopf öffnet das
+Stripe-Kundenportal: Kündigung zum Periodenende, Wechsel des Zahlungsmittels,
+Rechnungen. Die Kunden-Id wird serverseitig abgeleitet und nie aus dem Formular
+gelesen. Welche Funktionen das Portal anbietet, steht in der Portal-Konfiguration
+im Stripe-Dashboard; ohne gespeicherte Konfiguration zeigt die Seite einen Fehler
+und verweist auf die E-Mail.
+
+**Grund:** Befund 5 der externen rechtlichen Durchsicht vom 2026-09-13. Entschieden
+hat die Betreiberin: Portal statt eigenem Knopf.
+
+**Dazu gehört:** Die Zahlungsansichten (Schritt 2 und Sperrseite) zeigen Betrag,
+tatsächliches Testphasenende, erste Abbuchung, Verlängerung und Kündigung direkt
+über dem Knopf. Diese Angaben werden aus dem Stripe-Abo gelesen, nicht aus `plaene` /
+`TESTPHASE_TAGE` (`src/lib/abo-konditionen.ts`). Weicht der Stripe-Preis vom
+Anzeigepreis ab, landet `[preise] …` im Protokoll.
+
+Die Expo-App hat kein Gegenstück, und das ist kein Paritätsbruch: Abo und Zahlung
+liegen ohnehin nur hier.
 
 **Ein Chef, mehrere Standorte ist nicht unterstützt.** Der Stepper geht durchgehend
 von einem Betrieb pro Anmeldung aus: `holeChefBetriebId()` liefert den ersten, für den

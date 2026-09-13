@@ -57,8 +57,14 @@ export function ZustimmungFeld({
           aria-describedby={fehler ? fehlerId : undefined}
           className="mt-1"
         />
+        {/*
+          Seit dem 2026-09-13 mit der Vertretungsversicherung (§ 1 Abs. 5
+          AVV) und ohne „akzeptiere die Datenschutzerklärung": AGB und AVV
+          schliesst man für den Betrieb ab, eine Datenschutzerklärung nimmt
+          man zur Kenntnis — sie ist eine Information, kein Vertrag.
+        */}
         <span>
-          Ich akzeptiere die{" "}
+          Ich schliesse für meinen Betrieb die{" "}
           <a
             href="/agb"
             target="_blank"
@@ -66,8 +72,8 @@ export function ZustimmungFeld({
             className="underline underline-offset-2 hover:text-signal"
           >
             AGB
-          </a>
-          , die{" "}
+          </a>{" "}
+          und die{" "}
           <a
             href="/avv"
             target="_blank"
@@ -76,7 +82,7 @@ export function ZustimmungFeld({
           >
             Auftragsverarbeitungsvereinbarung (AVV)
           </a>{" "}
-          und die{" "}
+          ab und bestätige, dass ich berechtigt bin, den Betrieb dabei zu vertreten. Die{" "}
           <a
             href="/datenschutz"
             target="_blank"
@@ -84,8 +90,8 @@ export function ZustimmungFeld({
             className="underline underline-offset-2 hover:text-signal"
           >
             Datenschutzerklärung
-          </a>
-          .
+          </a>{" "}
+          habe ich zur Kenntnis genommen.
         </span>
       </label>
 

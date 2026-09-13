@@ -1,0 +1,121 @@
+import type { AboKonditionen } from "@/lib/stripe";
+import { plaene, type PlanId } from "@/lib/site";
+
+/**
+ * Die Sätze, die unmittelbar vor dem Hinterlegen einer Zahlungsmethode
+ * stehen — Betrag, Umsatzsteuer, Testphasenende, erste Abbuchung,
+ * Verlängerung und Kündigung.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum es diese Datei gibt
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Aus der rechtlichen Durchsicht vom 2026-09-13 (Befund 5): Die letzte
+ * Zahlungsansicht nannte den Tarifnamen und „die ersten 14 Tage sind
+ * kostenlos", aber keinen Betrag — und den Satz über die 14 Tage auch
+ * dann, wenn die Testphase längst lief. Für ein Angebot an Unternehmer ist
+ * die Verbraucher-Buttonpflicht (§ 312j BGB) nicht einschlägig; klar sein
+ * soll trotzdem, was ab wann kostet. Zwei Seiten tragen das Formular
+ * (Schritt 2 und die Sperrseite), deshalb stehen die Sätze einmal hier.
+ *
+ * Die Seiten sind bislang einsprachig deutsch wie der ganze Stepper; wenn
+ * er übersetzt wird, wandern diese Sätze ins Wörterbuch.
+ */
+
+const DATUM = new Intl.DateTimeFormat("de-DE", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+export function formatiereDatum(datum: Date): string {
+  return DATUM.format(datum);
+}
+
+export function formatiereBetrag(k: AboKonditionen): string | null {
+  if (k.betragCent === null) return null;
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: k.waehrung.toUpperCase(),
+  }).format(k.betragCent / 100);
+}
+
+function jeZeitraum(k: AboKonditionen): string {
+  return k.intervall === "year" ? "pro Jahr" : "pro Monat";
+}
+
+/**
+ * „49,00 € pro Monat zzgl. USt." — oder `null`, wenn Stripe keinen Betrag
+ * liefert (ein Price ohne `unit_amount`, etwa gestaffelte Preise, die es
+ * hier nicht gibt).
+ */
+export function preisZeile(k: AboKonditionen): string | null {
+  const betrag = formatiereBetrag(k);
+  return betrag ? `${betrag} ${jeZeitraum(k)} zzgl. USt.` : null;
+}
+
+const KUENDIGUNG =
+  "Kündbar jederzeit zum Ende des bezahlten Zeitraums — im Dashboard unter Einstellungen → „Abo verwalten“ oder per E-Mail (AGB § 6 Abs. 2).";
+
+/** Schritt 2: Zahlungsmittel während oder nach der Testphase hinterlegen. */
+export function zusammenfassungSchritt(k: AboKonditionen): string[] {
+  const preis = preisZeile(k);
+  const zeilen: string[] = [];
+
+  if (k.testphaseEnde) {
+    const ende = formatiereDatum(k.testphaseEnde);
+    zeilen.push(`Kostenlose Testphase bis ${ende} — bis dahin wird nichts abgebucht.`);
+    zeilen.push(
+      preis
+        ? `Erste Abbuchung am ${ende}: ${preis}, danach im Voraus für jeden Zeitraum.`
+        : `Erste Abbuchung am ${ende}, danach im Voraus für jeden Zeitraum.`,
+    );
+  } else if (k.periodeEnde) {
+    zeilen.push(
+      preis
+        ? `Die Testphase ist vorbei, das Abo läuft. Nächste Abbuchung am ${formatiereDatum(k.periodeEnde)}: ${preis}.`
+        : `Die Testphase ist vorbei, das Abo läuft. Nächste Abbuchung am ${formatiereDatum(k.periodeEnde)}.`,
+    );
+  }
+
+  if (k.endetAm) {
+    zeilen.push(`Das Abo ist gekündigt und endet am ${formatiereDatum(k.endetAm)}.`);
+  } else {
+    zeilen.push("Das Abo verlängert sich automatisch um jeweils einen weiteren Zeitraum.");
+    zeilen.push(KUENDIGUNG);
+  }
+
+  return zeilen;
+}
+
+/** Sperrseite: Testphase ohne Zahlungsmittel abgelaufen, Abo pausiert. */
+export function zusammenfassungFortsetzen(k: AboKonditionen): string[] {
+  const preis = preisZeile(k);
+  return [
+    preis
+      ? `Mit dem Hinterlegen wird dein Abo sofort fortgesetzt, und ${preis} werden für den ersten Zeitraum abgebucht.`
+      : "Mit dem Hinterlegen wird dein Abo sofort fortgesetzt, und der erste Zeitraum wird abgebucht.",
+    "Danach verlängert es sich automatisch und wird jeweils im Voraus abgebucht.",
+    KUENDIGUNG,
+  ];
+}
+
+/**
+ * Meldet, wenn der Anzeigepreis der Website vom abgerechneten Stripe-Preis
+ * abweicht.
+ *
+ * Kein Abbruch: gezeigt wird ohnehin der Stripe-Betrag, also der richtige.
+ * Aber Landing, `/preise` und die Planwahl lesen `plaene` — und stünde
+ * dort ein anderer Betrag, hätte jemand auf der Preisseite etwas anderes
+ * gelesen als hier. Das soll im Protokoll auffallen, nicht erst in einer
+ * Beschwerde.
+ */
+export function pruefePreisGleichstand(plan: PlanId, k: AboKonditionen): void {
+  const anzeige = plaene.find((p) => p.id === plan)?.preis;
+  if (anzeige === undefined || k.betragCent === null) return;
+  if (anzeige * 100 !== k.betragCent) {
+    console.error(
+      `[preise] Plan ${plan}: Website zeigt ${anzeige} €, Stripe rechnet ${k.betragCent / 100} ${k.waehrung.toUpperCase()} ab — plaene in src/lib/site.ts oder STRIPE_PRICE_* angleichen.`,
+    );
+  }
+}

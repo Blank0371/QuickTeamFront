@@ -8,7 +8,8 @@ import { holeAbo } from "@/lib/abo";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { ermittleStand, pfadFuer } from "@/lib/einrichtung";
 import { plaene, TESTPHASE_TAGE } from "@/lib/site";
-import { erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
+import { pruefePreisGleichstand, zusammenfassungFortsetzen } from "@/lib/abo-konditionen";
+import { aboKonditionen, erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { planOderBasic } from "@/lib/validierung";
 import { zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
@@ -85,6 +86,14 @@ export default async function TestphaseAbgelaufenSeite({
     typeof stripeAbo.customer === "string" ? stripeAbo.customer : stripeAbo.customer.id;
   const intent = await erstelleSetupIntent(kundeId);
 
+  /*
+   * Hier wird mit dem Klick sofort abgebucht (`nimmAboWiederAuf` bezahlt
+   * die offene Rechnung gleich mit). Deshalb steht der Betrag direkt über
+   * dem Knopf, und der Knopf sagt, dass es kostet.
+   */
+  const konditionen = aboKonditionen(stripeAbo);
+  pruefePreisGleichstand(planOderBasic(abo?.plan), konditionen);
+
   return (
     <Container className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
@@ -111,12 +120,15 @@ export default async function TestphaseAbgelaufenSeite({
             </div>
           ) : null}
 
-          <ZahlungsFormular clientSecret={intent.clientSecret} />
+          <ZahlungsFormular
+            clientSecret={intent.clientSecret}
+            zusammenfassung={zusammenfassungFortsetzen(konditionen)}
+            knopfText="Kostenpflichtig fortsetzen"
+          />
         </div>
 
         <p className="mt-6 text-sm leading-relaxed text-muted">
-          Es entsteht kein neues Abonnement — dein bestehendes wird fortgesetzt. Die
-          erste Abbuchung erfolgt unmittelbar danach.
+          Es entsteht kein neues Abonnement — dein bestehendes wird fortgesetzt.
         </p>
       </div>
     </Container>

@@ -1,8 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
+import { holeAbo } from "@/lib/abo";
 import { speichereEinstellungen } from "@/lib/dashboard/einstellungen";
+import { erstelleKundenportal, holeAboFuerBetrieb } from "@/lib/stripe";
+import { leseSprache } from "@/i18n/sprache";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { einstellungenSchema } from "@/lib/validierung";
@@ -103,4 +108,91 @@ export async function einstellungenSpeichern(
   revalidatePath("/dashboard/einstellungen");
 
   return { status: "erfolg", nachricht: "Gespeichert.", felder: {}, werte: {} };
+}
+
+/**
+ * Leitet die Betriebsleitung ins Stripe-Kundenportal.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum ein Portal statt eines eigenen Kündigen-Knopfs
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Entschieden am 2026-09-13 nach der rechtlichen Durchsicht (Befund 5:
+ * „eine reguläre Kündigungsoberfläche habe ich nicht gefunden"). Das
+ * Portal deckt Kündigung zum Periodenende, Wechsel des Zahlungsmittels
+ * und Rechnungsabruf in einem ab — drei Dinge, die sonst je eine eigene
+ * Oberfläche bräuchten. Was es anbietet, stellt der Betreiber im
+ * Stripe-Dashboard ein, nicht dieser Code.
+ *
+ * **Die Kunden-Id kommt nie aus dem Formular.** Der Betrieb ergibt sich
+ * aus der serverseitig geprüften Position, der Kunde aus unserer Zeile
+ * in `betrieb_abonnements` oder — solange der Webhook noch nicht durch
+ * ist — über `holeAboFuerBetrieb()` bei Stripe. Ein hereingereichter
+ * Wert würde Zugriff auf das Portal eines fremden Kunden eröffnen.
+ *
+ * Kein `FormZustand`: der Erfolg ist ein Verlassen der Seite, und ein
+ * Fehler landet als `?abo=…` wieder auf ihr. So braucht der Knopf kein
+ * JavaScript.
+ */
+export async function aboVerwalten(): Promise<void> {
+  const { supabase, position } = await betreteDashboard();
+  if (!istChef(position)) redirect("/dashboard/einstellungen?abo=verweigert");
+
+  let kundeId: string | null = null;
+  try {
+    const abo = await holeAbo(supabase, position.betriebId);
+    kundeId = abo?.stripe_customer_id ?? null;
+
+    if (!kundeId) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const beiStripe = await holeAboFuerBetrieb({
+        betriebId: position.betriebId,
+        email: user?.email ?? "",
+        kundeId: null,
+      });
+      if (beiStripe) {
+        kundeId =
+          typeof beiStripe.customer === "string" ? beiStripe.customer : beiStripe.customer.id;
+      }
+    }
+  } catch (fehler) {
+    console.error(`[abo] Kunde für Portal nicht ermittelbar: ${fehler}`);
+  }
+
+  if (!kundeId) redirect("/dashboard/einstellungen?abo=kein-abo");
+
+  let ziel: string | null = null;
+  try {
+    ziel = await erstelleKundenportal({
+      kundeId,
+      rueckkehrUrl: `${await eigeneHerkunft()}/dashboard/einstellungen`,
+      sprache: await leseSprache(),
+    });
+  } catch (fehler) {
+    /*
+     * Häufigster Grund: im Stripe-Dashboard ist noch keine
+     * Portal-Konfiguration gespeichert. Das ist ein Einrichtungsfehler auf
+     * unserer Seite, kein Fehler des Kunden — deshalb ins Protokoll mit
+     * Kunden-Id, und dem Kunden der Weg per E-Mail.
+     */
+    console.error(`[abo] Kundenportal für ${kundeId} nicht erzeugt: ${fehler}`);
+  }
+
+  // `redirect` wirft; deshalb ausserhalb des try-Blocks.
+  redirect(ziel ?? "/dashboard/einstellungen?abo=portal-fehler");
+}
+
+/**
+ * Protokoll und Host dieser Anfrage — damit das Portal dorthin
+ * zurückführt, wo es geöffnet wurde, auch lokal und auf Vorschau-Adressen.
+ * `siteUrl` aus `src/lib/site.ts` zeigte ohne gesetzte Variable immer auf
+ * die Produktionsdomain.
+ */
+async function eigeneHerkunft(): Promise<string> {
+  const kopf = await headers();
+  const host = kopf.get("x-forwarded-host") ?? kopf.get("host") ?? "quickteam.at";
+  const proto = (kopf.get("x-forwarded-proto") ?? "https").split(",")[0]?.trim() || "https";
+  return `${proto}://${host}`;
 }

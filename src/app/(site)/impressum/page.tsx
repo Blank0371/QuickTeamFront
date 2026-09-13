@@ -23,14 +23,17 @@ export const metadata: Metadata = {
  * Ostfildern — für sie gilt deutsches Recht, unabhängig davon, dass
  * QuickTeam sich an Betriebe in beiden Ländern richtet.
  *
- * **Die Kontaktadresse ist vom Auftraggeber genannt worden**, nicht aus
- * dem Repository abgeleitet: `blanktrading@web.de`. § 5 Abs. 1 Nr. 2 DDG
- * verlangt Angaben, die eine schnelle elektronische Kontaktaufnahme
- * ermöglichen; damit ist diese Pflicht erfüllt.
+ * **Kontaktadresse und Telefonnummer sind vom Auftraggeber genannt
+ * worden**, nicht aus dem Repository abgeleitet: `blanktrading@web.de`
+ * und `+43 664 2538798`.
  *
- * Eine Telefonnummer steht bewusst nicht hier. Neben einer
- * E-Mail-Adresse ist sie nicht zwingend, und erfunden wird an dieser
- * Stelle nichts.
+ * **Die Telefonnummer steht seit dem 2026-09-13 hier.** Vorher hiess es
+ * an dieser Stelle, die E-Mail allein erfülle § 5 Abs. 1 Nr. 2 DDG. Die
+ * rechtliche Durchsicht vom 2026-09-13 (Befund 4) hat das zu Recht als zu
+ * pauschal bemängelt: Nach EuGH C-298/07 (Rn. 25, 40) braucht es neben der
+ * E-Mail einen weiteren schnellen, unmittelbaren und effizienten
+ * Kommunikationsweg. Ein Telefon ist dafür nicht zwingend, erfüllt es aber.
+ * Die Nummer muss tatsächlich erreichbar sein.
  *
  * **Keine Aussage zur Verbraucherschlichtung, kein OS-Link.** Die
  * OS-Plattform der EU-Kommission ist am 20. Juli 2025 eingestellt
@@ -71,6 +74,8 @@ export default async function ImpressumSeite() {
       <h2>{t.rechtliches.kontakt}</h2>
       <p>
         E-Mail: <a href="mailto:blanktrading@web.de">blanktrading@web.de</a>
+        <br />
+        {t.rechtliches.telefon}: <a href="tel:+436642538798">+43 664 2538798</a>
       </p>
 
       <h2>{t.rechtliches.vertretenDurch}</h2>

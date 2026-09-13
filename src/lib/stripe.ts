@@ -389,6 +389,89 @@ export async function kuendigeAbo(aboId: string): Promise<Stripe.Subscription> {
 }
 
 /**
+ * Was der Kunde unmittelbar vor dem Hinterlegen einer Zahlungsmethode
+ * wissen muss — gelesen aus dem Abo selbst, nicht aus Konstanten.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum aus Stripe und nicht aus `plaene` / `TESTPHASE_TAGE`
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Die rechtliche Durchsicht vom 2026-09-13 hat zwei Dinge bemängelt:
+ * Die Zahlungsansicht sagte bei jedem Aufruf „die ersten 14 Tage sind
+ * kostenlos" — auch am zwölften Tag einer laufenden Testphase —, und sie
+ * nannte keinen Betrag. Beides kommt jetzt von dort, wo abgerechnet
+ * wird: der Betrag vom Price des Abo-Postens, das Testphasenende aus
+ * `trial_end`. Die Anzeigepreise in `plaene` pflegt niemand automatisch
+ * mit (CLAUDE.md, „Nichts im Code hält beide synchron") — was hier steht,
+ * ist deshalb der Betrag, der tatsächlich abgebucht wird.
+ *
+ * `current_period_end` liegt seit der Stripe-API `2025-03-31` am Posten,
+ * nicht mehr am Abo.
+ */
+export type AboKonditionen = {
+  /** Betrag je Abrechnungszeitraum in der kleinsten Einheit (Cent), netto. */
+  betragCent: number | null;
+  waehrung: string;
+  intervall: Stripe.Price.Recurring.Interval | null;
+  /** Ende der Testphase, solange sie läuft — sonst `null`. */
+  testphaseEnde: Date | null;
+  /** Ende des laufenden Abrechnungszeitraums. */
+  periodeEnde: Date | null;
+  /** Gesetzt, wenn das Abo gekündigt ist und zu diesem Zeitpunkt endet. */
+  endetAm: Date | null;
+};
+
+export function aboKonditionen(abo: Stripe.Subscription): AboKonditionen {
+  const posten = abo.items.data[0];
+  const preis = posten?.price;
+  const alsDatum = (sekunden: number | null | undefined) =>
+    typeof sekunden === "number" ? new Date(sekunden * 1000) : null;
+
+  const periodeEnde = alsDatum(posten?.current_period_end);
+
+  return {
+    betragCent: preis?.unit_amount ?? null,
+    waehrung: preis?.currency ?? "eur",
+    intervall: preis?.recurring?.interval ?? null,
+    testphaseEnde: abo.status === "trialing" ? alsDatum(abo.trial_end) : null,
+    periodeEnde,
+    endetAm: abo.cancel_at_period_end ? periodeEnde : alsDatum(abo.cancel_at),
+  };
+}
+
+/**
+ * Öffnet das Stripe-Kundenportal für einen Kunden.
+ *
+ * Dort kündigt der Kunde zum Ende des bezahlten Zeitraums (AGB § 6 Abs. 2),
+ * ändert sein Zahlungsmittel und ruft Rechnungen ab. Welche dieser
+ * Funktionen das Portal anbietet, steht **nicht** hier, sondern in der
+ * Portal-Konfiguration im Stripe-Dashboard (Settings → Billing → Customer
+ * portal). Ohne gespeicherte Konfiguration wirft Stripe beim Anlegen der
+ * Sitzung — der Aufrufer fängt das ab und zeigt eine Meldung.
+ *
+ * Der Status in `betrieb_abonnements` ändert sich dadurch nicht direkt:
+ * eine Kündigung zum Periodenende lässt das Abo bis dahin `active`, und
+ * erst `customer.subscription.deleted` führt über den Webhook zu
+ * `gekuendigt`.
+ */
+export async function erstelleKundenportal({
+  kundeId,
+  rueckkehrUrl,
+  sprache,
+}: {
+  kundeId: string;
+  rueckkehrUrl: string;
+  sprache: "de" | "en";
+}): Promise<string> {
+  const sitzung = await stripeKlient().billingPortal.sessions.create({
+    customer: kundeId,
+    return_url: rueckkehrUrl,
+    locale: sprache,
+  });
+  return sitzung.url;
+}
+
+/**
  * Fehler, der dem Kunden gezeigt werden darf — die Karte hat nicht
  * funktioniert, und das ist keine Panne auf unserer Seite.
  */

@@ -27,24 +27,27 @@ export const metadata: Metadata = {
  *  Warum hier ein Hinweis steht und bei AGB und Datenschutz nicht
  * ─────────────────────────────────────────────────────────────────────
  *
- * Die beiden anderen Dokumente sind fertige Fassungen ohne Lücken. Der
- * AVV ist eine **Vorlage**: `[Firma / Name des Kunden]`, `[Anschrift]`
- * und `[gesetzliche Vertretung]` stehen wörtlich im Text und werden erst
- * beim Abschluss gefüllt. Ohne Einordnung liest sich das wie ein Versehen
- * — als hätte jemand vergessen, die Seite fertig zu machen.
+ * Bis zum 2026-09-13 war der AVV eine Vorlage mit `[Firma / Name des
+ * Kunden]`, `[Anschrift]` und `[gesetzliche Vertretung]`, und der Kasten
+ * behauptete, diese Angaben würden bei der Registrierung aus den Daten
+ * des Betriebs übernommen. Die rechtliche Durchsicht vom 2026-09-13
+ * (Befund 3) hat das zu Recht bemängelt: eine Anschrift fragt die
+ * Registrierung gar nicht ab, und ausgefüllt wurde nie etwas.
  *
- * Der Kasten sagt deshalb, was die Klammern sind. Er behauptet
- * ausdrücklich **nicht**, der Abschluss sei schon gebaut: laut
- * `docs/rechtliches/legals/README.md` ist der Zustimmungs-Flow in der
- * Anwendung noch offen. Das ist eine Aufgabe, keine Aussage für diese
- * Seite, und sie wird von hier aus nicht miterledigt.
+ * Seither bestimmt der Vertragstext die Partei über das Kundenkonto
+ * (§ 1 Abs. 4 AGB), und § 1 Abs. 5 AVV beschreibt den elektronischen
+ * Abschluss samt Vertretungsversicherung. Der Kasten erklärt genau das —
+ * und nichts, was der Code nicht tut: gespeichert werden Fassung,
+ * Zeitpunkt und handelndes Konto (`rechtliche_zustimmungen`), und die
+ * Versicherung steht im Text von `ZustimmungFeld`.
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Anlage 3 ist eine Tabelle
  * ─────────────────────────────────────────────────────────────────────
  *
- * Sie listet die Unterauftragsverarbeiter — Supabase, Expo, Apple,
- * Google —, je mit Ort der Verarbeitung und Übermittlungsgrundlage.
+ * Sie listet die Unterauftragsverarbeiter — seit dem 2026-09-13 Supabase,
+ * Vercel, Resend, Expo, Apple, Google und WEB.DE —, je mit Ort der
+ * Verarbeitung und Übermittlungsgrundlage.
  * `MarkdownText` kann Tabellen und Blockzitate seit dem 2026-09-10;
  * vorher wäre daraus eine Absatzfolge voller Pipe-Zeichen geworden, und
  * das ausgerechnet bei einer Pflichtangabe nach Art. 28 Abs. 3 lit. d

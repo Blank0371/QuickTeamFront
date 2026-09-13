@@ -1,12 +1,12 @@
 # Data Processing Agreement (DPA) under Art. 28 GDPR
 
 
-**Last updated: 10 September 2026**
+**Last updated: 13 September 2026**
 
 ## Between
 
 **Controller** (the "Controller" or "Customer"):
-[Customer's company / name], [address], represented by [legal representative]
+the business that has registered for the Service as Customer within the meaning of Section 1(4) of the Terms, with the details stored in the customer account (in particular the name of the business and its country), represented by the person who concluded this agreement on the Customer's behalf under Section 1(5)
 
 — and —
 
@@ -25,7 +25,9 @@ the following data-processing agreement is concluded.
 
 (3) The duration of this agreement corresponds to the term of the usage contract. The obligations under this agreement continue beyond termination of the usage contract for as long as the Processor processes or stores the Controller's personal data.
 
-(4) Processing takes place exclusively within the European Union or the European Economic Area (EU/EEA). Any relocation of processing to a third country requires the Controller's prior consent and may only occur in compliance with the requirements of Art. 44 et seq. GDPR.
+(4) The Controller's data is stored in data centres within the European Union (Ireland region). Any transfer to a third country, or access from a third country, takes place exclusively through the sub-processors listed in Annex 3, limited to the services described there and only in compliance with the requirements of Art. 44 et seq. GDPR; the respective transfer basis is stated in Annex 3. Any further transfer to a third country is permitted only under the procedure in Section 6(2).
+
+(5) This agreement is concluded electronically: the person acting for the Customer accepts it at registration or, for a new version, in the dashboard, and in doing so confirms that they are authorised to represent the Customer. For each acceptance, the Processor stores the version of this agreement, the time, the acting account and the Customer. On request, it provides the Controller with these details and with the text of the agreement in the accepted version in text form.
 
 ## Section 2 — Controller's right to issue instructions
 
@@ -128,7 +130,7 @@ Art. 82 GDPR applies to the liability of the Parties. In the internal relationsh
 
 **1. Confidentiality (Art. 32(1)(b) GDPR)**
 - *Physical access control:* operation in certified data centers within the EU/EEA; physical access protection by the hosting sub-processor.
-- *System access control:* individual user accounts with authentication (email/password or SMS one-time code); passwords stored only as hashes; administrative access (including to the database and management console) is additionally protected by two-factor authentication (2FA).
+- *System access control:* individual user accounts with authentication (email address and password; email address confirmed by one-time code); passwords stored only as hashes; administrative access (including to the database and management console) is additionally protected by two-factor authentication (2FA).
 - *Data access control:* row-level security on all data tables isolating each business's data; server-enforced authorization via secured database functions; least-privilege access.
 - *Separation control:* logical multi-tenant separation of data per business.
 
@@ -150,10 +152,13 @@ Art. 82 GDPR applies to the liability of the Parties. In the internal relationsh
 
 | Sub-processor | Service | Place of processing | Transfer basis where a third country is involved |
 |---|---|---|---|
-| Supabase, Inc. (Supabase) | hosting, database, authentication, backup | EU/EEA (Ireland region) | processing within the EEA; a data-processing agreement (DPA) is in place with Supabase |
+| Supabase, Inc. (Supabase) | database hosting, authentication, server-side functions, backup | stored in the EU (Ireland region); access from the USA possible for support and maintenance | for access from the USA, EU Standard Contractual Clauses (Art. 46 GDPR) in the data-processing agreement (DPA) with Supabase |
+| Vercel Inc. | hosting and delivery of the website and web dashboard, including server-side processing when pages are requested | worldwide server network, including the USA | EU-U.S. Data Privacy Framework (certified); additionally EU Standard Contractual Clauses |
+| Resend, Inc. | sending emails containing confirmation codes | USA | EU-U.S. Data Privacy Framework (certified); additionally EU Standard Contractual Clauses |
 | Expo (650 Industries, Inc.) | technical delivery of push notifications | USA | EU Standard Contractual Clauses (Art. 46 GDPR) |
 | Apple Inc. (Apple Push Notification service) | delivery of push notifications on iOS devices | USA | EU-U.S. Data Privacy Framework (certified); additionally EU Standard Contractual Clauses |
 | Google LLC (Firebase Cloud Messaging) | delivery of push notifications on Android devices | USA | EU-U.S. Data Privacy Framework (certified); additionally EU Standard Contractual Clauses |
+| 1&1 Mail & Media GmbH (WEB.DE) | the Provider's email mailbox, insofar as the Controller or its users send personal data by email as part of support requests | Germany | no third-country transfer |
 
 > **Note on Stripe:** payment processing is carried out via Stripe (Stripe Payments Europe, Limited) and concerns the payment/billing data of the Customer (business owner). Stripe processes this data as an independent controller, not as a sub-processor of the Provider, and is therefore not listed here. A data-processing agreement (DPA) is in place with Stripe; details are set out in the privacy policy.
 

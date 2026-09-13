@@ -8,7 +8,13 @@ import { holeAbo } from "@/lib/abo";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { betreteSchritt } from "@/lib/einrichtung";
 import { plaene, TESTPHASE_TAGE } from "@/lib/site";
-import { erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
+import {
+  formatiereDatum,
+  preisZeile,
+  pruefePreisGleichstand,
+  zusammenfassungSchritt,
+} from "@/lib/abo-konditionen";
+import { aboKonditionen, erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { planOderBasic } from "@/lib/validierung";
 
@@ -97,12 +103,26 @@ export default async function ZahlungSeite({
       typeof stripeAbo.customer === "string" ? stripeAbo.customer : stripeAbo.customer.id;
     const intent = await erstelleSetupIntent(kundeId);
 
+    /*
+     * Betrag und Testphasenende aus dem Abo, nicht aus `plaene` und
+     * `TESTPHASE_TAGE`: wer am zwölften Tag zurückkommt, hat keine
+     * vierzehn Tage mehr, und abgebucht wird der Stripe-Preis, nicht der
+     * Anzeigepreis. Siehe `src/lib/abo-konditionen.ts`.
+     */
+    const konditionen = aboKonditionen(stripeAbo);
+    pruefePreisGleichstand(gewaehlt, konditionen);
+    const preis = preisZeile(konditionen);
+
     return (
       <SchrittRahmen
         schritt="zahlung"
         stand={stand}
         titel="Zahlungsmittel hinterlegen"
-        lead={`Plan ${planName}. Jetzt wird nichts abgebucht — die ersten ${TESTPHASE_TAGE} Tage sind kostenlos, danach läuft es automatisch weiter.`}
+        lead={
+          konditionen.testphaseEnde
+            ? `Plan ${planName}${preis ? `, ${preis}` : ""}. Jetzt wird nichts abgebucht — die Testphase läuft bis ${formatiereDatum(konditionen.testphaseEnde)}.`
+            : `Plan ${planName}${preis ? `, ${preis}` : ""}.`
+        }
       >
         {uebernahmeFehler ? (
           <div className="mb-6">
@@ -110,7 +130,10 @@ export default async function ZahlungSeite({
           </div>
         ) : null}
 
-        <ZahlungsFormular clientSecret={intent.clientSecret} />
+        <ZahlungsFormular
+          clientSecret={intent.clientSecret}
+          zusammenfassung={zusammenfassungSchritt(konditionen)}
+        />
 
         <p className="mt-6 border-t border-line pt-5 text-sm text-muted">
           <Link
@@ -134,7 +157,16 @@ export default async function ZahlungSeite({
       schritt="zahlung"
       stand={stand}
       titel="Plan wählen"
-      lead={`${TESTPHASE_TAGE} Tage kostenlos, danach monatlich. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.`}
+      lead={
+        /*
+         * Die vierzehn Tage gelten ab der ersten Planwahl, nicht ab jedem
+         * Aufruf dieser Seite — ein Planwechsel verlängert die Testphase
+         * nicht (`wechslePlan` lässt `trial_end` unberührt).
+         */
+        abo?.stripe_subscription_id
+          ? "Deine Testphase läuft bereits seit der ersten Planwahl; ein Planwechsel verlängert sie nicht. Das Zahlungsmittel kannst du jetzt hinterlegen oder später nachtragen."
+          : `${TESTPHASE_TAGE} Tage kostenlos, danach monatlich. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.`
+      }
     >
       <PlanAuswahl
         aktuell={gewaehlt}

@@ -156,14 +156,15 @@ export const en: Dictionary = {
     agb: "General Terms and Conditions",
     avv: "Data Processing Agreement",
     avvKurz: "DPA",
-    mustertextTitel: "Template text",
+    mustertextTitel: "How this agreement is concluded",
     mustertextHinweis:
-      "This agreement is concluded on registration. The details marked in square brackets are taken from the business's own data at that point.",
+      "The agreement is concluded electronically at registration: whoever registers the business accepts it on the business's behalf and confirms that they are authorised to represent it. The contracting party is the registered business with the details from its customer account. We store the accepted version, the time and the acting account.",
     impressum: "Imprint",
     nichtAbrufbar: "This text is currently unavailable.",
     impressumLead: "Provider identification under section 5 of the German Digital Services Act (DDG).",
     diensteanbieter: "Service provider",
     kontakt: "Contact",
+    telefon: "Phone",
     vertretenDurch: "Represented by",
     geschaeftsfuehrer: "Managing Director",
     register: "Register",
@@ -318,7 +319,7 @@ export const en: Dictionary = {
     "v.wiederholung.leer": "Repeat the password.",
     "v.wiederholung.ungleich": "The two passwords do not match.",
     "v.zustimmung.fehlt":
-      "You have to accept the Terms, the DPA and the Privacy Policy to continue.",
+      "To continue, you have to accept the Terms and the DPA and take note of the Privacy Policy.",
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
 

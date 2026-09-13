@@ -80,8 +80,23 @@ function erscheinungsbild(): Appearance {
   };
 }
 
+/**
+ * Was unmittelbar vor dem Knopf steht, und wie der Knopf heisst.
+ *
+ * Beides kommt von der Seite, weil es vom Zustand des Abos abhängt, den
+ * nur der Server kennt: in der Testphase kostet das Hinterlegen noch
+ * nichts, auf der Sperrseite wird sofort abgebucht. Die Sätze stehen
+ * **im** Formular direkt über dem Knopf und nicht irgendwo darüber —
+ * Betrag, erste Abbuchung und Kündigung sollen zu sehen sein, während
+ * man klickt (rechtliche Durchsicht vom 2026-09-13, Befund 5).
+ */
+type Abschluss = {
+  zusammenfassung?: readonly string[];
+  knopfText?: string;
+};
+
 /** Innenteil — muss innerhalb von `<Elements>` stehen, sonst greifen die Hooks nicht. */
-function Formular() {
+function Formular({ zusammenfassung = [], knopfText = "Zahlungsmittel hinterlegen" }: Abschluss) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -145,19 +160,35 @@ function Formular() {
 
       <PaymentElement />
 
+      {zusammenfassung.length > 0 ? (
+        <ul
+          id="zahlung-konditionen"
+          className="flex list-disc flex-col gap-1.5 rounded-blk border border-line bg-surface-sunk py-3 pl-8 pr-4 text-sm leading-relaxed text-muted"
+        >
+          {zusammenfassung.map((zeile) => (
+            <li key={zeile}>{zeile}</li>
+          ))}
+        </ul>
+      ) : null}
+
       <button
         type="submit"
         disabled={!stripe || laeuft}
         aria-disabled={!stripe || laeuft}
+        aria-describedby={zusammenfassung.length > 0 ? "zahlung-konditionen" : undefined}
         className="w-full rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {laeuft ? "Wird hinterlegt …" : "Zahlungsmittel hinterlegen"}
+        {laeuft ? "Wird hinterlegt …" : knopfText}
       </button>
     </form>
   );
 }
 
-export function ZahlungsFormular({ clientSecret }: { clientSecret: string }) {
+export function ZahlungsFormular({
+  clientSecret,
+  zusammenfassung,
+  knopfText,
+}: { clientSecret: string } & Abschluss) {
   /*
    * Das Erscheinungsbild entsteht erst im Browser — `getComputedStyle`
    * gibt es auf dem Server nicht. Bis dahin rendert `<Elements>` nichts,
@@ -179,7 +210,7 @@ export function ZahlungsFormular({ clientSecret }: { clientSecret: string }) {
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret, appearance: aussehen, locale: "de" }}>
-      <Formular />
+      <Formular zusammenfassung={zusammenfassung} knopfText={knopfText} />
     </Elements>
   );
 }

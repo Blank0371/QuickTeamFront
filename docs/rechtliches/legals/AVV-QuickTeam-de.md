@@ -1,11 +1,11 @@
 # Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO
 
-**Stand: 10. September 2026**
+**Stand: 13. September 2026**
 
 ## Zwischen
 
 **Verantwortlicher** (nachfolgend „Verantwortlicher" oder „Kunde"):
-[Firma / Name des Kunden], [Anschrift], vertreten durch [gesetzliche Vertretung]
+dem Unternehmen, das den Dienst als Kunde im Sinne von § 1 Abs. 4 der AGB registriert hat, mit den im Kundenkonto hinterlegten Angaben (insbesondere Name des Betriebs und Land), vertreten durch die Person, die diesen Vertrag nach § 1 Abs. 5 für den Kunden abgeschlossen hat
 
 — und —
 
@@ -24,7 +24,9 @@ wird der folgende Vertrag zur Auftragsverarbeitung geschlossen.
 
 (3) Die Dauer dieses Vertrags entspricht der Laufzeit des Nutzungsvertrags. Über die Beendigung des Nutzungsvertrags hinaus gelten die Pflichten aus diesem Vertrag fort, solange der Auftragsverarbeiter personenbezogene Daten des Verantwortlichen verarbeitet oder aufbewahrt.
 
-(4) Die Verarbeitung findet ausschließlich innerhalb der Europäischen Union oder des Europäischen Wirtschaftsraums (EU/EWR) statt. Eine Verlagerung der Verarbeitung in ein Drittland bedarf der vorherigen Zustimmung des Verantwortlichen und darf nur unter Einhaltung der Voraussetzungen der Art. 44 ff. DSGVO erfolgen.
+(4) Die Daten des Verantwortlichen werden in Rechenzentren innerhalb der Europäischen Union gespeichert (Region Irland). Eine Übermittlung in ein Drittland oder ein Zugriff aus einem Drittland findet ausschließlich durch die in Anlage 3 aufgeführten Unterauftragsverarbeiter statt, beschränkt auf die dort beschriebenen Leistungen und nur unter Einhaltung der Voraussetzungen der Art. 44 ff. DSGVO; die jeweilige Übermittlungsgrundlage ist in Anlage 3 angegeben. Jede weitere Übermittlung in ein Drittland ist nur nach dem Verfahren des § 6 Abs. 2 zulässig.
+
+(5) Dieser Vertrag wird elektronisch geschlossen: Die für den Kunden handelnde Person stimmt ihm bei der Registrierung oder, bei einer neuen Fassung, im Dashboard zu und versichert dabei, zur Vertretung des Kunden berechtigt zu sein. Der Auftragsverarbeiter speichert zu jeder Zustimmung die Fassung dieses Vertrags, den Zeitpunkt, das handelnde Konto und den Kunden. Er stellt dem Verantwortlichen diese Angaben und den Vertragstext in der angenommenen Fassung auf Anfrage in Textform zur Verfügung.
 
 ## § 2 Weisungsrecht des Verantwortlichen
 
@@ -127,7 +129,7 @@ Für die Haftung der Parteien gilt Art. 82 DSGVO. Im Innenverhältnis gelten erg
 
 **1. Vertraulichkeit (Art. 32 Abs. 1 lit. b DSGVO)**
 - *Zutrittskontrolle:* Betrieb in zertifizierten Rechenzentren innerhalb der EU/des EWR; physische Zutrittssicherung durch den Hosting-Unterauftragsverarbeiter.
-- *Zugangskontrolle:* Individuelle Benutzerkonten mit Authentifizierung (E-Mail/Passwort bzw. SMS-Einmalcode); Passwörter werden ausschließlich als Hash gespeichert; administrative Zugänge (u. a. zur Datenbank und Verwaltungskonsole) sind zusätzlich durch Zwei-Faktor-Authentifizierung (2FA) geschützt.
+- *Zugangskontrolle:* Individuelle Benutzerkonten mit Authentifizierung (E-Mail-Adresse und Passwort; Bestätigung der E-Mail-Adresse per Einmalcode); Passwörter werden ausschließlich als Hash gespeichert; administrative Zugänge (u. a. zur Datenbank und Verwaltungskonsole) sind zusätzlich durch Zwei-Faktor-Authentifizierung (2FA) geschützt.
 - *Zugriffskontrolle:* Zeilenbasierte Zugriffskontrollen (Row-Level Security) auf allen Datentabellen, die die Daten jedes Betriebs voneinander isolieren; serverseitig durchgesetzte Autorisierung über gesicherte Datenbankfunktionen; Zugriff nach dem Prinzip der geringsten Rechte.
 - *Trennungskontrolle:* Logische Mandantentrennung der Daten je Betrieb.
 
@@ -149,10 +151,13 @@ Für die Haftung der Parteien gilt Art. 82 DSGVO. Im Innenverhältnis gelten erg
 
 | Unterauftragsverarbeiter | Leistung | Ort der Verarbeitung | Übermittlungsgrundlage bei Drittlandbezug |
 |---|---|---|---|
-| Supabase, Inc. (Supabase) | Hosting, Datenbank, Authentifizierung, Datensicherung | EU/EWR (Region Irland) | Verarbeitung im EWR; mit Supabase besteht ein Auftragsverarbeitungsvertrag (DPA) |
+| Supabase, Inc. (Supabase) | Hosting der Datenbank, Authentifizierung, serverseitige Funktionen, Datensicherung | Speicherung in der EU (Region Irland); Zugriffe aus den USA im Rahmen von Support und Wartung möglich | für Zugriffe aus den USA EU-Standardvertragsklauseln (Art. 46 DSGVO) im Auftragsverarbeitungsvertrag (DPA) mit Supabase |
+| Vercel Inc. | Hosting und Auslieferung von Website und Web-Dashboard einschließlich der serverseitigen Verarbeitung beim Seitenaufruf | weltweites Servernetz, auch USA | EU-U.S. Data Privacy Framework (zertifiziert); ergänzend EU-Standardvertragsklauseln |
+| Resend, Inc. | Versand von E-Mails mit Bestätigungscodes | USA | EU-U.S. Data Privacy Framework (zertifiziert); ergänzend EU-Standardvertragsklauseln |
 | Expo (650 Industries, Inc.) | technische Zustellung von Push-Benachrichtigungen | USA | EU-Standardvertragsklauseln (Art. 46 DSGVO) |
 | Apple Inc. (Apple Push Notification service) | Zustellung von Push-Benachrichtigungen auf iOS-Geräten | USA | EU-U.S. Data Privacy Framework (zertifiziert); ergänzend EU-Standardvertragsklauseln |
 | Google LLC (Firebase Cloud Messaging) | Zustellung von Push-Benachrichtigungen auf Android-Geräten | USA | EU-U.S. Data Privacy Framework (zertifiziert); ergänzend EU-Standardvertragsklauseln |
+| 1&1 Mail & Media GmbH (WEB.DE) | E-Mail-Postfach des Anbieters, soweit der Verantwortliche oder seine Nutzer im Rahmen von Support-Anfragen personenbezogene Daten per E-Mail übermitteln | Deutschland | kein Drittlandbezug |
 
 > **Hinweis zu Stripe:** Die Zahlungsabwicklung erfolgt über Stripe (Stripe Payments Europe, Limited) und betrifft die Zahlungs-/Rechnungsdaten des Kunden (Betriebsinhabers). Stripe verarbeitet diese Daten als eigenständig Verantwortlicher, nicht als Unterauftragsverarbeiter des Anbieters, und ist daher hier nicht aufgeführt. Mit Stripe besteht ein Datenverarbeitungsvertrag (DPA); Einzelheiten regelt die Datenschutzerklärung.
 

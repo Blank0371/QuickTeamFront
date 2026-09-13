@@ -3,9 +3,11 @@ import Link from "next/link";
 
 import { Container } from "@/components/container";
 import { FormMeldung } from "@/components/formular/felder";
+import { einzelwert } from "@/lib/auth-meldungen";
 import { holeEinstellungen } from "@/lib/dashboard/einstellungen";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 
+import { AboAbschnitt } from "./abo-abschnitt";
 import { EinstellungenFormular } from "./einstellungen-formular";
 
 export const metadata: Metadata = {
@@ -32,13 +34,22 @@ export const metadata: Metadata = {
  * Adresse ist erratbar, und ohne sie bekäme eine angestellte Person ein
  * Formular zu sehen, dessen Absenden dann an RLS scheitert.
  */
-export default async function EinstellungenSeite() {
+export default async function EinstellungenSeite({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { supabase, position } = await betreteDashboard();
   const chef = istChef(position);
 
   const einstellungen = chef
     ? await holeEinstellungen(supabase, position.betriebId)
     : null;
+
+  const aboMeldung = einzelwert((await searchParams)["abo"]) ?? null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <Container className="py-8 sm:py-10">
@@ -73,6 +84,15 @@ export default async function EinstellungenSeite() {
             <EinstellungenFormular start={einstellungen} />
           )}
         </div>
+
+        {chef ? (
+          <AboAbschnitt
+            supabase={supabase}
+            betriebId={position.betriebId}
+            email={user?.email ?? ""}
+            meldung={aboMeldung}
+          />
+        ) : null}
 
         {/*
           Die Kontolöschung steht am Fuss und ausserhalb des

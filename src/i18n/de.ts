@@ -121,14 +121,15 @@ export const de = {
     agb: "Allgemeine Geschäftsbedingungen",
     avv: "Auftragsverarbeitungsvertrag",
     avvKurz: "AVV",
-    mustertextTitel: "Mustertext",
+    mustertextTitel: "So kommt dieser Vertrag zustande",
     mustertextHinweis:
-      "Dieser Vertrag kommt mit der Registrierung zustande. Die in eckigen Klammern markierten Angaben werden dabei aus den Daten des Betriebs übernommen.",
+      "Der Vertrag wird bei der Registrierung elektronisch geschlossen: Wer den Betrieb registriert, stimmt ihm für den Betrieb zu und bestätigt dabei, den Betrieb vertreten zu dürfen. Vertragspartner ist der registrierte Betrieb mit den Angaben aus seinem Kundenkonto. Wir speichern die angenommene Fassung, den Zeitpunkt und das handelnde Konto.",
     impressum: "Impressum",
     nichtAbrufbar: "Dieser Text ist gerade nicht abrufbar.",
     impressumLead: "Angaben gemäss § 5 Digitale-Dienste-Gesetz (DDG).",
     diensteanbieter: "Diensteanbieter",
     kontakt: "Kontakt",
+    telefon: "Telefon",
     vertretenDurch: "Vertreten durch",
     geschaeftsfuehrer: "Geschäftsführer",
     register: "Register",
@@ -306,7 +307,7 @@ export const de = {
     "v.wiederholung.leer": "Wiederhol das Passwort.",
     "v.wiederholung.ungleich": "Die beiden Passwörter stimmen nicht überein.",
     "v.zustimmung.fehlt":
-      "Ohne Zustimmung zu AGB, AVV und Datenschutzerklärung geht es nicht weiter.",
+      "Ohne Abschluss von AGB und AVV und die Kenntnisnahme der Datenschutzerklärung geht es nicht weiter.",
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
 
