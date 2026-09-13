@@ -14,10 +14,12 @@
  * eigene Verzeichnis ist ein lokaler: der gleichzeitig laufende
  * Dev-Server. Auf einem Build-Runner gibt es keinen, dafür aber einen
  * Hoster, der das Ergebnis an einer festen Stelle erwartet — Netlify
- * veröffentlicht `.next`. Ohne diese Ausnahme bliebe `.next` leer,
- * während der fertige Build in `.next-build` läge; das Deployment
+ * und Vercel veröffentlichen `.next`. Ohne diese Ausnahme bliebe `.next`
+ * leer, während der fertige Build in `.next-build` läge; das Deployment
  * schlüge fehl oder lieferte einen veralteten Stand aus. `CI` setzen
- * Netlify und praktisch jeder andere Runner selbst.
+ * Netlify und praktisch jeder andere Runner selbst — **Vercel jedoch
+ * nicht** (es setzt `VERCEL=1`), deshalb wird es hier ausdrücklich
+ * mitgeprüft.
  *
  * Als Skriptdatei und nicht als Präfix im npm-Script, weil `VAR=wert cmd`
  * unter Windows (cmd.exe) nicht funktioniert.
@@ -31,7 +33,10 @@ if (befehl !== "build" && befehl !== "start") {
   process.exit(1);
 }
 
-const inCi = (process.env.CI ?? "").toLowerCase() === "true" || process.env.NETLIFY === "true";
+const inCi =
+  (process.env.CI ?? "").toLowerCase() === "true" ||
+  process.env.NETLIFY === "true" ||
+  process.env.VERCEL === "1";
 
 const { status } = spawnSync("npx", ["next", befehl, ...process.argv.slice(3)], {
   stdio: "inherit",
