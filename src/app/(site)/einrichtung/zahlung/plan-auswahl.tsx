@@ -110,7 +110,7 @@ export function PlanAuswahl({
       <p className="text-xs leading-relaxed text-muted">
         In beiden Fällen laufen zuerst {TESTPHASE_TAGE} Tage kostenlos. Ohne hinterlegtes
         Zahlungsmittel pausiert dein Betrieb danach, bis du eins nachträgst — deine Daten
-        bleiben erhalten.
+        bleiben dafür 90 Tage erhalten.
       </p>
     </form>
   );

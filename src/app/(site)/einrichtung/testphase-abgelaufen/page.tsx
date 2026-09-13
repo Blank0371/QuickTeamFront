@@ -17,7 +17,7 @@ import { zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
 export const metadata: Metadata = {
   title: "Testphase abgelaufen",
   description:
-    "Deine Testphase ist vorbei. Hinterleg ein Zahlungsmittel, dann läuft dein Betrieb weiter — deine Daten bleiben erhalten.",
+    "Deine Testphase ist vorbei. Hinterleg ein Zahlungsmittel, dann läuft dein Betrieb weiter — deine Daten bleiben bis zu 90 Tage erhalten.",
   robots: { index: false, follow: false },
 };
 
@@ -107,8 +107,9 @@ export default async function TestphaseAbgelaufenSeite({
 
         <p className="mt-4 text-base leading-relaxed text-muted">
           Die {TESTPHASE_TAGE} Tage sind vorbei, und es ist kein Zahlungsmittel
-          hinterlegt. Dein Betrieb, dein Team und deine Schichtvorlagen bleiben
-          gespeichert — sobald du eine Zahlungsmethode hinterlegst, läuft dein Plan{" "}
+          hinterlegt. Dein Betrieb, dein Team und deine Schichtvorlagen bleiben bis
+          90 Tage nach Ende der Testphase gespeichert, danach werden sie gelöscht (AGB
+          § 5 Abs. 3). Sobald du eine Zahlungsmethode hinterlegst, läuft dein Plan{" "}
           <strong className="font-semibold text-text">{planName}</strong> weiter, wo er
           aufgehört hat.
         </p>

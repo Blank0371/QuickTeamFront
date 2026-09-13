@@ -16,7 +16,7 @@ Stand-alone, readable copies of QuickTeam's contract documents, exported for leg
 - **B2B only.** Directed exclusively at entrepreneurs (§ 14 BGB); consumers excluded. This deliberately keeps the statutory consumer right of withdrawal (Widerrufsrecht) and § 305 BGB incorporation rules out of scope.
 - **The business owner is the customer.** Employees are invited "Users" under the owner's contract and pay nothing; only the owner is the paying/contracting party.
 - **Paid SaaS via Stripe**, billed monthly (annual optional later), month-to-month term, cancellation effective at end of the paid period, and stopping payment ends the contract.
-- **Court-safe drafting** aimed at surviving German AGB-Kontrolle (§§ 305–310 BGB): the standard liability cascade, the § 536a(1) no-fault carve-out, and a proper change-of-terms mechanism with an objection right.
+- **Court-safe drafting** aimed at surviving German AGB-Kontrolle (§§ 305–310 BGB): the standard liability cascade, the § 536a(1) no-fault carve-out, and a change-of-terms mechanism based on active consent (since 2026-09-13; previously consent by silence).
 - **German version prevails**; English is information only.
 
 ## Resolved (operator-confirmed, Sept 2026)
@@ -101,8 +101,8 @@ the rewrite above). All eight findings were re-checked against this repo on
 | 3 | AVV promises auto-filled company/address/representative — not implemented | **Fixed.** Placeholders removed; the party is defined via the customer account (AGB § 1(4)); new § 1(5) describes electronic conclusion. The registration checkbox now includes the confirmation of authority to represent the business. The `/avv` notice no longer promises anything the code doesn't do. |
 | 4 | Impressum: e-mail alone is not enough (CJEU C-298/07) | **Fixed.** Phone number +43 664 2538798 added to the Impressum (and to the controller block of the privacy policy). It must actually be answered. |
 | 5 | Payment view: no amount, fixed "14 days free", no cancellation UI | **Fixed.** Amount, VAT note, actual trial end, first debit, renewal and cancellation are shown directly above the button, read from the Stripe subscription (`src/lib/abo-konditionen.ts`). The expired-trial button now says "Kostenpflichtig fortsetzen". **Cancellation:** "Abo verwalten" in dashboard settings opens the Stripe customer portal. A mismatch between website price and Stripe price is logged (`[preise]`). **Still open:** invoice data (see below). |
-| 6 | Export promised (AGB § 6(4)), none exists; Data Act | **Open, planned.** Operator plans a download button (likely Excel). Chapter VI of the Data Act asks for a structured, commonly used, machine-readable format; `.xlsx` is likely fine, CSV/JSON per table would be safer. AGB § 6(4) should be reworded once the function exists. |
-| 7 | AGB clauses (price changes, change by silence, indemnity "auf erstes Anfordern", force majeure for sub-suppliers, backup duty) | **For the lawyer.** Not changed here. |
+| 6 | Export promised (AGB § 6(4)), none exists; Data Act | **Reworded 2026-09-13, function still open.** § 6(4)/(5) now promise export *on request* (CSV/JSON, within 30 days, free) plus a short Data Act clause — deliverable by hand today. A download button remains planned; once it exists, § 6(4) already allows referring to it. |
+| 7 | AGB clauses (price changes, change by silence, indemnity "auf erstes Anfordern", force majeure for sub-suppliers, backup duty) | **Reworded 2026-09-13** (see "Terms 2026-09-13" below). Lawyer review still required. |
 | 8 | Security promises vs. production; Next.js 15.5.22 | **Next.js updated to 15.5.25** (includes the 25 Aug 2026 fixes). RLS: enabled on every public table (checked 2026-09-13; `konto_merge_token` has RLS without policies, i.e. deny-all, intended). Backups: Supabase plan is Pro, daily backups kept 7 days. **2FA cannot be verified from here** — see checklist. |
 
 ### Operator checklist before go-live
@@ -114,6 +114,81 @@ the rewrite above). All eight findings were re-checked against this repo on
 5. **Invoices / tax:** the Stripe customer only carries e-mail and business ID. German invoices up to 250 € gross may omit the recipient's address (Kleinbetragsrechnung), but reverse-charge invoices to Austrian businesses need the customer's name, address and VAT ID. Clarify with a tax adviser; Stripe can collect address and tax ID in the portal/checkout.
 6. **2FA** on every admin account: Supabase organisation, Vercel, Stripe, Resend, GitHub, Expo, the domain registrar.
 7. **Hosting ambiguity:** the repo still contains `netlify.toml`, and the comments in `next.config.ts` describe Netlify. That misled the reviewer. Remove it if Netlify is not used.
+
+## Terms 2026-09-13 — what changed and why
+
+Full review of the AGB against the live flow (Stripe trial, dashboard,
+consent gate, account deletion). Section and paragraph numbers that other
+documents or the code cite — § 1(3), § 1(4), § 6(2), § 6(4), § 7(3), § 10,
+§ 14(6) — are unchanged. `src/lib/rechtstexte.ts`: `agb` bumped to
+`2026-09-13-draft`, so managers confirm again through the consent gate.
+
+### Operator decisions (2026-09-13)
+
+1. **Non-payment ends the contract.** Failed debit → retried within 14 days →
+   still unpaid 14 days after the due date → contract ends at the end of the
+   last paid period, nothing owed for the unpaid period (§ 5(6), § 6(2)).
+   Default interest and the "two months in arrears" termination are gone —
+   they contradicted "stopping payment ends the contract". A *reversed*
+   payment (SEPA chargeback) for a period already used stays owed (§ 5(6),
+   § 6(3)); otherwise a chargeback would be a free month.
+2. **Export on request** (§ 6(4)/(5)), see finding 6.
+3. **Changes to the Terms need active consent** (§ 13). Silence no longer
+   counts. Without consent the old terms continue; the Provider may terminate
+   at the end of the billing period in which the change was due. Price
+   changes keep their own rule (§ 5(7): 6 weeks' notice, customer may cancel).
+4. **Plan limits are contractual** (§ 2(6)): exceeding the employee limit
+   other than temporarily → request to upgrade → otherwise termination at
+   period end. Nothing is blocked technically, no back-charging.
+
+### Other corrections
+
+| Clause | Before | Now |
+|---|---|---|
+| § 5(2)/(3), § 6 | No trial period anywhere; "use is subject to a charge" | Free trial starts with the plan choice; without a card the subscription is suspended, management may be blocked, 90 days to resume, then contract ends and data is deleted (matches privacy policy 15.3) |
+| § 3(2)/(3) | "binding offer by order, contract on confirmation or activation" | Registration is the offer; contract when the business is created after e-mail confirmation; person registering warrants authority to represent (matches AVV § 1(5) and the checkbox) |
+| § 6(2) | "function in the Service or at the payment provider" | Names the dashboard function (customer portal); self-deletion of the sole manager = immediate termination (matches `/kontoloeschung`) |
+| § 4(4), § 7(5), § 10(4) | Customer had to back up "by regular export" — no export exists; data-loss liability hinged on that | Provider backs up daily (AVV Annex 2); customer only keeps what it needs outside the Service; slight-negligence liability limited to restoring from backup |
+| § 4(1), § 11 | Sub-supplier failures excluded / counted as force majeure | Only if the sub-supplier failure is itself force majeure (providers are vicarious agents, § 278 BGB) |
+| § 4(3) | "Response times depend on the plan" — no plan defines any | Reasonable period; fixed times only if stated or agreed |
+| § 7(4) | Indemnity "auf erstes Anfordern" (likely invalid in standard terms) | Plain indemnity, plus notice / defence / no acknowledgement without consent |
+| § 7(2) | § 26 BDSG only (German; doubtful after CJEU C-34/21) | Art. 6/88 GDPR + national rules; works-council rights for DE (§ 87(1) no. 6 BetrVG) and AT (§§ 96, 96a ArbVG) |
+| § 7(6) | — | Scheduling aid only: solver proposals are proposals, labour-law compliance stays with the customer, not a working-time recording system |
+| § 2(1)/(2)/(5) | "App (iOS, Android, Web)", push listed as a feature | Web app + mobile apps "insofar as published"; solver and roles listed; push only in the mobile apps, handover not delivery owed |
+| § 5(5) | — | Electronic invoices (PDF) agreed; customer supplies invoice data incl. VAT ID outside Germany |
+| § 10(6) | "Where liability is excluded, claims become time-barred …" | Damages claims 1 year, except § 10(1) cases and fraudulently concealed defects |
+| § 14(1) | Double text-form clause (invalid in standard terms) | Individual agreements prevail (§ 305b BGB), otherwise text form |
+| § 14(4) | Jurisdiction only for merchants | Also for customers without general jurisdiction in Germany (Austrian customers) |
+
+UI copy adjusted: `plan-auswahl.tsx` and `testphase-abgelaufen/page.tsx`
+said "your data is kept" without a limit; they now say 90 days.
+
+### Checklist — these clauses must be true in practice
+
+1. **Stripe → Settings → Billing → Subscriptions and emails:** retry failed
+   payments within **14 days**, then **cancel the subscription**; enable the
+   customer e-mails for failed payments (§ 5(6) promises both). Test and live.
+2. **Deletion jobs:** § 5(3) (90 days after a suspended trial) and § 6(4)
+   (30 days after contract end) are still manual — see "Operator decisions
+   recorded on 2026-09-13" above.
+3. **Export requests by hand** until the download button exists: all tables
+   of the business as CSV/JSON within 30 days (§ 6(4)/(5)).
+4. **Changing the Terms later (§ 13) — the consent gate does not fit yet:**
+   - Bump the version in `rechtstexte.ts` only **on the effective date**,
+     after the 6-week offer by e-mail. Bumping earlier blocks managers before
+     the change is due.
+   - The gate has no "decline" path, and "Abo verwalten" sits behind it; a
+     manager who does not consent can only cancel by e-mail. Under § 13(3)
+     the old terms keep applying, so blocking management for someone who
+     keeps paying is hard to defend. Before the first real change: give the
+     gate a way out (decline / cancel link) or let it lapse to a reminder.
+   - Terminating a non-consenting customer means cancelling their Stripe
+     subscription by hand.
+5. **Plan limits (§ 2(6)):** nothing counts employees yet; a request to
+   upgrade has to be triggered by hand.
+6. **The app's copy** (`QuickTeamMobile/src/lib/legalDocs.ts`, `TERMS_DE` /
+   `TERMS_EN`, version `2026-09-10-draft`) no longer matches — for the app
+   developer; this repo does not write there.
 
 ## Published on the website (added 2026-09-10)
 
