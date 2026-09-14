@@ -856,6 +856,37 @@ Testphase — das war schon immer so und ist über den Betrieb nicht zu fassen. 
 § 5 Abs. 2 („beginnt mit der Wahl des Tarifs im Anschluss an die Registrierung")
 deckt die Regel; eine Textänderung war nicht nötig.
 
+### Änderung vom 2026-09-14: gescheiterte Erst-Lastschrift kündigt das Abo
+
+**Vorher:** Ein Neuabschluss ohne Testphase, bezahlt per SEPA, ging bei Stripe sofort
+auf `active`, während die Lastschrift noch `processing` war. Scheiterte sie, stornierte
+Stripe die Rechnung, **das Abo blieb `active`** (Stripe-Doku „How subscriptions work",
+„Payment methods with delayed payment confirmation"), und unsere Zeile stand bis zur
+nächsten Monatsrechnung auf `aktiv`. Ein Monat ohne Zahlung, nach jeder Kündigung
+wiederholbar.
+
+**Jetzt:** Der Webhook behandelt `invoice.payment_failed` — **nur** für die Erstrechnung
+eines Abos (`billing_reason = subscription_create`). Er schlägt Rechnung und Abo frisch
+nach und kündigt das Abo **bei Stripe**, wenn die Rechnung unbezahlt und das Abo
+trotzdem `active` ist. `customer.subscription.deleted` schreibt danach wie jede
+Kündigung `gekuendigt`; ein `invoice.*`-Ereignis schreibt weiterhin nie den Status.
+Abgelehnte Karten sind nicht betroffen (Abo `incomplete`, verfällt nach 23 Stunden),
+ebenso wenig die Abbuchung am Ende einer Testphase (gewöhnliche Folgerechnung,
+`past_due`, Mahnlauf).
+
+Das ist die **einzige Stelle, an der der Webhook bei Stripe schreibt**. An der
+`service_role`-Regel ändert das nichts: in der Datenbank bleibt es bei
+`betrieb_abonnements`.
+
+**Restlücke, bewusst:** bis die Bank die Lastschrift zurückgibt, läuft der Zugang —
+Tage statt eines Monats. Ganz schliessen liesse sie sich nur, indem man bei SEPA den
+Zugang bis zum Zahlungseingang zurückhält; das wäre eine Produktentscheidung.
+
+**Webhook-Ereignisse, die im Stripe-Dashboard am Endpunkt abonniert sein müssen:**
+`customer.subscription.created`, `.updated`, `.deleted`, `.paused`, `.resumed` und
+**`invoice.payment_failed`**. Fehlt das letzte, greift diese Kündigung nie — ohne
+Fehlermeldung.
+
 ### Änderung vom 2026-09-13: Kündigung über das Stripe-Kundenportal
 
 **Vorher:** Es gab keine Oberfläche zum Kündigen. AGB § 6 Abs. 2 nannte die

@@ -17,7 +17,9 @@ import { planAusPriceId } from "@/lib/stripe";
  *   2. der Key heisst `SUPABASE_SERVICE_ROLE_KEY`, nie mit `NEXT_PUBLIC_`
  *   3. der Client entsteht lokal in der Handler-Funktion, wird nirgends
  *      exportiert und ist aus keiner anderen Datei importierbar
- *   4. geschrieben wird ausschliesslich `betrieb_abonnements`
+ *   4. geschrieben wird ausschliesslich `betrieb_abonnements` (bei Stripe
+ *      kündigt der Handler seit dem 2026-09-14 ausserdem ein Abo, dessen
+ *      erste Lastschrift gescheitert ist — siehe unten)
  *   5. ohne gültige Signatur endet der Handler, bevor der Client existiert
  *   6. der Rohbody kommt aus `request.text()`, nicht aus `.json()`
  *
@@ -157,6 +159,93 @@ function statusAusStripe(
       );
       return null;
   }
+}
+
+/* -------------------------------------------------------------------- */
+
+/**
+ * Kündigt ein Abo, dessen erste Zahlung per Lastschrift gescheitert ist.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das nötig ist
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Bei Zahlungsmitteln mit verzögerter Bestätigung — für uns SEPA — setzt
+ * Stripe ein Abo ohne Testphase **sofort** auf `active`, während die
+ * erste Zahlung noch `processing` ist. Scheitert sie Tage später, storniert
+ * Stripe die Rechnung, **und das Abo bleibt `active`** (Stripe-Doku „How
+ * subscriptions work", Abschnitt „Payment methods with delayed payment
+ * confirmation", am 2026-09-14 nachgelesen). Eine stornierte Rechnung zählt
+ * für den Status nicht mehr; unsere Zeile stünde also bis zur nächsten
+ * Monatsrechnung auf `aktiv` — ein Monat Zugang ohne Zahlung, und nach
+ * der Kündigung beliebig oft wiederholbar.
+ *
+ * Betroffen ist der Neuabschluss nach Kündigung (`erstelleAbo` ohne
+ * Testphase). Scheitert dagegen die Abbuchung am Ende einer Testphase,
+ * ist das eine gewöhnliche Folgerechnung: `past_due`, Mahnlauf, danach
+ * gekündigt — wie bei einer Karte.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Was hier geschieht — und was nicht
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Gekündigt wird **bei Stripe**, nicht in unserer Zeile. Eine Zeile auf
+ * `gekuendigt` neben einem Abo, das bei Stripe weiterläuft, hielte nicht:
+ * die Tore fragen bei `gekuendigt` nach und fänden ein lebendes Abo.
+ * Das Kündigen löst `customer.subscription.deleted` aus, und erst dieses
+ * Ereignis schreibt `gekuendigt` — über denselben Zweig wie jede andere
+ * Kündigung. Den Status schreibt damit weiterhin nie ein `invoice.*`.
+ *
+ * Nachgeschlagen wird frisch, nicht aus dem Ereignis: eine spät
+ * zugestellte Meldung über einen gescheiterten ersten Kartenversuch darf
+ * kein Abo kündigen, das inzwischen mit einer anderen Karte bezahlt ist.
+ * Gekündigt wird deshalb nur, wenn die Erstrechnung **jetzt** unbezahlt
+ * ist und das Abo **jetzt** trotzdem `active`. Bei einer abgelehnten
+ * Karte ist es `incomplete` und verfällt nach 23 Stunden von selbst.
+ *
+ * Wer gekündigt wird, landet beim nächsten Seitenaufruf im Zahlungsschritt
+ * und schliesst neu ab — ohne Testphase, sofort fällig. Bleibt ein
+ * Zeitfenster: bis die Bank die Lastschrift zurückgibt, läuft der Zugang.
+ * Das sind Tage statt eines Monats; ganz schliessen liesse es sich nur,
+ * indem man den Zugang bis zum Zahlungseingang zurückhält.
+ */
+async function kuendigeNachGescheiterterErstzahlung(
+  stripe: Stripe,
+  eingang: Stripe.Invoice,
+): Promise<Response> {
+  if (eingang.billing_reason !== "subscription_create") {
+    return new Response("ok (keine Erstrechnung)", { status: 200 });
+  }
+
+  const aboId = alsId(eingang.parent?.subscription_details?.subscription);
+  if (!aboId || !eingang.id) {
+    return new Response("ok (ohne Abo)", { status: 200 });
+  }
+
+  const [rechnung, abo] = await Promise.all([
+    stripe.invoices.retrieve(eingang.id),
+    stripe.subscriptions.retrieve(aboId),
+  ]);
+
+  if (!abo.metadata?.["betrieb_id"]) {
+    return new Response("ok (ohne Zuordnung)", { status: 200 });
+  }
+
+  if (rechnung.status === "paid" || abo.status !== "active") {
+    return new Response("ok (nichts zu tun)", { status: 200 });
+  }
+
+  await stripe.subscriptions.cancel(abo.id, {
+    cancellation_details: {
+      comment: "Erstzahlung gescheitert, Abo blieb active (verzögerte Bestätigung)",
+    },
+  });
+
+  protokolliere(
+    "invoice.payment_failed",
+    `Abo ${abo.id} gekündigt: Erstrechnung ${rechnung.id} ist ${rechnung.status}, Abo war active`,
+  );
+  return new Response("ok (gekündigt)", { status: 200 });
 }
 
 /* -------------------------------------------------------------------- */
@@ -352,6 +441,17 @@ export async function POST(request: Request): Promise<Response> {
         protokolliere(event.type, `kein Betrieb mit id ${betriebId}`);
         return new Response("Betrieb nicht gefunden", { status: 404 });
       }
+
+      /*
+       * Das einzige `invoice.*`-Ereignis, das hier behandelt wird, und es
+       * schreibt nichts in die Datenbank — es kündigt bei Stripe. Warum,
+       * steht bei `kuendigeNachGescheiterterErstzahlung`. Ein Fehler beim
+       * Nachschlagen oder Kündigen fällt in den `catch` unten: 500, und
+       * Stripe stellt erneut zu. Ein zweiter Durchlauf findet das Abo dann
+       * gekündigt und tut nichts.
+       */
+      case "invoice.payment_failed":
+        return await kuendigeNachGescheiterterErstzahlung(stripe, event.data.object);
 
       default:
         // Alles andere ist bewusst unbeantwortet — mit 200, damit Stripe
