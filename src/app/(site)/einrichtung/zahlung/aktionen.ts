@@ -87,6 +87,10 @@ function protokolliere(stelle: string, ursache: unknown): void {
  * Abonnement entsteht in beiden Fällen, weil es der Träger der Testphase
  * ist und nicht der Beleg einer Zahlung.
  *
+ * Seit dem 2026-09-14 gibt es die Testphase nur beim ersten Abo eines
+ * Betriebs; wer nach einer Kündigung neu abschliesst, zahlt sofort und
+ * kann nicht überspringen (`erstelleAbo`).
+ *
  * Seit dem 2026-09-13 steht der Kunde vor dem Abo fest: erst Land und
  * gegebenenfalls UID-Nummer an den Stripe-Kunden, dann das Abo mit
  * `automatic_tax`. In umgekehrter Reihenfolge berechnete Stripe Tax die
@@ -120,19 +124,26 @@ export async function planWaehlen(
     uid = geprueft.data.uid || null;
   }
 
+  let sofortFaellig: boolean;
+
   try {
     const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
     await setzeUid(kunde.id, uid);
 
     const vorhanden = await holeAboFuerBetrieb({ betriebId, email, kundeId });
 
-    if (vorhanden) {
-      // Zweiter Durchgang: es gibt schon ein Abo. Dann nicht noch eins,
-      // sondern höchstens den Posten umstellen.
-      await wechslePlan(vorhanden, plan);
-    } else {
-      await erstelleAbo({ betriebId, plan, email, kundeId, rechnung });
-    }
+    /*
+     * Zweiter Durchgang: es gibt schon ein Abo. Dann nicht noch eins,
+     * sondern höchstens den Posten umstellen. Ein noch unbezahltes
+     * (`incomplete`) geht an `erstelleAbo`, das es bei anderem Plan
+     * ersetzt statt umstellt — siehe dort.
+     */
+    const abo =
+      vorhanden && vorhanden.status !== "incomplete"
+        ? await wechslePlan(vorhanden, plan)
+        : await erstelleAbo({ betriebId, plan, email, kundeId, rechnung });
+
+    sofortFaellig = abo.status === "incomplete";
   } catch (ursache) {
     protokolliere("planWaehlen", ursache);
     return fehler(
@@ -140,5 +151,12 @@ export async function planWaehlen(
     );
   }
 
-  redirect(ueberspringen ? "/einrichtung" : "/einrichtung/zahlung?zahlen=1");
+  /*
+   * „Später hinterlegen" gibt es nur mit Testphase. Ohne sie ist die erste
+   * Rechnung sofort fällig, und das Überspringen führte bloss über den
+   * Stepper zurück hierher — die Tore lassen ein unbezahltes Abo nicht
+   * durch. Die Seite zeigt den Knopf in dem Fall gar nicht; das hier
+   * fängt ab, was trotzdem ankommt.
+   */
+  redirect(ueberspringen && !sofortFaellig ? "/einrichtung" : "/einrichtung/zahlung?zahlen=1");
 }

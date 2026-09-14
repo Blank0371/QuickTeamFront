@@ -130,6 +130,7 @@ export default async function TestphaseAbgelaufenSeite({
             clientSecret={intent.clientSecret}
             zusammenfassung={zusammenfassungFortsetzen(konditionen)}
             knopfText="Kostenpflichtig fortsetzen"
+            rueckkehrPfad="/einrichtung/testphase-abgelaufen"
             rechnung={await holeVorbelegung(
               rechnung?.name ?? null,
               rechnung?.land ?? null,

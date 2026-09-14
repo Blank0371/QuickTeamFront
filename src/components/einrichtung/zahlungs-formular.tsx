@@ -102,12 +102,27 @@ type Abschluss = {
   knopfText?: string;
 };
 
+/**
+ * Wohin Stripe nach einer Weiterleitung (3DS, PayPal, Bank) zurückschickt
+ * — **die Seite, die das Formular zeigt**, weil nur sie `?setup_intent=`
+ * auswertet.
+ *
+ * Bis zum 2026-09-14 stand hier fest `/einrichtung/zahlung`, auch für die
+ * Sperrseite. Dort kam die Rückkehr nie an: Schritt 2 leitet einen
+ * gesperrten Betrieb vor jeder Auswertung auf die Sperrseite um, und
+ * `redirect()` nimmt den Query-String nicht mit. Die bestätigte
+ * Zahlungsmethode wurde nie übernommen, das Abo blieb pausiert, und eine
+ * Fehlermeldung gab es auch nicht.
+ */
+type Rueckkehr = { rueckkehrPfad?: string };
+
 /** Innenteil — muss innerhalb von `<Elements>` stehen, sonst greifen die Hooks nicht. */
 function Formular({
   zusammenfassung = [],
   knopfText = "Zahlungsmittel hinterlegen",
   rechnung,
-}: Abschluss & { rechnung: RechnungsWerte }) {
+  rueckkehrPfad,
+}: Abschluss & Rueckkehr & { rechnung: RechnungsWerte }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -206,7 +221,26 @@ function Formular({
     const { error, setupIntent } = await stripe.confirmSetup({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}${window.location.pathname}`,
+        /*
+         * Beide Seiten hatten diesen Fehler unabhängig gefunden und
+         * verschieden gelöst — hier stehen beide Lösungen übereinander,
+         * weil sie verschiedene Fehlerarten abdecken:
+         *
+         *   * `rueckkehrPfad` ist die **ausdrückliche** Angabe der
+         *     aufrufenden Seite. Sie ist serverseitig gesetzt und hält
+         *     auch dort, wo `pathname` täuschen könnte (Rewrite,
+         *     abweichender Basispfad).
+         *   * `window.location.pathname` ist der **Rückfall**. Vorher
+         *     stand hier als Vorgabe `/einrichtung/zahlung` — damit wäre
+         *     genau derselbe stille Totalausfall zurückgekehrt, sobald
+         *     jemand eine dritte Einbindung ergänzt und die Prop
+         *     vergisst. Der Rückfall auf die aktuelle Seite kann nicht
+         *     vergessen werden.
+         *
+         * Eine feste Vorgabe wäre die schlechteste der drei Varianten:
+         * sie sieht aus wie eine Entscheidung und ist eine Falle.
+         */
+        return_url: `${window.location.origin}${rueckkehrPfad ?? window.location.pathname}`,
       },
       redirect: "if_required",
     });
@@ -282,7 +316,8 @@ export function ZahlungsFormular({
   zusammenfassung,
   knopfText,
   rechnung,
-}: { clientSecret: string; rechnung: RechnungsWerte } & Abschluss) {
+  rueckkehrPfad,
+}: { clientSecret: string; rechnung: RechnungsWerte } & Abschluss & Rueckkehr) {
   /*
    * Das Erscheinungsbild entsteht erst im Browser — `getComputedStyle`
    * gibt es auf dem Server nicht. Bis dahin rendert `<Elements>` nichts,
@@ -308,6 +343,7 @@ export function ZahlungsFormular({
         zusammenfassung={zusammenfassung}
         knopfText={knopfText}
         rechnung={rechnung}
+        rueckkehrPfad={rueckkehrPfad}
       />
     </Elements>
   );

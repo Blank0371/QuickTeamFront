@@ -220,6 +220,24 @@ für das Dashboard (`robots: index:false`) ist sie folgenlos. Die Wörterbücher
 bleiben davon unberührt — es ändert sich nur, woher `leseSprache()` die Locale
 nimmt.
 
+### Änderung vom 2026-09-14: `?lang=de|en` für Links aus der App
+
+**Vorher:** die Sprache kam ausschliesslich aus `qt_sprache`. **Jetzt:** ein
+`?lang=` im Aufruf geht dem Cookie vor — nur für diese eine Anfrage.
+
+**Grund:** die Expo-App öffnet unter Einstellungen > Rechtliches `/datenschutz`,
+`/agb` und `/avv` im In-App-Browser, wo kein Cookie gesetzt ist; ohne Parameter
+sah dort jeder Deutsch. Die App hängt `?lang=de` bzw. `?lang=en` an (alle
+Nicht-Deutsch-Sprachen → `en`).
+
+**Kein Cookie, bewusst:** die Middleware reicht den Wert als Kopfzeile
+`x-qt-sprache` an `leseSprache()` weiter (`src/i18n/sprach-parameter.ts`) und
+speichert nichts — die Datenschutzerklärung sagt über `qt_sprache` „nur wenn Sie
+die Sprache umschalten", und das bleibt so wahr. Preis: interne Links fallen auf
+Cookie bzw. Deutsch zurück. Nur GET/HEAD, damit der Umschalter (Server-Action-POST
+an dieselbe Adresse samt `?lang=`) weiter gewinnt — am 2026-09-14 im Browser
+geprüft. Eine vom Client mitgeschickte `x-qt-sprache` wird verworfen.
+
 ## Datenbank
 
 Supabase-Projekt `jqpfuotwsgnqihspsmmf` (eu-west-1). Die App teilt sich dieselbe
@@ -647,6 +665,10 @@ trial", und das Abo geht direkt auf `trialing`.
 fälligen ersten Zahlung geschieht — bei einem Trial gibt es keine. Aus demselben
 Grund ist der Stripe-Status `incomplete` in diesem Flow unerreichbar.
 
+**Seit dem 2026-09-14 gilt das nur noch für das erste Abo eines Betriebs** — ein
+Neuabschluss nach Kündigung hat keine Testphase, ist nicht überspringbar und
+entsteht `incomplete`. Siehe „Änderung vom 2026-09-14: eine Testphase je Betrieb".
+
 ### `missing_payment_method: 'pause'` trägt das Ablauf-Tor
 
 ```
@@ -774,6 +796,96 @@ eigene Zeile hat.** `ermittleStandFuer()` behandelt ihn wie „kein Abo“ und
 `pruefeSperre()` leitet Chefs auf `/einrichtung/zahlung`, wo sich ein neues Abo
 abschliessen lässt. Hier stand bis zum 2026-09-13, der Fall falle bis ins
 Dashboard durch; das war zu dem Zeitpunkt schon nicht mehr wahr.
+
+### Änderung vom 2026-09-14: zwei Fehler auf dem Weg aus der Sperre
+
+**Rückkehr nach einer Weiterleitung auf der Sperrseite.** `ZahlungsFormular`
+schickte die `return_url` fest auf `/einrichtung/zahlung`, auch von der Sperrseite
+aus. Schritt 2 leitet einen gesperrten Betrieb aber vor jeder Auswertung auf die
+Sperrseite um, und `redirect()` verwirft den Query-String: `?setup_intent=` kam nie
+an, die bestätigte Zahlungsmethode wurde nie übernommen, ohne Fehlermeldung. Betraf
+jedes Zahlungsmittel, das die Seite verlässt (PayPal, Bank-Weiterleitungen, 3DS mit
+Weiterleitung). **Jetzt** gibt die Sperrseite `rueckkehrPfad` mit — die Seite, die
+das Formular zeigt, wertet die Rückkehr auch aus.
+
+**`pausiert` wird bei Stripe bestätigt.** Vorher kam die Sperre allein aus der
+Zeile, die nur der Webhook ändert. Wer auf der Sperrseite bezahlt hatte, war bei
+Stripe schon `active`, die Zeile aber noch `pausiert` — und stand wieder vor
+„Kostenpflichtig fortsetzen". **Jetzt** fragen Stepper (`ermittleStandFuer`) und
+Dashboard-Tor (`pruefeSperre`) beide über `aboLageBeiStripe()` nach, **nur**
+wenn die Zeile `pausiert` oder `gekuendigt` sagt (bzw. im Stepper noch keine
+Subscription-ID trägt). Stripe kann die Sperre aufheben, nicht erfinden; ist Stripe
+nicht erreichbar, bleibt sie. Beide Tore müssen dieselbe Frage stellen — fragte nur
+eines nach, schickten sie sich den Kunden gegenseitig im Kreis zu. Die Regel „der
+Webhook schreibt `betrieb_abonnements` allein" bleibt unberührt: gelesen wird bei
+Stripe, geschrieben nichts.
+
+### Änderung vom 2026-09-14: eine Testphase je Betrieb
+
+**Vorher:** `erstelleAbo()` gab jedem neuen Abo `trial_period_days`. Ein gekündigter
+Betrieb wird in den Zahlungsschritt geschickt, um neu abzuschliessen — und bekam
+dort die nächste Testphase, ohne Karte. Während der Testphase im Kundenportal
+kündigen, neu abschliessen, wieder kündigen: unbegrenzt kostenlos.
+
+**Jetzt:** Die Testphase gibt es nur, wenn der Stripe-Kunde des Betriebs noch **nie**
+ein Abo hatte (`holeAboVerlauf()`, `status: "all"` zählt gekündigte mit). Jedes
+weitere Abo entsteht mit `payment_behavior: "default_incomplete"` — Status
+`incomplete`, erste Rechnung offen, kein Einzugsversuch ohne Karte.
+`uebernimmZahlungsmittel()` bezahlt sie sofort (`bezahleOffeneRechnung()`, dieselbe
+Mechanik wie beim Wiederaufnehmen). Ohne Karte verfällt das Abo nach 23 Stunden
+kostenlos (`incomplete_expired` → `gekuendigt`).
+
+- **Kein Überspringen:** Plan-Auswahl ohne „Später hinterlegen", Text ohne
+  „14 Tage kostenlos"; `planWaehlen()` ignoriert `absicht=ueberspringen`, wenn das
+  Abo `incomplete` ist. Die Zahlungsansicht nennt die sofortige Abbuchung
+  (`zusammenfassungNeuabschluss()`), der Knopf heisst „Kostenpflichtig abonnieren".
+- **Beide Tore zählen `incomplete` wie „kein Abo"** (`aboLageBeiStripe()` →
+  `unbezahlt`). Sonst wäre das blosse Anlegen schon der Zugang. Der Webhook
+  schreibt für `incomplete` weiterhin nichts, die Zeile bleibt also `gekuendigt`,
+  bis bezahlt ist.
+- **Planwechsel vor der Zahlung:** ein `incomplete`-Abo wird nicht umgestellt,
+  sondern gekündigt und neu angelegt — an ihm hängt die offene Rechnung über den
+  alten Betrag, und das Kündigen stoppt deren Einzug.
+- **Idempotenzschlüssel** trägt jetzt die Anzahl bisheriger Abos statt `:steuer`.
+  Vorher lieferte Stripe einem Betrieb, der binnen 24 Stunden kündigte und neu
+  abschloss, das alte, gekündigte Abo als Antwort zurück — und es entstand keins.
+
+**Grenze:** gezählt wird je Stripe-Kunde, und der hängt am Betrieb. Eine zweite
+Registrierung mit anderer Adresse ist ein neuer Betrieb und bekommt eine neue
+Testphase — das war schon immer so und ist über den Betrieb nicht zu fassen. AGB
+§ 5 Abs. 2 („beginnt mit der Wahl des Tarifs im Anschluss an die Registrierung")
+deckt die Regel; eine Textänderung war nicht nötig.
+
+### Änderung vom 2026-09-14: gescheiterte Erst-Lastschrift kündigt das Abo
+
+**Vorher:** Ein Neuabschluss ohne Testphase, bezahlt per SEPA, ging bei Stripe sofort
+auf `active`, während die Lastschrift noch `processing` war. Scheiterte sie, stornierte
+Stripe die Rechnung, **das Abo blieb `active`** (Stripe-Doku „How subscriptions work",
+„Payment methods with delayed payment confirmation"), und unsere Zeile stand bis zur
+nächsten Monatsrechnung auf `aktiv`. Ein Monat ohne Zahlung, nach jeder Kündigung
+wiederholbar.
+
+**Jetzt:** Der Webhook behandelt `invoice.payment_failed` — **nur** für die Erstrechnung
+eines Abos (`billing_reason = subscription_create`). Er schlägt Rechnung und Abo frisch
+nach und kündigt das Abo **bei Stripe**, wenn die Rechnung unbezahlt und das Abo
+trotzdem `active` ist. `customer.subscription.deleted` schreibt danach wie jede
+Kündigung `gekuendigt`; ein `invoice.*`-Ereignis schreibt weiterhin nie den Status.
+Abgelehnte Karten sind nicht betroffen (Abo `incomplete`, verfällt nach 23 Stunden),
+ebenso wenig die Abbuchung am Ende einer Testphase (gewöhnliche Folgerechnung,
+`past_due`, Mahnlauf).
+
+Das ist die **einzige Stelle, an der der Webhook bei Stripe schreibt**. An der
+`service_role`-Regel ändert das nichts: in der Datenbank bleibt es bei
+`betrieb_abonnements`.
+
+**Restlücke, bewusst:** bis die Bank die Lastschrift zurückgibt, läuft der Zugang —
+Tage statt eines Monats. Ganz schliessen liesse sie sich nur, indem man bei SEPA den
+Zugang bis zum Zahlungseingang zurückhält; das wäre eine Produktentscheidung.
+
+**Webhook-Ereignisse, die im Stripe-Dashboard am Endpunkt abonniert sein müssen:**
+`customer.subscription.created`, `.updated`, `.deleted`, `.paused`, `.resumed` und
+**`invoice.payment_failed`**. Fehlt das letzte, greift diese Kündigung nie — ohne
+Fehlermeldung.
 
 ### Änderung vom 2026-09-13: Kündigung über das Stripe-Kundenportal
 

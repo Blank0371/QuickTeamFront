@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { aboGekuendigt, holeAbo, testphaseAbgelaufen } from "@/lib/abo";
 import { holeChefBetriebId } from "@/lib/betrieb";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
-import { holeAboFuerBetrieb } from "@/lib/stripe";
+import { aboLageBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { ermittleZustimmungBefund, sperrtZugang } from "@/lib/zustimmung";
 
@@ -103,62 +103,38 @@ export async function ermittleStandFuer(
    * auf `testphaseAbgelaufen()` (das nur `pausiert` kennt) und landete
    * am Ende auf dem Abschluss-Screen: voller Zugang ohne laufendes Abo.
    *
-   * Mit ihr wird Stripe gefragt, und `holeAboFuerBetrieb()` sortiert
-   * `canceled` und `incomplete_expired` bereits aus — es kommt `null`
-   * zurück und der Weg führt zurück in den Zahlungsschritt, wo sich ein
-   * neues Abo abschliessen lässt. Die Stripe-Abfrage bleibt trotzdem
-   * nötig statt eines direkten `return`: wer nach der Kündigung neu
-   * abgeschlossen hat, hat dort ein lebendes Abo, während unsere Zeile
-   * noch auf den Webhook wartet.
+   * Mit ihr wird Stripe gefragt. `canceled` und `incomplete_expired`
+   * zählen dort nicht als Abo, und der Weg führt zurück in den
+   * Zahlungsschritt, wo sich ein neues abschliessen lässt. Die Abfrage
+   * bleibt trotzdem nötig statt eines direkten `return`: wer nach der
+   * Kündigung neu abgeschlossen hat, hat dort ein lebendes Abo, während
+   * unsere Zeile noch auf den Webhook wartet.
+   *
+   * **`pausiert` fragt ebenfalls nach**, seit dem 2026-09-14: wer gerade
+   * auf der Sperrseite bezahlt hat, ist bei Stripe schon `active`, und die
+   * Zeile hinkt hinterher. Die Sperre steht dabei vor allem Weiteren,
+   * siehe oben.
+   *
+   * Ein neues Abo, dessen erste Rechnung noch offen ist (`unbezahlt` —
+   * ein Neuabschluss nach Kündigung hat keine Testphase mehr), hält den
+   * Betrieb im Zahlungsschritt. Antwortet Stripe gar nicht, gilt die
+   * Richtung, in die unsere Zeile zeigt: gesperrt bleibt gesperrt, und
+   * alles andere geht in den Zahlungsschritt statt durch. Die Lagen im
+   * Einzelnen stehen bei `aboLageBeiStripe`.
    */
   const abo = await holeAbo(supabase, betriebId);
 
-  if (!abo?.stripe_subscription_id || aboGekuendigt(abo)) {
-    const beiStripe = await holeAboFuerBetrieb({
+  if (!abo?.stripe_subscription_id || aboGekuendigt(abo) || testphaseAbgelaufen(abo)) {
+    const lage = await aboLageBeiStripe({
       betriebId,
       email,
       kundeId: abo?.stripe_customer_id ?? null,
     });
-    if (beiStripe === null) {
-      return { offen: "zahlung", gesperrt: false, betriebId };
-    }
-  }
-
-  /*
-   * ───────────────────────────────────────────────────────────────────
-   *  Die Sperre wird gegen Stripe gegengeprüft — Korrektur 2026-09-14.
-   * ───────────────────────────────────────────────────────────────────
-   *
-   * `testphaseAbgelaufen()` liest `betrieb_abonnements.status`, und diese
-   * Spalte schreibt **allein der Webhook**. Zwischen „Kunde hat gerade
-   * eine Karte hinterlegt und das Abo wurde fortgesetzt" und „unsere
-   * Zeile sagt es auch" liegen Sekunden.
-   *
-   * In genau dieser Lücke stand bisher der unangenehmste Fall des ganzen
-   * Zahlungswegs: Der Kunde setzt sein pausiertes Abo auf der Sperrseite
-   * fort, `nimmAboWiederAuf()` bezahlt die offene Rechnung, das Abo läuft
-   * — und der nächste Seitenaufruf wirft ihn zurück auf die Sperrseite,
-   * weil unsere Zeile noch `pausiert` sagt. Er hat gerade bezahlt und
-   * sieht dieselbe Sperre wie vorher.
-   *
-   * Für „kein Abo" wird derselbe Zweifel oben schon zugunsten von Stripe
-   * aufgelöst; hier fehlte er. Gefragt wird nur im Sperrfall, also
-   * selten: im Normalbetrieb kostet das keine einzige zusätzliche
-   * Anfrage.
-   *
-   * **Gesperrt bleibt, wer wirklich gesperrt ist.** Antwortet Stripe mit
-   * `paused` — oder gar nicht —, bleibt es bei der Sperre. Ein Ausfall
-   * bei Stripe öffnet nichts.
-   */
-  if (testphaseAbgelaufen(abo)) {
-    const beiStripe = await holeAboFuerBetrieb({
-      betriebId,
-      email,
-      kundeId: abo?.stripe_customer_id ?? null,
-    });
-
-    if (beiStripe === null || beiStripe.status === "paused") {
+    if (lage === "pausiert" || (lage === "unbekannt" && testphaseAbgelaufen(abo))) {
       return { offen: "zahlung", gesperrt: true, betriebId };
+    }
+    if (lage !== "laeuft") {
+      return { offen: "zahlung", gesperrt: false, betriebId };
     }
   }
 

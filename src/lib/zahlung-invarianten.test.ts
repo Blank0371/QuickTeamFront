@@ -121,14 +121,37 @@ describe("3DS kehrt zu der Seite zurück, auf der das Formular stand", () => {
      * auf dem Stepper-Schritt, wurde dort von `betreteSchritt` wegen
      * `gesperrt` umgeleitet — und verlor dabei `?setup_intent=`. Die
      * Zahlungsmethode war bestätigt und wurde nie übernommen.
+     *
+     * Am 2026-09-14 haben zwei Zweige diesen Fehler unabhängig gefunden
+     * und verschieden gelöst: eine ausdrückliche `rueckkehrPfad`-Prop
+     * gegen `window.location.pathname`. Zusammengeführt gilt beides —
+     * und der Test prüft seither **die Eigenschaft**, nicht die
+     * Schreibweise: es darf keinen Weg geben, auf dem ein fester Pfad
+     * gewinnt.
      */
+    const zeile = formular
+      .split("\n")
+      .find((z) => z.includes("return_url:"));
+    assert.ok(zeile, "return_url nicht gefunden");
+
     assert.ok(
-      !formular.includes("return_url: `${window.location.origin}/einrichtung/zahlung`"),
-      "der Rückweg darf nicht auf eine feste Seite zeigen",
+      !/return_url:.*\/einrichtung\//.test(zeile),
+      "kein fester Pfad in return_url — genau das war der Fehler",
     );
     assert.ok(
-      formular.includes("${window.location.origin}${window.location.pathname}"),
-      "der Rückweg muss die aktuelle Seite sein",
+      zeile.includes("rueckkehrPfad"),
+      "die aufrufende Seite muss den Rückweg bestimmen können",
+    );
+    assert.ok(
+      zeile.includes("window.location.pathname"),
+      "und ohne Prop muss die aktuelle Seite der Rückfall sein — " +
+        "eine feste Vorgabe würde den Fehler bei der nächsten Einbindung zurückholen",
+    );
+
+    // Die Prop darf keine feste Vorgabe haben, sonst ist der Rückfall tot.
+    assert.ok(
+      !/rueckkehrPfad\s*=\s*"/.test(formular),
+      "rueckkehrPfad darf keinen Vorgabewert haben",
     );
   });
 
@@ -150,6 +173,8 @@ describe("3DS kehrt zu der Seite zurück, auf der das Formular stand", () => {
   });
 });
 
+const ZEILENUMBRUCH = String.fromCharCode(10);
+
 describe("Die Sperre wird gegen Stripe gegengeprüft", () => {
   const einrichtung = lies("src/lib/einrichtung.ts");
 
@@ -160,16 +185,37 @@ describe("Die Sperre wird gegen Stripe gegengeprüft", () => {
      * Seitenaufruf zurück auf die Sperrseite geworfen werden, nur weil
      * die Zustellung noch unterwegs ist.
      */
-    const iSperre = einrichtung.indexOf("if (testphaseAbgelaufen(abo))");
-    assert.ok(iSperre > 0);
-    const block = einrichtung.slice(iSperre, iSperre + 900);
+    const iAbfrage = einrichtung.indexOf("const abo = await holeAbo(supabase, betriebId);");
+    assert.ok(iAbfrage > 0, "Abo-Abfrage nicht gefunden");
+    const block = einrichtung.slice(iAbfrage, iAbfrage + 900);
+
     assert.ok(
-      block.includes("holeAboFuerBetrieb"),
+      block.includes("aboLageBeiStripe"),
       "im Sperrfall muss Stripe gefragt werden",
     );
+    /*
+     * Zeilenweise statt per Regex: die Bedingung enthält verschachtelte
+     * Klammern (`aboGekuendigt(abo)`), an denen ein Muster mit `[^)]*`
+     * scheitert — und ein Test, der an seiner eigenen Regex scheitert,
+     * behauptet einen Fehler, den es nicht gibt.
+     */
+    const zeilen = block.split(ZEILENUMBRUCH);
+    const iBedingung = zeilen.findIndex(
+      (z) => z.trimStart().startsWith("if (") && z.includes("testphaseAbgelaufen(abo)"),
+    );
+    assert.ok(iBedingung >= 0, "keine Bedingung, die `pausiert` einschliesst");
     assert.ok(
-      block.includes('beiStripe.status === "paused"'),
+      zeilen.slice(iBedingung, iBedingung + 6).some((z) => z.includes("aboLageBeiStripe")),
+      "auch `pausiert` muss die Stripe-Abfrage auslösen — sonst wirft der " +
+        "nächste Seitenaufruf einen gerade zahlenden Kunden zurück auf die Sperrseite",
+    );
+    assert.ok(
+      block.includes('lage === "pausiert"'),
       "gesperrt bleibt, wer bei Stripe wirklich pausiert ist",
+    );
+    assert.ok(
+      block.includes('lage === "unbekannt"'),
+      "antwortet Stripe nicht, darf die Sperre nicht aufgehen",
     );
   });
 });

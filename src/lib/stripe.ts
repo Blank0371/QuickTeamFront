@@ -567,26 +567,131 @@ export async function holeAboFuerBetrieb({
    */
   kundeId?: string | null;
 }): Promise<Stripe.Subscription | null> {
-  const kunde = await sucheKunde({ betriebId, email, kundeId });
-  if (!kunde) return null;
+  return (await holeAboVerlauf({ betriebId, email, kundeId })).lebend;
+}
 
+/**
+ * Das lebende Abo **und** wie viele Abos dieser Betrieb je hatte,
+ * gekündigte und verfallene eingeschlossen.
+ *
+ * Die Anzahl beantwortet die Frage „steht ihm noch eine Testphase zu?"
+ * — siehe `erstelleAbo`. Gezählt wird bei Stripe, nicht in unserer
+ * Zeile: `betrieb_abonnements` kennt nur das jeweils letzte Abo, und
+ * `status: "all"` liefert auch die gekündigten.
+ */
+export type AboVerlauf = {
+  lebend: Stripe.Subscription | null;
+  anzahl: number;
+};
+
+export async function holeAboVerlauf({
+  betriebId,
+  email,
+  kundeId = null,
+}: {
+  betriebId: string;
+  email: string;
+  kundeId?: string | null;
+}): Promise<AboVerlauf> {
+  const kunde = await sucheKunde({ betriebId, email, kundeId });
+  if (!kunde) return { lebend: null, anzahl: 0 };
+  return verlaufFuerKunde(kunde.id);
+}
+
+async function verlaufFuerKunde(kundeId: string): Promise<AboVerlauf> {
   const abos = await stripeKlient().subscriptions.list({
-    customer: kunde.id,
+    customer: kundeId,
     status: "all",
     limit: 100,
   });
 
-  return abos.data.find((abo) => !ERLEDIGT.includes(abo.status)) ?? null;
+  return {
+    lebend: abos.data.find((abo) => !ERLEDIGT.includes(abo.status)) ?? null,
+    anzahl: abos.data.length,
+  };
 }
 
 /**
- * Legt das Abonnement mit Testphase an — ohne Zahlungsmittel.
+ * Was Stripe zu einem Betrieb sagt, dessen Zeile nicht für sich spricht —
+ * `pausiert`, `gekuendigt` oder noch ohne Subscription-ID.
  *
- * Bei einem Trial ist nichts fällig: Stripe stellt eine Rechnung über
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum die Tore nicht allein aus unserer Zeile lesen
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Die Zeile schreibt der Webhook, mit ein paar Sekunden Verzögerung. Genau
+ * in diese Sekunden fällt der Moment, in dem es darauf ankommt: jemand hat
+ * gerade bezahlt, das Abo ist bei Stripe `active`, und die Weiterleitung
+ * kommt an, bevor der Webhook durch ist. Aus der Zeile allein abgeleitet
+ * stand er wieder vor der Sperrseite oder der Planwahl.
+ *
+ * Gefragt wird nur in diesen Fällen. Eine Zeile mit Subscription-ID und
+ * `trial` / `aktiv` / `zahlung_ausstehend` gilt ohne Nachfrage — der
+ * Normalfall kostet damit keinen Aufruf bei Stripe.
+ *
+ *   - `laeuft`    — Testphase, aktiv oder in der Mahnung: Zugang
+ *   - `pausiert`  — Testphase ohne Zahlungsmittel abgelaufen: Sperrseite
+ *   - `unbezahlt` — neues Abo ohne Testphase, erste Rechnung offen
+ *                   (`incomplete`); zählt wie kein Abo, sonst wäre das
+ *                   Anlegen allein schon der Zugang
+ *   - `kein-abo`  — nichts Lebendes: Zahlungsschritt
+ *   - `unbekannt` — Stripe antwortet nicht. Die Aufrufer entscheiden dann
+ *                   gegen den Zugang: ein Tor, das bei einem Netzfehler
+ *                   aufgeht, ist keins.
+ */
+export type AboLage = "laeuft" | "pausiert" | "unbezahlt" | "kein-abo" | "unbekannt";
+
+export async function aboLageBeiStripe({
+  betriebId,
+  email,
+  kundeId = null,
+}: {
+  betriebId: string;
+  email: string;
+  kundeId?: string | null;
+}): Promise<AboLage> {
+  try {
+    const abo = await holeAboFuerBetrieb({ betriebId, email, kundeId });
+    if (abo === null) return "kein-abo";
+    if (abo.status === "paused") return "pausiert";
+    if (abo.status === "incomplete") return "unbezahlt";
+    return "laeuft";
+  } catch (ursache) {
+    const text = ursache instanceof Error ? ursache.message : String(ursache);
+    console.error(`[stripe] aboLageBeiStripe(${betriebId}): ${text}`);
+    return "unbekannt";
+  }
+}
+
+/**
+ * Legt das Abonnement an — mit Testphase beim ersten Abo des Betriebs,
+ * ohne bei jedem weiteren.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Eine Testphase je Betrieb (seit dem 2026-09-14)
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Vorher bekam jedes neue Abo 14 Tage geschenkt. Ein gekündigter Betrieb
+ * landet aber im Zahlungsschritt, um neu abzuschliessen — und bekam dort
+ * die nächste Testphase, ohne Karte. Kündigen im Kundenportal während der
+ * Testphase, neu abschliessen, wieder kündigen: unbegrenzt kostenlos. AGB
+ * § 5 Abs. 2 lässt die Testphase ohnehin nur mit der Tarifwahl „im
+ * Anschluss an die Registrierung" beginnen.
+ *
+ * Ob der Betrieb schon ein Abo hatte, sagt Stripe (`holeAboVerlauf`),
+ * nicht unsere Zeile — die kennt nur das letzte.
+ *
+ * **Mit Testphase** ist nichts fällig: Stripe stellt eine Rechnung über
  * 0,00 mit dem Posten „Free trial" aus, und das Abo geht direkt auf
- * `trialing`. `payment_behavior` bleibt deshalb ungesetzt; der Parameter
- * regelt, was bei einer *fälligen* ersten Zahlung geschieht, und die gibt
- * es hier nicht.
+ * `trialing`.
+ *
+ * **Ohne Testphase** ist die erste Rechnung sofort fällig, aber noch kein
+ * Zahlungsmittel da — das kommt erst im nächsten Schritt. Deshalb
+ * `payment_behavior: "default_incomplete"`: das Abo entsteht `incomplete`
+ * mit offener Rechnung, ohne dass Stripe einen Einzug versucht, der
+ * mangels Karte nur scheitern könnte. `uebernimmZahlungsmittel` bezahlt
+ * die Rechnung, sobald die Karte da ist. Kommt keine, verfällt das Abo
+ * nach 23 Stunden von selbst (`incomplete_expired`) und kostet nichts.
  *
  * `missing_payment_method: "pause"` ist die tragende Einstellung des
  * ganzen Flows: läuft die Testphase ohne hinterlegte Karte ab, setzt
@@ -596,7 +701,10 @@ export async function holeAboFuerBetrieb({
  * `cancel` wäre endgültig und `create_invoice` würde nur mahnen.
  *
  * Ist bereits ein Abo da, wird keins angelegt. Der Aufrufer bekommt das
- * vorhandene zurück und kann darauf `wechslePlan` anwenden.
+ * vorhandene zurück und kann darauf `wechslePlan` anwenden. Ausnahme: ein
+ * noch unbezahltes (`incomplete`) Abo mit anderem Plan wird gekündigt und
+ * neu angelegt statt umgestellt — an ihm hängt eine offene Rechnung über
+ * den alten Betrag, und das Kündigen stoppt deren Einzug.
  *
  * `automatic_tax` seit dem 2026-09-13: vorher schlug nichts die
  * Umsatzsteuer auf, obwohl AGB § 5 Abs. 1 und jede Preisangabe „zzgl. USt."
@@ -621,30 +729,50 @@ export async function erstelleAbo({
   const stripe = stripeKlient();
   const preis = priceIdFuer(plan);
 
-  const vorhanden = await holeAboFuerBetrieb({ betriebId, email, kundeId });
-  if (vorhanden) return vorhanden;
-
   const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
+
+  /*
+   * Eine Liste für beides — ob schon eins lebt, und wie viele es je gab.
+   * Zwei getrennte Abfragen liessen zwischen sich Platz für einen
+   * Doppelklick, der das eine schon und das andere noch nicht sieht.
+   */
+  const { lebend, anzahl } = await verlaufFuerKunde(kunde.id);
+
+  if (lebend) {
+    const unbezahltMitAnderemPlan =
+      lebend.status === "incomplete" && lebend.items.data[0]?.price.id !== preis;
+    if (!unbezahltMitAnderemPlan) return lebend;
+    await stripe.subscriptions.cancel(lebend.id);
+  }
+
+  const ersteTestphase = anzahl === 0;
 
   return stripe.subscriptions.create(
     {
       customer: kunde.id,
       items: [{ price: preis }],
-      trial_period_days: TESTPHASE_TAGE,
-      trial_settings: { end_behavior: { missing_payment_method: "pause" } },
+      ...(ersteTestphase
+        ? {
+            trial_period_days: TESTPHASE_TAGE,
+            trial_settings: { end_behavior: { missing_payment_method: "pause" } },
+          }
+        : { payment_behavior: "default_incomplete" }),
       payment_settings: { save_default_payment_method: "on_subscription" },
       automatic_tax: { enabled: true },
       metadata: { [BETRIEB_SCHLUESSEL]: betriebId },
     },
     /*
-     * Der Plan steht im Schlüssel, und das ist Absicht. Ohne ihn würde
-     * ein späterer Wechsel auf denselben Schlüssel laufen und Stripe
-     * einen Fehler werfen, weil die Parameter nicht mehr passen. Mit ihm
-     * schützt der Schlüssel genau das, wogegen er schützen soll — den
-     * Doppelklick — und steht einem echten Planwechsel nicht im Weg.
-     * `:steuer` aus demselben Grund wie beim Kunden.
+     * Plan und Anzahl der bisherigen Abos stehen im Schlüssel, beides mit
+     * Absicht. Der Schlüssel soll genau den Doppelklick abfangen — zwei
+     * Anfragen, die dieselbe Liste gesehen haben — und sonst nichts:
+     *
+     *   - ohne den Plan liefe ein späterer Wechsel auf denselben
+     *     Schlüssel, und Stripe würfe, weil die Parameter nicht passen
+     *   - ohne die Anzahl bekäme ein Betrieb, der binnen 24 Stunden
+     *     kündigt und neu abschliesst, von Stripe das alte, gekündigte
+     *     Abo als Antwort zurück — und es entstünde gar keins
      */
-    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}:steuer` },
+    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}:${anzahl}` },
   );
 }
 
@@ -821,7 +949,8 @@ function alsId(wert: string | { id?: string } | null | undefined): string | null
  * Kunde hinterlegt seine Karte, bekommt „danke" zu sehen und steht danach
  * weiter vor der Sperre, ohne zu wissen warum. Deshalb wird die Rechnung
  * hier sofort bezahlt; danach ist das Abo `active`, und die Ableitung
- * lässt ihn im selben Moment durch.
+ * lässt ihn im selben Moment durch — weil sie bei `pausiert` Stripe
+ * nachfragt, statt auf den Webhook zu warten (`aboLageBeiStripe`).
  *
  * `billing_cycle_anchor: "now"` startet den Zyklus bei der Wiederaufnahme.
  * Ohne das würde anteilig für die Zeit abgerechnet, in der das Abo
@@ -831,10 +960,32 @@ function alsId(wert: string | { id?: string } | null | undefined): string | null
 export async function nimmAboWiederAuf(
   aboId: string,
 ): Promise<Stripe.Subscription> {
-  const stripe = stripeKlient();
-  const abo = await stripe.subscriptions.resume(aboId, {
+  const abo = await stripeKlient().subscriptions.resume(aboId, {
     billing_cycle_anchor: "now",
   });
+
+  return bezahleOffeneRechnung(
+    abo,
+    "Die Karte wurde abgelehnt. Deine Testphase ist abgelaufen und die erste Abbuchung steht an — versuch es mit einer anderen Zahlungsmethode.",
+  );
+}
+
+/**
+ * Bezahlt die offene letzte Rechnung eines Abos sofort — nach dem
+ * Wiederaufnehmen (`nimmAboWiederAuf`) und beim ersten Zahlungsmittel
+ * eines Abos ohne Testphase (`uebernimmZahlungsmittel`). In beiden Fällen
+ * hängt das Abo, bis die Rechnung bezahlt ist, und in beiden Fällen soll
+ * das nicht erst Stripes eigener Einzug irgendwann erledigen.
+ *
+ * Bei einer Lastschrift (SEPA) kehrt `invoices.pay` zurück, während die
+ * Zahlung noch `processing` ist; Stripe setzt das Abo dabei laut Doku
+ * gleich auf `active`.
+ */
+async function bezahleOffeneRechnung(
+  abo: Stripe.Subscription,
+  ablehnung: string,
+): Promise<Stripe.Subscription> {
+  const stripe = stripeKlient();
 
   const rechnungId = alsId(abo.latest_invoice);
   if (!rechnungId) return abo;
@@ -847,17 +998,15 @@ export async function nimmAboWiederAuf(
   } catch (ursache) {
     /*
      * Karte abgelehnt, Deckung fehlt, 3DS nachträglich verlangt. Das Abo
-     * bleibt pausiert — der Aufrufer muss das sehen und darf keinen
+     * bleibt, wo es war — der Aufrufer muss das sehen und darf keinen
      * Erfolg melden.
      */
     const text = ursache instanceof Error ? ursache.message : String(ursache);
     console.error(`[stripe] invoices.pay(${rechnungId}): ${text}`);
-    throw new ZahlungAbgelehnt(
-      "Die Karte wurde abgelehnt. Deine Testphase ist abgelaufen und die erste Abbuchung steht an — versuch es mit einer anderen Zahlungsmethode.",
-    );
+    throw new ZahlungAbgelehnt(ablehnung);
   }
 
-  return stripe.subscriptions.retrieve(aboId);
+  return stripe.subscriptions.retrieve(abo.id);
 }
 
 /* ------------------------------------------------------------------ */
@@ -917,7 +1066,12 @@ export async function erstelleSetupIntent(kundeId: string): Promise<{
  * Hier wird auch `automatic_tax` nachgezogen. Jedes Abo, das je etwas
  * abbucht, kommt durch diese Funktion — ein Abo aus der Zeit vor Stripe
  * Tax bekommt die Steuer damit spätestens hier, und zwar bevor
- * `nimmAboWiederAuf` die erste Rechnung erzeugt.
+ * `nimmAboWiederAuf` die erste Rechnung erzeugt. Nur wenn sie fehlt: ein
+ * `incomplete`-Abo trägt sie seit dem Anlegen, und an einem solchen wird
+ * nur geändert, was die Stripe-Doku dafür vorsieht — das Zahlungsmittel.
+ *
+ * Ein Abo ohne Testphase (`incomplete`, siehe `erstelleAbo`) wird hier
+ * bezahlt: seine erste Rechnung ist offen, seit es angelegt wurde.
  */
 export async function uebernimmZahlungsmittel({
   kundeId,
@@ -938,9 +1092,10 @@ export async function uebernimmZahlungsmittel({
     invoice_settings: { default_payment_method: zahlungsmittelId },
   });
 
+  const vorher = await stripe.subscriptions.retrieve(aboId);
   const abo = await stripe.subscriptions.update(aboId, {
     default_payment_method: zahlungsmittelId,
-    automatic_tax: { enabled: true },
+    ...(vorher.automatic_tax.enabled ? {} : { automatic_tax: { enabled: true } }),
   });
 
   /*
@@ -950,6 +1105,13 @@ export async function uebernimmZahlungsmittel({
    */
   if (abo.status === "paused") {
     return nimmAboWiederAuf(abo.id);
+  }
+
+  if (abo.status === "incomplete") {
+    return bezahleOffeneRechnung(
+      abo,
+      "Die Zahlung wurde abgelehnt, das Abo ist noch nicht gestartet. Versuch es mit einer anderen Zahlungsmethode.",
+    );
   }
 
   return abo;

@@ -107,6 +107,26 @@ export function zusammenfassungSchritt(k: AboKonditionen): string[] {
   return zeilen;
 }
 
+/**
+ * Schritt 2 ohne Testphase: der Betrieb hatte schon ein Abo, die erste
+ * Rechnung des neuen ist sofort fällig (`incomplete`, siehe `erstelleAbo`).
+ *
+ * Eigene Sätze statt `zusammenfassungSchritt`: dort landete ein solches
+ * Abo im Zweig „Die Testphase ist vorbei, das Abo läuft" — beides wäre
+ * hier falsch, es hat nie eine Testphase gehabt und läuft noch nicht.
+ */
+export function zusammenfassungNeuabschluss(k: AboKonditionen): string[] {
+  const preis = preisZeile(k);
+  return [
+    "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits.",
+    preis
+      ? `Mit dem Hinterlegen beginnt dein Abo sofort, und ${preis} werden für den ersten Zeitraum abgebucht.`
+      : "Mit dem Hinterlegen beginnt dein Abo sofort, und der erste Zeitraum wird abgebucht.",
+    "Danach verlängert es sich automatisch und wird jeweils im Voraus abgebucht.",
+    KUENDIGUNG,
+  ];
+}
+
 /** Sperrseite: Testphase ohne Zahlungsmittel abgelaufen, Abo pausiert. */
 export function zusammenfassungFortsetzen(k: AboKonditionen): string[] {
   const preis = preisZeile(k);

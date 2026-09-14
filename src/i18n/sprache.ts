@@ -1,6 +1,7 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { defaultLocale, istLocale, type Locale } from "./config";
+import { SPRACH_KOPFZEILE } from "./sprach-parameter";
 
 /**
  * Welche Sprache gilt für diese Anfrage?
@@ -44,6 +45,11 @@ export const SPRACH_COOKIE = "qt_sprache";
 const MAX_ALTER = 60 * 60 * 24 * 365;
 
 export async function leseSprache(): Promise<Locale> {
+  // `?lang=` aus einem App-Link geht dem Cookie vor — nur für diese Anfrage,
+  // ohne etwas zu speichern. Begründung in `sprach-parameter.ts`.
+  const ausLink = (await headers()).get(SPRACH_KOPFZEILE);
+  if (ausLink && istLocale(ausLink)) return ausLink;
+
   const laden = await cookies();
   const wert = laden.get(SPRACH_COOKIE)?.value;
   return wert && istLocale(wert) ? wert : defaultLocale;
