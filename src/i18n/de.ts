@@ -90,6 +90,15 @@ export const de = {
       chef: "Chef",
       mitarbeiter: "Mitarbeiter",
     },
+    /* `/dashboard/beendet` — Angestellte eines Betriebs mit beendetem Vertrag. */
+    beendet: {
+      metaTitel: "Betrieb nicht mehr aktiv",
+      titel: "Dieser Betrieb nutzt QuickTeam nicht mehr",
+      text: "Sein Abonnement ist beendet. Dienstplan, Mitteilungen, Urlaub und Tausch sind deshalb hier nicht mehr erreichbar.",
+      loeschung:
+        "Die Daten des Betriebs werden nach Ablauf der vertraglichen Frist gelöscht. Brauchst du etwas daraus, wende dich an deinen Arbeitgeber.",
+      mehrere: "Du gehörst noch zu weiteren Betrieben — wechsle zu einem davon, um weiterzuarbeiten.",
+    },
   },
 
   /**

@@ -30,6 +30,7 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
  * | mehrere, keine gewählt             | `/dashboard/wechseln`         |
  * | Chef, Abo `pausiert`               | `/einrichtung/testphase-…`    |
  * | Chef, Abo `gekuendigt`             | `/einrichtung/zahlung`        |
+ * | Angestellte, Abo `gekuendigt`      | `/dashboard/beendet`          |
  * | sonst                              | Seite rendern                 |
  *
  * Die Prüfung steht hier und nicht in der Middleware, aus demselben
@@ -97,6 +98,13 @@ export async function betreteDashboard(): Promise<Zugang> {
  * soll seinen Dienstplan sehen können, auch wenn der Chef die Karte
  * nicht hinterlegt hat. Gesperrt wird die Verwaltung, nicht die Schicht.
  *
+ * **Mit einer Ausnahme seit dem 2026-09-14: ein beendeter Vertrag.** Die
+ * Pause sperrt nur die Verwaltung (AGB § 5 Abs. 3), und dabei bleibt es.
+ * Ist das Abo aber `gekuendigt`, endet laut AGB § 6 Abs. 2 der Zugang zum
+ * Dienst — für alle, nicht nur für den Chef. Angestellte fragen dafür
+ * `betrieb_vertrag_beendet()`, weil sie die Abo-Zeile nicht lesen können;
+ * siehe `pruefeVertragsende`.
+ *
  * Gefragt wird zuerst die eigene Zeile. Sagt sie `pausiert` oder
  * `gekuendigt`, fragt das Tor bei Stripe nach, **genau wie der Stepper**
  * — bis zum 2026-09-14 tat es das nicht. Wer auf der Sperrseite bezahlt
@@ -111,7 +119,7 @@ async function pruefeSperre(
   position: Position,
   email: string,
 ): Promise<void> {
-  if (position.rolleTyp !== "chef") return;
+  if (position.rolleTyp !== "chef") return pruefeVertragsende(supabase, position);
 
   const abo = await holeAbo(supabase, position.betriebId);
   if (!testphaseAbgelaufen(abo) && !aboGekuendigt(abo)) return;
@@ -152,6 +160,38 @@ async function pruefeSperre(
    * behalten ihren Dienstplan.
    */
   redirect("/einrichtung/zahlung");
+}
+
+/**
+ * Vertrag beendet → Angestellte kommen nicht mehr ins Dashboard.
+ *
+ * Die RPC antwortet `true` nur für ein Mitglied des Betriebs und nur bei
+ * `gekuendigt`; `pausiert` lässt sie bewusst durch (AGB § 5 Abs. 3).
+ *
+ * **Ein Lesefehler lässt durch.** Das ist die umgekehrte Wahl wie bei der
+ * Chef-Sperre, und zwar mit Absicht: dort sperrt die eigene Zeile, und Stripe
+ * darf sie nur aufheben. Hier gibt es ohne Antwort keine Aussage, und eine
+ * Küchenhilfe wegen einer Störung aus ihrem Dienstplan auszusperren wäre der
+ * teurere Fehler als ein paar Stunden Zugang zu einem Betrieb, der ohnehin
+ * binnen 30 Tagen gelöscht wird.
+ *
+ * Kein Nachfragen bei Stripe wie für den Chef: nach einem Neuabschluss hinkt
+ * die Zeile nur Sekunden hinterher, bis der Webhook ankommt.
+ */
+async function pruefeVertragsende(
+  supabase: SupabaseServerClient,
+  position: Position,
+): Promise<void> {
+  const { data, error } = await supabase.rpc("betrieb_vertrag_beendet", {
+    p_betrieb_id: position.betriebId,
+  });
+
+  if (error) {
+    console.error(`[zugang] betrieb_vertrag_beendet: ${error.message}`);
+    return;
+  }
+
+  if (data === true) redirect("/dashboard/beendet");
 }
 
 /**

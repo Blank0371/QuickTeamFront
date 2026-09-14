@@ -83,10 +83,11 @@ export const ZUSTIMMUNG_ART: Record<ZustimmungDokument, ZustimmungArt> = {
  * Aktuelle Fassung je Dokument.
  *
  * Deckt sich mit der `Stand:`-Zeile der jeweiligen Datei:
- * alle drei vom 13.09.2026.
+ * AGB und AVV vom 13.09.2026, die Datenschutzerklärung vom 14.09.2026
+ * (Zustimmungsarchiv und Löschung der Logins, Ziffern 5.2 und 15.3).
  */
 export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
   agb: "2026-09-13-draft",
   avv: "2026-09-13-draft",
-  datenschutz: "2026-09-13-draft",
+  datenschutz: "2026-09-14-draft",
 };

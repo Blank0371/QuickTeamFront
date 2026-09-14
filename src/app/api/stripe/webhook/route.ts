@@ -136,11 +136,12 @@ function statusAusStripe(
       return "gekuendigt";
 
     /*
-     * Entsteht nur, wenn eine Testphase ohne hinterlegtes Zahlungsmittel
-     * endet. Unser Checkout nimmt die Karte sofort, der Fall ist damit
-     * ausgeschlossen. Nicht zu verwechseln mit „Zahlungseinzug
-     * pausieren" im Dashboard — das ist `pause_collection` und lässt
-     * `status` auf `active`.
+     * Entsteht, wenn eine Testphase ohne hinterlegtes Zahlungsmittel
+     * endet (`missing_payment_method: 'pause'`) — seit dem überspringbaren
+     * Zahlungsschritt vom 2026-08-19 der Normalfall, nicht ausgeschlossen.
+     * Nach 90 Tagen kündigt `api/cron/testphasen-beenden` bei Stripe.
+     * Nicht zu verwechseln mit „Zahlungseinzug pausieren" im Dashboard —
+     * das ist `pause_collection` und lässt `status` auf `active`.
      */
     case "paused":
       return "pausiert";

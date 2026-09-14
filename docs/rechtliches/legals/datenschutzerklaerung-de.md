@@ -1,6 +1,6 @@
 # DATENSCHUTZERKLÄRUNG
 
-**Stand: 13. September 2026**
+**Stand: 14. September 2026**
 
 Diese Datenschutzerklärung informiert Sie nach Art. 13 und 14 der Datenschutz-Grundverordnung (DSGVO) darüber, wie die BlankTrading UG (haftungsbeschränkt) (nachfolgend „wir“ oder „uns“) personenbezogene Daten verarbeitet, wenn Sie
 
@@ -97,11 +97,13 @@ Zur Bestätigung Ihrer E-Mail-Adresse senden wir Ihnen einen achtstelligen Code 
 
 Bei der Registrierung bestätigen Sie die Allgemeinen Geschäftsbedingungen und den Auftragsverarbeitungsvertrag (AVV) für Ihren Betrieb und nehmen diese Datenschutzerklärung zur Kenntnis. Ändert sich eines dieser Dokumente, bitten wir Führungskräfte im Dashboard erneut um Bestätigung. Als Nachweis speichern wir je Dokument: Bezeichnung, Fassung (Datum des Stands), Zeitpunkt, Kennung Ihres Kontos und des Betriebs sowie gegebenenfalls die Sprache der bestätigten Fassung. Diese Einträge können nachträglich nicht geändert werden.
 
+Für die Bestätigung von AGB und AVV legen wir im Zeitpunkt der Bestätigung zusätzlich eine Kopie an, die auch nach der Löschung des Betriebs erhalten bleibt: Name und Land des Betriebs, Vor- und Nachname sowie E-Mail-Adresse der bestätigenden Person, Dokument, Fassung, Sprache, Prüfsumme der bestätigten Fassung und Zeitpunkt. Diese Kopie bewahren wir bis zum Ende des dritten Kalenderjahres nach Vertragsende auf (regelmäßige Verjährungsfrist, §§ 195, 199 BGB) und löschen sie dann automatisch. Die Kenntnisnahme dieser Datenschutzerklärung wird nicht kopiert; ihr Nachweis wird mit dem Betrieb gelöscht.
+
 ### 5.3 Zwecke und Rechtsgrundlagen
 
 - **Anlage und Verwaltung des Kundenkontos, Vertragsschluss:** Art. 6 Abs. 1 lit. b DSGVO, soweit Sie selbst Vertragspartner sind (etwa als Einzelunternehmer). Handeln Sie für ein Unternehmen, etwa als Geschäftsführer, stützen wir die Verarbeitung Ihrer Daten auf Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt in der Durchführung des Vertrags mit dem von Ihnen vertretenen Unternehmen.
 - **Bestätigung der E-Mail-Adresse:** Art. 6 Abs. 1 lit. f DSGVO (Schutz vor Konten mit fremden oder falschen Adressen).
-- **Zustimmungsnachweis:** Art. 6 Abs. 1 lit. f DSGVO (Nachweis des Vertragsschlusses und der Einbeziehung der Vertragsbedingungen).
+- **Zustimmungsnachweis:** Art. 6 Abs. 1 lit. f DSGVO (Nachweis des Vertragsschlusses und der Einbeziehung der Vertragsbedingungen; nach Vertragsende zur Abwehr von Ansprüchen, Art. 17 Abs. 3 lit. e DSGVO).
 
 ---
 
@@ -284,7 +286,8 @@ Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zw
 | Push-Token | bis zur Kontolöschung oder bis sich ein anderes Konto auf dem Gerät anmeldet (Ziffer 10) |
 | Profil im Betrieb | bis Ihr Arbeitgeber es entfernt oder Sie Ihr Konto löschen (dann Pseudonymisierung, Ziffer 15.1), spätestens bis zur Löschung des Betriebs |
 | Planungs- und Kommunikationsdaten, Änderungsprotokoll | nach Weisung Ihres Arbeitgebers, spätestens bis zur Löschung des Betriebs (Ziffer 15.3) |
-| Nachweise der Zustimmung zu AGB, AVV und Datenschutzerklärung | bis zur Löschung des Betriebs |
+| Nachweise der Zustimmung zu AGB und AVV | bis zum Ende des dritten Kalenderjahres nach Vertragsende (Ziffer 5.2) |
+| Nachweise der Kenntnisnahme der Datenschutzerklärung | bis zur Löschung des Betriebs |
 | Stripe-Kennungen, Tarif und Status des Abonnements | bis zur Löschung des Betriebs |
 | Rechnungen und Buchungsbelege | 8 Jahre (§ 147 AO, § 257 HGB) |
 | Handels- und Geschäftsbriefe, auch per E-Mail | 6 Jahre (§ 257 HGB, § 147 AO) |
@@ -312,9 +315,9 @@ Führungskräfte können das Profil einer Person im Betrieb pseudonymisieren. Da
 
 ### 15.3 Ende des Vertrags und abgelaufene Testphase
 
-- **Nach Vertragsende** stellen wir die Daten des Betriebs 30 Tage lang zum Export bereit (§ 6 Abs. 4 AGB). Danach löschen wir alle Daten des Betriebs, einschließlich der Profile der Beschäftigten, der Planungs- und Kommunikationsdaten, des Änderungsprotokolls und der Zustimmungsnachweise, soweit keine gesetzliche Aufbewahrungspflicht entgegensteht.
+- **Nach Vertragsende** stellen wir die Daten des Betriebs 30 Tage lang zum Export bereit (§ 6 Abs. 4 AGB). Danach löschen wir alle Daten des Betriebs, einschließlich der Profile der Beschäftigten, der Planungs- und Kommunikationsdaten, des Änderungsprotokolls und der Nachweise über die Kenntnisnahme der Datenschutzerklärung, soweit keine gesetzliche Aufbewahrungspflicht entgegensteht. Die Nachweise der Zustimmung zu AGB und AVV bewahren wir nach Ziffer 5.2 weiter auf.
 - **Läuft die Testphase ohne hinterlegtes Zahlungsmittel ab**, wird das Abonnement pausiert und die Verwaltung des Betriebs gesperrt. Wird es nicht innerhalb von 90 Tagen durch Hinterlegen eines Zahlungsmittels fortgesetzt, löschen wir den Betrieb und seine Daten wie nach Vertragsende.
-- Anmeldekonten von Beschäftigten bleiben bestehen, weil sie weiteren Betrieben zugeordnet sein können; sie werden gelöscht, wenn die jeweilige Person ihr Konto löscht.
+- **Anmeldekonten**, denen nach der Löschung des Betriebs keine Anstellung in einem anderen Betrieb mehr zugeordnet ist, löschen wir zusammen mit dem Betrieb, samt Sitzungen und Push-Token. Das gilt für Führungskräfte wie für Beschäftigte. Konten, die weiteren Betrieben zugeordnet sind, bleiben bestehen.
 
 ### 15.4 Datensicherungen
 

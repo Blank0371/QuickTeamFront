@@ -132,6 +132,14 @@ export const en: Dictionary = {
       chef: "Manager",
       mitarbeiter: "Employee",
     },
+    beendet: {
+      metaTitel: "Business no longer active",
+      titel: "This business no longer uses QuickTeam",
+      text: "Its subscription has ended, so the schedule, messages, vacation and swaps are no longer available here.",
+      loeschung:
+        "The business's data will be deleted once the contractual period has passed. If you need anything from it, please ask your employer.",
+      mehrere: "You also belong to other businesses — switch to one of them to keep working.",
+    },
   },
 
   /*

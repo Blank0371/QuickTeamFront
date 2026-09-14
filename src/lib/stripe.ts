@@ -94,6 +94,16 @@ export function planAusPriceId(priceId: string | null | undefined): PlanId | nul
  */
 export function stripeKlient(): Stripe {
   verlangeSoftLaunchFrei();
+  return stripeKlientOhneRiegel();
+}
+
+/**
+ * Derselbe Client ohne Soft-Launch-Sperre — nur für Arbeit an **bestehenden**
+ * Abonnements, die keinen Vertrag schliesst und von keinem Besucher ausgelöst
+ * wird. Einziger Aufrufer ist `beendeUeberfaelligePausen()`; die Begründung
+ * ist dieselbe wie beim Webhook in `soft-launch.ts`.
+ */
+function stripeKlientOhneRiegel(): Stripe {
   const secret = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
   if (secret.length === 0) {
     throw new KonfigurationsFehler("STRIPE_SECRET_KEY fehlt in der Umgebung.");
@@ -634,6 +644,82 @@ export async function wechslePlan(
  */
 export async function kuendigeAbo(aboId: string): Promise<Stripe.Subscription> {
   return stripeKlient().subscriptions.cancel(aboId);
+}
+
+/** AGB § 5 Abs. 3: so lange lässt sich ein pausiertes Abo fortsetzen. */
+export const PAUSE_HOECHSTENS_TAGE = 90;
+
+export type PausenBilanz = {
+  /** Pausierte Abos, die Stripe geliefert hat — auch fremde und noch nicht fällige. */
+  geprueft: number;
+  gekuendigt: string[];
+  fehler: string[];
+};
+
+/**
+ * Kündigt pausierte Abos, deren Testphase vor mehr als 90 Tagen endete.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das hier passiert und nicht in der Datenbank
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Läuft eine Testphase ohne Karte ab, pausiert Stripe das Abo
+ * (`missing_payment_method: 'pause'`) — und lässt es dann für immer so.
+ * Einen „nach 90 Tagen kündigen"-Schalter gibt es nicht. Der tägliche Job in
+ * der Datenbank (`private.betriebe_aufraeumen()`, siehe
+ * `docs/backend-befunde-2026-09-14.md`) löscht aber nur `gekuendigt`, nie
+ * `pausiert`: ein pausiertes Abo liesse sich noch fortsetzen, und dann würde
+ * für einen gelöschten Betrieb abgebucht.
+ *
+ * Also wird hier bei Stripe gekündigt. Der Webhook schreibt daraus wie bei
+ * jeder Kündigung `gekuendigt`; `beendet_am` bleibt dabei das Ende der
+ * Testphase, die 30-Tage-Frist ist also längst vorbei, und der Job löscht
+ * beim nächsten Lauf. Das ist genau § 5 Abs. 3: Vertragsende nach 90 Tagen,
+ * Löschung mit dem Vertragsende.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Die Frist kommt von Stripe, nicht aus unserer Zeile
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Gerechnet wird ab `trial_end` — dort pausiert Stripe. Die Datenbank wird
+ * dafür nicht gefragt; diese Funktion braucht nur den Stripe-Key, keinen
+ * Supabase-Client und schon gar nicht `service_role`.
+ *
+ * Abos ohne `betrieb_id` in den Metadaten bleiben unberührt: die sind im
+ * Stripe-Dashboard von Hand entstanden und nicht unsere (dieselbe Regel wie
+ * im Webhook).
+ *
+ * Ein Fehler bei einem Abo hält die übrigen nicht auf. Er landet in der
+ * Bilanz, und der nächste Lauf versucht es erneut — ein fälliges Abo bleibt
+ * so lange in der Liste, bis es gekündigt ist.
+ */
+export async function beendeUeberfaelligePausen(
+  jetzt: Date = new Date(),
+): Promise<PausenBilanz> {
+  const stripe = stripeKlientOhneRiegel();
+  const grenze = Math.floor(jetzt.getTime() / 1000) - PAUSE_HOECHSTENS_TAGE * 24 * 60 * 60;
+  const bilanz: PausenBilanz = { geprueft: 0, gekuendigt: [], fehler: [] };
+
+  for await (const abo of stripe.subscriptions.list({ status: "paused", limit: 100 })) {
+    bilanz.geprueft += 1;
+
+    if (!abo.metadata?.[BETRIEB_SCHLUESSEL]) continue;
+    if (abo.trial_end === null || abo.trial_end > grenze) continue;
+
+    try {
+      await stripe.subscriptions.cancel(abo.id, {
+        cancellation_details: {
+          comment: `Testphase ohne Zahlungsmittel, seit mehr als ${PAUSE_HOECHSTENS_TAGE} Tagen pausiert (AGB § 5 Abs. 3)`,
+        },
+      });
+      bilanz.gekuendigt.push(abo.id);
+    } catch (fehler) {
+      const text = fehler instanceof Error ? fehler.message : String(fehler);
+      bilanz.fehler.push(`${abo.id}: ${text}`);
+    }
+  }
+
+  return bilanz;
 }
 
 /**

@@ -8,8 +8,8 @@ Stand-alone, readable copies of QuickTeam's contract documents, exported for leg
 | `Terms-QuickTeam-en.md` | General Terms and Conditions | English — convenience translation | Ready for review |
 | `AVV-QuickTeam-de.md` | Auftragsverarbeitungsvertrag (Art. 28 GDPR) | German — **legally binding** | Ready for review, incl. 3 annexes |
 | `DPA-QuickTeam-en.md` | Data Processing Agreement | English — convenience translation | Ready for review, incl. 3 annexes |
-| `datenschutzerklaerung-de.md` | Datenschutzerklärung (Privacy Policy) | German — **legally binding** | Rewritten 13 Sept 2026, ready for review — see "Privacy policy 2026-09-13" below |
-| `privacy-policy-en.md` | Privacy Policy | English — convenience translation | Rewritten 13 Sept 2026, mirrors the German text section by section |
+| `datenschutzerklaerung-de.md` | Datenschutzerklärung (Privacy Policy) | German — **legally binding** | Rewritten 13 Sept 2026, amended 14 Sept 2026, ready for review — see "Privacy policy 2026-09-13" and "Amendment 2026-09-14" below |
+| `privacy-policy-en.md` | Privacy Policy | English — convenience translation | Rewritten 13 Sept 2026, amended 14 Sept 2026, mirrors the German text section by section |
 
 ## Key drafting decisions
 
@@ -29,7 +29,7 @@ Stand-alone, readable copies of QuickTeam's contract documents, exported for leg
 
 ## Still open — needs the lawyer / operator
 
-- **Privacy policy:** rewritten on 2026-09-13 against the live system (see "Privacy policy 2026-09-13" below). Still open: lawyer review. The app's copy was synced on 2026-09-14 (see "Source of truth" below).
+- **Privacy policy:** rewritten on 2026-09-13 against the live system (see "Privacy policy 2026-09-13" below), amended on 2026-09-14 (see "Amendment 2026-09-14"). Still open: lawyer review. **The app's copy is behind again:** it was synced on 2026-09-14 with the 13 Sept text and version `2026-09-13-draft` (see "Source of truth" below).
 - **Execute the provider DPAs/SCCs:** confirm the Expo (and Apple/Google) data-processing terms / SCCs are actually accepted before go-live. Annex 3 of the AVV/DPA names DPF and the EU SCCs as the transfer basis for the US push services, so the published documents already assert something that has to be true at launch. This obligation used to sit inside the documents themselves as an *Umsetzungshinweis / Implementation note*; it was removed on 2026-09-10 because `/avv` renders them publicly and an internal to-do has no place on a contract page. It lives here now — do not put it back into the documents.
 - **App Store note:** these terms assume web/Stripe billing. If digital subscriptions are ever sold *inside* the iOS/Android app, Apple/Google in-app-purchase rules would additionally apply.
 - **Impressum:** already exists (per operator) — not managed here.
@@ -65,7 +65,7 @@ not taken from earlier documents.
 
 - **Hosting is Vercel.** The repo also contains a `netlify.toml`; if the site ever moves, Sections 3, 13 and 14 must change.
 - **SMS/phone login is off.** It is therefore not mentioned. If it is ever switched on, the SMS provider must be added (recipient, third country, retention).
-- **Deletion after contract end: 30 days** (matches AGB § 6(4)). **Paused trials: deleted after 90 days** without reactivation. **Nothing automates either yet** — until a job exists, both must be done by hand. The policy promises them.
+- **Deletion after contract end: 30 days** (matches AGB § 6(4)). **Paused trials: deleted after 90 days** without reactivation. **Since 2026-09-14 the 30-day deletion runs automatically** (cron `betriebe-aufraeumen`, daily 03:30 UTC, see `docs/backend-befunde-2026-09-14.md`). **The 90-day case** goes through Stripe: the database only deletes cancelled businesses, so the cron `/api/cron/testphasen-beenden` (built 2026-09-14, daily 02:00 UTC) cancels subscriptions paused for more than 90 days, and the deletion follows on the next database run. It takes effect once deployed with `CRON_SECRET` set in Vercel; until then, cancel such subscriptions in Stripe by hand.
 - **Contact stays blanktrading@web.de**, so WEB.DE is listed as a processor.
 - **Bug reports: deleted after handling, at most 12 months.** This period was set while drafting, not decided explicitly — change it if needed.
 
@@ -78,14 +78,28 @@ not taken from earlier documents.
 5. **Health data (8).** The policy is honest that the emergency reason is visible to business members and that "sick" is Art. 9 data. That visibility is a technical defect (see `docs/backend-befunde-2026-09-13.md`). Please consider whether the text can go live before the defect is fixed.
 6. **Push token after sign-out (10).** The policy admits that sign-out does not remove the token. That is true today and should be fixed in the app; then the sentence can go.
 7. **"Agreements under Art. 28 with all processors" (13).** Must be true on the publication date. In particular: can a WEB.DE free mail account be covered by a DPA? If not, a business mailbox is the cleaner solution.
-8. **Retention of the records of acceptance (15).** They are deleted together with the business (FK `ON DELETE CASCADE`), i.e. 30 days after the contract ends. Keeping them for the limitation period (3 years, §§ 195, 199 BGB) would need a schema change; the policy describes the current behaviour.
+8. **Retention of the records of acceptance (5.2, 15).** Since 2026-09-14 (operator decision): acceptances of the **Terms and DPA** are copied at the time of acceptance into an archive (business name and country, name and email of the person, document, version, language, checksum, time) and kept until the end of the third calendar year after the contract ends (§§ 195, 199 BGB), then purged by the daily job. The employees' privacy-policy acknowledgements are not archived. Please confirm: (a) the 3-year period — Austrian customers' claims can run on different limitation periods; (b) Art. 6(1)(f) / Art. 17(3)(e) as the basis; (c) whether AGB § 6(4) ("deletes the Customer's data") needs a sentence, or whether the provider's own contract evidence is not "Customer's data" in that sense. The AGB were **not** changed.
 9. **Retention for accounting records** is given as 8 years for invoices / booking records (§ 147 AO as amended by BEG IV, effective 2025) and 6 years for business letters. Please confirm.
 10. **AVV aligned on 2026-09-13:** § 1(4) now separates EU storage from third-country transfers by the Annex 3 sub-processors, and Annex 3 lists Vercel, Resend and WEB.DE. Please check the new § 1(5) (electronic conclusion, confirmation of authority to represent) and whether defining the controller by reference to the customer account is sufficient without a postal address.
 
 ### Consequences for the code and the app
 
 - `src/lib/rechtstexte.ts`: `datenschutz` bumped to `2026-09-13-draft`. Managers are asked to confirm again through the consent gate on their next dashboard visit — intended.
-- **The app's copy is synced** (2026-09-14): `src/lib/legalDocs.ts` in the app repo carries this text word for word, version `2026-09-13-draft`. See "Source of truth" below.
+- **The app's copy was synced** (2026-09-14) with the 13 Sept text, version `2026-09-13-draft` — **it predates the amendment below and needs another sync.** See "Source of truth" below.
+
+## Amendment 2026-09-14 — acceptance archive and login deletion
+
+Follows the database changes in `docs/backend-befunde-2026-09-14.md` (A1–A4, applied the same day on operator instruction).
+
+| Where | Change |
+|---|---|
+| 5.2 | New paragraph: Terms/DPA acceptances are copied at the time of acceptance and kept until the end of the third calendar year after the contract ends; privacy-policy acknowledgements are not copied |
+| 5.3 | Legal basis for the record of acceptance extended to the defence of legal claims after the contract ends (Art. 17(3)(e)) |
+| 15 (table) | One row split in two: Terms/DPA (3 years after contract end) and privacy-policy acknowledgements (until the business is deleted) |
+| 15.3, bullet 1 | The deletion no longer includes the Terms/DPA records; reference to 5.2 |
+| 15.3, bullet 3 | Before: employees' login accounts remain. Now: every login account (manager or employee) that has no employment in another business left is deleted with the business |
+
+`src/lib/rechtstexte.ts`: `datenschutz` bumped to `2026-09-14-draft`. Managers confirm the privacy policy again through the consent gate on their next dashboard visit — intended. AGB and AVV are unchanged and stay at `2026-09-13-draft`.
 - **Vercel region:** Without a `regions` setting, Vercel runs server functions in `iad1` (Washington, D.C.). Setting the project to `dub1` (Dublin, same region as the Supabase database) would keep dashboard data processing in the EU and reduce latency. The policy is written so that it is true either way.
 
 ## External legal review of 2026-09-13 — status per finding
@@ -168,9 +182,11 @@ said "your data is kept" without a limit; they now say 90 days.
 1. **Stripe → Settings → Billing → Subscriptions and emails:** retry failed
    payments within **14 days**, then **cancel the subscription**; enable the
    customer e-mails for failed payments (§ 5(6) promises both). Test and live.
-2. **Deletion jobs:** § 5(3) (90 days after a suspended trial) and § 6(4)
-   (30 days after contract end) are still manual — see "Operator decisions
-   recorded on 2026-09-13" above.
+2. **Deletion jobs:** § 6(4) (30 days after contract end) runs automatically
+   since 2026-09-14. § 5(3) (90 days after a suspended trial) is automated by
+   the Stripe cron once deployed with `CRON_SECRET` — see "Operator decisions
+   recorded on 2026-09-13" above. Access for employees now also ends with the
+   contract (§ 6(2)) in the web dashboard; the app still has no such gate.
 3. **Export requests by hand** until the download button exists: all tables
    of the business as CSV/JSON within 30 days (§ 6(4)/(5)).
 4. **Changing the Terms later (§ 13) — the consent gate does not fit yet:**
@@ -187,7 +203,8 @@ said "your data is kept" without a limit; they now say 90 days.
 5. **Plan limits (§ 2(6)):** nothing counts employees yet; a request to
    upgrade has to be triggered by hand.
 6. **The app's copy** (`QuickTeamMobile/src/lib/legalDocs.ts`, `TERMS_DE` /
-   `TERMS_EN`): synced on 2026-09-14, version `2026-09-13-draft`.
+   `TERMS_EN`): synced on 2026-09-14, version `2026-09-13-draft`. The Terms
+   are unchanged since; the privacy policy is not (see "Amendment 2026-09-14").
 
 ## Published on the website (added 2026-09-10)
 
@@ -224,7 +241,7 @@ pre-lawyer drafts.
 
 **This folder is the master copy.** The Expo app (`QuickTeamMobile`) was synced with it on 2026-09-14:
 
-- **Consent gate:** `src/lib/legalDocs.ts` (`PRIVACY_DE` / `PRIVACY_EN`, `TERMS_DE` / `TERMS_EN`) carries the privacy policy and the Terms word for word, with only the Markdown syntax removed (tables become indented lists). Versions in `src/lib/privacyPolicy.ts` / `src/lib/terms.ts` are `2026-09-13-draft`, the same as `src/lib/rechtstexte.ts` here. The button says "I have taken note", since the app concludes no contract.
+- **Consent gate:** `src/lib/legalDocs.ts` (`PRIVACY_DE` / `PRIVACY_EN`, `TERMS_DE` / `TERMS_EN`) carries the privacy policy and the Terms word for word, with only the Markdown syntax removed (tables become indented lists). Versions in `src/lib/privacyPolicy.ts` / `src/lib/terms.ts` are `2026-09-13-draft`. **Since 2026-09-14 the privacy policy here is `2026-09-14-draft`** — `PRIVACY_DE` / `PRIVACY_EN` and `privacyPolicy.ts` need the amended text and the new version. The button says "I have taken note", since the app concludes no contract.
 - **Settings > Legal:** opens `/datenschutz`, `/agb` and `/avv` on this website with `?lang=de|en` (see `src/i18n/sprach-parameter.ts`). The AVV/DPA is not in the app's consent gate; the business concludes it at registration here.
 - **Review copies:** `legals/` in the app repo holds byte-identical copies of the six documents in this folder.
 

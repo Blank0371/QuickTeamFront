@@ -70,8 +70,9 @@ export const config = {
      * Session-Cookie mit, das aufzufrischen wäre. Jeder Aufruf löste
      * sonst eine überflüssige Anfrage an Supabase aus — vor einem
      * Endpunkt, dessen Antwortzeit Stripe misst und bei Verzögerung
-     * wiederholt.
+     * wiederholt. Dasselbe gilt für `api/cron/…`: Vercel ruft dort ohne
+     * Sitzung auf.
      */
-    "/((?!api/stripe/webhook|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|opengraph-image|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt)$).*)",
+    "/((?!api/stripe/webhook|api/cron|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|opengraph-image|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt)$).*)",
   ],
 };

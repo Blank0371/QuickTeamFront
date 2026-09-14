@@ -882,6 +882,33 @@ Das ist die **einzige Stelle, an der der Webhook bei Stripe schreibt**. An der
 Tage statt eines Monats. Ganz schliessen liesse sie sich nur, indem man bei SEPA den
 Zugang bis zum Zahlungseingang zurückhält; das wäre eine Produktentscheidung.
 
+### Änderung vom 2026-09-14: Vertragsende sperrt alle, pausierte Abos enden nach 90 Tagen
+
+Teile B und C aus `docs/backend-befunde-2026-09-14.md`, gebaut auf den
+Datenbankteil A (Löschjob, siehe „Was hier nicht passiert").
+
+**Vorher:** das Dashboard-Tor sperrte nur Chefs; Angestellte eines gekündigten
+Betriebs arbeiteten unbegrenzt weiter, entgegen AGB § 6 Abs. 2. Und ein pausiertes
+Abo blieb bei Stripe für immer pausiert — der Löschjob fasst `pausiert` nie an, der
+Betrieb wäre also nie gelöscht worden.
+
+**Jetzt:**
+
+- `pruefeSperre()` fragt für Nicht-Chefs `betrieb_vertrag_beendet()` und leitet bei
+  `true` auf `/dashboard/beendet` (neben `(arbeit)`, wie `wechseln`). Nur
+  `gekuendigt` sperrt; `pausiert` sperrt weiterhin nur die Verwaltung. Ein
+  Lesefehler lässt durch — die Begründung steht an `pruefeVertragsende`.
+- `/api/cron/testphasen-beenden`, täglich 02:00 UTC über `vercel.json`: kündigt bei
+  Stripe jedes Abo mit `betrieb_id`, das pausiert ist und dessen `trial_end` mehr als
+  90 Tage zurückliegt. Der Webhook schreibt `gekuendigt`, der DB-Job löscht beim
+  nächsten Lauf (03:30 UTC). Braucht nur den Stripe-Key, keinen Supabase-Client.
+  Steht hinter `CRON_SECRET` (fehlt der Wert: 500, nie offen) und ist wie der
+  Webhook von Soft-Launch-Sperre und Middleware ausgenommen — deshalb
+  `stripeKlientOhneRiegel()` in `src/lib/stripe.ts`, mit genau diesem einen Aufrufer.
+
+**`CRON_SECRET` muss in Vercel gesetzt sein** (Production), sonst scheitert jeder
+Lauf mit 500 — sichtbar im Vercel-Dashboard, aber ohne Kündigung.
+
 **Webhook-Ereignisse, die im Stripe-Dashboard am Endpunkt abonniert sein müssen:**
 `customer.subscription.created`, `.updated`, `.deleted`, `.paused`, `.resumed` und
 **`invoice.payment_failed`**. Fehlt das letzte, greift diese Kündigung nie — ohne
@@ -1580,6 +1607,17 @@ nicht geraten und nicht aus dieser Datei extrapoliert. `list_tables` für Strukt
   ihre eigene Begründung und ihren eigenen Abschnitt hier. Insbesondere bleibt
   es dabei, dass an **bestehenden** Tabellen, Policies und Funktionen von hier
   aus nichts geändert wird — auch nicht an der neuen, sobald die App sie kennt.
+
+  **Zweite Ausnahme, am 2026-09-14 von der Betreiberin angewiesen:** Löschung nach
+  Vertragsende, Teil A aus `docs/backend-befunde-2026-09-14.md`, vier Migrationen
+  `loeschung_a1` bis `loeschung_a4`. Anders als die erste ist sie **nicht rein
+  additiv**: `betrieb_abonnements` bekam die Spalte `beendet_am` samt Trigger,
+  `rechtliche_zustimmungen` und `betriebe` je einen Trigger. Neu sind das Schema
+  `private` (Zustimmungsarchiv, Löschprotokoll, Löschfunktion, täglicher Job),
+  der Cron `betriebe-aufraeumen` und die RPC `betrieb_vertrag_beendet()`.
+  Grund: AGB § 5 Abs. 3 / § 6 Abs. 4 und Datenschutzerklärung 15.3 versprechen
+  eine Löschung, die es nicht gab. Eingespielt **ohne Test**, ebenfalls auf
+  Anweisung. Der Satz oben gilt für alles Weitere unverändert.
 - **Kein `service_role`-Key im Repo — mit genau einer Ausnahme.** Alles andere läuft
   weiterhin über den anon-Key und RLS. Die Ausnahme ist der Stripe-Webhook unter
   `src/app/api/stripe/webhook/route.ts` und sonst nichts.

@@ -33,7 +33,10 @@
  * Endpunkt kommt von Stripe, nicht von einem Besucher, und ist kein Weg
  * zu einem Vertragsabschluss. Er schreibt den Zahlungsstatus bereits
  * bestehender Abonnements; ihn abzuschalten hiesse, deren Zustand
- * auflaufen zu lassen, ohne dass jemand etwas gewinnt.
+ * auflaufen zu lassen, ohne dass jemand etwas gewinnt. Aus demselben Grund
+ * `/api/cron/testphasen-beenden` (seit 2026-09-14): Vercel ruft ihn auf, er
+ * kündigt nur bestehende, seit 90 Tagen pausierte Abos und steht hinter
+ * `CRON_SECRET`.
  *
  * Die Sperre ist bewusst reversibel und löscht nichts: Auth-, Stepper-
  * und Dashboard-Code bleiben vollständig vorhanden.

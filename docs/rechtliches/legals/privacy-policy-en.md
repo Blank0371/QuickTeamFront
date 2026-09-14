@@ -1,6 +1,6 @@
 # PRIVACY POLICY
 
-**Last updated: 13 September 2026**
+**Last updated: 14 September 2026**
 
 This Privacy Policy informs you, in accordance with Articles 13 and 14 of the General Data Protection Regulation (GDPR), how BlankTrading UG (haftungsbeschränkt) ("we" or "us") processes personal data when you
 
@@ -97,11 +97,13 @@ To confirm your email address, we send you an eight-digit code (Section 12.1). O
 
 When registering, you accept the General Terms and Conditions and the Data Processing Agreement (DPA) on behalf of your business and take note of this Privacy Policy. If any of these documents changes, we ask managers to confirm again in the dashboard. As evidence, we store for each document: its name, version (date of the edition), time, the identifiers of your account and of the business and, where applicable, the language of the accepted version. These records cannot be changed afterwards.
 
+When the Terms and the DPA are accepted, we additionally make a copy at the time of acceptance that is kept even after the business is deleted: the name and country of the business, the first and last name and email address of the person accepting, the document, version, language, checksum of the accepted version and time. We keep this copy until the end of the third calendar year after the contract ends (standard limitation period, Sections 195 and 199 BGB) and then delete it automatically. Taking note of this Privacy Policy is not copied; its record is deleted together with the business.
+
 ### 5.3 Purposes and legal bases
 
 - **Creating and managing the customer account, concluding the contract:** Art. 6(1)(b) GDPR where you are the contracting party yourself (for example as a sole trader). Where you act for a company, for example as its managing director, we base the processing of your data on Art. 6(1)(f) GDPR; our legitimate interest lies in performing the contract with the company you represent.
 - **Confirming your email address:** Art. 6(1)(f) GDPR (protection against accounts with third-party or incorrect addresses).
-- **Record of acceptance:** Art. 6(1)(f) GDPR (evidence of the conclusion of the contract and of the incorporation of the contractual terms).
+- **Record of acceptance:** Art. 6(1)(f) GDPR (evidence of the conclusion of the contract and of the incorporation of the contractual terms; after the contract ends, the defence of legal claims, Art. 17(3)(e) GDPR).
 
 ---
 
@@ -284,7 +286,8 @@ We store personal data only for as long as necessary for the respective purpose 
 | Push token | until the account is deleted or another account signs in on the device (Section 10) |
 | Profile within the business | until your Employer removes it or you delete your account (then pseudonymisation, Section 15.1), at the latest until the business is deleted |
 | Scheduling and communication data, change log | as instructed by your Employer, at the latest until the business is deleted (Section 15.3) |
-| Records of acceptance of the Terms, the DPA and the Privacy Policy | until the business is deleted |
+| Records of acceptance of the Terms and the DPA | until the end of the third calendar year after the contract ends (Section 5.2) |
+| Records of taking note of the Privacy Policy | until the business is deleted |
 | Stripe identifiers, plan and subscription status | until the business is deleted |
 | Invoices and accounting records | 8 years (Sec. 147 AO, Sec. 257 HGB) |
 | Commercial and business letters, including by email | 6 years (Sec. 257 HGB, Sec. 147 AO) |
@@ -312,9 +315,9 @@ Managers can pseudonymise a person's profile within the business. This removes t
 
 ### 15.3 End of the contract and expired trial
 
-- **After the contract ends**, we make the business's data available for export for 30 days (Section 6(4) of the Terms). We then delete all data of the business, including the employees' profiles, the scheduling and communication data, the change log and the records of acceptance, unless a statutory retention obligation applies.
+- **After the contract ends**, we make the business's data available for export for 30 days (Section 6(4) of the Terms). We then delete all data of the business, including the employees' profiles, the scheduling and communication data, the change log and the records of taking note of the Privacy Policy, unless a statutory retention obligation applies. We continue to keep the records of acceptance of the Terms and the DPA in accordance with Section 5.2.
 - **If the trial ends without a payment method**, the subscription is paused and management of the business is locked. If it is not resumed within 90 days by adding a payment method, we delete the business and its data in the same way as after the end of the contract.
-- Employees' login accounts remain, because they may be linked to other businesses; they are deleted when the respective person deletes their account.
+- **Login accounts** that are no longer linked to employment in any other business once the business is deleted are deleted together with the business, including sessions and push tokens. This applies to managers and employees alike. Accounts linked to other businesses remain.
 
 ### 15.4 Backups
 
