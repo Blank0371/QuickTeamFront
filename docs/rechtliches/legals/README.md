@@ -29,7 +29,7 @@ Stand-alone, readable copies of QuickTeam's contract documents, exported for leg
 
 ## Still open — needs the lawyer / operator
 
-- **Privacy policy:** rewritten on 2026-09-13 against the live system (see "Privacy policy 2026-09-13" below). Still open: lawyer review, syncing the app's own copy, and bringing the AVV/DPA (§ 1(4), Annex 3) in line with it.
+- **Privacy policy:** rewritten on 2026-09-13 against the live system (see "Privacy policy 2026-09-13" below). Still open: lawyer review. The app's copy was synced on 2026-09-14 (see "Source of truth" below).
 - **Execute the provider DPAs/SCCs:** confirm the Expo (and Apple/Google) data-processing terms / SCCs are actually accepted before go-live. Annex 3 of the AVV/DPA names DPF and the EU SCCs as the transfer basis for the US push services, so the published documents already assert something that has to be true at launch. This obligation used to sit inside the documents themselves as an *Umsetzungshinweis / Implementation note*; it was removed on 2026-09-10 because `/avv` renders them publicly and an internal to-do has no place on a contract page. It lives here now — do not put it back into the documents.
 - **App Store note:** these terms assume web/Stripe billing. If digital subscriptions are ever sold *inside* the iOS/Android app, Apple/Google in-app-purchase rules would additionally apply.
 - **Impressum:** already exists (per operator) — not managed here.
@@ -85,7 +85,7 @@ not taken from earlier documents.
 ### Consequences for the code and the app
 
 - `src/lib/rechtstexte.ts`: `datenschutz` bumped to `2026-09-13-draft`. Managers are asked to confirm again through the consent gate on their next dashboard visit — intended.
-- **The app ships its own copy** (`src/lib/legalDocs.ts` in the app repo, last updated 2026-09-12). It no longer matches this text and has to be brought in line by the app developer; this repo does not write to the app repo.
+- **The app's copy is synced** (2026-09-14): `src/lib/legalDocs.ts` in the app repo carries this text word for word, version `2026-09-13-draft`. See "Source of truth" below.
 - **Vercel region:** Without a `regions` setting, Vercel runs server functions in `iad1` (Washington, D.C.). Setting the project to `dub1` (Dublin, same region as the Supabase database) would keep dashboard data processing in the EU and reduce latency. The policy is written so that it is true either way.
 
 ## External legal review of 2026-09-13 — status per finding
@@ -187,8 +187,7 @@ said "your data is kept" without a limit; they now say 90 days.
 5. **Plan limits (§ 2(6)):** nothing counts employees yet; a request to
    upgrade has to be triggered by hand.
 6. **The app's copy** (`QuickTeamMobile/src/lib/legalDocs.ts`, `TERMS_DE` /
-   `TERMS_EN`, version `2026-09-10-draft`) no longer matches — for the app
-   developer; this repo does not write there.
+   `TERMS_EN`): synced on 2026-09-14, version `2026-09-13-draft`.
 
 ## Published on the website (added 2026-09-10)
 
@@ -223,4 +222,10 @@ pre-lawyer drafts.
 
 ## Source of truth
 
-The in-app text lives in `src/lib/legalDocs.ts` (constants `TERMS_DE` / `TERMS_EN`), versioned via `TERMS_VERSION` in `src/lib/terms.ts`. **If the wording changes in either place, update the other to match.** The AVV/DPA here are not yet wired into an in-app acceptance flow (see `TERMS_DE` § 7(3) / Section 7(3), which assumes the customer concludes the AVV at registration).
+**This folder is the master copy.** The Expo app (`QuickTeamMobile`) was synced with it on 2026-09-14:
+
+- **Consent gate:** `src/lib/legalDocs.ts` (`PRIVACY_DE` / `PRIVACY_EN`, `TERMS_DE` / `TERMS_EN`) carries the privacy policy and the Terms word for word, with only the Markdown syntax removed (tables become indented lists). Versions in `src/lib/privacyPolicy.ts` / `src/lib/terms.ts` are `2026-09-13-draft`, the same as `src/lib/rechtstexte.ts` here. The button says "I have taken note", since the app concludes no contract.
+- **Settings > Legal:** opens `/datenschutz`, `/agb` and `/avv` on this website with `?lang=de|en` (see `src/i18n/sprach-parameter.ts`). The AVV/DPA is not in the app's consent gate; the business concludes it at registration here.
+- **Review copies:** `legals/` in the app repo holds byte-identical copies of the six documents in this folder.
+
+**When a document here changes:** re-copy the text into the app's `legalDocs.ts` and bump the app's version constants to match `rechtstexte.ts`. Otherwise the app's consent gate keeps showing the old text.
