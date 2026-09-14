@@ -76,16 +76,38 @@ export function ScrollHinweis() {
 
       if (!hero || reduziert) return;
 
-      gsap.to(wurzel, {
-        autoAlpha: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: hero,
-          start: "bottom 95%",
-          end: "bottom 72%",
-          scrub: 0.5,
-        },
+      /*
+       * Der gescrubbte Ausblender gilt nur ab 1024px.
+       *
+       * Er hat dort eine Aufgabe: der Hero ist niedriger als ein
+       * Bildschirm, die Kalender-Sequenz schiebt sich von unten darunter,
+       * und ohne diesen Ausblender stuende der Hinweis noch ueber der
+       * beginnenden Sequenz. Mobil gibt es die Sequenz nicht — der
+       * Hinweis scrollt dort einfach mit dem Hero aus dem Bild, so wie
+       * jedes andere Element auch. Ein an die Scrollposition gehaengter
+       * Deckkraftwert waere dafuer Aufwand ohne Wirkung.
+       *
+       * `gsap.matchMedia()` nimmt den Tween beim Unterschreiten der
+       * Breite samt gesetzter Inline-Deckkraft zurueck; ein halb
+       * ausgeblendeter Hinweis, den nichts mehr zuruecksetzt, kann
+       * dadurch nicht stehenbleiben.
+       */
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px)", () => {
+        gsap.to(wurzel, {
+          autoAlpha: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: hero,
+            start: "bottom 95%",
+            end: "bottom 72%",
+            scrub: 0.5,
+          },
+        });
       });
+
+      return () => mm.revert();
     },
     { scope: wurzelRef },
   );

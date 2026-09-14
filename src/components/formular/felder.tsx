@@ -240,6 +240,7 @@ export function SelectFeld({
   fehler,
   hinweis,
   leerText,
+  beiAenderung,
 }: {
   id: string;
   name: string;
@@ -259,6 +260,17 @@ export function SelectFeld({
    * wollte.
    */
   leerText?: string;
+  /**
+   * Wird bei jeder Auswahl mit dem neuen Code aufgerufen.
+   *
+   * Ergänzt am 2026-09-14 für die Landwahl in den Rechnungsangaben: dort
+   * hängt ein weiteres Feld an der Auswahl (die UID gibt es nur für
+   * Österreich), und das muss die Insel mitbekommen. Das Feld bleibt
+   * **unkontrolliert** — `defaultValue` steuert weiterhin die Anzeige,
+   * der Rückruf meldet nur. Ein kontrolliertes Feld hätte die acht
+   * bestehenden Aufrufer verändert, die alle ohne Zustand auskommen.
+   */
+  beiAenderung?: (wert: string) => void;
 }) {
   const { formular } = useKlientTexte();
 
@@ -268,6 +280,7 @@ export function SelectFeld({
         id={id}
         name={name}
         defaultValue={defaultValue ?? ""}
+        onChange={beiAenderung ? (e) => beiAenderung(e.target.value) : undefined}
         required={leerText === undefined}
         aria-invalid={fehler ? true : undefined}
         aria-describedby={beschreibungIds(id, fehler, hinweis)}

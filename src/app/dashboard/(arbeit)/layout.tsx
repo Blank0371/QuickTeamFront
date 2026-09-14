@@ -5,6 +5,7 @@ import {
   type Gruppe,
 } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
+import { ZustimmungHinweis } from "@/components/dashboard/zustimmung-hinweis";
 import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
@@ -48,7 +49,7 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
  * zwei Gelegenheiten, sich zu widersprechen.
  */
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const { position, alle } = await betreteDashboard();
+  const { position, alle, zustimmung } = await betreteDashboard();
   const sprache = await leseSprache();
   const t = getDictionary(sprache);
   const chef = istChef(position);
@@ -207,6 +208,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             abmeldenLabel={t.dashboard.abmelden}
             wechselnLabel={t.dashboard.wechseln}
           />
+          {/*
+            Der Streifen steht zwischen Kopfzeile und Inhalt, nicht
+            darüber: er gehört zum Arbeitsbereich und soll die Kopfzeile
+            nicht vom Fensterrand wegschieben. Für Angestellte ist
+            `zustimmung` immer `null` — sie werden gar nicht erst
+            gefragt (siehe `pruefeZustimmung`).
+          */}
+          <ZustimmungHinweis befund={zustimmung} />
           {children}
         </div>
       </div>

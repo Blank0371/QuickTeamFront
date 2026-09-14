@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { aboVerwalten } from "@/app/dashboard/(arbeit)/einstellungen/aktionen";
 import { Container } from "@/components/container";
 import { ZahlungsFormular } from "@/components/einrichtung/zahlungs-formular";
 import { FormMeldung } from "@/components/formular/felder";
 import { holeAbo } from "@/lib/abo";
+import { holeRechnungsangaben } from "@/lib/betrieb";
+import { holeVorbelegung } from "@/lib/rechnung";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { ermittleStand, pfadFuer } from "@/lib/einrichtung";
 import { plaene, TESTPHASE_TAGE } from "@/lib/site";
@@ -82,6 +85,8 @@ export default async function TestphaseAbgelaufenSeite({
   });
   if (!stripeAbo) redirect("/einrichtung/zahlung");
 
+  const rechnung = await holeRechnungsangaben(supabase, stand.betriebId);
+
   const kundeId =
     typeof stripeAbo.customer === "string" ? stripeAbo.customer : stripeAbo.customer.id;
   const intent = await erstelleSetupIntent(kundeId);
@@ -126,12 +131,51 @@ export default async function TestphaseAbgelaufenSeite({
             zusammenfassung={zusammenfassungFortsetzen(konditionen)}
             knopfText="Kostenpflichtig fortsetzen"
             rueckkehrPfad="/einrichtung/testphase-abgelaufen"
+            rechnung={await holeVorbelegung(
+              rechnung?.name ?? null,
+              rechnung?.land ?? null,
+              kundeId,
+            )}
           />
         </div>
 
         <p className="mt-6 text-sm leading-relaxed text-muted">
           Es entsteht kein neues Abonnement — dein bestehendes wird fortgesetzt.
         </p>
+
+        {/*
+          Die beiden Wege, die auch ein gesperrter Betrieb gehen können
+          muss: kündigen und seine Daten mitnehmen.
+
+          Vorher gab es sie hier nicht, und über das Dashboard waren sie
+          nicht erreichbar — diese Seite ist ja gerade die Umleitung, die
+          jeden Dashboard-Aufruf abfängt. Wer nicht weiterzahlen wollte,
+          hatte damit keinen Knopf zum Kündigen und keinen Zugang zu
+          seinen Daten; übrig blieb die E-Mail. § 6 Abs. 4 der AGB gibt
+          den Export ausdrücklich bis dreissig Tage **nach** Vertragsende,
+          also erst recht währenddessen.
+
+          Beide laufen über `betreteOhneTore()` und kommen deshalb an
+          dieser Sperre vorbei, ohne sie aufzuweichen: geprüft werden
+          Anmeldung, aktive Anstellung und Chef-Eigenschaft wie überall.
+        */}
+        <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-6 text-sm">
+          <form action={aboVerwalten}>
+            <button
+              type="submit"
+              className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+            >
+              Abo verwalten oder kündigen
+            </button>
+          </form>
+          <a
+            href="/api/betrieb-export"
+            download
+            className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+          >
+            Daten exportieren
+          </a>
+        </div>
       </div>
     </Container>
   );

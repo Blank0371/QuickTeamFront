@@ -13,6 +13,8 @@
 import { redirect } from "next/navigation";
 
 import { stelleBetriebSicher } from "@/lib/betrieb";
+import { leseSprache } from "@/i18n/sprache";
+import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import {
   aktuelleZustimmungVersionen,
   schreibeZustimmungen,
@@ -170,6 +172,7 @@ export async function bestaetigen(
       ergebnis.betriebId,
       data.session.user.id,
       zustimmungVersionen,
+      { sprache: await leseSprache(), hashes: await zustimmungHashes() },
     );
   }
 
@@ -415,6 +418,7 @@ export async function betriebNachtragen(
       ergebnis.betriebId,
       user.id,
       zustimmungVersionen,
+      { sprache: await leseSprache(), hashes: await zustimmungHashes() },
     );
   }
 

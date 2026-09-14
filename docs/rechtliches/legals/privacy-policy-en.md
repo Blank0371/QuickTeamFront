@@ -111,7 +111,9 @@ When the Terms and the DPA are accepted, we additionally make a copy at the time
 
 After registering, you choose a plan. The subscription begins with a 14-day trial, even if you have not yet added a payment method. You can add a payment method immediately or at any time before the trial ends; if the trial ends without one, the subscription is paused (for the consequences for your data, see Section 15.3).
 
-- **We transmit to Stripe:** your email address, an internal identifier of your business and the chosen plan.
+- **We collect billing details before a paid subscription begins.** When you store a means of payment, we ask for the legal company name, street and house number, postal code, city and country. These details are required for a proper invoice (Section 14(4) of the German VAT Act); the legal basis is Art. 6(1)(b) and (c) GDPR. As long as you only use the free trial and store no means of payment, we do not ask for them.
+- **We transmit to Stripe:** your email address, the billing details listed above (company name, street and house number, postal code, city, country), an internal identifier of your business, the preferred language for invoices and the chosen plan. Stripe needs the address and country to calculate VAT and issue the invoice. If, as an Austrian business, you voluntarily provide your **VAT identification number (UID)**, we transmit that as well; Stripe verifies it against the European Commission's VAT Information Exchange System (VIES) and uses it to decide whether the reverse-charge procedure applies.
+- **The billing details are stored at Stripe**, not in our database, which holds only your business's country. You can change them at any time via the customer portal (see below).
 - **Payment details** (such as card details or an IBAN for SEPA Direct Debit) are entered directly into Stripe's form, which is embedded on our page and loaded from Stripe's servers. This data goes straight to Stripe; we do not receive or store full card numbers or bank details.
 - **We store:** the Stripe customer ID, the subscription ID, the plan and the subscription status (such as trial, active, paused). Stripe notifies us of status changes automatically.
 - **Customer portal:** Via "Abo verwalten" (manage subscription) in the dashboard settings, managers reach Stripe's customer portal, where you can cancel the subscription, change the payment method and download invoices. The portal is operated by Stripe; for this we transmit only your Stripe customer ID and the address you return to afterwards.
@@ -289,6 +291,7 @@ We store personal data only for as long as necessary for the respective purpose 
 | Records of acceptance of the Terms and the DPA | until the end of the third calendar year after the contract ends (Section 5.2) |
 | Records of taking note of the Privacy Policy | until the business is deleted |
 | Stripe identifiers, plan and subscription status | until the business is deleted |
+| Billing details (company name, address, VAT ID if provided) | at Stripe, for as long as the customer account exists there; in invoices additionally for the statutory retention periods |
 | Invoices and accounting records | 8 years (Sec. 147 AO, Sec. 257 HGB) |
 | Commercial and business letters, including by email | 6 years (Sec. 257 HGB, Sec. 147 AO) |
 | Other emails to us | until the request has been dealt with |

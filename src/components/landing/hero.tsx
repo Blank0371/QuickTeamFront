@@ -92,52 +92,89 @@ export function Hero({
       const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (reduziert) return;
 
-      gsap
-        .timeline({ defaults: { ease: "power2.out" } })
-        .set(".qt-hero-marke, .qt-hero-sub, .qt-hero-cta", {
-          autoAlpha: 0,
-          y: 18,
-        })
-        .to(".qt-hero-marke", { autoAlpha: 1, y: 0, duration: 1 })
-        .to(".qt-hero-sub", { autoAlpha: 1, y: 0, duration: 0.7 }, "-=0.55")
-        .to(".qt-hero-cta", { autoAlpha: 1, y: 0, duration: 0.6 }, "-=0.4");
+      /*
+       * ─────────────────────────────────────────────────────────────
+       *  Alles Folgende laeuft ausschliesslich ab 1024px.
+       * ─────────────────────────────────────────────────────────────
+       *
+       * Bis zum 2026-09-13 lief beides auf jeder Breite: der Auftritt
+       * setzte Wortmarke, Untertitel und Knoepfe zuerst auf
+       * `autoAlpha: 0`, und der Rueckzug haengte Deckkraft, Verschiebung
+       * und Skalierung des gesamten Hero-Inhalts an die Scrollposition.
+       *
+       * Auf dem Schreibtisch ist das die Ouvertuere zur Kalender-Sequenz
+       * darunter — auf dem Handy gibt es diese Sequenz gar nicht, die
+       * Desktop-Buehne ist unter 1024px per `display: none` abgeschaltet.
+       * Der Rueckzug bezog sich dort also auf nichts: die Ueberschrift
+       * verblasste und schrumpfte, waehrend darunter nur der naechste
+       * Textblock kam. Dazu ist auf einem Telefon der Hero-Inhalt fast
+       * der ganze erste Bildschirm, und ein Wischer verschiebt mehr
+       * Anteil davon als ein Mausrad — die Bewegung war entsprechend
+       * heftiger, genau dort, wo sie am wenigsten hilft.
+       *
+       * Mobil steht der Hero deshalb einfach da: voll deckend, unbewegt,
+       * ohne dass ein Skript ihn erst sichtbar machen muesste. Faellt
+       * JavaScript aus oder kommt es spaet, aendert das nichts mehr.
+       *
+       * `gsap.matchMedia()` und nicht ein `if` mit `matchMedia`: der
+       * Zweig wird beim Unterschreiten der Breite automatisch
+       * zurueckgenommen, inklusive aller gesetzten Inline-Stile und der
+       * ScrollTrigger. Ein Wechsel der Fensterbreite — Drehen des
+       * Geraets, aufgeklappte Entwicklerwerkzeuge — laesst sonst einen
+       * halbtransparenten Hero stehen, den nichts mehr zurueckstellt.
+       */
+      const mm = gsap.matchMedia();
 
-      // Kontrollierter Rueckzug beim Verlassen des Hero: der Inhalt
-      // weicht zurueck, waehrend die Kalender-Buehne darunter ihren
-      // eigenen Einblend-Scrub startet. Beide haengen an der echten
-      // Scrollposition und laufen dadurch zusammen, ohne eine
-      // gemeinsame Timeline zu brauchen.
-      //
-      // `scrub: 0.5` statt `true`: reines `scrub: true` bildet jeden
-      // diskreten Wheel-Tick 1:1 ab und macht Text sichtbar in Stufen
-      // springen. `ease: "none"`, weil jede Ease-Kurve innerhalb einer
-      // gescrubbten Animation das Timing gegen den tatsaechlichen
-      // Scrollfortschritt verschiebt. `force3D: false`, weil
-      // GPU-Layer-Transforms auf Fliesstext ein leichtes
-      // Subpixel-Flimmern verursachen koennen.
-      gsap.to("[data-hero-inhalt]", {
-        autoAlpha: 0,
-        y: -36,
-        scale: 0.97,
-        ease: "none",
-        force3D: false,
-        scrollTrigger: {
-          trigger: wurzelRef.current,
-          // Kuerzer als vorher („bottom 85%" bis „bottom top"): der
-          // Rueckzug lief ueber fast eine ganze Bildschirmhoehe, ein
-          // halbdurchsichtiger Hero stand lange im Bild, waehrend noch
-          // nichts Neues da war. Jetzt ist er fertig, sobald der
-          // Kalenderrahmen von unten hereinkommt.
-          //
-          // Der Anfangsanker sitzt bewusst am Hero-*Kopf*, nicht an
-          // seinem Fuss: der Hero ist niedriger als ein Bildschirm,
-          // seine Unterkante steht also schon bei Scrollstand 0 im
-          // Bild — jedes „bottom X%" waere damit sofort ausgeloest.
-          start: "top top-=80",
-          end: "bottom 20%",
-          scrub: 0.5,
-        },
+      mm.add("(min-width: 1024px)", () => {
+        gsap
+          .timeline({ defaults: { ease: "power2.out" } })
+          .set(".qt-hero-marke, .qt-hero-sub, .qt-hero-cta", {
+            autoAlpha: 0,
+            y: 18,
+          })
+          .to(".qt-hero-marke", { autoAlpha: 1, y: 0, duration: 1 })
+          .to(".qt-hero-sub", { autoAlpha: 1, y: 0, duration: 0.7 }, "-=0.55")
+          .to(".qt-hero-cta", { autoAlpha: 1, y: 0, duration: 0.6 }, "-=0.4");
+
+        // Kontrollierter Rueckzug beim Verlassen des Hero: der Inhalt
+        // weicht zurueck, waehrend die Kalender-Buehne darunter ihren
+        // eigenen Einblend-Scrub startet. Beide haengen an der echten
+        // Scrollposition und laufen dadurch zusammen, ohne eine
+        // gemeinsame Timeline zu brauchen.
+        //
+        // `scrub: 0.5` statt `true`: reines `scrub: true` bildet jeden
+        // diskreten Wheel-Tick 1:1 ab und macht Text sichtbar in Stufen
+        // springen. `ease: "none"`, weil jede Ease-Kurve innerhalb einer
+        // gescrubbten Animation das Timing gegen den tatsaechlichen
+        // Scrollfortschritt verschiebt. `force3D: false`, weil
+        // GPU-Layer-Transforms auf Fliesstext ein leichtes
+        // Subpixel-Flimmern verursachen koennen.
+        gsap.to("[data-hero-inhalt]", {
+          autoAlpha: 0,
+          y: -36,
+          scale: 0.97,
+          ease: "none",
+          force3D: false,
+          scrollTrigger: {
+            trigger: wurzelRef.current,
+            // Kuerzer als vorher („bottom 85%" bis „bottom top"): der
+            // Rueckzug lief ueber fast eine ganze Bildschirmhoehe, ein
+            // halbdurchsichtiger Hero stand lange im Bild, waehrend noch
+            // nichts Neues da war. Jetzt ist er fertig, sobald der
+            // Kalenderrahmen von unten hereinkommt.
+            //
+            // Der Anfangsanker sitzt bewusst am Hero-*Kopf*, nicht an
+            // seinem Fuss: der Hero ist niedriger als ein Bildschirm,
+            // seine Unterkante steht also schon bei Scrollstand 0 im
+            // Bild — jedes „bottom X%" waere damit sofort ausgeloest.
+            start: "top top-=80",
+            end: "bottom 20%",
+            scrub: 0.5,
+          },
+        });
       });
+
+      return () => mm.revert();
     },
     { scope: wurzelRef },
   );

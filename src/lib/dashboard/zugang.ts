@@ -11,7 +11,11 @@ import {
 } from "@/lib/dashboard/position";
 import { aboLageBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { ermittleZustimmungStand } from "@/lib/zustimmung";
+import {
+  ermittleZustimmungBefund,
+  sperrtZugang,
+  type ZustimmungBefund,
+} from "@/lib/zustimmung";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -42,6 +46,16 @@ export type Zugang = {
   position: Position;
   /** Alle zulässigen Positionen — die Schale zeigt den Wechsel nur, wenn es etwas zu wechseln gibt. */
   alle: Position[];
+  /**
+   * Der Zustimmungsstand, sofern er geprüft wurde (nur für Chefs).
+   *
+   * Er wird **hier** mitgegeben und nicht von der Schale ein zweites Mal
+   * abgefragt: seit dem 2026-09-13 sperrt eine offene Vertragsänderung
+   * nicht mehr, sondern wird als Hinweis gezeigt — und ein zweiter
+   * Aufruf wäre eine zweite Abfrage pro Seitenaufbau für dieselbe
+   * Auskunft, die das Tor ohnehin schon eingeholt hat.
+   */
+  zustimmung: ZustimmungBefund | null;
 };
 
 export async function betreteDashboard(): Promise<Zugang> {
@@ -71,7 +85,49 @@ export async function betreteDashboard(): Promise<Zugang> {
   if (position === null) redirect(wechselAdresse(await angefragterPfad()));
 
   await pruefeSperre(supabase, position, user.email ?? "");
-  await pruefeZustimmung(supabase, position);
+  const zustimmung = await pruefeZustimmung(supabase, position, user.id);
+
+  return { supabase, position, alle, zustimmung };
+}
+
+/**
+ * Anmeldung und Position, **ohne** Zahlungssperre und Zustimmungs-Tor.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Wofür es diesen zweiten Eingang gibt
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Für genau die Handlungen, die ein gesperrter Betrieb **noch vornehmen
+ * können muss**: das Stripe-Kundenportal öffnen (kündigen, Rechnungen
+ * abrufen, Zahlungsmittel wechseln) und seine Daten exportieren.
+ *
+ * Vorher liefen beide über `betreteDashboard()` und wurden damit von
+ * genau der Sperre erfasst, aus der sie herausführen sollen: ein Betrieb
+ * mit `pausiert` landete beim Klick auf „Abo verwalten" auf der
+ * Sperrseite, ein Betrieb ohne Erstzustimmung auf dem Zustimmungs-Tor.
+ * Wer nicht mehr zahlen will, kam so nicht an die Kündigung; wer den
+ * Vertrag nicht mehr annimmt, nicht an seine Daten. Beides ist die
+ * falsche Richtung — die Sperre soll die *Verwaltung des Betriebs*
+ * anhalten, nicht den Ausgang.
+ *
+ * **Die Berechtigung wird dadurch nicht schwächer.** Anmeldung, aktive
+ * Anstellung und Position werden unverändert aus `auth.uid()` abgeleitet,
+ * und die Aufrufer prüfen zusätzlich `istChef()`. Was hier fehlt, sind
+ * ausschliesslich die beiden **wirtschaftlichen** Tore, nicht eine
+ * Zugriffskontrolle.
+ */
+export async function betreteOhneTore(): Promise<Omit<Zugang, "zustimmung">> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const alle = await holePositionen(supabase, user.id);
+  const position = waehleAktive(alle, await gewuenschtePositionsId());
+
+  if (position === null) redirect(wechselAdresse(await angefragterPfad()));
 
   return { supabase, position, alle };
 }
@@ -238,11 +294,26 @@ async function pruefeVertragsende(
 async function pruefeZustimmung(
   supabase: SupabaseServerClient,
   position: Position,
-): Promise<void> {
-  if (position.rolleTyp !== "chef") return;
+  authId: string,
+): Promise<ZustimmungBefund | null> {
+  if (position.rolleTyp !== "chef") return null;
 
-  const stand = await ermittleZustimmungStand(supabase, position.betriebId);
-  if (stand === "zugestimmt") return;
+  const befund = await ermittleZustimmungBefund(supabase, position.betriebId, authId);
+
+  /*
+   * Seit dem 2026-09-13 führt nicht mehr jede Lücke hierher, sondern nur
+   * die beiden Fälle, in denen wir den Zugang nicht verantworten können:
+   * eine nie erfolgte Erstannahme (kein Vertrag, keine AVV-Grundlage) und
+   * ein gescheiterter Lesevorgang (wir wissen es schlicht nicht).
+   *
+   * Eine **offene Vertragsänderung** sperrt ausdrücklich nicht mehr —
+   * § 13 Abs. 3 der AGB lässt bis zur Zustimmung die bisherigen
+   * Bedingungen gelten, und ein Riegel wäre genau der Druck, den diese
+   * Klausel ausschliesst. Sie wird stattdessen von der Schale als
+   * Hinweis gezeigt (`ZustimmungHinweis`), deshalb wandert der Befund
+   * hier nach oben statt verworfen zu werden.
+   */
+  if (!sperrtZugang(befund)) return befund;
 
   /*
    * `fehlend` **und** `pruefung-fehlgeschlagen` führen auf dieselbe Seite —

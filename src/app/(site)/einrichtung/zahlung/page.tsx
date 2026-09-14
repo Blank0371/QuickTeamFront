@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { SchrittRahmen } from "@/components/einrichtung/schritt-rahmen";
 import { FormMeldung } from "@/components/formular/felder";
 import { holeAbo } from "@/lib/abo";
+import { holeVorbelegung } from "@/lib/rechnung";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { holeRechnungsangaben } from "@/lib/betrieb";
 import { betreteSchritt } from "@/lib/einrichtung";
@@ -155,6 +156,11 @@ export default async function ZahlungSeite({
               : zusammenfassungSchritt(konditionen)
           }
           knopfText={sofort ? "Kostenpflichtig abonnieren" : undefined}
+          rechnung={await holeVorbelegung(
+            rechnung?.name ?? null,
+            rechnung?.land ?? null,
+            kundeId,
+          )}
         />
 
         <p className="mt-6 border-t border-line pt-5 text-sm text-muted">

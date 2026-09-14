@@ -8,7 +8,7 @@ import { holeAbo } from "@/lib/abo";
 import { speichereEinstellungen } from "@/lib/dashboard/einstellungen";
 import { erstelleKundenportal, holeAboFuerBetrieb } from "@/lib/stripe";
 import { leseSprache } from "@/i18n/sprache";
-import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
+import { betreteDashboard, betreteOhneTore, istChef } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { einstellungenSchema } from "@/lib/validierung";
 import { holeValidierung } from "@/i18n/server";
@@ -133,9 +133,33 @@ export async function einstellungenSpeichern(
  * Kein `FormZustand`: der Erfolg ist ein Verlassen der Seite, und ein
  * Fehler landet als `?abo=…` wieder auf ihr. So braucht der Knopf kein
  * JavaScript.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum `betreteOhneTore()` und nicht `betreteDashboard()`
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Geändert am 2026-09-13. Vorher lief der Weg ins Kundenportal durch
+ * dieselben beiden Tore wie jede Dashboard-Seite — und wurde damit
+ * genau in den Zuständen abgefangen, für die man das Portal am
+ * dringendsten braucht:
+ *
+ * | Zustand | vorher | jetzt |
+ * | ------- | ------ | ----- |
+ * | `pausiert` | Umleitung auf die Sperrseite | Portal öffnet |
+ * | `gekuendigt` | Umleitung in den Zahlungsschritt | Portal öffnet |
+ * | Erstzustimmung fehlt | Umleitung aufs Zustimmungs-Tor | Portal öffnet |
+ *
+ * Ein Kunde, der kündigen oder seine Rechnungen holen wollte, landete
+ * also jedes Mal auf einer Seite, die ihn zum Zahlen oder Zustimmen
+ * aufforderte. Das ist die falsche Richtung: gesperrt wird die
+ * *Verwaltung des Betriebs*, nicht der Weg aus dem Vertrag heraus.
+ *
+ * An der Berechtigung ändert sich nichts — Anmeldung, aktive Anstellung
+ * und Chef-Eigenschaft werden unverändert serverseitig abgeleitet, und
+ * die Kunden-Id kommt weiterhin nie aus dem Formular.
  */
 export async function aboVerwalten(): Promise<void> {
-  const { supabase, position } = await betreteDashboard();
+  const { supabase, position } = await betreteOhneTore();
   if (!istChef(position)) redirect("/dashboard/einstellungen?abo=verweigert");
 
   let kundeId: string | null = null;

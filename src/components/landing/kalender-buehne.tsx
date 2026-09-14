@@ -287,43 +287,46 @@ export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprec
           .to(glowGold, { autoAlpha: 0, duration: 0.35 }, "<");
       });
 
-      mm.add("(max-width: 1023.98px)", () => {
-        const wurzel = wurzelRef.current;
-        const mobil = wurzel?.querySelector<HTMLElement>("[data-mobil-buehne]");
-        if (!mobil) return;
-
-        const rahmen = mobil.querySelector<HTMLElement>("[data-logo-wrap]");
-        if (rahmen) {
-          gsap.set(rahmen, { autoAlpha: 0, y: 16, scale: 0.94 });
-          gsap.to(rahmen, {
-            autoAlpha: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.6,
-            scrollTrigger: { trigger: mobil, start: "top 78%" },
-          });
-        }
-
-        const bloecke = gsap.utils.toArray<HTMLElement>("[data-versprechen-item-mobil]", mobil);
-        bloecke.forEach((block) => {
-          const kacheln = gsap.utils.toArray<HTMLElement>("[data-kachel]", block);
-          gsap.set(block, { autoAlpha: 0, y: 18 });
-          gsap.set(kacheln, { autoAlpha: 0, scale: 0.85 });
-          gsap.to(block, {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.5,
-            scrollTrigger: { trigger: block, start: "top 82%" },
-          });
-          gsap.to(kacheln, {
-            autoAlpha: 1,
-            scale: 1,
-            duration: 0.5,
-            stagger: 0.06,
-            scrollTrigger: { trigger: block, start: "top 78%" },
-          });
-        });
-      });
+      /*
+       * ─────────────────────────────────────────────────────────────
+       *  Unter 1024px passiert nichts mehr — und das ist die Aenderung.
+       * ─────────────────────────────────────────────────────────────
+       *
+       * Hier stand bis zum 2026-09-13 ein eigener Mobilzweig: der
+       * Kalenderrahmen und **jeder** der drei Versprechen-Bloecke
+       * bekamen `autoAlpha: 0` und wurden erst von einem ScrollTrigger
+       * bei „top 82%" eingeblendet. Damit waren Ueberschrift und Text
+       * der drei Kernaussagen im Auslieferungszustand unsichtbar und
+       * haengten daran, dass GSAP geladen, ausgewertet und der Trigger
+       * ausgeloest wurde.
+       *
+       * Drei Wege, auf denen das schiefgeht, und alle drei sind auf
+       * einem Telefon der Normalfall statt der Ausnahme:
+       *
+       * 1. **Kein oder spaetes JavaScript.** Der Text steht im HTML —
+       *    aber unsichtbar, sobald das Skript einmal gelaufen ist und
+       *    der Trigger nicht feuert.
+       * 2. **Schnelles Wischen.** ScrollTrigger wertet im
+       *    Scroll-Callback aus; ein Schwung ueber mehrere
+       *    Bildschirmhoehen konnte einen Block ueberspringen, der
+       *    danach dauerhaft auf `autoAlpha: 0` stand.
+       * 3. **Sprungmarke.** Ein Klick auf „Was ist QuickTeam?" springt
+       *    mitten in den Abschnitt. Was dabei uebersprungen wird, bleibt
+       *    leer — der Besucher landet auf einer Seite, die aussieht, als
+       *    haette sie keinen Inhalt.
+       *
+       * Gegen alle drei gibt es keinen Handgriff, der die Animation
+       * rettet, ohne genau das Problem zu behalten: sie versteckt
+       * tragenden Inhalt, bis ein Ereignis eintritt. Der mobile
+       * Abschnitt ist deshalb jetzt reines, statisches HTML — sofort
+       * lesbar, unabhaengig von Skript, Scrollrichtung und
+       * Sprungnavigation. Die Farbdramaturgie bleibt trotzdem sichtbar:
+       * jeder Block traegt das Logo mit genau den Kacheln, die bis
+       * dahin gefuellt sind, und zwar als gerendertes Markup, nicht als
+       * Animationszustand.
+       *
+       * Die Desktop-Sequenz darueber ist unberuehrt.
+       */
 
       return () => mm.revert();
     },
@@ -331,14 +334,30 @@ export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprec
   );
 
   return (
-    <div ref={wurzelRef}>
+    /*
+      Die Sprungmarke sitzt am Wrapper, nicht an der Desktop-Section.
+
+      Vorher trug `id="kalender"` die Buehne selbst — und die ist unter
+      1024px `display: none`. Ein Anker auf ein nicht dargestelltes
+      Element scrollt nirgendwohin: der Hauptknopf des Hero („Funktionen
+      entdecken", der waehrend des Soft-Launches angezeigte Zweig) und
+      der Navigationspunkt „Was ist QuickTeam?" taten auf dem Handy
+      schlicht nichts. Dasselbe galt zwischen 768px und 1023px, wo die
+      Navigationsleiste schon sichtbar, die Desktop-Buehne aber noch
+      abgeschaltet ist.
+
+      Der Wrapper umfasst beide Fassungen und ist immer dargestellt.
+      Die `IntersectionObserver`-Markierung der Navigationsleiste
+      (`document.getElementById("kalender")`) findet ihn genauso, und
+      weil er beide Sections enthaelt, stimmt der markierte Bereich in
+      beiden Ansichten.
+    */
+    <div ref={wurzelRef} id="kalender" style={{ scrollMarginTop: "3.5rem" }}>
       <section
-        id="kalender"
         data-buehne
         data-licht-szene="kalender-eintritt"
         aria-label="QuickTeam: vom leeren Kalenderrahmen zum vollständigen Plan"
         className="relative hidden w-full lg:block"
-        style={{ scrollMarginTop: "3.5rem" }}
       >
         {/*
           Zwei unsichtbare Marker fuer die `LichtEbene`. Ohne sie koennte
@@ -430,18 +449,30 @@ export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprec
         data-mobil-buehne
         data-licht-szene="kalender-eintritt"
         aria-label="QuickTeam: vom leeren Kalenderrahmen zum vollständigen Plan"
-        className="relative w-full overflow-hidden px-5 pb-20 pt-6 sm:px-8 sm:pt-8 lg:hidden"
+        className="relative w-full overflow-hidden px-5 pb-14 pt-4 sm:px-8 sm:pb-16 sm:pt-6 lg:hidden"
       >
-        <div className="relative mx-auto flex w-48 justify-center sm:w-56">
-          <div data-logo-wrap className="w-full">
+        {/*
+          Abstaende enger als zuvor (`pb-20 pt-6` / `mt-16` / `gap-14`).
+
+          Sie waren aus der Desktop-Komposition uebernommen, wo sie den
+          Atem zwischen zwei grossen Szenen tragen. Auf einem Telefon
+          kostet derselbe Abstand ein Drittel Bildschirmhoehe pro Fuge:
+          zwischen Logo und erstem Versprechen lag mehr Leerraum als
+          Text, und es waren vier zusaetzliche Wischer noetig, um an drei
+          kurzen Absaetzen vorbeizukommen. Die Abstaende richten sich
+          jetzt nach dem, was dazwischen steht, statt nach einer
+          Dramaturgie, die es mobil gar nicht gibt.
+        */}
+        <div className="relative mx-auto flex w-40 justify-center sm:w-48">
+          <div className="w-full">
             <KalenderLogo aktivFarben={["green", "gold", "red"]} />
           </div>
         </div>
 
-        <div className="relative mt-16 grid gap-14">
+        <div className="relative mt-10 grid gap-10 sm:mt-12 sm:gap-12">
           {versprechen.map((v, index) => (
-            <div key={v.id} data-versprechen-item-mobil data-versprechen-farbe={v.farbe}>
-              <div className="mb-4 w-20">
+            <div key={v.id} data-versprechen-farbe={v.farbe}>
+              <div className="mb-3 w-16">
                 <KalenderLogo
                   aktivFarben={versprechen.slice(0, index + 1).map((eintrag) => eintrag.farbe)}
                   animiert

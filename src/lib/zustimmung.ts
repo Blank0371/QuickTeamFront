@@ -1,5 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
 import {
+  istZugangsvoraussetzung,
   RECHTSTEXT_VERSIONEN,
   ZUSTIMMUNG_ART,
   ZUSTIMMUNG_DOKUMENTE,
@@ -78,18 +79,38 @@ export function aktuelleZustimmungVersionen(): ZustimmungVersionen {
  * die Zeile ohnehin durch den Index
  * `(betrieb_id, auth_id, dokument, version)`; hier wird nur der Fehler
  * vermieden, den er sonst würfe.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Seit dem 2026-09-13 wandern zwei Angaben mit: `sprache` und
+ *  `inhalt_hash`
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Beide Spalten gab es schon, nur schrieb sie niemand. Ohne sie hält
+ * die Zeile fest, *dass* zugestimmt wurde und unter welcher
+ * Versionsangabe — aber nicht, welchem Text und in welcher Sprache
+ * gelesen. `inhalt_hash` deckt den Fall ab, dass ein Rechtstext
+ * geändert und der Wert in `rechtstexte.ts` vergessen wird
+ * (`rechtstexte-inhalt.ts` erklärt es im Einzelnen); `sprache` den, dass
+ * jemand die englische Übersetzung gelesen hat.
+ *
+ * Beide sind optional: eine nicht lesbare Datei schreibt die Zeile ohne
+ * Hash statt gar nicht. Ein Nachweis mit einer Angabe weniger ist
+ * besser als kein Nachweis.
  */
 export async function schreibeZustimmungen(
   supabase: SupabaseServerClient,
   betriebId: string,
   authId: string,
   versionen: ZustimmungVersionen,
+  nachweis: { sprache?: string; hashes?: Partial<Record<ZustimmungDokument, string>> } = {},
 ): Promise<{ art: "ok" } | { art: "fehler"; grund: string }> {
   const zeilen = ZUSTIMMUNG_DOKUMENTE.map((dokument) => ({
     betrieb_id: betriebId,
     auth_id: authId,
     dokument,
     version: versionen[dokument],
+    sprache: nachweis.sprache ?? null,
+    inhalt_hash: nachweis.hashes?.[dokument] ?? null,
   }));
 
   const { error } = await supabase
@@ -107,101 +128,163 @@ export async function schreibeZustimmungen(
   return { art: "ok" };
 }
 
-/**
- * Drei mögliche Antworten auf „liegt eine Zustimmung vor?" — und genau
- * drei, weil ein Datenbankfehler **keine** davon ist.
- *
- * - `"zugestimmt"` — alle drei Dokumente in der aktuellen Fassung vorhanden.
- * - `"fehlend"` — mindestens eins fehlt; das Tor führt auf die Zustimmung.
- * - `"pruefung-fehlgeschlagen"` — die Abfrage selbst ist gescheitert; wir
- *   wissen es schlicht nicht.
- */
-export type ZustimmungStand = "zugestimmt" | "fehlend" | "pruefung-fehlgeschlagen";
+/* ------------------------------------------------------------------ */
+/* Liegt eine Zustimmung vor — und welche Art von Lücke ist es?         */
+/* ------------------------------------------------------------------ */
 
 /**
- * Ermittelt, ob für diesen Betrieb eine Zustimmung zu **allen drei**
- * Dokumenten in der **aktuell gültigen** Fassung vorliegt.
+ * Der Stand je Dokument. Drei Antworten, und die Unterscheidung
+ * zwischen den beiden mittleren ist der Kern der Änderung vom
+ * 2026-09-13.
+ *
+ * - `"aktuell"` — zur geltenden Fassung liegt eine Zeile vor.
+ * - `"nie"` — zu diesem Dokument liegt **überhaupt keine** Zeile vor.
+ *   Das ist die fehlende Erstannahme.
+ * - `"veraltet"` — es liegt eine Zeile vor, aber zu einer anderen
+ *   Fassung. Das ist eine **angebotene Vertragsänderung**, der noch
+ *   nicht zugestimmt wurde.
+ */
+export type DokumentStand = "aktuell" | "veraltet" | "nie";
+
+export type ZustimmungBefund =
+  | { art: "zugestimmt" }
+  /**
+   * Mindestens ein zustimmungspflichtiges Dokument wurde **nie**
+   * angenommen. Erst hier wird gesperrt: ohne AGB und AVV gibt es
+   * weder einen Vertrag noch eine Grundlage, Beschäftigtendaten im
+   * Auftrag zu verarbeiten.
+   */
+  | { art: "erstannahme-fehlt"; stand: Record<ZustimmungDokument, DokumentStand> }
+  /**
+   * Alles Pflichtige war schon einmal angenommen, nur nicht in der
+   * geltenden Fassung. **Sperrt nicht** — siehe unten.
+   */
+  | { art: "aenderung-offen"; stand: Record<ZustimmungDokument, DokumentStand> }
+  | { art: "pruefung-fehlgeschlagen" };
+
+/**
+ * Ermittelt, wie es um die Zustimmung dieses Betriebs steht.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Änderung vom 2026-09-13: eine neue Fassung sperrt nicht mehr
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * **Vorher** verlangte die Prüfung für alle drei Dokumente eine Zeile in
+ * der **aktuellen** Fassung und gab sonst „fehlend" zurück; das Tor in
+ * `dashboard/zugang.ts` sperrte daraufhin die gesamte Verwaltung,
+ * einschliesslich des Wegs ins Stripe-Kundenportal.
+ *
+ * Das widersprach dem eigenen Vertrag. § 13 Abs. 2 und 3 der AGB sagen:
+ * eine Änderung wird wirksam, **wenn der Kunde ihr zustimmt**; Schweigen
+ * gilt nicht als Zustimmung, und *solange er nicht zugestimmt hat, gelten
+ * für ihn die bisherigen Bedingungen*. Ein Betrieb, der unter der alten
+ * Fassung zahlt, hat also einen laufenden Vertrag — ihn auszusperren,
+ * bis er die neue abnickt, ist genau die Drucksituation, die § 13 Abs. 3
+ * ausschliesst. Praktisch hätte zudem ein einziger geänderter Wert in
+ * `rechtstexte.ts` **alle** zahlenden Bestandskunden gleichzeitig
+ * ausgesperrt.
+ *
+ * **Jetzt** wird unterschieden:
+ *
+ * | Beobachtung | Folge |
+ * | ----------- | ----- |
+ * | keine Zeile zu AGB oder AVV | Sperre — ohne Vertrag kein Dienst |
+ * | Zeile zu einer älteren Fassung | Hinweis, kein Riegel |
+ * | Datenschutzerklärung fehlt | Hinweis, kein Riegel (siehe unten) |
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Betrieblich wird je Betrieb gefragt, persönlich je Person
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * AGB und AVV sind eine Vertragsannahme **für den Betrieb** (Punkt 11
+ * des Audits, generierte Spalte `art`): hat ein Chef sie angenommen,
+ * steht der Vertrag, und ein zweiter Chef schliesst ihn nicht noch
+ * einmal. Die Datenschutzerklärung ist dagegen eine Kenntnisnahme
+ * **durch die Person**. Bis zum 2026-09-13 zählte auch sie je Betrieb —
+ * damit galt die Kenntnisnahme des einen Chefs stillschweigend für
+ * jeden weiteren, was den Sinn einer persönlichen Angabe aufhebt.
+ * Gefragt wird sie jetzt gegen die eigene `auth_id`.
+ *
+ * Dass sie trotzdem nicht sperrt, ist kein Widerspruch: Art. 13 DSGVO
+ * verlangt, dass informiert **wird**, nicht dass jemand zustimmt
+ * (`istZugangsvoraussetzung()` in `rechtstexte.ts`).
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Ein Lesefehler ist keine Zustimmung
  * ─────────────────────────────────────────────────────────────────────
  *
- * Bis zum 2026-09-12 gab diese Funktion bei einem Abfragefehler `true`
- * zurück — „im Zweifel nicht sperren", um keinen zahlenden Betrieb an
- * einer wackeligen Abfrage scheitern zu lassen. Der Audit (Punkt 12) hat
- * das als Fehler benannt: ein Datenbankfehler darf nicht als erfolgreiche
- * Zustimmung durchgehen, sonst ist der Nachweis wertlos — er wäre genau
- * dann „vorhanden", wenn wir ihn nicht lesen können.
- *
- * Die Entscheidung des Betreibers (2026-09-12) ist deshalb der Mittelweg:
- * ein Lesefehler ist ein **eigener** Zustand, weder Zustimmung noch
- * Dauer­sperre. Das Tor führt in diesem Fall auf dieselbe Zustimmungsseite,
- * die aber „Prüfung fehlgeschlagen, bitte erneut versuchen" zeigt statt
- * das Formular — bei einer vorübergehenden Störung genügt der nächste
- * Versuch, und ein zahlender Betrieb sitzt nicht fest, weil er sich nur
- * neu laden muss.
- *
- * ─────────────────────────────────────────────────────────────────────
- *  Gefragt wird nach dem Betrieb, nicht nach der Person
- * ─────────────────────────────────────────────────────────────────────
- *
- * Der Vertrag besteht zwischen Anbieter und **Betrieb**; wer ihn
- * seinerzeit angenommen hat, ist für die Frage „liegt eine Zustimmung
- * vor" unerheblich. Ein zweiter Chef, der später dazukommt, wird
- * deshalb nicht erneut gefragt — sonst müsste jede Person dieselbe
- * Vereinbarung für denselben Betrieb noch einmal schliessen.
- *
- * Lesen darf das ohnehin nur, wer unter
- * `zustimmung_select_chef_oder_selbst` fällt: für den Betrieb also der
- * Chef. Für eine angestellte Person liefert die Abfrage nur ihre
- * eigenen Zeilen — deshalb fragt das Tor sie gar nicht erst (siehe
- * `pruefeZustimmung` in `dashboard/zugang.ts`).
- *
- * **Eine Fassungsänderung fragt neu.** Das ist kein Nebeneffekt,
- * sondern der Zweck: wird ein Rechtstext geändert und der Wert in
- * `rechtstexte.ts` mitgezogen, passt keine bestehende Zeile mehr, und
- * das Tor greift beim nächsten Aufruf. Genau so fällt auch der
- * `-draft`-Zusatz irgendwann weg.
+ * Unverändert seit dem 2026-09-12 (Punkt 12): ein Abfragefehler ist ein
+ * eigener Zustand, weder Zustimmung noch Dauersperre. Das Tor führt auf
+ * dieselbe Seite, die dann „Prüfung fehlgeschlagen, bitte erneut
+ * versuchen" zeigt.
  */
-export async function ermittleZustimmungStand(
+export async function ermittleZustimmungBefund(
   supabase: SupabaseServerClient,
   betriebId: string,
-): Promise<ZustimmungStand> {
+  authId: string,
+): Promise<ZustimmungBefund> {
   const { data, error } = await supabase
     .from("rechtliche_zustimmungen")
-    .select("dokument, version, art")
+    .select("dokument, version, art, auth_id")
     .eq("betrieb_id", betriebId);
 
   if (error) {
     console.error(`[zustimmung] Prüfung ${betriebId}: ${error.message}`);
-    return "pruefung-fehlgeschlagen";
+    return { art: "pruefung-fehlgeschlagen" };
   }
 
-  /*
-   * Eine Zeile zählt nur, wenn sie die **richtige Art** trägt (Punkt 11):
-   * die betriebliche Freischaltung hängt an AGB/AVV als `art='betrieblich'`,
-   * die persönliche Kenntnisnahme an der Datenschutzerklärung als
-   * `art='persoenlich'`. Die Datenbank stellt das über die generierte Spalte
-   * und die getrennten INSERT-Policies bereits sicher — nur ein Chef kann
-   * eine betriebliche Zeile anlegen. Dass das Gate die Art hier trotzdem
-   * ausdrücklich prüft, ist die sichtbare Kopplung an genau diese Trennung:
-   * gezählt wird die betriebliche Annahme, nicht irgendeine Zeile mit
-   * passendem Dokumentnamen.
-   *
-   * Wer prüft, ist der Betrieb, nicht die Person (Modell A, 2026-09-12):
-   * eine vorhandene `betrieblich`-Zeile eines Chefs schaltet den Betrieb
-   * frei, ein zweiter Chef wird nicht erneut gefragt. Der Nachweis „durch
-   * wen als Vertreter" liegt in `auth_id` + der Chef-Policy.
-   */
-  const vorhanden = new Set(
-    (data ?? [])
-      .filter((zeile) => zeile.art === ZUSTIMMUNG_ART[zeile.dokument as ZustimmungDokument])
-      .map((zeile) => `${zeile.dokument}:${zeile.version}`),
-  );
+  const zeilen = data ?? [];
 
-  const vollstaendig = ZUSTIMMUNG_DOKUMENTE.every((dokument) =>
-    vorhanden.has(`${dokument}:${RECHTSTEXT_VERSIONEN[dokument]}`),
-  );
+  const stand = {} as Record<ZustimmungDokument, DokumentStand>;
+  for (const dokument of ZUSTIMMUNG_DOKUMENTE) {
+    /*
+     * Eine Zeile zählt nur, wenn sie die **richtige Art** trägt. Die
+     * Datenbank stellt das über die generierte Spalte `art` und die
+     * getrennten INSERT-Policies bereits sicher — nur ein Chef kann eine
+     * betriebliche Zeile anlegen. Dass hier trotzdem ausdrücklich
+     * verglichen wird, ist die sichtbare Kopplung an genau diese
+     * Trennung: gezählt wird die betriebliche Annahme, nicht irgendeine
+     * Zeile mit passendem Dokumentnamen.
+     */
+    const passend = zeilen.filter(
+      (zeile) =>
+        zeile.dokument === dokument &&
+        zeile.art === ZUSTIMMUNG_ART[dokument] &&
+        (ZUSTIMMUNG_ART[dokument] === "betrieblich" || zeile.auth_id === authId),
+    );
 
-  return vollstaendig ? "zugestimmt" : "fehlend";
+    if (passend.length === 0) stand[dokument] = "nie";
+    else if (passend.some((zeile) => zeile.version === RECHTSTEXT_VERSIONEN[dokument]))
+      stand[dokument] = "aktuell";
+    else stand[dokument] = "veraltet";
+  }
+
+  const sperrend = ZUSTIMMUNG_DOKUMENTE.filter(istZugangsvoraussetzung);
+
+  if (sperrend.some((dokument) => stand[dokument] === "nie")) {
+    return { art: "erstannahme-fehlt", stand };
+  }
+  if (ZUSTIMMUNG_DOKUMENTE.some((dokument) => stand[dokument] !== "aktuell")) {
+    return { art: "aenderung-offen", stand };
+  }
+  return { art: "zugestimmt" };
+}
+
+/**
+ * Wird der Zugang durch diesen Befund gesperrt?
+ *
+ * Ausdrücklich eine eigene Funktion und kein `befund.art !==
+ * "zugestimmt"` an der Aufrufstelle: die Frage „liegt etwas vor" und die
+ * Frage „darf jemand deshalb nicht arbeiten" sind seit dem 2026-09-13
+ * verschieden, und ein Vergleich an der Aufrufstelle wäre die
+ * Gelegenheit, sie beim nächsten Mal wieder zu verwechseln.
+ */
+export function sperrtZugang(befund: ZustimmungBefund): boolean {
+  return befund.art === "erstannahme-fehlt" || befund.art === "pruefung-fehlgeschlagen";
+}
+
+/** Welche Dokumente die Person jetzt bestätigen soll. */
+export function offeneDokumente(befund: ZustimmungBefund): ZustimmungDokument[] {
+  if (befund.art === "zugestimmt" || befund.art === "pruefung-fehlgeschlagen") return [];
+  return ZUSTIMMUNG_DOKUMENTE.filter((dokument) => befund.stand[dokument] !== "aktuell");
 }

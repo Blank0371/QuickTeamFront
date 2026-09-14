@@ -5,7 +5,7 @@ import { holeChefBetriebId } from "@/lib/betrieb";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
 import { aboLageBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { ermittleZustimmungStand } from "@/lib/zustimmung";
+import { ermittleZustimmungBefund, sperrtZugang } from "@/lib/zustimmung";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -290,8 +290,22 @@ async function verlangeZustimmungVorMitarbeiterdaten(
   if (stand.betriebId === null) return;
 
   const supabase = await createClient();
-  const zustimmung = await ermittleZustimmungStand(supabase, stand.betriebId);
-  if (zustimmung === "zugestimmt") return;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  /*
+   * Gesperrt wird nur, was den Zugang wirklich sperrt: eine nie erfolgte
+   * Erstannahme oder eine gescheiterte Prüfung. Eine offene
+   * **Vertragsänderung** hält den Stepper seit dem 2026-09-13 nicht mehr
+   * auf — der Annahmenachweis, den Punkt 13 des Audits vor der
+   * Verarbeitung von Mitarbeiterdaten verlangt, liegt dann ja vor, nur zu
+   * einer älteren Fassung. Und nach § 13 Abs. 3 der AGB gilt genau die
+   * bis zur Zustimmung weiter.
+   */
+  const befund = await ermittleZustimmungBefund(supabase, stand.betriebId, user.id);
+  if (!sperrtZugang(befund)) return;
 
   redirect(zustimmungAdresse(`/einrichtung/${ziel}`));
 }

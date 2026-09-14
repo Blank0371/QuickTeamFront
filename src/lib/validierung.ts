@@ -162,6 +162,42 @@ export const feldSchemata = {
     .refine((wert) => wert === "" || /^ATU\d{8}$/u.test(wert), {
       error: vm("v.uid.form"),
     }),
+
+  /* ---------------------------------------------------------------- */
+  /* Rechnungsangaben — seit dem 2026-09-14 vor der Aktivierung Pflicht */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * Der **rechtliche** Unternehmensname, nicht der Anzeigename des
+   * Betriebs.
+   *
+   * Zwei Felder, und das ist Absicht: `betriebe.name` ist die
+   * Bezeichnung, unter der das Team den Betrieb im Dienstplan
+   * wiedererkennt („Café am Markt"). Auf die Rechnung gehört die Firma
+   * nach § 14 Abs. 4 Nr. 1 UStG — „Marktcafé Huber GmbH". Sie fallen oft
+   * auseinander, und wer beides in ein Feld zwingt, bekommt entweder
+   * einen unleserlichen Dienstplan oder eine fehlerhafte Rechnung.
+   *
+   * Vorbelegt wird trotzdem mit `betriebe.name`: bei Einzelunternehmen
+   * stimmt es meistens, und ein leeres Pflichtfeld ist die schlechtere
+   * Ausgangslage als ein korrigierbarer Vorschlag.
+   */
+  rechnung_firma: pflichtText("bez.firma", 120),
+  rechnung_strasse: pflichtText("bez.strasse", 120),
+  rechnung_ort: pflichtText("bez.ort", 80),
+  /**
+   * Postleitzahl — geprüft **gegen das Land**, deshalb unten in
+   * `rechnungSchema` als `superRefine` und nicht hier.
+   *
+   * Hier steht nur, was ohne Kenntnis des Landes gilt: nicht leer, und
+   * Ziffern. Österreich hat vier, Deutschland fünf — beides feste
+   * Längen, aber welche gilt, weiss erst das zusammengesetzte Schema.
+   */
+  rechnung_plz: z
+    .string()
+    .trim()
+    .min(1, vm("v.pflicht.leer", { bez: verweis("bez.plz") }))
+    .regex(/^\d+$/u, vm("v.plz.ziffern")),
 } as const;
 
 export type FeldName = keyof typeof feldSchemata;
@@ -301,6 +337,57 @@ export const planSchema = z.enum(["basic", "pro", "business"]).catch("basic");
 
 /** Schritt 2: die freiwillige UID-Nummer neben der Planwahl. */
 export const uidSchema = z.object({ uid: feldSchemata.uid });
+
+/**
+ * Die Rechnungsanschrift, die vor der Aktivierung eines
+ * kostenpflichtigen Abonnements vorliegen muss.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das Land hier mitgeprüft wird, obwohl es schon in `betriebe` steht
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Weil die Postleitzahl davon abhängt und beides zusammen abgeschickt
+ * wird. Österreich hat vier Ziffern, Deutschland fünf; eine
+ * Postleitzahl ohne ihr Land zu prüfen hiesse, entweder vier- oder
+ * fünfstellige Eingaben durchzulassen — und damit genau den Fehler
+ * nicht zu fangen, der beim Umzug eines Betriebs entsteht.
+ *
+ * `superRefine` statt zweier getrennter Schemata: der Fehler gehört an
+ * das Feld `rechnung_plz`, nicht an das Formular. Eine Fabrik
+ * `plzSchema(land)` hätte dieselbe Prüfung an zwei Aufrufstellen
+ * gebraucht — Browser und Server —, und genau dort laufen sie
+ * auseinander.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Die UID bleibt freiwillig und österreichisch
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Unverändert zum bestehenden Steuerablauf: `feldSchemata.uid` lässt
+ * den leeren String zu, und für deutsche Betriebe wird das Feld gar
+ * nicht erst angezeigt. Kommt trotzdem ein Wert herein, verwirft ihn
+ * die Server Action — ein Inlandsumsatz ändert sich dadurch nicht.
+ */
+export const rechnungSchema = z
+  .object({
+    rechnung_firma: feldSchemata.rechnung_firma,
+    rechnung_strasse: feldSchemata.rechnung_strasse,
+    rechnung_plz: feldSchemata.rechnung_plz,
+    rechnung_ort: feldSchemata.rechnung_ort,
+    land: feldSchemata.land,
+    uid: feldSchemata.uid,
+  })
+  .superRefine((werte, ctx) => {
+    const erwartet = werte.land === "AT" ? 4 : 5;
+    if (werte.rechnung_plz.length !== erwartet) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["rechnung_plz"],
+        message: vm(werte.land === "AT" ? "v.plz.at" : "v.plz.de", { anzahl: erwartet }),
+      });
+    }
+  });
+
+export type RechnungsEingabe = z.infer<typeof rechnungSchema>;
 
 /** Prüft einen Wert aus einem Formularfeld oder Query-Parameter. */
 export function planOderBasic(wert: unknown): "basic" | "pro" | "business" {

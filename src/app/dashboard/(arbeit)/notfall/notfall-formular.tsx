@@ -119,6 +119,25 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
         <label htmlFor="notfall-grund" className="text-sm font-medium text-text">
           Grund (optional)
         </label>
+        {/*
+          Der Hinweis steht hier, weil dieses Feld der Ort ist, an dem
+          Gesundheitsdaten entstehen. Die App schlug dafür lange „Ich bin
+          krank." als Platzhalter vor — eine Aufforderung zu einer Angabe
+          nach Art. 9 DSGVO, die für die Vertretungssuche gar nicht
+          gebraucht wird: dafür zählen Schicht, Rolle und Zeitpunkt.
+
+          Bewusst kein Beispieltext im Feld selbst. Jedes Beispiel wird
+          zur Vorlage, und ein Platzhalter, der eine Krankheit nennt,
+          erzeugt genau die Daten, die man danach aufwendig schützen muss.
+          Der wirksamste Schutz ist, dass sie nicht entstehen.
+
+          Wer den Grund liest, steht dabei — sonst schreibt man ihn für
+          ein Publikum, das man sich falsch vorstellt.
+        */}
+        <p id="notfall-grund-hinweis" className="text-xs leading-relaxed text-muted">
+          Kurz und ohne Angaben zu deiner Gesundheit. Lesen können ihn die
+          Betriebsleitung und wer deine Schicht übernimmt.
+        </p>
         <textarea
           id="notfall-grund"
           name="grund"
@@ -126,6 +145,7 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
           onChange={(e) => setGrund(e.target.value)}
           rows={3}
           maxLength={500}
+          aria-describedby="notfall-grund-hinweis"
           className={feldBasis}
         />
       </div>

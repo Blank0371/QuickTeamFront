@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Container } from "@/components/container";
+import { aboVerwalten } from "@/app/dashboard/(arbeit)/einstellungen/aktionen";
 import { abmelden } from "@/lib/auth-aktionen";
 import { holeTexte } from "@/i18n/server";
 import { sicheresZiel, zustimmungAdresse, ZIEL_PARAMETER } from "@/lib/dashboard/pfad";
@@ -12,7 +13,7 @@ import {
   waehleAktive,
 } from "@/lib/dashboard/position";
 import { createClient } from "@/lib/supabase/server";
-import { ermittleZustimmungStand } from "@/lib/zustimmung";
+import { ermittleZustimmungBefund, offeneDokumente } from "@/lib/zustimmung";
 
 import { ZustimmungFormular } from "./zustimmung-formular";
 
@@ -72,8 +73,8 @@ export default async function ZustimmungSeite({
   if (position === null) redirect("/dashboard/wechseln");
   if (position.rolleTyp !== "chef") redirect(ziel);
 
-  const stand = await ermittleZustimmungStand(supabase, position.betriebId);
-  if (stand === "zugestimmt") redirect(ziel);
+  const befund = await ermittleZustimmungBefund(supabase, position.betriebId, user.id);
+  if (befund.art === "zugestimmt") redirect(ziel);
 
   const t = await holeTexte();
 
@@ -85,7 +86,7 @@ export default async function ZustimmungSeite({
    * Seite neu; war die Störung vorübergehend, steht danach entweder das
    * Formular oder es geht direkt weiter.
    */
-  if (stand === "pruefung-fehlgeschlagen") {
+  if (befund.art === "pruefung-fehlgeschlagen") {
     return (
       <Container className="py-12 sm:py-16">
         <div className="mx-auto w-full max-w-2xl">
@@ -125,18 +126,61 @@ export default async function ZustimmungSeite({
     );
   }
 
+  const aenderung = befund.art === "aenderung-offen";
+  const offen = offeneDokumente(befund);
+
   return (
     <Container className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
         <h1 className="text-3xl leading-[1.1] sm:text-4xl">
-          Kurz bestätigen, dann geht&#39;s weiter
+          {aenderung
+            ? "Neue Fassung — bitte einmal ansehen"
+            : "Kurz bestätigen, dann geht's weiter"}
         </h1>
 
+        {/*
+          Zwei Fälle, zwei Texte, und der Unterschied ist nicht kosmetisch.
+
+          Bei der **Erstannahme** fehlt der Vertrag; ohne ihn gibt es
+          keine Grundlage, Beschäftigtendaten im Auftrag zu verarbeiten,
+          und die Verwaltung bleibt bis zum Haken zu.
+
+          Bei einer **Vertragsänderung** besteht der Vertrag. § 13 Abs. 3
+          der AGB sagt ausdrücklich: solange der Kunde nicht zugestimmt
+          hat, gelten für ihn die bisherigen Bedingungen. Diese Seite darf
+          ihn dann nicht festhalten — sie fragt, und „später" ist eine
+          zulässige Antwort. Schweigen ist nach § 13 Abs. 2 ohnehin keine
+          Zustimmung; ein Weiterklicken-Zwang würde daraus praktisch doch
+          eine machen.
+        */}
         <p className="mt-4 text-base leading-relaxed text-muted">
-          Für <span className="text-text">{position.betriebName}</span> liegt uns noch
-          keine Zustimmung zu den aktuellen Fassungen vor. Das holen wir einmal nach —
-          danach landest du wieder dort, wo du hinwolltest.
+          {aenderung ? (
+            <>
+              Für <span className="text-text">{position.betriebName}</span> gibt es eine
+              neue Fassung der Vertragsunterlagen. Bis du zustimmst, gelten die bisherigen
+              Bedingungen weiter — du kannst also auch später entscheiden.
+            </>
+          ) : (
+            <>
+              Für <span className="text-text">{position.betriebName}</span> liegt uns noch
+              keine Zustimmung vor. Das holen wir einmal nach — danach landest du wieder
+              dort, wo du hinwolltest.
+            </>
+          )}
         </p>
+
+        {offen.length > 0 ? (
+          <ul className="mt-4 flex flex-wrap gap-2 text-xs text-muted">
+            {offen.map((dokument) => (
+              <li
+                key={dokument}
+                className="rounded-blk border border-line px-2.5 py-1 uppercase tracking-[0.12em]"
+              >
+                {DOKUMENT_NAME[dokument]}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <div className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8">
           <ZustimmungFormular ziel={ziel} />
@@ -146,6 +190,41 @@ export default async function ZustimmungSeite({
             deiner Abrechnung und deinem Zahlungsmittel ändert sich dadurch nichts.
           </p>
         </div>
+
+        {aenderung ? (
+          <p className="mt-6">
+            <Link
+              href={ziel}
+              className="text-sm font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+            >
+              Später entscheiden und weiterarbeiten
+            </Link>
+          </p>
+        ) : (
+          /*
+            Der Ausgang aus der Sperre. Wer den Vertrag nicht (mehr)
+            annehmen will, muss trotzdem kündigen und an seine Daten
+            kommen können — sonst wäre die Zustimmung durch das Aussperren
+            der Daten erzwungen. Beide Wege laufen über
+            `betreteOhneTore()` und sind deshalb auch hier erreichbar.
+          */
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm">
+            <form action={aboVerwalten}>
+              <button
+                type="submit"
+                className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+              >
+                Abo verwalten oder kündigen
+              </button>
+            </form>
+            <a
+              href="/api/betrieb-export"
+              className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+            >
+              Daten exportieren
+            </a>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <p className="text-sm text-muted">{user.email}</p>
@@ -162,3 +241,9 @@ export default async function ZustimmungSeite({
     </Container>
   );
 }
+
+const DOKUMENT_NAME: Record<string, string> = {
+  agb: "AGB",
+  avv: "AVV",
+  datenschutz: "Datenschutz",
+};
