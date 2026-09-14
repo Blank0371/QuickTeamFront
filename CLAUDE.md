@@ -220,6 +220,24 @@ für das Dashboard (`robots: index:false`) ist sie folgenlos. Die Wörterbücher
 bleiben davon unberührt — es ändert sich nur, woher `leseSprache()` die Locale
 nimmt.
 
+### Änderung vom 2026-09-14: `?lang=de|en` für Links aus der App
+
+**Vorher:** die Sprache kam ausschliesslich aus `qt_sprache`. **Jetzt:** ein
+`?lang=` im Aufruf geht dem Cookie vor — nur für diese eine Anfrage.
+
+**Grund:** die Expo-App öffnet unter Einstellungen > Rechtliches `/datenschutz`,
+`/agb` und `/avv` im In-App-Browser, wo kein Cookie gesetzt ist; ohne Parameter
+sah dort jeder Deutsch. Die App hängt `?lang=de` bzw. `?lang=en` an (alle
+Nicht-Deutsch-Sprachen → `en`).
+
+**Kein Cookie, bewusst:** die Middleware reicht den Wert als Kopfzeile
+`x-qt-sprache` an `leseSprache()` weiter (`src/i18n/sprach-parameter.ts`) und
+speichert nichts — die Datenschutzerklärung sagt über `qt_sprache` „nur wenn Sie
+die Sprache umschalten", und das bleibt so wahr. Preis: interne Links fallen auf
+Cookie bzw. Deutsch zurück. Nur GET/HEAD, damit der Umschalter (Server-Action-POST
+an dieselbe Adresse samt `?lang=`) weiter gewinnt — am 2026-09-14 im Browser
+geprüft. Eine vom Client mitgeschickte `x-qt-sprache` wird verworfen.
+
 ## Datenbank
 
 Supabase-Projekt `jqpfuotwsgnqihspsmmf` (eu-west-1). Die App teilt sich dieselbe

@@ -1,6 +1,7 @@
 import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { mitSprachKopfzeile } from "@/i18n/sprach-parameter";
 import { PFAD_KOPFZEILE } from "@/lib/dashboard/pfad";
 
 import { supabaseAnonKey, supabaseKonfiguriert, supabaseUrl } from "./env";
@@ -34,7 +35,7 @@ export async function updateSession(request: NextRequest) {
    * Kopie trüge dann noch die alten, abgelaufenen Auth-Cookies.
    */
   const antwort = () => {
-    const kopfzeilen = new Headers(request.headers);
+    const kopfzeilen = mitSprachKopfzeile(request);
     kopfzeilen.set(PFAD_KOPFZEILE, request.nextUrl.pathname);
     return NextResponse.next({ request: { headers: kopfzeilen } });
   };

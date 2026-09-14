@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { mitSprachKopfzeile } from "@/i18n/sprach-parameter";
 import { istGesperrt, softLaunchAktiv } from "@/lib/soft-launch";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -51,7 +52,9 @@ export async function middleware(request: NextRequest) {
    * früheren Test im Browser hat, sähe die Website überhaupt nicht.
    * Ohne Sitzungsauffrischung gibt es diesen Weg nicht mehr.
    */
-  if (softLaunchAktiv()) return NextResponse.next({ request });
+  if (softLaunchAktiv()) {
+    return NextResponse.next({ request: { headers: mitSprachKopfzeile(request) } });
+  }
 
   return updateSession(request);
 }
