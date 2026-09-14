@@ -95,8 +95,26 @@ type Abschluss = {
   knopfText?: string;
 };
 
+/**
+ * Wohin Stripe nach einer Weiterleitung (3DS, PayPal, Bank) zurückschickt
+ * — **die Seite, die das Formular zeigt**, weil nur sie `?setup_intent=`
+ * auswertet.
+ *
+ * Bis zum 2026-09-14 stand hier fest `/einrichtung/zahlung`, auch für die
+ * Sperrseite. Dort kam die Rückkehr nie an: Schritt 2 leitet einen
+ * gesperrten Betrieb vor jeder Auswertung auf die Sperrseite um, und
+ * `redirect()` nimmt den Query-String nicht mit. Die bestätigte
+ * Zahlungsmethode wurde nie übernommen, das Abo blieb pausiert, und eine
+ * Fehlermeldung gab es auch nicht.
+ */
+type Rueckkehr = { rueckkehrPfad?: string };
+
 /** Innenteil — muss innerhalb von `<Elements>` stehen, sonst greifen die Hooks nicht. */
-function Formular({ zusammenfassung = [], knopfText = "Zahlungsmittel hinterlegen" }: Abschluss) {
+function Formular({
+  zusammenfassung = [],
+  knopfText = "Zahlungsmittel hinterlegen",
+  rueckkehrPfad = "/einrichtung/zahlung",
+}: Abschluss & Rueckkehr) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -120,7 +138,7 @@ function Formular({ zusammenfassung = [], knopfText = "Zahlungsmittel hinterlege
     const { error, setupIntent } = await stripe.confirmSetup({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/einrichtung/zahlung`,
+        return_url: `${window.location.origin}${rueckkehrPfad}`,
       },
       redirect: "if_required",
     });
@@ -188,7 +206,8 @@ export function ZahlungsFormular({
   clientSecret,
   zusammenfassung,
   knopfText,
-}: { clientSecret: string } & Abschluss) {
+  rueckkehrPfad,
+}: { clientSecret: string } & Abschluss & Rueckkehr) {
   /*
    * Das Erscheinungsbild entsteht erst im Browser — `getComputedStyle`
    * gibt es auf dem Server nicht. Bis dahin rendert `<Elements>` nichts,
@@ -210,7 +229,11 @@ export function ZahlungsFormular({
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret, appearance: aussehen, locale: "de" }}>
-      <Formular zusammenfassung={zusammenfassung} knopfText={knopfText} />
+      <Formular
+        zusammenfassung={zusammenfassung}
+        knopfText={knopfText}
+        rueckkehrPfad={rueckkehrPfad}
+      />
     </Elements>
   );
 }

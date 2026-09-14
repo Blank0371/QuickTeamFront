@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { aboGekuendigt, holeAbo, testphaseAbgelaufen } from "@/lib/abo";
 import { holeChefBetriebId } from "@/lib/betrieb";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
-import { holeAboFuerBetrieb } from "@/lib/stripe";
+import { holeAboFuerBetrieb, pruefePauseBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { ermittleZustimmungStand } from "@/lib/zustimmung";
 
@@ -124,9 +124,26 @@ export async function ermittleStandFuer(
     }
   }
 
-  // Die Sperre steht vor allem Weiteren, siehe oben.
+  /*
+   * Die Sperre steht vor allem Weiteren, siehe oben.
+   *
+   * Unsere Zeile sagt `pausiert`, Stripe bestätigt es — oder eben nicht:
+   * wer gerade auf der Sperrseite bezahlt hat, ist bei Stripe schon
+   * `active`, während der Webhook noch unterwegs ist. Begründung bei
+   * `pruefePauseBeiStripe`.
+   */
   if (testphaseAbgelaufen(abo)) {
-    return { offen: "zahlung", gesperrt: true, betriebId };
+    const beiStripe = await pruefePauseBeiStripe({
+      betriebId,
+      email,
+      kundeId: abo?.stripe_customer_id ?? null,
+    });
+    if (beiStripe === "pausiert") {
+      return { offen: "zahlung", gesperrt: true, betriebId };
+    }
+    if (beiStripe === "kein-abo") {
+      return { offen: "zahlung", gesperrt: false, betriebId };
+    }
   }
 
   // Schritt 3: mindestens eine Rolle.

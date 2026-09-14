@@ -390,6 +390,56 @@ export async function holeAboFuerBetrieb({
 }
 
 /**
+ * Was Stripe zu einem Betrieb sagt, den unsere Zeile als `pausiert` führt.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum die Sperre nicht allein aus unserer Zeile kommt
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * `pausiert` schreibt der Webhook, und er nimmt es auch wieder weg — mit
+ * ein paar Sekunden Verzögerung. Genau in diese Sekunden fällt der
+ * Moment, in dem es darauf ankommt: `nimmAboWiederAuf` hat die Rechnung
+ * bezahlt, das Abo ist bei Stripe `active`, und die Weiterleitung auf
+ * `/einrichtung` kommt an, bevor der Webhook durch ist. Aus der Zeile
+ * allein abgeleitet stand der Kunde, der gerade bezahlt hatte, wieder
+ * vor der Sperrseite — mit einem Knopf „Kostenpflichtig fortsetzen".
+ *
+ * Gefragt wird nur, wenn die Zeile `pausiert` sagt. Der Normalfall kostet
+ * damit keinen einzigen Aufruf bei Stripe; die Nachfrage trifft allein
+ * die, die ohnehin gerade gesperrt sind oder sich eben freigekauft haben.
+ *
+ * Die Richtung bleibt dabei die der Zeile: Stripe kann eine Sperre
+ * aufheben, aber keine erfinden. Und ist Stripe nicht erreichbar, gilt
+ * die Zeile — ein Tor, das bei einem Netzfehler aufgeht, ist keins.
+ *
+ *   - `pausiert` — Stripe bestätigt die Sperre (oder antwortet nicht)
+ *   - `laeuft`   — das Abo lebt wieder; die Zeile hinkt hinterher
+ *   - `kein-abo` — kein lebendes Abo mehr, etwa gekündigt, während es
+ *                  pausiert war; der Weg führt in den Zahlungsschritt
+ */
+export type PauseBeiStripe = "pausiert" | "laeuft" | "kein-abo";
+
+export async function pruefePauseBeiStripe({
+  betriebId,
+  email,
+  kundeId = null,
+}: {
+  betriebId: string;
+  email: string;
+  kundeId?: string | null;
+}): Promise<PauseBeiStripe> {
+  try {
+    const abo = await holeAboFuerBetrieb({ betriebId, email, kundeId });
+    if (abo === null) return "kein-abo";
+    return abo.status === "paused" ? "pausiert" : "laeuft";
+  } catch (ursache) {
+    const text = ursache instanceof Error ? ursache.message : String(ursache);
+    console.error(`[stripe] pruefePauseBeiStripe(${betriebId}): ${text} — Sperre bleibt`);
+    return "pausiert";
+  }
+}
+
+/**
  * Legt das Abonnement mit Testphase an — ohne Zahlungsmittel.
  *
  * Bei einem Trial ist nichts fällig: Stripe stellt eine Rechnung über
@@ -631,7 +681,8 @@ function alsId(wert: string | { id?: string } | null | undefined): string | null
  * Kunde hinterlegt seine Karte, bekommt „danke" zu sehen und steht danach
  * weiter vor der Sperre, ohne zu wissen warum. Deshalb wird die Rechnung
  * hier sofort bezahlt; danach ist das Abo `active`, und die Ableitung
- * lässt ihn im selben Moment durch.
+ * lässt ihn im selben Moment durch — weil sie bei `pausiert` Stripe
+ * nachfragt, statt auf den Webhook zu warten (`pruefePauseBeiStripe`).
  *
  * `billing_cycle_anchor: "now"` startet den Zyklus bei der Wiederaufnahme.
  * Ohne das würde anteilig für die Zeit abgerechnet, in der das Abo

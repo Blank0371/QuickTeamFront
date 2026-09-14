@@ -9,6 +9,7 @@ import {
   waehleAktive,
   type Position,
 } from "@/lib/dashboard/position";
+import { pruefePauseBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { ermittleZustimmungStand } from "@/lib/zustimmung";
 
@@ -68,7 +69,7 @@ export async function betreteDashboard(): Promise<Zugang> {
    */
   if (position === null) redirect(wechselAdresse(await angefragterPfad()));
 
-  await pruefeSperre(supabase, position);
+  await pruefeSperre(supabase, position, user.email ?? "");
   await pruefeZustimmung(supabase, position);
 
   return { supabase, position, alle };
@@ -96,20 +97,30 @@ export async function betreteDashboard(): Promise<Zugang> {
  * soll seinen Dienstplan sehen können, auch wenn der Chef die Karte
  * nicht hinterlegt hat. Gesperrt wird die Verwaltung, nicht die Schicht.
  *
- * Gefragt wird nur die eigene Zeile, nicht Stripe. Der Stepper fragt dort
- * nach, weil er wissen muss, ob ein Abo *existiert*, während der Webhook
- * noch unterwegs sein kann. Hier geht es um `pausiert`, und dieser Wert
- * entsteht ohnehin erst durch den Webhook — vorher gibt es nichts
- * abzufragen.
+ * Gefragt wird zuerst die eigene Zeile. Sagt sie `pausiert`, fragt das
+ * Tor bei Stripe nach, **genau wie der Stepper** — bis zum 2026-09-14
+ * tat es das nicht. Wer auf der Sperrseite bezahlt hatte, wurde vom
+ * Stepper durchgelassen (Stripe: `active`) und von hier zurückgeschickt
+ * (Zeile noch `pausiert`), und zwar im Kreis, bis der Webhook ankam. Zwei
+ * Tore auf demselben Zustand müssen dieselbe Frage stellen.
  */
 async function pruefeSperre(
   supabase: SupabaseServerClient,
   position: Position,
+  email: string,
 ): Promise<void> {
   if (position.rolleTyp !== "chef") return;
 
   const abo = await holeAbo(supabase, position.betriebId);
-  if (testphaseAbgelaufen(abo)) redirect("/einrichtung/testphase-abgelaufen");
+  if (testphaseAbgelaufen(abo)) {
+    const beiStripe = await pruefePauseBeiStripe({
+      betriebId: position.betriebId,
+      email,
+      kundeId: abo?.stripe_customer_id ?? null,
+    });
+    if (beiStripe === "pausiert") redirect("/einrichtung/testphase-abgelaufen");
+    if (beiStripe === "kein-abo") redirect("/einrichtung/zahlung");
+  }
 
   /*
    * Gekündigt führt zurück in den Zahlungsschritt, nicht auf die

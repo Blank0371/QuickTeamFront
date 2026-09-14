@@ -793,6 +793,28 @@ eigene Zeile hat.** `ermittleStandFuer()` behandelt ihn wie „kein Abo“ und
 abschliessen lässt. Hier stand bis zum 2026-09-13, der Fall falle bis ins
 Dashboard durch; das war zu dem Zeitpunkt schon nicht mehr wahr.
 
+### Änderung vom 2026-09-14: zwei Fehler auf dem Weg aus der Sperre
+
+**Rückkehr nach einer Weiterleitung auf der Sperrseite.** `ZahlungsFormular`
+schickte die `return_url` fest auf `/einrichtung/zahlung`, auch von der Sperrseite
+aus. Schritt 2 leitet einen gesperrten Betrieb aber vor jeder Auswertung auf die
+Sperrseite um, und `redirect()` verwirft den Query-String: `?setup_intent=` kam nie
+an, die bestätigte Zahlungsmethode wurde nie übernommen, ohne Fehlermeldung. Betraf
+jedes Zahlungsmittel, das die Seite verlässt (PayPal, Bank-Weiterleitungen, 3DS mit
+Weiterleitung). **Jetzt** gibt die Sperrseite `rueckkehrPfad` mit — die Seite, die
+das Formular zeigt, wertet die Rückkehr auch aus.
+
+**`pausiert` wird bei Stripe bestätigt.** Vorher kam die Sperre allein aus der
+Zeile, die nur der Webhook ändert. Wer auf der Sperrseite bezahlt hatte, war bei
+Stripe schon `active`, die Zeile aber noch `pausiert` — und stand wieder vor
+„Kostenpflichtig fortsetzen". **Jetzt** fragen Stepper (`ermittleStandFuer`) und
+Dashboard-Tor (`pruefeSperre`) beide über `pruefePauseBeiStripe()` nach, **nur**
+wenn die Zeile `pausiert` sagt. Stripe kann die Sperre aufheben, nicht erfinden;
+ist Stripe nicht erreichbar, bleibt sie. Beide Tore müssen dieselbe Frage stellen —
+fragte nur eines nach, schickten sie sich den Kunden gegenseitig im Kreis zu.
+Die Regel „der Webhook schreibt `betrieb_abonnements` allein" bleibt unberührt:
+gelesen wird bei Stripe, geschrieben nichts.
+
 ### Änderung vom 2026-09-13: Kündigung über das Stripe-Kundenportal
 
 **Vorher:** Es gab keine Oberfläche zum Kündigen. AGB § 6 Abs. 2 nannte die
