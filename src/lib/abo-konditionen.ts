@@ -57,6 +57,23 @@ export function preisZeile(k: AboKonditionen): string | null {
 const KUENDIGUNG =
   "Kündbar jederzeit zum Ende des bezahlten Zeitraums — im Dashboard unter Einstellungen → „Abo verwalten“ oder per E-Mail (AGB § 6 Abs. 2).";
 
+/**
+ * Was mit dem Hinterlegen erhoben und weitergegeben wird.
+ *
+ * Steht seit dem 2026-09-14 in beiden Zusammenfassungen, weil seither
+ * Rechnungsangaben **Pflicht** sind, bevor ein Abonnement kostenpflichtig
+ * wird. Eine Zusammenfassung, die den Betrag nennt, aber verschweigt,
+ * welche Daten dafür erhoben werden, ist unvollständig — und die
+ * Datenschutzerklärung (Ziffer 6) sagt dasselbe, nur eben nicht an der
+ * Stelle, an der jemand gerade klickt.
+ *
+ * Bewusst ohne Aufzählung der einzelnen Felder: die stehen unmittelbar
+ * darüber im Formular, und sie hier ein zweites Mal zu nennen wäre eine
+ * zweite Stelle, die beim nächsten Feld vergessen wird.
+ */
+const RECHNUNGSANGABEN =
+  "Deine Rechnungsangaben werden an den Zahlungsdienstleister Stripe übermittelt, der daraus die Rechnung erstellt und die Umsatzsteuer berechnet (Datenschutzerklärung, Ziffer 6).";
+
 /** Schritt 2: Zahlungsmittel während oder nach der Testphase hinterlegen. */
 export function zusammenfassungSchritt(k: AboKonditionen): string[] {
   const preis = preisZeile(k);
@@ -85,6 +102,8 @@ export function zusammenfassungSchritt(k: AboKonditionen): string[] {
     zeilen.push(KUENDIGUNG);
   }
 
+  zeilen.push(RECHNUNGSANGABEN);
+
   return zeilen;
 }
 
@@ -97,6 +116,7 @@ export function zusammenfassungFortsetzen(k: AboKonditionen): string[] {
       : "Mit dem Hinterlegen wird dein Abo sofort fortgesetzt, und der erste Zeitraum wird abgebucht.",
     "Danach verlängert es sich automatisch und wird jeweils im Voraus abgebucht.",
     KUENDIGUNG,
+    RECHNUNGSANGABEN,
   ];
 }
 

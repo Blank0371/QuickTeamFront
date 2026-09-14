@@ -1135,6 +1135,51 @@ aus `docs/rechtliches/legals/`, und das README dort listet alle sechs Dokumente.
 Zwei gleiche Fassungen eines Rechtstexts sind eine Gelegenheit, die zu pflegen,
 die niemand ausliefert.
 
+## Die Landingpage bewegt sich nur ab 1024px
+
+**Entscheidung vom 2026-09-13.** Die Desktopgestaltung ist unverändert; unter
+1024px ist die Seite jetzt still.
+
+**Vorher** lief die Bewegung auf jeder Breite, obwohl die grosse
+Kalender-Sequenz dort per `display: none` gar nicht existierte:
+
+- `hero.tsx` setzte Wortmarke, Untertitel und Knöpfe auf `autoAlpha: 0` und
+  blendete sie ein; beim Scrollen wurde der gesamte Hero-Inhalt an die
+  Scrollposition gekoppelt ausgeblendet, verschoben und verkleinert — mobil
+  also ein Rückzug vor nichts.
+- Der mobile Kalenderabschnitt versteckte **jeden** der drei
+  Versprechen-Blöcke mit `autoAlpha: 0` und zeigte sie erst bei `top 82%`.
+  Drei Wege, auf denen das schiefgeht, sind auf einem Telefon der Normalfall:
+  spätes oder fehlendes JavaScript, schnelles Wischen über mehrere
+  Bildschirmhöhen, und der Sprunglink, der mitten hineinspringt.
+- `licht-ebene.tsx` bewegte die Hintergrundbeleuchtung bei jedem Wischer,
+  ohne dass im Vordergrund etwas dazu passierte.
+- Der Sprunganker `#kalender` sass auf der **desktop-only** Section. Unter
+  1024px — und damit auch zwischen 768px und 1023px, wo die Navigationsleiste
+  schon sichtbar ist — sprang weder der Hero-Knopf „Funktionen entdecken"
+  noch der Navigationspunkt „Was ist QuickTeam?" irgendwohin.
+
+**Jetzt:** alle vier Client-Inseln kapseln ihre Bewegung in
+`gsap.matchMedia("(min-width: 1024px)")` und geben `mm.revert()` als Cleanup
+zurück; der mobile Kalenderabschnitt ist reines statisches Markup ohne
+Animationszweig; der Anker sitzt am immer dargestellten Wrapper.
+
+**`gsap.matchMedia()` und nicht ein `if` mit `matchMedia`** — der Unterschied
+ist der Rückbau: beim Unterschreiten der Breite nimmt GSAP die gesetzten
+Inline-Stile und die ScrollTrigger selbst zurück. Ein einmaliger Test liesse
+beim Drehen des Geräts einen halbtransparenten, verkleinerten Hero stehen, den
+nichts mehr zurückstellt. Im Browser gegengeprüft: bei 1440×900 und Scrollstand
+1500 steht der Hero-Inhalt auf `opacity 0`, `scale 0.97`; nach dem Verkleinern
+auf 390px sofort wieder auf `opacity 1`, `transform: none`.
+
+**Die Farbdramaturgie geht mobil nicht verloren** — jeder Block trägt das
+Kalenderlogo mit genau den Kacheln, die bis dahin gefüllt sind, als gerendertes
+Markup statt als Animationszustand. Inhalte und Preise bleiben eine Quelle; es
+gibt keine zweite mobile Textfassung.
+
+`prefers-reduced-motion` gilt unverändert und wird vor der Breitenabfrage
+geprüft.
+
 ## Lighthouse: gemessene Werte, nicht behauptete
 
 **Erstmals im Repo belegt am 2026-09-09.** Vorher gab es dazu nichts: gesucht wurde
@@ -1444,6 +1489,259 @@ und jemanden hier steckenzulassen hiesse, ihm ein halbes Konto zu hinterlassen.
 Der Preis ist ein Betrieb ohne Nachweis, den niemand bemerkt, ausser er sieht
 ins Protokoll. **Ob das der richtige Handel ist, ist eine Frage an den
 Betreiber, keine technische** — sie ist gestellt und noch nicht beantwortet.
+
+### Änderung vom 2026-09-13: eine neue Fassung sperrt nicht mehr
+
+**Vorher** verlangte `ermittleZustimmungStand()` für alle drei Dokumente eine
+Zeile in der **aktuellen** Fassung; alles andere hiess „fehlend", und das Tor
+in `dashboard/zugang.ts` sperrte daraufhin die gesamte Verwaltung — den Weg ins
+Stripe-Kundenportal eingeschlossen.
+
+**Jetzt** unterscheidet `ermittleZustimmungBefund()` drei Lücken:
+
+| Beobachtung | Folge |
+| ----------- | ----- |
+| zu AGB oder AVV **keine** Zeile | Sperre — ohne Vertrag kein Dienst |
+| Zeile zu einer **älteren** Fassung | Hinweisstreifen, kein Riegel |
+| Datenschutzerklärung fehlt | Hinweis, kein Riegel |
+
+**Grund:** § 13 Abs. 2 und 3 der eigenen AGB. Eine Änderung wird wirksam, *wenn
+der Kunde ihr zustimmt*; Schweigen gilt nicht als Zustimmung, und **solange er
+nicht zugestimmt hat, gelten für ihn die bisherigen Bedingungen**. Ein Betrieb,
+der unter der alten Fassung zahlt, auszusperren, bis er die neue abnickt, ist
+genau die Drucksituation, die die Klausel ausschliesst. Praktisch hätte zudem
+ein einziger geänderter Wert in `rechtstexte.ts` alle zahlenden Bestandskunden
+gleichzeitig ausgesperrt.
+
+**Die Datenschutzerklärung sperrt gar nicht mehr.** Art. 13 DSGVO verlangt, dass
+informiert *wird*, nicht dass jemand zustimmt (`istZugangsvoraussetzung()`).
+
+**Betrieblich wird je Betrieb gefragt, persönlich je Person.** Bis dahin zählte
+auch die Datenschutzerklärung je Betrieb — die Kenntnisnahme des einen Chefs galt
+damit stillschweigend für jeden weiteren, was den Sinn einer persönlichen Angabe
+aufhebt. Sie wird jetzt gegen die eigene `auth_id` geprüft.
+
+**Der Nachweis trägt zwei Angaben mehr.** `sprache` und `inhalt_hash` waren als
+Spalten vorhanden und wurden nie geschrieben. Der Hash (sha256 über die deutsche
+Fassung, Zeilenenden normalisiert) fängt ab, was die Anleitung in
+`rechtstexte.ts` sonst nur bittet: wird ein Rechtstext geändert und Schritt 3
+vergessen, sind alte und neue Zustimmungen nicht mehr unterscheidbar —
+unbemerkt. `rechtstexte-inhalt.ts` erklärt, warum immer die **deutsche** Fassung
+gehasht wird (§ 14 Abs. 6: sie ist die maßgebliche).
+
+**Fassungen dürfen auseinanderlaufen.** AGB und Datenschutzerklärung stehen seit
+dem 2026-09-13 auf `2026-09-13-r2-draft`, der AVV unverändert auf
+`2026-09-13-draft`. Ein gemeinsamer Wert hätte eine Änderung des AVV behauptet,
+die es nicht gab.
+
+### Änderung vom 2026-09-13: Kündigung und Export kommen an jeder Sperre vorbei
+
+`betreteOhneTore()` in `src/lib/dashboard/zugang.ts` prüft Anmeldung, aktive
+Anstellung und Position wie `betreteDashboard()`, lässt aber die beiden
+**wirtschaftlichen** Tore weg. Zwei Aufrufer, und nur diese zwei: `aboVerwalten()`
+und `/api/betrieb-export`.
+
+**Vorher** liefen beide durch `betreteDashboard()` und wurden damit genau in den
+Zuständen abgefangen, für die man sie am dringendsten braucht: bei `pausiert` auf
+die Sperrseite, bei `gekuendigt` in den Zahlungsschritt, bei fehlender
+Erstzustimmung aufs Tor. Wer kündigen wollte, kam nicht an die Kündigung; wer
+den Vertrag nicht mehr annahm, nicht an seine Daten. Gesperrt werden soll die
+Verwaltung des Betriebs, nicht der Ausgang aus dem Vertrag.
+
+Beide Wege stehen deshalb auch auf `/einrichtung/testphase-abgelaufen` und im
+Zustimmungs-Tor. **An der Berechtigung ändert sich nichts** — die Kunden-Id kommt
+weiterhin nie aus dem Formular, der Export kennt keinen `?betrieb=`-Parameter.
+
+## Der Betriebsexport
+
+Gebaut am 2026-09-13. `GET /api/betrieb-export` liefert ein JSON-Paket mit 21
+Tabellen und fünf abgeleiteten Abschnitten; die Liste steht in
+`src/lib/export/tabellen.ts`, der Bauer in `src/lib/export/paket.ts`.
+Vollständige Beschreibung: `docs/export/README.md`.
+
+**Er füllt eine Zusage, die bis dahin unerfüllbar war.** § 6 Abs. 4 und 5 der AGB
+versprachen die Herausgabe „in einem strukturierten, gängigen und
+maschinenlesbaren Format" — es gab dafür keine Funktion, nur den Satz.
+
+**Vier Regeln, die beim Erweitern gelten:**
+
+1. **Die Tabellenliste wird gepflegt, nicht erraten.** Ein Export, der sich seine
+   Tabellen aus `information_schema` sucht, nimmt beim nächsten Schema-Zuwachs
+   alles mit. Eine neue Tabelle fehlt, bis jemand sie einträgt — der harmlosere
+   Fehler. `AUSSCHLUESSE` nennt umgekehrt jede bekannte Tabelle, die **nicht**
+   mitgeht, mit Grund, und das steht wörtlich im Paket.
+2. **Jede Abfrage grenzt selbst auf `betrieb_id` ein.** RLS genügt nicht:
+   Policies wie `na_select` lauten `betrieb_id IN (SELECT meine_betriebe())` und
+   lieferten einem Konto mit zwei Anstellungen beide Betriebe. Ein Test läuft
+   über `EXPORT_TABELLEN` und fällt bei jeder Tabelle, die das vergisst.
+3. **Seitenweise lesen, stabil sortiert nach dem Primärschlüssel.** PostgREST
+   deckelt bei 1000 Zeilen; ohne eigene Seiten wäre das Paket stillschweigend
+   abgeschnitten und sähe vollständig aus.
+4. **Vier Eingriffe sind keine Auslassung** und stehen als `hinweise` im Paket:
+   Einzelstimmen anonymer Umfragen fallen heraus (auch die eigene — `us_select`
+   lässt sie durch); Geheimnisse und der Notfallgrund werden im
+   Änderungsprotokoll zu `[entfernt]`; Namen pseudonymisierter Anstellungen
+   kehren aus `alte_werte` nicht zurück.
+
+**Zwei benannte Grenzen:** kein Schnappschuss (jede Tabelle ist eine eigene
+Transaktion — `meta.konsistenz` sagt es, `docs/export/migration-export-schnappschuss.sql`
+skizziert die Fassung mit `repeatable read`), und **Anhänge nur als Verzeichnis**:
+am 2026-09-13 enthält `storage.buckets` null Zeilen und `nachricht_anhaenge` null
+Zeilen. Es gibt keinen Objektspeicher, gegen den sich signieren liesse. Sobald es
+einen gibt, steht in `docs/export/README.md`, was zu ergänzen ist — einschliesslich
+der Prüfung jedes Pfads gegen die Betriebszugehörigkeit.
+
+### Änderung vom 2026-09-14: Rechnungsangaben vor der Aktivierung
+
+**Entscheidung der Betreiberin.** Vollständige Rechnungsdaten werden
+erfasst, **bevor** ein Abonnement kostenpflichtig wird. Das
+Stripe-Kundenportal dient danach zum **Ändern**, nicht zur erstmaligen
+Vervollständigung — man erreicht es erst, wenn ein Abo schon läuft, und
+dann ist die erste Rechnung bereits ohne Anschrift gestellt.
+
+**Vorher** ging nur das Land an Stripe (`address.country`), abgeleitet aus
+`betriebe.land`. § 5 Abs. 5 der AGB verpflichtet den Kunden aber zu „Firma
+und Anschrift", und § 14 Abs. 4 UStG verlangt sie auf der Rechnung.
+
+**Jetzt** stehen über dem Zahlungsformular fünf Pflichtfelder —
+rechtlicher Unternehmensname, Straße/Hausnummer, PLZ, Ort, Land — plus die
+freiwillige UID für österreichische Betriebe, unverändert nach dem
+bestehenden Steuerablauf.
+
+**Wo das Tor steht, ist der Kern.** Nicht im Formular, sondern in
+`zahlungsmittelUebernehmen()`: `rechnungVollstaendig(kundeId)` **liest den
+Stand bei Stripe**, bevor die Standard-Zahlungsmethode gesetzt und ein
+pausiertes Abo geweckt wird. Zwei Gründe, und beide sind der Grund:
+
+1. **3DS.** Verlangt die Bank eine Freigabe, verlässt der Browser die
+   Seite und kommt als `?setup_intent=…` zurück — das Formular gibt es
+   dann nicht mehr. Ein Parameter mit den Rechnungsdaten wäre
+   ausgerechnet auf diesem Weg leer. Deshalb speichert
+   `rechnungSpeichern()` sie **vor** `confirmSetup`, und die Übernahme
+   liest sie dort, wo sie hingehören.
+2. **Ein direkter Aufruf der Server Action** kommt am Formular vorbei,
+   aber nicht an einer Prüfung, die Stripe fragt.
+
+**Kostenloses Testen ohne Zahlungsmittel bleibt möglich** — und das ist
+keine Nebenbemerkung, sondern die Bedingung. Die Planwahl legt weiterhin
+ein Abo mit Testphase ohne Karte und ohne Anschrift an; in der Testphase
+ist nichts fällig und es entsteht keine Rechnung. Pflicht werden die
+Angaben genau dann, wenn eine Rechnung entstehen kann.
+
+**Die Sperrseite ist mit abgedeckt**, weil sie dasselbe
+`ZahlungsFormular` zeigt: die Wiederaufnahme eines pausierten Testabos
+läuft durch dasselbe Tor.
+
+**Gespeichert wird bei Stripe**, nicht bei uns: `betriebe` hat für
+Straße, PLZ und Ort keine Spalten, und das Schema wird von hier aus nicht
+verändert. Die eine Ausnahme ist das **Land** — es steht in
+`betriebe.land`, weil der ganze übrige Code es von dort liest, und wird
+bei einer Änderung an **beide** Stellen geschrieben. Sonst hätte ein
+Betrieb zwei Länder: eines auf der Rechnung, eines in der
+Arbeitszeitprüfung.
+
+**Firma ist nicht Betriebsname.** `betriebe.name` ist die Bezeichnung im
+Dienstplan („Café am Markt"), auf die Rechnung gehört die Firma
+(„Marktcafé Huber GmbH"). Vorbelegt, nicht gleichgesetzt.
+
+**Die Prüfung liegt in `rechnung-pruefung.ts`, nicht in `rechnung.ts`** —
+sie ist rein und damit ohne Bundler testbar. `rechnung.ts` daneben spricht
+mit Stripe und Supabase und zieht über `soft-launch-riegel.ts` auch
+`next/navigation` herein.
+
+### Änderung vom 2026-09-14: der Export blättert per Keyset und sagt, was fehlt
+
+**Zwei Korrekturen am Export vom 2026-09-13.**
+
+**Erstens: `range()` war falsch.** Versatz-Blättern überspringt bei einer
+gleichzeitigen Einfügung vor dem Cursor eine Zeile und liefert bei einer
+Löschung eine doppelt. Bei `plan_aenderungen` (acht Seiten) und einem
+Dienstplan, der sich während des Exports ständig ändert, ist das kein
+Randfall. Jetzt Keyset: sortiert nach Primärschlüssel, Bedingung „alles
+nach der zuletzt gelesenen Zeile", für zusammengesetzte Schlüssel als
+`(a,b) > (x,y)` in PostgREST-Filtersprache übersetzt.
+
+**Die Garantie steht jetzt im Paket**, und zwar samt ihrer Grenze: *jede
+Zeile, die während des Lesevorgangs unverändert vorhanden ist, erscheint
+genau einmal* — aber es ist **kein Schnappschuss**, und zwischen Tabellen
+gibt es keine gemeinsame Transaktion. `einladungen` ist die Ausnahme: ihr
+Primärschlüssel ist der Einladungs-Hash, den wir weder exportieren noch
+als Sortierkriterium benutzen wollen (Seitenkanal), deshalb dort eine
+Seite mit Überlaufmeldung.
+
+**Zweitens: ein Export mit fehlenden Anhängen heisst jetzt so.**
+`vollstaendig: false` plus `unvollstaendig: [...]` im Paket,
+`-UNVOLLSTAENDIG.json` im Dateinamen und
+`X-QuickTeam-Export-Vollstaendig: nein` im Antwortkopf. Das hängt an den
+Zeilen des jeweiligen Laufs, **nicht** an der Beobachtung „die Buckets
+waren leer" — entsteht ein Upload-Weg, meldet der Export sich von selbst.
+
+**Gespeicherte Pfade werden eingeordnet, nie abgerufen.** `datei_pfad`
+ist von jedem Betriebsmitglied beschreibbar; ein serverseitiger Abruf
+wäre SSRF mit Ansage (`http://169.254.169.254/…`). Jeder Eintrag trägt
+`pfad_art`, `im_betriebsordner` und `datei_enthalten: false`. Die
+Tabellenzeile ist über `betrieb_id` eingegrenzt — **der Pfad darin nicht**.
+
+### Korrektur vom 2026-09-14: ein Spaltenrecht entzieht kein Tabellenrecht
+
+Der Entwurf `docs/backend/migration-2026-09-13-notfallgrund.sql` enthielt
+
+```sql
+revoke select (grund) on public.notfaelle from authenticated;
+```
+
+und war damit **wirkungslos**. `authenticated` hält SELECT auf der ganzen
+Tabelle, und die PostgreSQL-Dokumentation sagt dazu ausdrücklich:
+„revoking privileges on individual columns has no effect if the role
+holds table-level privileges". Das Statement läuft fehlerfrei durch und
+schützt nichts.
+
+**Richtig ist: erst `revoke select on <tabelle>`, dann `grant select
+(<alle erlaubten Spalten>)`.** Die korrigierte Fassung tut das und prüft
+das Ergebnis im selben Lauf mit `has_column_privilege()` — schlägt sie
+fehl, bricht die Transaktion ab, statt eine wirkungslose Migration zu
+hinterlassen.
+
+**Wer eine Spalte schützt, prüft ausserdem fünf weitere Wege dorthin**
+(alle am 2026-09-14 gegen die Live-Instanz erhoben und in der Migration
+einzeln festgehalten): geerbte Rechte über `pg_auth_members`,
+PUBLIC-Grants in `relacl`, Views (`relkind in ('v','m')` — im Schema
+`public` gibt es **keine**), SECURITY-DEFINER-Funktionen, die die Spalte
+weiterreichen, und Filter/`RETURNING`, die ebenfalls SELECT auf der Spalte
+verlangen.
+
+**SECURITY DEFINER ist dafür nicht automatisch nötig** und nicht
+automatisch sicher. Die Migration stellt deshalb zwei Wege nebeneinander:
+Spaltenrechte plus Definer-RPC (wenig Aufwand, aber die Funktion **ist**
+dann die Zugriffskontrolle), oder eine eigene Tabelle `notfall_gruende`
+mit eigener RLS-Policy (mehr Aufwand, dafür bleibt RLS die einzige
+Autorisierungsebene — die Linie dieses Projekts). Empfohlen ist die
+zweite, sobald jemand ohnehin an `notfall_melden` arbeitet.
+
+### Die Löschmigration ist gesperrt
+
+`docs/backend/migration-2026-09-13-aufbewahrung.sql` wird **nicht
+angewendet**, bis vier Punkte erledigt sind: ein belastbares
+Vertragsende-Datum (`betrieb_abonnements` hat keines —
+`aktualisiert_am` heisst „zuletzt vom Webhook gesehen"), ein Lauf, in dem
+die Exportfristen nachweislich greifen, Klarheit über
+`trg_letzter_chef`, und eine Erprobung an einem Wegwerfbetrieb in
+`QT-Sandbox-Test`. Die Sperrliste steht im Kopf der Datei.
+
+## Prüfungen laufen mit `npm test`
+
+Seit dem 2026-09-13 gibt es einen Testlauf: `node --test` über
+`src/**/*.test.ts`, ohne neue Abhängigkeit. Node entfernt die Typangaben selbst;
+`scripts/test-loader.mjs` reicht nur nach, was Node nicht kennt — den
+`@/…`-Alias und endungslose Importe.
+
+Getestet werden damit die **echten** Quelldateien. Umgekehrt heisst das: was dort
+läuft, muss ohne Bundler auskommen. Module, die React, `next/headers` oder
+`server-only` ziehen, gehören nicht in einen Unit-Test — dafür ist der
+Browserlauf da (`.claude/skills/run-quickteam-web`).
+
+Die Gates sind damit **drei**: `npm run typecheck`, `npm run build`, `npm test`.
+`npm run lint` bleibt unbrauchbar (fragt interaktiv und hängt).
 
 ## Schema nachschlagen statt raten
 

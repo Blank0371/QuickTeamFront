@@ -5,7 +5,7 @@ import { holeChefBetriebId } from "@/lib/betrieb";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
 import { holeAboFuerBetrieb } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { ermittleZustimmungStand } from "@/lib/zustimmung";
+import { ermittleZustimmungBefund, sperrtZugang } from "@/lib/zustimmung";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -124,9 +124,42 @@ export async function ermittleStandFuer(
     }
   }
 
-  // Die Sperre steht vor allem Weiteren, siehe oben.
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   *  Die Sperre wird gegen Stripe gegengeprüft — Korrektur 2026-09-14.
+   * ───────────────────────────────────────────────────────────────────
+   *
+   * `testphaseAbgelaufen()` liest `betrieb_abonnements.status`, und diese
+   * Spalte schreibt **allein der Webhook**. Zwischen „Kunde hat gerade
+   * eine Karte hinterlegt und das Abo wurde fortgesetzt" und „unsere
+   * Zeile sagt es auch" liegen Sekunden.
+   *
+   * In genau dieser Lücke stand bisher der unangenehmste Fall des ganzen
+   * Zahlungswegs: Der Kunde setzt sein pausiertes Abo auf der Sperrseite
+   * fort, `nimmAboWiederAuf()` bezahlt die offene Rechnung, das Abo läuft
+   * — und der nächste Seitenaufruf wirft ihn zurück auf die Sperrseite,
+   * weil unsere Zeile noch `pausiert` sagt. Er hat gerade bezahlt und
+   * sieht dieselbe Sperre wie vorher.
+   *
+   * Für „kein Abo" wird derselbe Zweifel oben schon zugunsten von Stripe
+   * aufgelöst; hier fehlte er. Gefragt wird nur im Sperrfall, also
+   * selten: im Normalbetrieb kostet das keine einzige zusätzliche
+   * Anfrage.
+   *
+   * **Gesperrt bleibt, wer wirklich gesperrt ist.** Antwortet Stripe mit
+   * `paused` — oder gar nicht —, bleibt es bei der Sperre. Ein Ausfall
+   * bei Stripe öffnet nichts.
+   */
   if (testphaseAbgelaufen(abo)) {
-    return { offen: "zahlung", gesperrt: true, betriebId };
+    const beiStripe = await holeAboFuerBetrieb({
+      betriebId,
+      email,
+      kundeId: abo?.stripe_customer_id ?? null,
+    });
+
+    if (beiStripe === null || beiStripe.status === "paused") {
+      return { offen: "zahlung", gesperrt: true, betriebId };
+    }
   }
 
   // Schritt 3: mindestens eine Rolle.
@@ -281,8 +314,22 @@ async function verlangeZustimmungVorMitarbeiterdaten(
   if (stand.betriebId === null) return;
 
   const supabase = await createClient();
-  const zustimmung = await ermittleZustimmungStand(supabase, stand.betriebId);
-  if (zustimmung === "zugestimmt") return;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  /*
+   * Gesperrt wird nur, was den Zugang wirklich sperrt: eine nie erfolgte
+   * Erstannahme oder eine gescheiterte Prüfung. Eine offene
+   * **Vertragsänderung** hält den Stepper seit dem 2026-09-13 nicht mehr
+   * auf — der Annahmenachweis, den Punkt 13 des Audits vor der
+   * Verarbeitung von Mitarbeiterdaten verlangt, liegt dann ja vor, nur zu
+   * einer älteren Fassung. Und nach § 13 Abs. 3 der AGB gilt genau die
+   * bis zur Zustimmung weiter.
+   */
+  const befund = await ermittleZustimmungBefund(supabase, stand.betriebId, user.id);
+  if (!sperrtZugang(befund)) return;
 
   redirect(zustimmungAdresse(`/einrichtung/${ziel}`));
 }

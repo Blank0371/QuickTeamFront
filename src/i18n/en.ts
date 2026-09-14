@@ -306,6 +306,10 @@ export const en: Dictionary = {
     "bez.rollenName": "The role name",
     "bez.bezeichnung": "The label",
     "bez.titel": "The title",
+    "bez.firma": "The company name",
+    "bez.strasse": "The street",
+    "bez.plz": "The postal code",
+    "bez.ort": "The city",
 
     "v.pflicht.leer": "{bez} must not be empty.",
     "v.pflicht.lang": "{bez} is too long — {max} characters at most.",
@@ -323,6 +327,9 @@ export const en: Dictionary = {
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
     "v.uid.form": "An Austrian VAT ID (UID) consists of ATU and 8 digits, e.g. ATU12345678.",
+    "v.plz.ziffern": "The postal code consists of digits only.",
+    "v.plz.at": "Austrian postal codes have {anzahl} digits.",
+    "v.plz.de": "German postal codes have {anzahl} digits.",
 
     "v.telefon.kurz": "The phone number needs at least {min} digits.",
     "v.einladung.kontakt":

@@ -122,6 +122,32 @@ export function LichtEbene() {
       // ruhigen Grundbeleuchtung — kein ScrollTrigger, keine Bewegung.
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+      /*
+       * ─────────────────────────────────────────────────────────────
+       *  Unter 1024px ebenso: eine Pose, danach Ruhe.
+       * ─────────────────────────────────────────────────────────────
+       *
+       * Die Keyframes dieser Timeline sitzen an den Szenen der Seite,
+       * und die wichtigste davon — die 380vh lange Kalender-Sequenz —
+       * existiert mobil gar nicht. Uebrig blieb dort eine Beleuchtung,
+       * die bei jedem Wischer Position, Groesse und Deckkraft aenderte,
+       * ohne dass im Vordergrund etwas dazu passierte: Bewegung als
+       * Selbstzweck, hinter Text, auf dem Geraet mit dem kleinsten
+       * Energiebudget.
+       *
+       * Die Hero-Pose ist oben bereits gesetzt; sie bleibt stehen. Der
+       * Verlauf selbst, die Farben und die Rauschtextur gegen das
+       * Banding sind unveraendert — es bewegt sich nur nichts mehr.
+       *
+       * Ein `matchMedia`-Listener und kein einmaliger Test: dreht jemand
+       * sein Tablet ins Querformat und ueberschreitet dabei die Grenze,
+       * soll die Timeline entstehen; in die andere Richtung soll sie
+       * verschwinden. `bauen()` wird ohnehin schon bei jedem Resize neu
+       * aufgerufen, der Test gehoert deshalb dort hinein und nicht
+       * davor.
+       */
+      const abGrossenSchirmen = window.matchMedia("(min-width: 1024px)");
+
       let tl: gsap.core.Timeline | undefined;
 
       const bauen = () => {
@@ -136,6 +162,14 @@ export function LichtEbene() {
         // darauf liefert Nullen — die Szene laege dann bei
         // Scrollfortschritt 0 und wuerde die Keyframe-Reihenfolge
         // zerstoeren.
+        if (!abGrossenSchirmen.matches) {
+          // Zurueck auf die Hero-Pose — sonst bliebe beim Verkleinern
+          // des Fensters der zuletzt gescrubbte Zustand stehen.
+          gsap.set(gruen, heroPose.gruen);
+          gsap.set(gold, heroPose.gold);
+          return;
+        }
+
         const szenen = gsap.utils
           .toArray<HTMLElement>("[data-licht-szene]")
           .filter((el) => POSEN[el.dataset.lichtSzene ?? ""] && el.offsetParent !== null);
@@ -200,11 +234,13 @@ export function LichtEbene() {
         }, 200);
       };
       window.addEventListener("resize", beiResize);
+      abGrossenSchirmen.addEventListener("change", beiResize);
 
       return () => {
         abgebrochen = true;
         window.clearTimeout(timer);
         window.removeEventListener("resize", beiResize);
+        abGrossenSchirmen.removeEventListener("change", beiResize);
         tl?.scrollTrigger?.kill();
         tl?.kill();
       };

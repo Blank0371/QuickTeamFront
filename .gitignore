@@ -4,10 +4,46 @@ node_modules/
 out/
 build/
 
+# ── Umgebungsdateien ───────────────────────────────────────────────
+#
+# Vorher standen hier vier einzelne Namen (`.env`, `.env.local`,
+# `.env*.local`, `.env.production`). Die deckten den Bestand ab, aber
+# nicht das, was beim Arbeiten damit tatsächlich entsteht:
+#
+#   * Fassungen **ohne führenden Punkt** — `env.local`, `env.production`.
+#     Die entstehen beim Kopieren aus einem Dashboard, beim Entpacken
+#     eines Archivs oder weil der Explorer den Punkt schluckt. Sie sehen
+#     harmlos aus und waren von keiner Regel erfasst.
+#   * **Sicherungskopien**: `.env.local.bak`, `.env.production.alt`,
+#     `.env.local (Kopie)`.
+#   * Weitere Stufen: `.env.development`, `.env.test`, `.env.staging`.
+#
+# Deshalb jetzt umgekehrt: **alles, was wie eine Umgebungsdatei aussieht,
+# ist ignoriert** — und nur die Vorlagen sind ausdrücklich wieder
+# eingeschlossen. Eine neue Stufe muss dann nicht mehr nachgetragen
+# werden; vergessen kann man nur noch das Gegenteil, und das fällt sofort
+# auf, weil die Datei dann nicht im `git status` steht.
+#
+# Die Dateien in diesem Projekt tragen echte Produktionswerte
+# (Service-Role-Key, Webhook-Secret, Live-Keys). Ein versehentliches
+# `git add -A` wäre nicht zurückzunehmen: was einmal in der Historie
+# steht, bleibt dort, auch nach einem Folgecommit, der es löscht.
+
 .env
-.env.local
-.env*.local
-.env.production
+.env.*
+
+# Fassungen ohne führenden Punkt. **Am Wurzelverzeichnis verankert**
+# (`/`), sonst würde `env.*` auch `src/lib/supabase/env.ts` erfassen —
+# eine verfolgte Quelldatei, deren künftige Änderungen dann still
+# unsichtbar wären.
+/env
+/env.*
+
+# Die Vorlagen bleiben verfolgt. Sie enthalten nur Schlüsselnamen und
+# Erklärungen, keine Werte — und ohne sie weiss niemand, welche
+# Variablen gebraucht werden.
+!.env*.example
+!/env*.example
 
 npm-debug.log*
 yarn-error.log*

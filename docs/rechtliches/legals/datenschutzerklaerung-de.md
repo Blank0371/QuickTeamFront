@@ -1,6 +1,6 @@
 # DATENSCHUTZERKLÄRUNG
 
-**Stand: 13. September 2026**
+**Stand: 13. September 2026 (Fassung r2)**
 
 Diese Datenschutzerklärung informiert Sie nach Art. 13 und 14 der Datenschutz-Grundverordnung (DSGVO) darüber, wie die BlankTrading UG (haftungsbeschränkt) (nachfolgend „wir“ oder „uns“) personenbezogene Daten verarbeitet, wenn Sie
 
@@ -109,7 +109,9 @@ Bei der Registrierung bestätigen Sie die Allgemeinen Geschäftsbedingungen und 
 
 Nach der Registrierung wählen Sie einen Tarif. Das Abonnement beginnt mit einer 14-tägigen Testphase, auch wenn Sie noch kein Zahlungsmittel hinterlegen. Ein Zahlungsmittel können Sie sofort oder bis zum Ende der Testphase hinterlegen; läuft sie ohne Zahlungsmittel ab, wird das Abonnement pausiert (zu den Folgen für Ihre Daten siehe Ziffer 15.3).
 
-- **An Stripe übermitteln wir:** Ihre E-Mail-Adresse, eine interne Kennung Ihres Betriebs und den gewählten Tarif.
+- **Rechnungsangaben erheben wir, bevor ein kostenpflichtiges Abonnement beginnt.** Wenn Sie ein Zahlungsmittel hinterlegen, fragen wir den rechtlichen Unternehmensnamen, Straße und Hausnummer, Postleitzahl, Ort und Land ab. Diese Angaben sind für eine ordnungsgemäße Rechnung erforderlich (§ 14 Abs. 4 UStG); Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und lit. c DSGVO. Solange Sie den Dienst nur kostenlos testen und kein Zahlungsmittel hinterlegen, fragen wir sie nicht ab.
+- **An Stripe übermitteln wir:** Ihre E-Mail-Adresse, die genannten Rechnungsangaben (Unternehmensname, Straße und Hausnummer, Postleitzahl, Ort, Land), eine interne Kennung Ihres Betriebs, die bevorzugte Sprache für Rechnungen und den gewählten Tarif. Anschrift und Land benötigt Stripe, um die Umsatzsteuer zu berechnen und die Rechnung auszustellen. Geben Sie als österreichischer Betrieb freiwillig Ihre **Umsatzsteuer-Identifikationsnummer (UID)** an, übermitteln wir auch diese; Stripe prüft sie gegen das Mehrwertsteuer-Informationsaustauschsystem (MIAS/VIES) der Europäischen Kommission und entscheidet daran über das Reverse-Charge-Verfahren.
+- **Gespeichert werden die Rechnungsangaben bei Stripe**, nicht in unserer Datenbank; dort steht nur das Land Ihres Betriebs. Ändern können Sie sie jederzeit über das Kundenportal (siehe unten).
 - **Zahlungsdaten** (etwa Kartendaten oder IBAN für SEPA-Lastschrift) geben Sie direkt in das Formular von Stripe ein, das auf unserer Seite eingebettet ist und von Servern der Stripe geladen wird. Diese Daten gehen unmittelbar an Stripe; vollständige Kartennummern oder Kontoverbindungen erhalten und speichern wir nicht.
 - **Bei uns gespeichert werden:** die Stripe-Kundenkennung, die Kennung des Abonnements, der Tarif und der Status des Abonnements (etwa Testphase, aktiv, pausiert). Stripe teilt uns Änderungen des Status automatisch mit.
 - **Kundenportal:** Über „Abo verwalten“ in den Einstellungen des Dashboards gelangen Führungskräfte zum Kundenportal von Stripe. Dort können Sie das Abonnement kündigen, das Zahlungsmittel ändern und Rechnungen abrufen. Das Portal wird von Stripe betrieben; wir übermitteln dafür nur Ihre Stripe-Kundenkennung und die Adresse, zu der Sie danach zurückkehren.
@@ -286,6 +288,7 @@ Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zw
 | Planungs- und Kommunikationsdaten, Änderungsprotokoll | nach Weisung Ihres Arbeitgebers, spätestens bis zur Löschung des Betriebs (Ziffer 15.3) |
 | Nachweise der Zustimmung zu AGB, AVV und Datenschutzerklärung | bis zur Löschung des Betriebs |
 | Stripe-Kennungen, Tarif und Status des Abonnements | bis zur Löschung des Betriebs |
+| Rechnungsangaben (Unternehmensname, Anschrift, ggf. UID) | bei Stripe, solange das Kundenkonto dort besteht; in Rechnungen zusätzlich nach den gesetzlichen Aufbewahrungsfristen |
 | Rechnungen und Buchungsbelege | 8 Jahre (§ 147 AO, § 257 HGB) |
 | Handels- und Geschäftsbriefe, auch per E-Mail | 6 Jahre (§ 257 HGB, § 147 AO) |
 | Sonstige E-Mails an uns | bis zur Erledigung des Anliegens |

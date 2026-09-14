@@ -8,6 +8,8 @@ import { feldFehler, type FormZustand } from "@/lib/formular";
 import { createClient } from "@/lib/supabase/server";
 import { zustimmungSchema } from "@/lib/validierung";
 import { holeValidierung } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
+import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import { aktuelleZustimmungVersionen, schreibeZustimmungen } from "@/lib/zustimmung";
 
 /**
@@ -75,11 +77,18 @@ export async function zustimmen(
    */
   if (position.rolleTyp !== "chef") redirect("/dashboard");
 
+  /*
+   * Seit dem 2026-09-13 wandert der Nachweis vollständig mit: welche
+   * Sprachfassung gelesen wurde und welchen Inhalt die angenommene
+   * Fassung hatte. Beides sind Spalten, die es schon gab und die
+   * niemand schrieb — die Begründung steht in `rechtstexte-inhalt.ts`.
+   */
   const ergebnis = await schreibeZustimmungen(
     supabase,
     position.betriebId,
     user.id,
     aktuelleZustimmungVersionen(),
+    { sprache: await leseSprache(), hashes: await zustimmungHashes() },
   );
 
   if (ergebnis.art === "fehler") {

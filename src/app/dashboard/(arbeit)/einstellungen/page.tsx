@@ -94,6 +94,51 @@ export default async function EinstellungenSeite({
           />
         ) : null}
 
+        {chef ? (
+          /*
+            Der Datenexport nach § 6 Abs. 4 der AGB.
+
+            Ein Link, kein Knopf mit Server Action: das Ergebnis ist eine
+            Datei, und ein Route Handler liefert sie mit
+            `Content-Disposition: attachment` aus, ohne dass die Seite
+            dafür JavaScript braucht. `download` gibt dem Browser nur
+            einen Vorschlag — den verbindlichen Dateinamen setzt der
+            Handler.
+
+            Bewusst **nicht** hinter der Zahlungssperre: § 6 Abs. 4 gibt
+            den Export bis dreissig Tage nach Vertragsende. Deshalb
+            erreichbar auch von der Sperrseite und vom Zustimmungs-Tor.
+          */
+          <section aria-labelledby="export-titel" className="mt-12 border-t border-line pt-8">
+            <h2
+              id="export-titel"
+              className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
+            >
+              Daten exportieren
+            </h2>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+              Alle Daten deines Betriebs als eine JSON-Datei: Mitarbeiter und Rollen,
+              Vorlagen und Schichten, Urlaub, Verfügbarkeiten, Mitteilungen, Tausch,
+              Notfälle und das Änderungsprotokoll. Das Paket nennt zu jedem Abschnitt,
+              was er enthält, und listet auf, was bewusst fehlt.
+            </p>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+              Einzelstimmen anonymer Umfragen sind nicht enthalten — für sie steht die
+              Auszählung im Paket. Der Export ist kostenlos und beliebig oft möglich,
+              auch nach einer Kündigung.
+            </p>
+            <p className="mt-4">
+              <a
+                href="/api/betrieb-export"
+                download
+                className="inline-flex rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
+              >
+                Export herunterladen
+              </a>
+            </p>
+          </section>
+        ) : null}
+
         {/*
           Die Kontolöschung steht am Fuss und ausserhalb des
           Einstellungs-Panels: sie gehört nicht zu den Werten, die man

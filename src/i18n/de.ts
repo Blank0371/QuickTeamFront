@@ -294,6 +294,10 @@ export const de = {
     "bez.rollenName": "Der Rollenname",
     "bez.bezeichnung": "Die Bezeichnung",
     "bez.titel": "Der Titel",
+    "bez.firma": "Der Unternehmensname",
+    "bez.strasse": "Die Straße",
+    "bez.plz": "Die Postleitzahl",
+    "bez.ort": "Der Ort",
 
     "v.pflicht.leer": "{bez} darf nicht leer sein.",
     "v.pflicht.lang": "{bez} ist zu lang — höchstens {max} Zeichen.",
@@ -311,6 +315,9 @@ export const de = {
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
     "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
+    "v.plz.ziffern": "Die Postleitzahl besteht nur aus Ziffern.",
+    "v.plz.at": "Österreichische Postleitzahlen haben {anzahl} Ziffern.",
+    "v.plz.de": "Deutsche Postleitzahlen haben {anzahl} Ziffern.",
 
     "v.telefon.kurz": "Die Telefonnummer braucht mindestens {min} Ziffern.",
     "v.einladung.kontakt":

@@ -2,6 +2,8 @@ import Stripe from "stripe";
 
 import type { Rechnungsangaben } from "@/lib/betrieb";
 import { plaene, TESTPHASE_TAGE, type PlanId } from "@/lib/site";
+import type { LandCode } from "@/lib/validierung";
+import type { RechnungsProfil } from "@/lib/rechnung-pruefung";
 import { verlangeSoftLaunchFrei } from "@/lib/soft-launch-riegel";
 
 /**
@@ -304,6 +306,158 @@ export async function stelleSteuerstandortSicher(
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* Rechnungsangaben                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Liest die vorhandenen Rechnungsangaben eines Stripe-Kunden — für die
+ * Vorbelegung des Formulars.
+ *
+ * Bewusst nachsichtig: fehlt der Kunde, fehlt ein Feld oder schlägt der
+ * Abruf fehl, kommt `null` bzw. ein leeres Feld zurück. Eine
+ * Vorbelegung ist eine Bequemlichkeit, kein Nachweis — sie darf die
+ * Seite nicht zum Absturz bringen, und der Kunde füllt die Lücke
+ * ohnehin selbst.
+ */
+export async function holeRechnungsProfil(
+  kundeId: string | null,
+): Promise<Partial<RechnungsProfil> | null> {
+  if (!kundeId) return null;
+
+  try {
+    const stripe = stripeKlient();
+    const kunde = await stripe.customers.retrieve(kundeId);
+    if (kunde.deleted) return null;
+
+    const uid = await holeUid(kundeId);
+
+    return {
+      firma: kunde.name ?? "",
+      strasse: kunde.address?.line1 ?? "",
+      plz: kunde.address?.postal_code ?? "",
+      ort: kunde.address?.city ?? "",
+      ...(kunde.address?.country === "AT" || kunde.address?.country === "DE"
+        ? { land: kunde.address.country as LandCode }
+        : {}),
+      uid: uid ?? "",
+    };
+  } catch (ursache) {
+    const text = ursache instanceof Error ? ursache.message : String(ursache);
+    console.error(`[stripe] Rechnungsangaben von ${kundeId} nicht lesbar: ${text}`);
+    return null;
+  }
+}
+
+/**
+ * Schreibt die vollständige Rechnungsanschrift an **diesen** Kunden.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum die Kunden-Id ein Parameter ist und nicht hier ermittelt wird
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Damit der Aufrufer sie aus derselben Quelle bezieht wie das Abo, an
+ * dem gleich die Zahlungsmethode hängt. Zwei getrennte Ermittlungen —
+ * einmal für die Adresse, einmal für das Abo — könnten bei einer
+ * geänderten Anmeldeadresse zwei verschiedene Kunden treffen, und dann
+ * stünde die Anschrift am einen und die Karte am anderen.
+ * `zahlungsmittelUebernehmen` leitet beide aus dem gefundenen Abo ab.
+ *
+ * Anders als `stelleSteuerstandortSicher()` **überschreibt** diese
+ * Funktion vorhandene Werte: sie läuft nur, wenn jemand das Formular
+ * ausgefüllt und abgeschickt hat. Genau das ist dann die neuere Angabe.
+ */
+export async function speichereRechnungAmKunden(
+  kundeId: string,
+  profil: RechnungsProfil,
+): Promise<void> {
+  const stripe = stripeKlient();
+
+  await stripe.customers.update(kundeId, {
+    name: profil.firma,
+    address: {
+      line1: profil.strasse,
+      postal_code: profil.plz,
+      city: profil.ort,
+      country: profil.land,
+    },
+  });
+
+  /*
+   * ─────────────────────────────────────────────────────────────────
+   *  Die UID hängt am Rechnungsland, nicht am Formularfeld.
+   * ─────────────────────────────────────────────────────────────────
+   *
+   * Drei Fälle, und alle drei müssen ausdrücklich behandelt sein — der
+   * mittlere ist der, der sonst durchrutscht:
+   *
+   *  1. Land AT, UID angegeben  → setzen (ersetzt eine abweichende).
+   *  2. **Land nicht mehr AT**  → vorhandene EU-Nummern **entfernen**.
+   *     Eine `ATU…` an einem deutschen Rechnungsempfänger ist keine
+   *     harmlose Altlast: Stripe Tax entscheidet daran über Reverse
+   *     Charge.
+   *  3. Land AT, Feld leer      → stehen lassen. „Keine Angabe" ist
+   *     nicht „löschen"; wer die Nummer im Kundenportal gepflegt hat,
+   *     verliert sie nicht dadurch, dass er hier eine Hausnummer
+   *     korrigiert. Wer sie wirklich loswerden will, tut das im Portal
+   *     — dort gibt es die Schaltfläche dafür, und dort ist es eine
+   *     bewusste Handlung.
+   */
+  if (profil.land !== "AT") {
+    const entfernt = await entferneUids(kundeId);
+    if (entfernt > 0) {
+      console.info(
+        `[stripe] ${entfernt} EU-Steuernummer(n) von ${kundeId} entfernt — Rechnungsland ist jetzt ${profil.land}.`,
+      );
+    }
+    return;
+  }
+
+  await setzeUid(kundeId, profil.uid || null);
+}
+
+/**
+ * Liegen am Kunden vollständige Rechnungsangaben vor?
+ *
+ * Das Tor vor der Aktivierung eines kostenpflichtigen Abonnements
+ * (Entscheidung vom 2026-09-14). Bewusst **hier** und nicht im Formular:
+ *
+ *  - Es greift auch auf dem 3DS-Rückweg, auf dem der Browser die Seite
+ *    verlassen hat und kein Formularinhalt mehr existiert.
+ *  - Es liest den Zustand bei Stripe, statt einer Eingabe zu glauben.
+ *    Wer `zahlungsmittelUebernehmen()` direkt aufruft, kommt nicht
+ *    vorbei.
+ *
+ * Verlangt werden genau die Felder, die § 14 Abs. 4 UStG für eine
+ * Rechnung an einen Unternehmer braucht und die wir nicht selbst
+ * kennen: Firma, Straße, Postleitzahl, Ort, Land. **Die UID gehört
+ * nicht dazu** — sie ist freiwillig und nur für österreichische
+ * Betriebe überhaupt von Belang.
+ *
+ * Ein Fehlschlag beim Abruf gilt als „nicht vollständig". Das ist die
+ * sichere Richtung: lieber eine Aktivierung zu viel verweigern als eine
+ * Rechnung ohne Anschrift ausstellen.
+ */
+export async function rechnungVollstaendig(kundeId: string): Promise<boolean> {
+  try {
+    const kunde = await stripeKlient().customers.retrieve(kundeId);
+    if (kunde.deleted) return false;
+
+    const a = kunde.address;
+    return Boolean(
+      kunde.name?.trim() &&
+        a?.line1?.trim() &&
+        a?.postal_code?.trim() &&
+        a?.city?.trim() &&
+        a?.country?.trim(),
+    );
+  } catch (ursache) {
+    const text = ursache instanceof Error ? ursache.message : String(ursache);
+    console.error(`[stripe] Rechnungsangaben von ${kundeId} nicht prüfbar: ${text}`);
+    return false;
+  }
+}
+
 /** Die hinterlegte EU-USt-IdNr. des Kunden, oder `null`. */
 export async function holeUid(kundeId: string): Promise<string | null> {
   const ids = await stripeKlient().customers.listTaxIds(kundeId, { limit: 10 });
@@ -334,6 +488,42 @@ export async function setzeUid(kundeId: string, uid: string | null): Promise<voi
     await stripe.customers.deleteTaxId(kundeId, alt.id);
   }
   await stripe.customers.createTaxId(kundeId, { type: "eu_vat", value: uid });
+}
+
+/**
+ * Entfernt **alle** EU-Steuernummern des Kunden.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das nicht `setzeUid(kundeId, null)` erledigt
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * `setzeUid` steigt bei `null` sofort aus — dort heisst „keine Angabe"
+ * ausdrücklich „lass stehen, was da ist". Das ist richtig für die
+ * Planwahl, wo das Feld leer bleiben darf, ohne dass eine im
+ * Kundenportal gepflegte Nummer verschwindet.
+ *
+ * Für einen **Länderwechsel** ist es falsch. Wechselt die
+ * Rechnungsadresse von Österreich nach Deutschland, wäre eine stehen
+ * gebliebene `ATU…` eine Steuernummer, die nicht zur Rechnungsanschrift
+ * passt: Stripe Tax zöge sie weiterhin für die
+ * Reverse-Charge-Entscheidung heran, und die Rechnung wiese eine
+ * Umsatzsteuerbehandlung aus, für die es keine Grundlage mehr gibt.
+ * „Stillschweigend falsch weiterverwenden" ist genau der Fall, den es
+ * hier nicht geben darf.
+ *
+ * Zwei Namen für zwei Absichten, statt eines Parameters mit zwei
+ * Bedeutungen: `setzeUid(null)` heisst „nichts angegeben",
+ * `entferneUids()` heisst „weg damit".
+ */
+export async function entferneUids(kundeId: string): Promise<number> {
+  const stripe = stripeKlient();
+  const ids = await stripe.customers.listTaxIds(kundeId, { limit: 10 });
+  const euIds = ids.data.filter((id) => id.type === "eu_vat");
+
+  for (const alt of euIds) {
+    await stripe.customers.deleteTaxId(kundeId, alt.id);
+  }
+  return euIds.length;
 }
 
 /* ------------------------------------------------------------------ */
