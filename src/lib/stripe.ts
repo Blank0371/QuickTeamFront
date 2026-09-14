@@ -862,10 +862,10 @@ export type PausenBilanz = {
  * für einen gelöschten Betrieb abgebucht.
  *
  * Also wird hier bei Stripe gekündigt. Der Webhook schreibt daraus wie bei
- * jeder Kündigung `gekuendigt`; `beendet_am` bleibt dabei das Ende der
- * Testphase, die 30-Tage-Frist ist also längst vorbei, und der Job löscht
- * beim nächsten Lauf. Das ist genau § 5 Abs. 3: Vertragsende nach 90 Tagen,
- * Löschung mit dem Vertragsende.
+ * jeder Kündigung `gekuendigt`; der Trigger stellt `beendet_am` dabei auf den
+ * Zeitpunkt der Kündigung (Migration `loeschung_a5`), und der Job löscht 30
+ * Tage später. Das ist § 5 Abs. 3 in der AGB-Fassung r2: Vertragsende nach 90
+ * Tagen, Export und Löschung danach nach § 6 Abs. 4 — also Tag 90 + 30.
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Die Frist kommt von Stripe, nicht aus unserer Zeile

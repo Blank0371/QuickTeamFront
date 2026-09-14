@@ -900,8 +900,9 @@ Betrieb wäre also nie gelöscht worden.
   Lesefehler lässt durch — die Begründung steht an `pruefeVertragsende`.
 - `/api/cron/testphasen-beenden`, täglich 02:00 UTC über `vercel.json`: kündigt bei
   Stripe jedes Abo mit `betrieb_id`, das pausiert ist und dessen `trial_end` mehr als
-  90 Tage zurückliegt. Der Webhook schreibt `gekuendigt`, der DB-Job löscht beim
-  nächsten Lauf (03:30 UTC). Braucht nur den Stripe-Key, keinen Supabase-Client.
+  90 Tage zurückliegt. Der Webhook schreibt `gekuendigt`, der Trigger stellt
+  `beendet_am` auf die Kündigung, und der DB-Job löscht 30 Tage später — Tag 90 + 30,
+  wie AGB r2 § 5 Abs. 3 es verlangt. Braucht nur den Stripe-Key, keinen Supabase-Client.
   Steht hinter `CRON_SECRET` (fehlt der Wert: 500, nie offen) und ist wie der
   Webhook von Soft-Launch-Sperre und Middleware ausgenommen — deshalb
   `stripeKlientOhneRiegel()` in `src/lib/stripe.ts`, mit genau diesem einen Aufrufer.
@@ -1915,7 +1916,15 @@ nicht geraten und nicht aus dieser Datei extrapoliert. `list_tables` für Strukt
   der Cron `betriebe-aufraeumen` und die RPC `betrieb_vertrag_beendet()`.
   Grund: AGB § 5 Abs. 3 / § 6 Abs. 4 und Datenschutzerklärung 15.3 versprechen
   eine Löschung, die es nicht gab. Eingespielt **ohne Test**, ebenfalls auf
-  Anweisung. Der Satz oben gilt für alles Weitere unverändert.
+  Anweisung. Am selben Tag mit `loeschung_a5` an die AGB-Fassung r2 angeglichen
+  (pausiert → gekündigt stellt die 30-Tage-Uhr neu; `private.loeschsperre` hält
+  den Job bei einem Exportverlangen in Textform an). Der Satz oben gilt für alles
+  Weitere unverändert.
+
+  **`docs/backend/migration-2026-09-14-vertragsende-und-loeschung.sql` darf nicht
+  zusätzlich eingespielt werden** — sie ist ein paralleler, nie angewendeter Entwurf
+  für dasselbe Problem und legt u. a. eine zweite, anders gemeinte Spalte
+  `beendet_am` an. Was davon noch fehlt, steht in `docs/backend-befunde-2026-09-14.md`.
 - **Kein `service_role`-Key im Repo — mit genau einer Ausnahme.** Alles andere läuft
   weiterhin über den anon-Key und RLS. Die Ausnahme ist der Stripe-Webhook unter
   `src/app/api/stripe/webhook/route.ts` und sonst nichts.

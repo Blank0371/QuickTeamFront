@@ -1,4 +1,35 @@
 -- =====================================================================
+--  !!! NICHT EINSPIELEN — ÜBERHOLT DURCH DIE LIVE-MIGRATIONEN (2026-09-14) !!!
+-- =====================================================================
+--
+--  Am 2026-09-14 hat die Betreiberin einen parallel entstandenen Entwurf
+--  für dasselbe Problem einspielen lassen: Migrationen `loeschung_a1` bis
+--  `loeschung_a5` (Stand und Begründung: docs/backend-befunde-2026-09-14.md,
+--  CLAUDE.md „Was hier nicht passiert"). Diese Datei wurde dabei NICHT
+--  angewendet. Sie jetzt zusätzlich einzuspielen, zerstört den Live-Stand:
+--
+--   * `betrieb_abonnements.beendet_am` EXISTIERT BEREITS — mit anderer
+--     Bedeutung (Beginn von gekuendigt/pausiert, gesetzt vom Trigger
+--     `trg_abo_beendet_am`). `add column if not exists` überspränge die
+--     Spalte still, und der Trigger überschriebe jeden Wert, den der
+--     Webhook nach Abschnitt 3 hineinschreibt.
+--   * Löschfunktion, Protokoll und Archiv gibt es live schon, im Schema
+--     `private`: `private.betrieb_endgueltig_loeschen()`,
+--     `private.loeschprotokoll`, `private.zustimmungsarchiv`; täglicher
+--     Cron `betriebe-aufraeumen`. Diese Datei legte daneben eine zweite
+--     Garnitur in `public` an.
+--   * Das Zustimmungsarchiv hat live eine bestätigte Frist (3 Jahre, von
+--     der Betreiberin entschieden) und wird vom Job geräumt.
+--   * 90 + 30 für das pausierte Testabo ist live umgesetzt (a5), ebenso
+--     eine Löschsperre für Exportverlangen — als manuelle Tabelle
+--     `private.loeschsperre`, nicht als `export_anfragen`.
+--
+--  Was von diesem Entwurf noch Wert hat, als Vorlage für eine Folge-
+--  Migration auf dem Live-Stand: `gekuendigt_zum` (vorgemerkte Kündigung,
+--  nur zur Anzeige), `export_anfragen` statt der manuellen Sperre, und die
+--  Testmatrix in Abschnitt 10.
+--
+-- =====================================================================
 --  Vertragsende, Exportfristen und geordnete Löschung eines Betriebs
 --  Vorbereitet am 2026-09-14. NICHT ANGEWENDET, NICHT ERPROBT.
 --

@@ -65,7 +65,7 @@ not taken from earlier documents.
 
 - **Hosting is Vercel.** The repo also contains a `netlify.toml`; if the site ever moves, Sections 3, 13 and 14 must change.
 - **SMS/phone login is off.** It is therefore not mentioned. If it is ever switched on, the SMS provider must be added (recipient, third country, retention).
-- **Deletion after contract end: 30 days** (matches AGB § 6(4)). **Paused trials: deleted after 90 days** without reactivation. **Since 2026-09-14 the 30-day deletion runs automatically** (cron `betriebe-aufraeumen`, daily 03:30 UTC, see `docs/backend-befunde-2026-09-14.md`). **The 90-day case** goes through Stripe: the database only deletes cancelled businesses, so the cron `/api/cron/testphasen-beenden` (built 2026-09-14, daily 02:00 UTC) cancels subscriptions paused for more than 90 days, and the deletion follows on the next database run. It takes effect once deployed with `CRON_SECRET` set in Vercel; until then, cancel such subscriptions in Stripe by hand.
+- **Deletion after contract end: 30 days** (matches AGB § 6(4)). **Paused trials: the contract ends after 90 days** without reactivation, and deletion follows 30 days later (AGB r2 § 5(3), since 2026-09-14; before r2 it was deletion on day 90). **Since 2026-09-14 the 30-day deletion runs automatically** (cron `betriebe-aufraeumen`, daily 03:30 UTC, see `docs/backend-befunde-2026-09-14.md`). **The 90-day case** goes through Stripe: the database only deletes cancelled businesses, so the cron `/api/cron/testphasen-beenden` (built 2026-09-14, daily 02:00 UTC) cancels subscriptions paused for more than 90 days, and the database job deletes 30 days after that cancellation. It takes effect once deployed with `CRON_SECRET` set in Vercel; until then, cancel such subscriptions in Stripe by hand.
 - **Contact stays blanktrading@web.de**, so WEB.DE is listed as a processor.
 - **Bug reports: deleted after handling, at most 12 months.** This period was set while drafting, not decided explicitly — change it if needed.
 
@@ -99,7 +99,9 @@ Follows the database changes in `docs/backend-befunde-2026-09-14.md` (A1–A4, a
 | 15.3, bullet 1 | The deletion no longer includes the Terms/DPA records; reference to 5.2 |
 | 15.3, bullet 3 | Before: employees' login accounts remain. Now: every login account (manager or employee) that has no employment in another business left is deleted with the business |
 
-`src/lib/rechtstexte.ts`: `datenschutz` bumped to `2026-09-14-draft`. Managers confirm the privacy policy again through the consent gate on their next dashboard visit — intended. AGB and AVV are unchanged and stay at `2026-09-13-draft`.
+`src/lib/rechtstexte.ts`: `datenschutz` bumped to `2026-09-14-draft`, **built on the r2 text** (billing details, Stripe) that was merged in the same day — the document now carries both changes. Since r2 a new version no longer blocks anyone; managers who accepted before get a notice (`ermittleZustimmungBefund` in `src/lib/zustimmung.ts`). AGB stay at `2026-09-13-r2-draft`, AVV at `2026-09-13-draft`.
+
+**Database aligned with AGB r2 on the same day** (migration `loeschung_a5`): after a paused trial ends without resumption, deletion follows 30 days after that contract end (day 90 + 30, § 5(3) r2), and a written export request holds the deletion via `private.loeschsperre` until the data has been provided and 14 days have passed (§ 6(4) r2). **Operator task:** when an export request arrives by email, add a row there (`betrieb_id`, `bis` = provision date + 14 days, a reason without personal data).
 - **Vercel region:** Without a `regions` setting, Vercel runs server functions in `iad1` (Washington, D.C.). Setting the project to `dub1` (Dublin, same region as the Supabase database) would keep dashboard data processing in the EU and reduce latency. The policy is written so that it is true either way.
 
 ## External legal review of 2026-09-13 — status per finding

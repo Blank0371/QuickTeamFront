@@ -14,6 +14,25 @@ Angaben am 2026-09-14 gegen die Live-DB (`jqpfuotwsgnqihspsmmf`) geprüft.
 > | `loeschung_a2_zustimmungsarchiv_und_loeschfunktion` | `private.zustimmungsarchiv` samt zwei Triggern, `private.betrieb_endgueltig_loeschen()` |
 > | `loeschung_a3_taeglicher_job` | `private.loeschprotokoll`, View `private.faellige_loeschungen`, `private.betriebe_aufraeumen()`, Cron `betriebe-aufraeumen` (03:30 UTC) |
 > | `loeschung_a4_betrieb_vertrag_beendet` | `public.betrieb_vertrag_beendet()`, nur für `authenticated` |
+> | `loeschung_a5_agb_r2_und_loeschsperre` | Angleichung an die AGB-Fassung r2 (siehe unten), `private.loeschsperre` |
+>
+> **Nachtrag, gleicher Tag: Zusammenführung mit paralleler Arbeit.** Beim Push
+> lag auf `main` ein zweiter Entwurf für dasselbe Problem
+> (`docs/backend/migration-2026-09-14-vertragsende-und-loeschung.sql`, nie
+> angewendet, jetzt mit Warnkopf versehen) samt **AGB-Fassung r2**. Zwei Stellen
+> der r2 widersprachen dem Live-Stand und sind mit a5 angeglichen:
+>
+> - **§ 5 Abs. 3 r2:** auch nach einer nicht fortgesetzten Pause gilt § 6 Abs. 4,
+>   also Löschung 30 Tage **nach** dem Vertragsende an Tag 90 — nicht an Tag 90.
+>   Der Trigger stellt die Uhr jetzt bei `pausiert` → `gekuendigt` neu. Damit ist
+>   Entscheidung 2 unten überholt: eine Kündigung während der Pause führt nicht
+>   mehr zur sofortigen Löschung, sondern zu einer 30 Tage später.
+> - **§ 6 Abs. 4 r2:** nach einem Exportverlangen in Textform wird nicht gelöscht,
+>   bevor bereitgestellt und 14 Tage vergangen sind. Solange Verlangen per Mail
+>   kommen: Zeile in `private.loeschsperre` anlegen (`betrieb_id`, `bis` =
+>   Bereitstellung + 14 Tage, `grund` ohne Personenbezug). Die View
+>   `faellige_loeschungen` überspringt gesperrte Betriebe; abgelaufene Sperren
+>   gelöschter Betriebe räumt der Job ab.
 >
 > **Nicht getestet** — Entscheidung der Betreiberin. Die erste echte Löschung
 > ist der Test; scheitert sie, steht der Fehler in `private.loeschprotokoll`,
