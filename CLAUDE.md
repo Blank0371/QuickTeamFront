@@ -665,6 +665,10 @@ trial", und das Abo geht direkt auf `trialing`.
 fälligen ersten Zahlung geschieht — bei einem Trial gibt es keine. Aus demselben
 Grund ist der Stripe-Status `incomplete` in diesem Flow unerreichbar.
 
+**Seit dem 2026-09-14 gilt das nur noch für das erste Abo eines Betriebs** — ein
+Neuabschluss nach Kündigung hat keine Testphase, ist nicht überspringbar und
+entsteht `incomplete`. Siehe „Änderung vom 2026-09-14: eine Testphase je Betrieb".
+
 ### `missing_payment_method: 'pause'` trägt das Ablauf-Tor
 
 ```
@@ -808,12 +812,49 @@ das Formular zeigt, wertet die Rückkehr auch aus.
 Zeile, die nur der Webhook ändert. Wer auf der Sperrseite bezahlt hatte, war bei
 Stripe schon `active`, die Zeile aber noch `pausiert` — und stand wieder vor
 „Kostenpflichtig fortsetzen". **Jetzt** fragen Stepper (`ermittleStandFuer`) und
-Dashboard-Tor (`pruefeSperre`) beide über `pruefePauseBeiStripe()` nach, **nur**
-wenn die Zeile `pausiert` sagt. Stripe kann die Sperre aufheben, nicht erfinden;
-ist Stripe nicht erreichbar, bleibt sie. Beide Tore müssen dieselbe Frage stellen —
-fragte nur eines nach, schickten sie sich den Kunden gegenseitig im Kreis zu.
-Die Regel „der Webhook schreibt `betrieb_abonnements` allein" bleibt unberührt:
-gelesen wird bei Stripe, geschrieben nichts.
+Dashboard-Tor (`pruefeSperre`) beide über `aboLageBeiStripe()` nach, **nur**
+wenn die Zeile `pausiert` oder `gekuendigt` sagt (bzw. im Stepper noch keine
+Subscription-ID trägt). Stripe kann die Sperre aufheben, nicht erfinden; ist Stripe
+nicht erreichbar, bleibt sie. Beide Tore müssen dieselbe Frage stellen — fragte nur
+eines nach, schickten sie sich den Kunden gegenseitig im Kreis zu. Die Regel „der
+Webhook schreibt `betrieb_abonnements` allein" bleibt unberührt: gelesen wird bei
+Stripe, geschrieben nichts.
+
+### Änderung vom 2026-09-14: eine Testphase je Betrieb
+
+**Vorher:** `erstelleAbo()` gab jedem neuen Abo `trial_period_days`. Ein gekündigter
+Betrieb wird in den Zahlungsschritt geschickt, um neu abzuschliessen — und bekam
+dort die nächste Testphase, ohne Karte. Während der Testphase im Kundenportal
+kündigen, neu abschliessen, wieder kündigen: unbegrenzt kostenlos.
+
+**Jetzt:** Die Testphase gibt es nur, wenn der Stripe-Kunde des Betriebs noch **nie**
+ein Abo hatte (`holeAboVerlauf()`, `status: "all"` zählt gekündigte mit). Jedes
+weitere Abo entsteht mit `payment_behavior: "default_incomplete"` — Status
+`incomplete`, erste Rechnung offen, kein Einzugsversuch ohne Karte.
+`uebernimmZahlungsmittel()` bezahlt sie sofort (`bezahleOffeneRechnung()`, dieselbe
+Mechanik wie beim Wiederaufnehmen). Ohne Karte verfällt das Abo nach 23 Stunden
+kostenlos (`incomplete_expired` → `gekuendigt`).
+
+- **Kein Überspringen:** Plan-Auswahl ohne „Später hinterlegen", Text ohne
+  „14 Tage kostenlos"; `planWaehlen()` ignoriert `absicht=ueberspringen`, wenn das
+  Abo `incomplete` ist. Die Zahlungsansicht nennt die sofortige Abbuchung
+  (`zusammenfassungNeuabschluss()`), der Knopf heisst „Kostenpflichtig abonnieren".
+- **Beide Tore zählen `incomplete` wie „kein Abo"** (`aboLageBeiStripe()` →
+  `unbezahlt`). Sonst wäre das blosse Anlegen schon der Zugang. Der Webhook
+  schreibt für `incomplete` weiterhin nichts, die Zeile bleibt also `gekuendigt`,
+  bis bezahlt ist.
+- **Planwechsel vor der Zahlung:** ein `incomplete`-Abo wird nicht umgestellt,
+  sondern gekündigt und neu angelegt — an ihm hängt die offene Rechnung über den
+  alten Betrag, und das Kündigen stoppt deren Einzug.
+- **Idempotenzschlüssel** trägt jetzt die Anzahl bisheriger Abos statt `:steuer`.
+  Vorher lieferte Stripe einem Betrieb, der binnen 24 Stunden kündigte und neu
+  abschloss, das alte, gekündigte Abo als Antwort zurück — und es entstand keins.
+
+**Grenze:** gezählt wird je Stripe-Kunde, und der hängt am Betrieb. Eine zweite
+Registrierung mit anderer Adresse ist ein neuer Betrieb und bekommt eine neue
+Testphase — das war schon immer so und ist über den Betrieb nicht zu fassen. AGB
+§ 5 Abs. 2 („beginnt mit der Wahl des Tarifs im Anschluss an die Registrierung")
+deckt die Regel; eine Textänderung war nicht nötig.
 
 ### Änderung vom 2026-09-13: Kündigung über das Stripe-Kundenportal
 

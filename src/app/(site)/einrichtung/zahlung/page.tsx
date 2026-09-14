@@ -13,12 +13,14 @@ import {
   formatiereDatum,
   preisZeile,
   pruefePreisGleichstand,
+  zusammenfassungNeuabschluss,
   zusammenfassungSchritt,
 } from "@/lib/abo-konditionen";
 import {
   aboKonditionen,
   erstelleSetupIntent,
   holeAboFuerBetrieb,
+  holeAboVerlauf,
   holeUid,
 } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -78,6 +80,9 @@ export default async function ZahlungSeite({
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const abo = await holeAbo(supabase, betriebId);
   const rechnung = await holeRechnungsangaben(supabase, betriebId);
   const gewaehlt = planOderBasic(abo?.plan);
@@ -88,10 +93,6 @@ export default async function ZahlungSeite({
   /* ---------------------------------------------------------------- */
 
   if (einzelwert(params["zahlen"]) === "1" || zurueckVon3ds) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     const stripeAbo = await holeAboFuerBetrieb({
       betriebId,
       email: user?.email ?? "",
@@ -120,6 +121,13 @@ export default async function ZahlungSeite({
     pruefePreisGleichstand(gewaehlt, konditionen);
     const preis = preisZeile(konditionen);
 
+    /*
+     * Neuabschluss ohne Testphase: die erste Rechnung ist offen, und das
+     * Hinterlegen bezahlt sie (`uebernimmZahlungsmittel`). Das muss vor
+     * und auf dem Knopf stehen, wie auf der Sperrseite.
+     */
+    const sofort = stripeAbo.status === "incomplete";
+
     return (
       <SchrittRahmen
         schritt="zahlung"
@@ -128,7 +136,9 @@ export default async function ZahlungSeite({
         lead={
           konditionen.testphaseEnde
             ? `Plan ${planName}${preis ? `, ${preis}` : ""}. Jetzt wird nichts abgebucht — die Testphase läuft bis ${formatiereDatum(konditionen.testphaseEnde)}.`
-            : `Plan ${planName}${preis ? `, ${preis}` : ""}.`
+            : sofort
+              ? `Plan ${planName}${preis ? `, ${preis}` : ""}. Mit dem Hinterlegen beginnt dein Abo, und der erste Zeitraum wird abgebucht.`
+              : `Plan ${planName}${preis ? `, ${preis}` : ""}.`
         }
       >
         {uebernahmeFehler ? (
@@ -139,7 +149,12 @@ export default async function ZahlungSeite({
 
         <ZahlungsFormular
           clientSecret={intent.clientSecret}
-          zusammenfassung={zusammenfassungSchritt(konditionen)}
+          zusammenfassung={
+            sofort
+              ? zusammenfassungNeuabschluss(konditionen)
+              : zusammenfassungSchritt(konditionen)
+          }
+          knopfText={sofort ? "Kostenpflichtig abonnieren" : undefined}
         />
 
         <p className="mt-6 border-t border-line pt-5 text-sm text-muted">
@@ -178,6 +193,21 @@ export default async function ZahlungSeite({
     uidFeld = { vorbelegt };
   }
 
+  /*
+   * Ob diesem Betrieb noch eine Testphase zusteht, entscheidet
+   * `erstelleAbo` — nach derselben Frage an Stripe, die hier gestellt
+   * wird. Die Seite fragt nur, damit sie nicht „14 Tage kostenlos"
+   * verspricht, wo gleich abgebucht wird. Ohne Testphase ist, wer schon
+   * Abos hatte und keins mehr lebend, oder nur ein unbezahltes.
+   */
+  const verlauf = await holeAboVerlauf({
+    betriebId,
+    email: user?.email ?? "",
+    kundeId: abo?.stripe_customer_id ?? null,
+  });
+  const ohneTestphase =
+    verlauf.anzahl > 0 && (verlauf.lebend === null || verlauf.lebend.status === "incomplete");
+
   return (
     <SchrittRahmen
       schritt="zahlung"
@@ -189,9 +219,11 @@ export default async function ZahlungSeite({
          * Aufruf dieser Seite — ein Planwechsel verlängert die Testphase
          * nicht (`wechslePlan` lässt `trial_end` unberührt).
          */
-        abo?.stripe_subscription_id
-          ? "Deine Testphase läuft bereits seit der ersten Planwahl; ein Planwechsel verlängert sie nicht. Das Zahlungsmittel kannst du jetzt hinterlegen oder später nachtragen."
-          : `${TESTPHASE_TAGE} Tage kostenlos, danach monatlich. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.`
+        ohneTestphase
+          ? "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits. Im nächsten Schritt hinterlegst du ein Zahlungsmittel, und dein Abo beginnt sofort."
+          : verlauf.lebend
+            ? "Deine Testphase läuft bereits seit der ersten Planwahl; ein Planwechsel verlängert sie nicht. Das Zahlungsmittel kannst du jetzt hinterlegen oder später nachtragen."
+            : `${TESTPHASE_TAGE} Tage kostenlos, danach monatlich. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.`
       }
     >
       <PlanAuswahl
@@ -200,6 +232,7 @@ export default async function ZahlungSeite({
         proMonat={t.landing.proMonat}
         ustHinweis={t.landing.preiseUstAlle}
         uidFeld={uidFeld}
+        ohneTestphase={ohneTestphase}
       />
     </SchrittRahmen>
   );

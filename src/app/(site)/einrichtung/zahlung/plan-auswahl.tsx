@@ -61,6 +61,7 @@ export function PlanAuswahl({
   proMonat,
   ustHinweis,
   uidFeld,
+  ohneTestphase,
 }: {
   aktuell: PlanId;
   grenzen: Dictionary["planGrenzen"];
@@ -71,6 +72,11 @@ export function PlanAuswahl({
    * Reverse Charge. `vorbelegt` ist die bei Stripe hinterlegte Nummer.
    */
   uidFeld: { vorbelegt: string | null } | null;
+  /**
+   * Der Betrieb hatte schon ein Abo, das neue beginnt ohne Testphase.
+   * Dann gibt es nichts zu überspringen — ohne Zahlung kein Zugang.
+   */
+  ohneTestphase: boolean;
 }) {
   const [zustand, aktion] = useActionState(planWaehlen, leererZustand);
   const { beiVerlassen, fehlerFuer } = useFeldPruefung(["uid"]);
@@ -126,14 +132,16 @@ export function PlanAuswahl({
         <span className="sm:w-auto">
           <AbsendenButton laufend="Einen Moment …">Weiter zur Zahlung</AbsendenButton>
         </span>
-        <UeberspringenButton />
+        {ohneTestphase ? null : <UeberspringenButton />}
       </div>
 
-      <p className="text-xs leading-relaxed text-muted">
-        In beiden Fällen laufen zuerst {TESTPHASE_TAGE} Tage kostenlos. Ohne hinterlegtes
-        Zahlungsmittel pausiert dein Betrieb danach, bis du eins nachträgst — deine Daten
-        bleiben dafür 90 Tage erhalten.
-      </p>
+      {ohneTestphase ? null : (
+        <p className="text-xs leading-relaxed text-muted">
+          In beiden Fällen laufen zuerst {TESTPHASE_TAGE} Tage kostenlos. Ohne hinterlegtes
+          Zahlungsmittel pausiert dein Betrieb danach, bis du eins nachträgst — deine Daten
+          bleiben dafür 90 Tage erhalten.
+        </p>
+      )}
     </form>
   );
 }

@@ -9,7 +9,7 @@ import {
   waehleAktive,
   type Position,
 } from "@/lib/dashboard/position";
-import { pruefePauseBeiStripe } from "@/lib/stripe";
+import { aboLageBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { ermittleZustimmungStand } from "@/lib/zustimmung";
 
@@ -97,12 +97,14 @@ export async function betreteDashboard(): Promise<Zugang> {
  * soll seinen Dienstplan sehen können, auch wenn der Chef die Karte
  * nicht hinterlegt hat. Gesperrt wird die Verwaltung, nicht die Schicht.
  *
- * Gefragt wird zuerst die eigene Zeile. Sagt sie `pausiert`, fragt das
- * Tor bei Stripe nach, **genau wie der Stepper** — bis zum 2026-09-14
- * tat es das nicht. Wer auf der Sperrseite bezahlt hatte, wurde vom
- * Stepper durchgelassen (Stripe: `active`) und von hier zurückgeschickt
- * (Zeile noch `pausiert`), und zwar im Kreis, bis der Webhook ankam. Zwei
- * Tore auf demselben Zustand müssen dieselbe Frage stellen.
+ * Gefragt wird zuerst die eigene Zeile. Sagt sie `pausiert` oder
+ * `gekuendigt`, fragt das Tor bei Stripe nach, **genau wie der Stepper**
+ * — bis zum 2026-09-14 tat es das nicht. Wer auf der Sperrseite bezahlt
+ * oder nach einer Kündigung neu abgeschlossen hatte, wurde vom Stepper
+ * durchgelassen (Stripe: `active`) und von hier zurückgeschickt (Zeile
+ * noch alt), und zwar im Kreis, bis der Webhook ankam. Zwei Tore auf
+ * demselben Zustand müssen dieselbe Frage stellen, und sie müssen sie
+ * gleich beantworten — die Lagen stehen bei `aboLageBeiStripe`.
  */
 async function pruefeSperre(
   supabase: SupabaseServerClient,
@@ -112,19 +114,23 @@ async function pruefeSperre(
   if (position.rolleTyp !== "chef") return;
 
   const abo = await holeAbo(supabase, position.betriebId);
-  if (testphaseAbgelaufen(abo)) {
-    const beiStripe = await pruefePauseBeiStripe({
-      betriebId: position.betriebId,
-      email,
-      kundeId: abo?.stripe_customer_id ?? null,
-    });
-    if (beiStripe === "pausiert") redirect("/einrichtung/testphase-abgelaufen");
-    if (beiStripe === "kein-abo") redirect("/einrichtung/zahlung");
+  if (!testphaseAbgelaufen(abo) && !aboGekuendigt(abo)) return;
+
+  const lage = await aboLageBeiStripe({
+    betriebId: position.betriebId,
+    email,
+    kundeId: abo?.stripe_customer_id ?? null,
+  });
+  if (lage === "laeuft") return;
+
+  if (lage === "pausiert" || (lage === "unbekannt" && testphaseAbgelaufen(abo))) {
+    redirect("/einrichtung/testphase-abgelaufen");
   }
 
   /*
    * Gekündigt führt zurück in den Zahlungsschritt, nicht auf die
-   * Sperrseite.
+   * Sperrseite — ebenso ein neues Abo, dessen erste Rechnung noch offen
+   * ist, und eine Zeile, zu der Stripe gerade nichts sagt.
    *
    * Dieses Tor muss die Frage überhaupt stellen, weil es den Stand
    * **nicht** über `ermittleStand()` bezieht, sondern selbst prüft.
@@ -145,7 +151,7 @@ async function pruefeSperre(
    * ohnehin nur, wer unter `abonnement_select_chef` fällt. Angestellte
    * behalten ihren Dienstplan.
    */
-  if (aboGekuendigt(abo)) redirect("/einrichtung/zahlung");
+  redirect("/einrichtung/zahlung");
 }
 
 /**
