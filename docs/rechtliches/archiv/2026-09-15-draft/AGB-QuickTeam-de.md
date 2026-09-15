@@ -206,7 +206,6 @@ Weitere Bestandteile: meta enthält Betrieb, Erzeugungszeitraum, Zeitzonenhinwei
 | benachrichtigung_gelesen | Wer welche Mitteilung gelesen hat. | benachrichtigung_id, mitarbeiter_id |
 | nachricht_anhaenge | Verzeichnis der Anhänge; Dateiinhalte separat bereitzustellen. | id |
 | schichttausch_anfragen | Schichttausch: Angebot, Annahme, Genehmigung. | id |
-| notfall_gruende | Geschützte optionale Notfallgründe. Bezug zu notfaelle über notfall_id; nur für berechtigte Führungskräfte. | notfall_id |
 | notfaelle | Notfallmeldungen und Vertretungen. | id |
 | plan_aenderungen | Änderungsprotokoll des Betriebs. Alte und neue Werte liegen als JSON vor. | id |
 | einladungen | Offene und eingelöste Einladungen. Der Einladungs-Hash ist ein Zugangsgeheimnis und fehlt. | erstellt_am |

@@ -1,3 +1,21 @@
+## Umsetzung am 15.09.2026, Revision r2
+
+Aktueller Schlüssel aller drei Dokumente: **2026-09-15-r2-draft**. Die Version ohne r2 ist archiviert. Notfallgründe sind jetzt in Supabase geschützt; App-Quelltexte liegen in QuickTeamMobile und wurden synchronisiert. Export umfasst jetzt 30 Bereiche. Aktueller Status und noch offene Schritte: [UMSETZUNG-2026-09-15.md](../UMSETZUNG-2026-09-15.md). Die folgenden älteren Aussagen zu offenem Notfallgrund-Umbau und fehlender App-Synchronisierung sind insoweit überholt.
+
+# QuickTeam — Rechtstexte, Stand 15. September 2026
+
+AGB, AVV und Datenschutzinformation liegen jeweils auf Deutsch und Englisch vor. Alle sechs Dateien und die Versionsschlüssel tragen den Stand 2026-09-15-draft. Deutsch ist die Vertragsfassung; Englisch die abgestimmte Übersetzung. Die Datenschutzinformation ist keine Verarbeitungseinwilligung.
+
+**Entwurfsstand; keine Launchfreigabe.** Änderungen, technische Voraussetzungen und Quellen stehen in [ABGLEICH-2026-09-15.md](../ABGLEICH-2026-09-15.md). Insbesondere Export-Löschsperren, Notfallgrund-Zugriffe, App-Fassung und Dienstleister-Nachweise sind vor Veröffentlichung abzugleichen.
+
+Die unmittelbar vorherigen sechs Texte sind mit Fassungen und SHA-256-Prüfsummen unter [archiv/vor-2026-09-15](../archiv/vor-2026-09-15/) erhalten. Bestehende Vertragsannahmen werden nicht rückwirkend ersetzt.
+
+## Historischer Bearbeitungsverlauf bis 14. September 2026
+
+Der folgende Verlauf dokumentiert frühere Annahmen und Prüfstände. Er ist **keine aktuelle Freigabe oder Tatsachenbestätigung**. Insbesondere sind die früheren Aussagen „No DPO required“, pauschale Stripe-Einordnung und „Court-safe“ durch den aktuellen Abgleich überholt. Ein Unterschreiten der Personalgrenze allein beseitigt keine Benennungspflicht; AGB-Kontrolle gilt auch im B2B-Bereich.
+
+---
+
 # QuickTeam — Legal documents (for review)
 
 Stand-alone, readable copies of QuickTeam's contract documents, exported for legal review. **All are pre-lawyer drafts.**

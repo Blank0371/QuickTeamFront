@@ -159,7 +159,7 @@ For each position we process: first and last name, email address, optionally a p
 - **Managers** of your business see all operational data of the business.
 - **Employees** see their own data. Colleagues' names and shifts are visible only to the extent your Employer has enabled this in the business settings. Messages, polls, open shifts and cover requests are addressed to the team or to the people eligible for them.
 - **Vacation requests** are visible only to you and the managers.
-- **Emergency reports** are visible to members of your business. The optional reason is separate and readable only by the reporting person and active managers of that business (Section 8).
+- **Emergency reports**, including the optional reason, are visible to the members of your business (see Section 8).
 
 ### 7.5 Purposes and legal bases of operational processing
 
@@ -171,7 +171,7 @@ Business data is used to organise shifts, availability, vacation, cover and comm
 
 Several functions have optional free-text fields: emergency reasons, vacation comments, shift notes and messages. Please do not enter diagnoses, details of illness or certificates of incapacity for work. Finding cover normally requires only the information that a shift cannot be worked.
 
-**Visibility:** An entered emergency reason is stored separately from general emergency information. Only the reporting person and active managers of the same business may read it. Other employees, including a person taking over the shift, cannot access the reason through emergency information. Even within this restricted group, processing must be limited to necessary information.
+**Current visibility:** An entered emergency reason is readable by business members, even if it is not displayed everywhere in the interface. This information is not consent or a legal basis for unnecessary disclosure.
 
 Even a brief mention of illness may be health data. Processing then also requires an applicable exception under Article 9(2) GDPR in the specific case, for example where necessary for employment-law obligations and permitted under national law. Voluntary entry alone does not automatically establish such an exception. Your Employer must assess necessity and recipients; we remain responsible for our safeguards. Unnecessary information must be removed. Contact your Employer or our privacy contact for this purpose.
 
@@ -198,7 +198,7 @@ There is therefore no decision based solely on automated processing that produce
 - Expo forwards the message to the **Apple Push Notification service (Apple Inc., USA)** or to **Firebase Cloud Messaging (Google LLC, USA)**, which deliver it to your device.
 - You can switch off individual notification types in the app settings, and push messages altogether in your device's system settings.
 - **Responsibility and legal bases:** We deliver business push messages on your Employer’s behalf; its legal basis is addressed in Section 7.5. Device permission is a prerequisite for push but does not replace any required data-protection consent or a basis for third-country transfers. Device access is exempt from consent under Section 25(2) no. 2 TDDDG or Section 165(3) TKG 2021 only insofar as strictly necessary for the push function you expressly enable. Any additional consent required must be informed. You can disable push in system settings. Section 14 addresses third-country transfers.
-- **Retention:** The push token is deleted when you delete your account. If another account signs in on the same device, the token is assigned to that account. The updated app removes this device’s push token and scheduled local reminders during normal sign-out. If a connection error prevents completion, the app displays a notice; retry or disable push in system settings. Notifications already delivered or in transit cannot reliably be recalled. Older app versions do not yet remove the token on sign-out.
+- **Retention:** The push token is deleted when you delete your account. If another account signs in on the same device, the token is assigned to that account. Signing out alone does not currently remove the token; if you no longer want to receive push messages after signing out, please switch them off in your system settings.
 
 **Local reminders.** On request, the app schedules shift reminders solely on your device. They are triggered without a network connection; no data is transmitted to us or to third parties.
 
@@ -208,7 +208,7 @@ There is therefore no decision based solely on automated processing that produce
 
 The app stores on your device: your login session (access and refresh identifiers), a cache of recently loaded data for display without a network connection (e.g. calendar data), your chosen language and appearance (light/dark), a note of which messages have already been shown, and the accepted version of the legal documents.
 
-This data stays on your device. Storing it is strictly necessary for the features you use (Sec. 25(2) no. 2 TDDDG or Sec. 165(3) TKG 2021; Art. 6(1)(b) or (f) GDPR). On successful normal sign-out, the updated app removes the login session, calendar cache, local message-read markers, notification preferences and local privacy acknowledgements. Language and appearance remain. In older app versions, other local data may remain until you uninstall the app or clear its data.
+This data stays on your device. Storing it is strictly necessary for the features you use (Sec. 25(2) no. 2 TDDDG or Sec. 165(3) TKG 2021; Art. 6(1)(b) or (f) GDPR). The login session is removed when you sign out; the remaining data stays until you uninstall the app or clear the app data in your device settings.
 
 **App stores.** When you download and update the app, Apple (App Store) and Google (Google Play) process data as controllers in their own right under their own privacy policies. We receive only aggregated statistics from the stores, not information about individual persons.
 

@@ -1,6 +1,6 @@
 # DATENSCHUTZERKLÄRUNG
 
-**Stand: 15. September 2026**
+**Stand: 14. September 2026**
 
 Diese Datenschutzerklärung informiert Sie nach Art. 13 und 14 der Datenschutz-Grundverordnung (DSGVO) darüber, wie die BlankTrading UG (haftungsbeschränkt) (nachfolgend „wir“ oder „uns“) personenbezogene Daten verarbeitet, wenn Sie
 
@@ -25,7 +25,7 @@ Telefon: +43 664 2538798
 
 **Datenschutzkontakt:** blanktrading@web.de. An diese Adresse richten Sie bitte auch alle Anfragen zur Ausübung Ihrer Rechte (Ziffer 17).
 
-**Datenschutzkontakt:** Ein Datenschutzbeauftragter ist derzeit nicht benannt. Datenschutzanfragen bearbeitet die Geschäftsführung unter der oben genannten Adresse.
+**Datenschutzbeauftragter:** Wir sind zur Benennung eines Datenschutzbeauftragten nicht verpflichtet (Art. 37 DSGVO, § 38 Abs. 1 BDSG) und haben keinen benannt. Datenschutzanfragen bearbeitet die Geschäftsführung selbst.
 
 ---
 
@@ -37,8 +37,8 @@ QuickTeam ist ein Werkzeug zur Schicht- und Personaleinsatzplanung, das Betriebe
 |---|---|---|
 | Besuch der Website, Cookies (Ziffern 3 und 4) | wir | Verantwortlicher |
 | Registrierung, Vertrag und Zahlung eines Betriebs (Ziffern 5 und 6) | wir | Verantwortlicher |
-| Ihr Anmeldekonto, Sitzungen, E-Mail-Kontakt, Fehlermeldungen (Ziffern 7.1, 11, 12) | wir | Verantwortlicher |
-| Betriebliche Daten: Ihr Profil im Betrieb, Schichten, Verfügbarkeiten, Vorlieben, Urlaub, Schichttausch, Notfälle, Mitteilungen, Umfragen, Änderungsprotokoll sowie Zustellung betrieblicher Push-Mitteilungen (Ziffern 7.2 bis 10) | Ihr Arbeitgeber | Auftragsverarbeiter (Art. 28 DSGVO) |
+| Ihr Anmeldekonto, Sitzungen, Push-Zustellung, E-Mail-Kontakt, Fehlermeldungen (Ziffern 7.1, 10, 11, 12) | wir | Verantwortlicher |
+| Betriebliche Daten: Ihr Profil im Betrieb, Schichten, Verfügbarkeiten, Vorlieben, Urlaub, Schichttausch, Notfälle, Mitteilungen, Umfragen, Änderungsprotokoll (Ziffern 7.2 bis 9) | Ihr Arbeitgeber | Auftragsverarbeiter (Art. 28 DSGVO) |
 
 **Betriebliche Daten.** Ihr Arbeitgeber entscheidet, welche Daten er in QuickTeam über Sie erfasst, wer im Betrieb welche Angaben sehen darf und wann Daten gelöscht werden. Wir verarbeiten diese Daten nur nach seinen Weisungen auf Grundlage eines Auftragsverarbeitungsvertrags. Ihr Arbeitgeber ist verpflichtet, Sie selbst über diese Verarbeitung zu informieren; die Ziffern 7.2 bis 9 beschreiben, was der Dienst dabei technisch tut, ersetzen diese Information aber nicht. Anfragen zu betrieblichen Daten richten Sie bitte zuerst an Ihren Arbeitgeber. Erreicht eine solche Anfrage uns, leiten wir sie unverzüglich an ihn weiter und unterstützen ihn bei der Beantwortung.
 
@@ -67,7 +67,7 @@ Wir setzen **keine** Analyse-, Tracking- oder Werbedienste ein und binden keine 
 
 ## 4. Cookies und ähnliche Technologien auf der Website
 
-Die Website verwendet die nachfolgenden Cookies für Anmeldung, gewählte Einstellungen, Registrierung und Zahlung:
+Wir verwenden ausschließlich Cookies, die für den von Ihnen genutzten Dienst technisch erforderlich sind:
 
 | Cookie | Zweck | Speicherdauer | Wann gesetzt |
 |---|---|---|---|
@@ -77,9 +77,9 @@ Die Website verwendet die nachfolgenden Cookies für Anmeldung, gewählte Einste
 | **qt_registrierung** | hält während der Registrierung Betriebsname, Land sowie Vor- und Nachname bereit, bis der Bestätigungscode eingegeben ist; nur auf der Registrierungsseite lesbar | 24 Stunden; wird nach der Bestätigung gelöscht | bei der Registrierung |
 | **__stripe_mid**, **__stripe_sid** | Betrugsprävention bei der Zahlung (Stripe) | 1 Jahr bzw. 30 Minuten | nur auf den Seiten mit Zahlungsformular (Ziffer 6) |
 
-**Rechtsgrundlage:** Für die zur Anmeldung, Registrierung und ausdrücklich gewählten Sprache oder Position erforderlichen Speicherzugriffe gilt § 25 Abs. 2 Nr. 2 TDDDG bzw. in Österreich § 165 Abs. 3 TKG 2021. Die Verarbeitung personenbezogener Daten richtet sich nach Art. 6 Abs. 1 lit. b DSGVO für eigene Vertragsbeziehungen bzw. lit. f DSGVO für sichere Zugänge und die Abwicklung für Unternehmensvertreter. Stripe verwendet im Zahlungsformular Cookies und Gerätesignale zur Betrugsprävention. Eine Einwilligungsausnahme gilt auch dort nur für Speicherzugriffe, die für den ausdrücklich verlangten Zahlungsdienst unbedingt erforderlich sind; eine allgemeine Berufung auf Sicherheit oder berechtigte Interessen ersetzt diese Voraussetzung nicht.
+**Rechtsgrundlage:** Das Speichern und Auslesen dieser Cookies ist unbedingt erforderlich, damit wir den von Ihnen ausdrücklich gewünschten Dienst bereitstellen können (§ 25 Abs. 2 Nr. 2 TDDDG; in Österreich § 165 Abs. 3 TKG 2021). Eine Einwilligung ist dafür nicht erforderlich. Die damit verbundene Verarbeitung personenbezogener Daten stützt sich auf Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Dienstes) bzw. Art. 6 Abs. 1 lit. f DSGVO (Sicherheit, Sprachwahl, Betrugsprävention).
 
-Auf der Website wird derzeit kein Cookie-Banner angezeigt. Analyse- und Werbe-Cookies werden nicht eingesetzt. Sie können Cookies in den Einstellungen Ihres Browsers löschen oder blockieren; ohne die Anmelde-Cookies ist eine Anmeldung jedoch nicht möglich.
+Weil wir keine Cookies zu Analyse- oder Werbezwecken einsetzen, zeigen wir kein Cookie-Banner. Sie können Cookies in den Einstellungen Ihres Browsers löschen oder blockieren; ohne die Anmelde-Cookies ist eine Anmeldung jedoch nicht möglich.
 
 ---
 
@@ -91,7 +91,7 @@ Zur Registrierung eines Betriebs erheben wir: Name des Betriebs, Land (Deutschla
 
 Zur Bestätigung Ihrer E-Mail-Adresse senden wir Ihnen einen achtstelligen Code (Ziffer 12.1). Erst nach Eingabe des Codes wird der Betrieb angelegt und Ihr Konto als Führungskraft („Chef“) mit ihm verknüpft. Bis dahin liegen die Angaben zum Betrieb bei Ihrem noch unbestätigten Konto.
 
-**Unbestätigte Registrierungen werden automatisch gelöscht.** Wird der Code nicht innerhalb von 24 Stunden eingegeben, wird das Konto samt den dazu gespeicherten Angaben beim nächsten stündlichen Bereinigungslauf gelöscht, regelmäßig spätestens nach etwa 25 Stunden.
+**Unbestätigte Registrierungen werden automatisch gelöscht.** Wird der Code nicht innerhalb von 24 Stunden eingegeben, löscht ein stündlich laufender Vorgang das Konto samt der dazu gespeicherten Angaben.
 
 ### 5.2 Nachweis der Zustimmung zu AGB, AVV und Datenschutzerklärung
 
@@ -112,14 +112,14 @@ Für die Bestätigung von AGB und AVV legen wir im Zeitpunkt der Bestätigung zu
 Nach der Registrierung wählen Sie einen Tarif. Das Abonnement beginnt mit einer 14-tägigen Testphase, auch wenn Sie noch kein Zahlungsmittel hinterlegen. Ein Zahlungsmittel können Sie sofort oder bis zum Ende der Testphase hinterlegen; läuft sie ohne Zahlungsmittel ab, wird das Abonnement pausiert (zu den Folgen für Ihre Daten siehe Ziffer 15.3).
 
 - **Rechnungsangaben erheben wir, bevor ein kostenpflichtiges Abonnement beginnt.** Wenn Sie ein Zahlungsmittel hinterlegen, fragen wir den rechtlichen Unternehmensnamen, Straße und Hausnummer, Postleitzahl, Ort und Land ab. Diese Angaben sind für eine ordnungsgemäße Rechnung erforderlich (§ 14 Abs. 4 UStG); Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und lit. c DSGVO. Solange Sie den Dienst nur kostenlos testen und kein Zahlungsmittel hinterlegen, fragen wir sie nicht ab.
-- **An Stripe übermitteln wir:** Ihre E-Mail-Adresse, die genannten Rechnungsangaben (Unternehmensname, Straße und Hausnummer, Postleitzahl, Ort, Land), eine interne Kennung Ihres Betriebs, die bevorzugte Sprache für Rechnungen und den gewählten Tarif. Anschrift und Land benötigt Stripe, um die Umsatzsteuer zu berechnen und die Rechnung auszustellen. Geben Sie als österreichischer Betrieb freiwillig Ihre **Umsatzsteuer-Identifikationsnummer (UID)** an, übermitteln wir auch diese; Stripe prüft ihre Gültigkeit über das Mehrwertsteuer-Informationsaustauschsystem (MIAS/VIES). Für die zutreffende steuerliche Behandlung sind die gesetzlichen Voraussetzungen maßgeblich; wir bleiben für die richtige Rechnung verantwortlich.
+- **An Stripe übermitteln wir:** Ihre E-Mail-Adresse, die genannten Rechnungsangaben (Unternehmensname, Straße und Hausnummer, Postleitzahl, Ort, Land), eine interne Kennung Ihres Betriebs, die bevorzugte Sprache für Rechnungen und den gewählten Tarif. Anschrift und Land benötigt Stripe, um die Umsatzsteuer zu berechnen und die Rechnung auszustellen. Geben Sie als österreichischer Betrieb freiwillig Ihre **Umsatzsteuer-Identifikationsnummer (UID)** an, übermitteln wir auch diese; Stripe prüft sie gegen das Mehrwertsteuer-Informationsaustauschsystem (MIAS/VIES) der Europäischen Kommission und entscheidet daran über das Reverse-Charge-Verfahren.
 - **Gespeichert werden die Rechnungsangaben bei Stripe**, nicht in unserer Datenbank; dort steht nur das Land Ihres Betriebs. Ändern können Sie sie jederzeit über das Kundenportal (siehe unten).
 - **Zahlungsdaten** (etwa Kartendaten oder IBAN für SEPA-Lastschrift) geben Sie direkt in das Formular von Stripe ein, das auf unserer Seite eingebettet ist und von Servern der Stripe geladen wird. Diese Daten gehen unmittelbar an Stripe; vollständige Kartennummern oder Kontoverbindungen erhalten und speichern wir nicht.
 - **Bei uns gespeichert werden:** die Stripe-Kundenkennung, die Kennung des Abonnements, der Tarif und der Status des Abonnements (etwa Testphase, aktiv, pausiert). Stripe teilt uns Änderungen des Status automatisch mit.
 - **Kundenportal:** Über „Abo verwalten“ in den Einstellungen des Dashboards gelangen Führungskräfte zum Kundenportal von Stripe. Dort können Sie das Abonnement kündigen, das Zahlungsmittel ändern und Rechnungen abrufen. Das Portal wird von Stripe betrieben; wir übermitteln dafür nur Ihre Stripe-Kundenkennung und die Adresse, zu der Sie danach zurückkehren.
 - **Betrugsprävention:** Auf den Seiten mit Zahlungsformular erhebt Stripe Geräte- und Nutzungsdaten (z. B. IP-Adresse, Browser-Merkmale, Interaktionen mit dem Formular) und setzt dafür die in Ziffer 4 genannten Cookies, um betrügerische Zahlungen zu erkennen.
 
-**Verantwortlichkeit:** Eingesetzt wird Stripe Payments Europe, Limited, Irland. Nach dem [Stripe-Datenverarbeitungsvertrag](https://stripe.com/legal/dpa) handelt Stripe je nach Verarbeitung als unser Auftragsverarbeiter, etwa zur Bereitstellung seiner Zahlungs- und Abonnementdienste nach unseren Weisungen, oder als eigenständig Verantwortlicher, insbesondere für eigene Betrugsbekämpfung, regulatorische Pflichten und weitere dort beschriebene eigene Zwecke. Für die Auswahl und Übermittlung der Kunden- und Rechnungsdaten bleiben wir verantwortlich. Die betriebliche Personalplanung übermitteln wir nicht über diese Zahlungsintegration. Informationen zu Stripes eigener Verarbeitung stehen in der [Stripe-Datenschutzerklärung](https://stripe.com/privacy). Übermittlungen in die USA richten sich nach Ziffer 14.
+**Verantwortlichkeit:** Die Zahlungsabwicklung übernimmt **Stripe Payments Europe, Limited, Irland**. Stripe verarbeitet die Zahlungs- und Abrechnungsdaten als eigenständig Verantwortlicher, insbesondere zur Durchführung der Zahlung, zur Betrugsprävention und zur Erfüllung eigener gesetzlicher Pflichten (etwa zur Geldwäscheprävention). Einzelheiten finden Sie in der Datenschutzerklärung von Stripe unter stripe.com/privacy. Stripe übermittelt Daten auch an die Stripe, Inc. in den USA (Ziffer 14).
 
 **Rechtsgrundlagen:** Art. 6 Abs. 1 lit. b DSGVO bzw. lit. f DSGVO (siehe Ziffer 5.3) für die Abwicklung des Abonnements; Art. 6 Abs. 1 lit. f DSGVO für die Betrugsprävention; Art. 6 Abs. 1 lit. c DSGVO für die Aufbewahrung von Rechnungs- und Buchungsunterlagen.
 
@@ -159,27 +159,29 @@ Je Anstellung werden verarbeitet: Vor- und Nachname, E-Mail-Adresse, optional Te
 - **Führungskräfte** Ihres Betriebs sehen alle betrieblichen Daten des Betriebs.
 - **Beschäftigte** sehen ihre eigenen Daten. Namen und Schichten von Kolleginnen und Kollegen sind nur sichtbar, soweit Ihr Arbeitgeber das in den Einstellungen des Betriebs freigegeben hat. Mitteilungen, Umfragen, offene Schichten und Vertretungsgesuche richten sich an das Team oder an die dafür in Frage kommenden Personen.
 - **Urlaubsanträge** sehen nur Sie und die Führungskräfte.
-- **Notfallmeldungen** sind für Mitglieder Ihres Betriebs einsehbar. Der optionale Grund ist davon getrennt und nur für die meldende Person und aktive Führungskräfte desselben Betriebs lesbar (Ziffer 8).
+- **Notfallmeldungen** einschließlich des optionalen Grundes sind für die Mitglieder Ihres Betriebs einsehbar (siehe Ziffer 8).
 
 ### 7.5 Zwecke und Rechtsgrundlagen der betrieblichen Verarbeitung
 
-Die betrieblichen Daten dienen der Organisation von Schichten, Verfügbarkeiten, Urlaub, Vertretungen und Kommunikation. Ihr Arbeitgeber bestimmt die Rechtsgrundlage für jede Verarbeitung und informiert Sie darüber. Maßgeblich sind Art. 6 DSGVO und die jeweils anwendbaren nationalen Beschäftigtendatenschutzvorschriften; Art. 88 DSGVO ist keine eigenständige Erlaubnis. Soweit erforderlich, sind Betriebsvereinbarungen und Mitbestimmungsrechte zu beachten. Eine pauschale Einwilligung zur Nutzung der App ersetzt diese Prüfung nicht. Gesundheitsangaben unterliegen zusätzlich Art. 9 DSGVO (Ziffer 8). Wir verarbeiten die betrieblichen Daten als Auftragsverarbeiter auf dokumentierte Weisung.
+Die Verarbeitung dient der Planung und Organisation der Arbeit im Betrieb: Dienstplanung, Berücksichtigung von Verfügbarkeiten und Wünschen, Urlaubsverwaltung, Schichttausch, Notfallvertretung und teaminterne Kommunikation. Die Rechtsgrundlage bestimmt Ihr Arbeitgeber als Verantwortlicher. In Betracht kommen insbesondere Art. 6 Abs. 1 lit. b DSGVO in Verbindung mit Art. 88 DSGVO und den nationalen Vorschriften zum Beschäftigtendatenschutz (in Deutschland § 26 BDSG), soweit die Verarbeitung für das Beschäftigungsverhältnis erforderlich ist; Art. 6 Abs. 1 lit. c DSGVO, soweit Ihr Arbeitgeber den Dienstplan für arbeitszeitrechtliche Aufzeichnungspflichten nutzt; und Art. 6 Abs. 1 lit. f DSGVO für organisatorische Funktionen wie Umfragen und Ankündigungen. Wir verarbeiten diese Daten als Auftragsverarbeiter nach Art. 28 DSGVO.
 
 ---
 
 ## 8. Freitexte und Gesundheitsdaten
 
-Mehrere Funktionen enthalten freiwillige Freitextfelder: Notfallgründe, Urlaubskommentare, Schichtnotizen und Mitteilungen. Bitte tragen Sie dort keine Diagnosen, Krankheitsdetails oder Arbeitsunfähigkeitsbescheinigungen ein. Für eine Vertretung genügt regelmäßig die Information, dass eine Schicht nicht übernommen werden kann.
+Mehrere Funktionen enthalten freiwillige Freitextfelder: den Grund einer Notfallmeldung, den Kommentar zu einem Urlaubsantrag, Notizen zu Schichten sowie Mitteilungen. Wir werten Freitexte nicht aus.
 
-**Sichtbarkeit:** Ein eingetragener Notfallgrund wird getrennt von den allgemeinen Notfallinformationen gespeichert. Lesen dürfen ihn nur die meldende Person und aktive Führungskräfte desselben Betriebs. Andere Beschäftigte, einschließlich einer übernehmenden Vertretung, erhalten über die Notfallinformationen keinen Zugriff auf den Grund. Auch innerhalb dieses eingeschränkten Kreises dürfen nur erforderliche Angaben verarbeitet werden.
+**Bitte machen Sie dort keine Angaben zu Ihrer Gesundheit.** Schon ein Grund wie „krank“ ist ein Gesundheitsdatum und damit eine besondere Kategorie personenbezogener Daten (Art. 9 DSGVO). Sie sind nicht verpflichtet, im Dienst einen Grund anzugeben. Der Grund einer Notfallmeldung ist für die Mitglieder Ihres Betriebs einsehbar. Wie Sie eine Arbeitsunfähigkeit melden, richtet sich nach den Regeln Ihres Arbeitsverhältnisses, nicht nach QuickTeam.
 
-Auch eine kurze Krankheitsangabe kann ein Gesundheitsdatum sein. Eine Verarbeitung erfordert dann zusätzlich zu den sonstigen Voraussetzungen eine im Einzelfall einschlägige Ausnahme nach Art. 9 Abs. 2 DSGVO, etwa soweit sie zur Erfüllung arbeitsrechtlicher Pflichten notwendig und national zulässig ist. Die bloße freiwillige Eingabe begründet eine solche Ausnahme nicht automatisch. Ihr Arbeitgeber muss Erforderlichkeit und Empfängerkreis prüfen; wir bleiben für unsere Schutzpflichten verantwortlich. Unnötige Angaben sind zu entfernen. Wenden Sie sich hierfür an Ihren Arbeitgeber oder unseren Datenschutzkontakt.
+Machen Sie dennoch eine solche Angabe, verarbeitet Ihr Arbeitgeber sie als Verantwortlicher. Rechtsgrundlage ist dann Art. 9 Abs. 2 lit. b DSGVO in Verbindung mit den Vorschriften des Beschäftigtendatenschutzes (in Deutschland § 26 Abs. 3 BDSG).
+
+---
 
 ## 9. Automatisch erstellte Planvorschläge
 
 Führungskräfte können für einen Planungszeitraum einen Dienstplanvorschlag automatisch erstellen lassen. Das Verfahren berücksichtigt den Personalbedarf je Schicht und Rolle, die Tätigkeitsrollen der Beschäftigten, Verfügbarkeiten, Schichtvorlieben, genehmigten Urlaub, Soll- und Höchststunden, bereits bestehende Zuweisungen sowie gesetzliche Ruhe- und Höchstarbeitszeiten.
 
-- Die Berechnung läuft auf unserer eigenen Infrastruktur bei Supabase in der EU. Für die Berechnung werden **keine zusätzlichen externen KI-Dienste** aufgerufen; Supabase bleibt als Infrastruktur-Auftragsverarbeiter beteiligt.
+- Die Berechnung läuft auf unserer eigenen Infrastruktur bei Supabase in der EU. Es werden **keine Daten an Dritte oder an KI-Dienste** übermittelt.
 - Das Ergebnis ist ein **Vorschlag**. Eine Führungskraft prüft ihn, kann ihn ändern oder verwerfen und macht ihn erst durch Veröffentlichung verbindlich.
 - Das Verfahren bewertet weder Ihre Leistung noch Ihr Verhalten und trifft keine Vorhersagen über Sie.
 
@@ -197,8 +199,8 @@ Eine ausschließlich auf automatisierter Verarbeitung beruhende Entscheidung, di
 - Für jede an Sie gerichtete Benachrichtigung übermittelt unser Server an den Push-Dienst von **Expo (650 Industries, Inc., USA)**: den Push-Token, einen Titel, einen Text und technische Angaben (Art der Benachrichtigung sowie interne Kennungen der Benachrichtigung und des Betriebs). **Bei Ankündigungen und Umfragen werden Titel und Text, die die verfassende Person geschrieben hat, vollständig übermittelt;** bei Systemmeldungen ist es ein Standardtext wie „Eine deiner Schichten wurde geändert.“
 - Expo leitet die Nachricht an den **Apple Push Notification service (Apple Inc., USA)** bzw. an **Firebase Cloud Messaging (Google LLC, USA)** weiter, die sie auf Ihr Gerät zustellen.
 - Einzelne Benachrichtigungsarten können Sie in den Einstellungen der App abschalten, Push-Nachrichten insgesamt in den Systemeinstellungen Ihres Geräts.
-- **Verantwortlichkeit und Rechtsgrundlagen:** Betriebliche Push-Mitteilungen stellen wir im Auftrag Ihres Arbeitgebers zu; dessen Rechtsgrundlage richtet sich nach Ziffer 7.5. Die technische Gerätefreigabe ist Voraussetzung für Push, ersetzt aber keine erforderliche datenschutzrechtliche Einwilligung und keine Grundlage für Drittlandübermittlungen. Der Gerätezugriff ist nur insoweit nach § 25 Abs. 2 Nr. 2 TDDDG bzw. § 165 Abs. 3 TKG 2021 einwilligungsfrei, wie er für die von Ihnen ausdrücklich aktivierte Push-Funktion unbedingt erforderlich ist. Eine darüber hinaus erforderliche Einwilligung muss informiert eingeholt werden. Sie können Push in den Systemeinstellungen abschalten. Ziffer 14 erläutert Drittlandübermittlungen.
-- **Speicherdauer:** Der Push-Token wird gelöscht, wenn Sie Ihr Konto löschen. Meldet sich auf demselben Gerät ein anderes Konto an, wird der Token diesem Konto zugeordnet. Die aktualisierte App entfernt beim regulären Abmelden den Push-Token dieses Geräts und geplante lokale Erinnerungen. Kann die Abmeldung wegen eines Verbindungsfehlers nicht vollständig abgeschlossen werden, zeigt sie einen Hinweis; versuchen Sie es erneut oder deaktivieren Sie Push in den Systemeinstellungen. Bereits zugestellte oder unterwegs befindliche Nachrichten lassen sich nicht zuverlässig zurückrufen. Ältere App-Versionen entfernen den Token beim Abmelden noch nicht.
+- **Rechtsgrundlage:** Für den Zugriff auf den Push-Token Ihre Einwilligung über den Systemdialog Ihres Geräts (§ 25 Abs. 1 TDDDG bzw. § 165 Abs. 3 TKG 2021, Art. 6 Abs. 1 lit. a DSGVO), die Sie jederzeit in den Systemeinstellungen widerrufen können; für die Zustellung Art. 6 Abs. 1 lit. f DSGVO (zeitnahe Information über Ihre Schichten und Ihr Team). Zur Übermittlung in die USA siehe Ziffer 14.
+- **Speicherdauer:** Der Push-Token wird gelöscht, wenn Sie Ihr Konto löschen. Meldet sich auf demselben Gerät ein anderes Konto an, wird der Token diesem Konto zugeordnet. Ein Abmelden allein entfernt den Token derzeit nicht; wenn Sie nach dem Abmelden keine Push-Nachrichten mehr erhalten möchten, schalten Sie diese bitte in den Systemeinstellungen ab.
 
 **Lokale Erinnerungen.** Auf Wunsch plant die App Schichterinnerungen ausschließlich auf Ihrem Gerät. Sie werden ohne Netzwerkverbindung ausgelöst; dabei werden keine Daten an uns oder Dritte übermittelt.
 
@@ -208,7 +210,7 @@ Eine ausschließlich auf automatisierter Verarbeitung beruhende Entscheidung, di
 
 Die App speichert auf Ihrem Gerät: Ihre Anmeldesitzung (Zugriffs- und Erneuerungskennungen), einen Zwischenspeicher zuletzt geladener Daten für die Anzeige ohne Netzverbindung (etwa Kalenderdaten), die gewählte Sprache und Darstellung (hell/dunkel), einen Vermerk, welche Mitteilungen bereits angezeigt wurden, sowie die bestätigte Fassung der Rechtstexte.
 
-Diese Daten bleiben auf Ihrem Gerät. Das Speichern ist für die von Ihnen genutzten Funktionen unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG bzw. § 165 Abs. 3 TKG 2021; Art. 6 Abs. 1 lit. b bzw. f DSGVO). Bei erfolgreicher regulärer Abmeldung entfernt die aktualisierte App die Anmeldesitzung, den Kalender-Zwischenspeicher, lokale Mitteilungs-Lesevermerke, Benachrichtigungseinstellungen und lokale Datenschutz-Kenntnisnahmen. Sprache und Darstellung bleiben erhalten. Bei älteren App-Versionen können weitere lokale Daten bis zur Deinstallation oder zum Löschen der App-Daten bestehen bleiben.
+Diese Daten bleiben auf Ihrem Gerät. Das Speichern ist für die von Ihnen genutzten Funktionen unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG bzw. § 165 Abs. 3 TKG 2021; Art. 6 Abs. 1 lit. b bzw. f DSGVO). Die Anmeldesitzung wird beim Abmelden entfernt; die übrigen Daten bleiben bis zur Deinstallation der App oder bis Sie die App-Daten in den Einstellungen Ihres Geräts löschen.
 
 **App-Stores.** Beim Herunterladen und Aktualisieren der App verarbeiten Apple (App Store) und Google (Google Play) Daten in eigener Verantwortung nach ihren eigenen Datenschutzbestimmungen. Von den Stores erhalten wir nur zusammengefasste Statistiken, keine Angaben zu einzelnen Personen.
 
@@ -245,10 +247,10 @@ Wir geben personenbezogene Daten nur weiter, soweit dies für den jeweiligen Zwe
 | Apple Inc. (APNs) | Zustellung von Push-Nachrichten auf iOS | Zustelldienst | USA |
 | Google LLC (Firebase Cloud Messaging) | Zustellung von Push-Nachrichten auf Android | Zustelldienst | USA |
 | 1&1 Mail & Media GmbH (WEB.DE) | E-Mail-Postfach | Auftragsverarbeiter | Deutschland |
-| Stripe Payments Europe, Limited | Zahlungsabwicklung, Betrugsprävention | je nach Zweck Auftragsverarbeiter oder eigenständig Verantwortlicher (Ziffer 6) | EU (Irland); Übermittlungen in die USA |
+| Stripe Payments Europe, Limited | Zahlungsabwicklung, Betrugsprävention | eigenständig Verantwortlicher | EU (Irland); Übermittlung an Stripe, Inc., USA |
 | Apple Inc. / Google LLC (App-Stores) | Bereitstellung der App | eigenständig Verantwortliche | nach eigenen Angaben |
 
-Die Verarbeitung durch Auftragsverarbeiter bedarf einer Vereinbarung nach Art. 28 DSGVO; die Pflicht zum Abschluss und zur Prüfung dieser Vereinbarungen liegt bei uns. Die Auflistung eines Dienstleisters ersetzt diese Vereinbarung nicht. Innerhalb Ihres Betriebs erhalten Ihr Arbeitgeber und – im Rahmen von Ziffer 7.4 – Ihre Kolleginnen und Kollegen Zugriff auf betriebliche Daten.
+Mit allen Auftragsverarbeitern bestehen Verträge nach Art. 28 DSGVO. Innerhalb Ihres Betriebs erhalten Ihr Arbeitgeber und – im Rahmen von Ziffer 7.4 – Ihre Kolleginnen und Kollegen Zugriff auf betriebliche Daten.
 
 Wir **verkaufen keine personenbezogenen Daten**, nutzen sie **nicht für Werbung** und geben sie an Behörden nur weiter, wenn wir gesetzlich dazu verpflichtet sind.
 
@@ -262,7 +264,7 @@ Die Datenbank des Dienstes wird in der EU (Irland) betrieben. Zu Übermittlungen
 - beim Versand von Bestätigungscodes über Resend (Ziffer 12.1),
 - beim Versand von Push-Nachrichten über Expo, Apple und Google (Ziffer 10),
 - durch Zugriffe von Supabase, Inc. auf die Infrastruktur, etwa im Rahmen von Support und Wartung,
-- durch Stripe im Rahmen der in Ziffer 6 beschriebenen Verarbeitungen.
+- durch Stripe im Rahmen seiner eigenen Verantwortlichkeit (Ziffer 6).
 
 Für die USA hat die Europäische Kommission einen Angemessenheitsbeschluss erlassen (EU-US Data Privacy Framework, Art. 45 DSGVO). Er gilt für Empfänger, die nach diesem Rahmen zertifiziert sind; das trifft auf Vercel, Resend, Apple, Google und Stripe zu. Für Empfänger ohne Zertifizierung, und ergänzend auch für die zertifizierten, stützen wir die Übermittlung auf die Standardvertragsklauseln der Europäischen Kommission (Art. 46 Abs. 2 lit. c DSGVO). Eine Kopie der jeweils herangezogenen Garantien erhalten Sie auf Anfrage unter blanktrading@web.de.
 
@@ -278,7 +280,7 @@ Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zw
 | Protokolle von Datenbank, Anmeldung und Server-Funktionen (Supabase) | automatische Löschung nach 7 Tagen |
 | Datensicherungen der Datenbank | tägliche Sicherung, jede Sicherung wird nach 7 Tagen überschrieben |
 | Cookies | siehe Ziffer 4 |
-| Unbestätigte Registrierung | ab 24 Stunden beim nächsten stündlichen Bereinigungslauf, regelmäßig binnen etwa 25 Stunden |
+| Unbestätigte Registrierung | automatische Löschung nach 24 Stunden |
 | Bestätigungscodes | verfallen nach kurzer Zeit, höchstens nach 24 Stunden |
 | Verknüpfungscode für die Zusammenführung von Konten | 15 Minuten gültig |
 | E-Mail-Protokolle beim Versanddienstleister (Resend) | 30 Tage |
@@ -316,14 +318,13 @@ Führungskräfte können das Profil einer Person im Betrieb pseudonymisieren. Da
 
 ### 15.3 Ende des Vertrags und abgelaufene Testphase
 
-- **Nach Vertragsende** halten wir die Betriebsdaten grundsätzlich 30 Kalendertage zum Export bereit. Bei einem rechtzeitig verlangten Export läuft die Abruffrist bis mindestens 30 Kalendertage nach vollständiger Bereitstellung. Bei einem Anbieterwechsel läuft sie mindestens 30 Kalendertage nach Ende der Übergangsphase. Während offener Bereitstellung oder laufender Übergangs- und Abruffristen werden die betroffenen Daten nicht gelöscht (§ 6 Abs. 4 bis 7 AGB, § 8 AVV). Danach werden sie beim nächsten täglichen Löschlauf entfernt; eine ausdrücklich verlangte frühere Löschung und gesetzliche Aufbewahrungspflichten bleiben unberührt.
-- **Testphase ohne Zahlungsmittel:** Nach Ablauf wird das Abonnement pausiert. Ohne Fortsetzung endet der Vertrag nach 90 Tagen; daran schließen sich grundsätzlich die 30 Tage für Export und anschließende Löschung an (90 + 30 Tage, zuzüglich der beschriebenen Verlängerungen und des nächsten täglichen Laufs). Eine Kündigung während der Pause löst die Frist ab diesem Vertragsende aus, nicht rückwirkend ab Testphasenende.
-- **Anmeldekonten** ohne verbleibende Anstellung in einem anderen Betrieb werden mit dem Betrieb gelöscht, einschließlich Sitzungen und Push-Token. Konten mit weiterer Anstellung bleiben erhalten.
-- **Vertragsnachweise:** Die Kopien der AGB- und AVV-Annahmen bleiben nach Ziffer 5.2 bis zum Ende des dritten Kalenderjahres nach Vertragsende erhalten. Nachweise der Datenschutz-Kenntnisnahme werden mit dem Betrieb gelöscht. Abrechnungsunterlagen unterliegen den gesonderten Fristen in Ziffer 15.
+- **Nach Vertragsende** stellen wir die Daten des Betriebs 30 Tage lang zum Export bereit (§ 6 Abs. 4 AGB). Danach löschen wir alle Daten des Betriebs, einschließlich der Profile der Beschäftigten, der Planungs- und Kommunikationsdaten, des Änderungsprotokolls und der Nachweise über die Kenntnisnahme der Datenschutzerklärung, soweit keine gesetzliche Aufbewahrungspflicht entgegensteht. Die Nachweise der Zustimmung zu AGB und AVV bewahren wir nach Ziffer 5.2 weiter auf.
+- **Läuft die Testphase ohne hinterlegtes Zahlungsmittel ab**, wird das Abonnement pausiert und die Verwaltung des Betriebs gesperrt. Wird es nicht innerhalb von 90 Tagen durch Hinterlegen eines Zahlungsmittels fortgesetzt, löschen wir den Betrieb und seine Daten wie nach Vertragsende.
+- **Anmeldekonten**, denen nach der Löschung des Betriebs keine Anstellung in einem anderen Betrieb mehr zugeordnet ist, löschen wir zusammen mit dem Betrieb, samt Sitzungen und Push-Token. Das gilt für Führungskräfte wie für Beschäftigte. Konten, die weiteren Betrieben zugeordnet sind, bleiben bestehen.
 
 ### 15.4 Datensicherungen
 
-Die Datenbank wird täglich gesichert; jede Sicherung wird nach 7 Tagen überschrieben. Separat gespeicherte Anhangdateien sind nicht Bestandteil dieser Datenbanksicherungen. Gelöschte Daten sind deshalb spätestens 7 Tage nach der Löschung auch aus den Sicherungen entfernt. Sicherungen verwenden wir ausschließlich zur Wiederherstellung nach einem Datenverlust. Müssten wir eine Sicherung zurückspielen, löschen wir Daten, deren Löschung zwischenzeitlich verlangt oder durchgeführt worden war, erneut.
+Die Datenbank wird täglich gesichert; jede Sicherung wird nach 7 Tagen überschrieben. Gelöschte Daten sind deshalb spätestens 7 Tage nach der Löschung auch aus den Sicherungen entfernt. Sicherungen verwenden wir ausschließlich zur Wiederherstellung nach einem Datenverlust. Müssten wir eine Sicherung zurückspielen, löschen wir Daten, deren Löschung zwischenzeitlich verlangt oder durchgeführt worden war, erneut.
 
 ---
 
