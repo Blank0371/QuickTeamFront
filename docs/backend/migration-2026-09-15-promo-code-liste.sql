@@ -136,8 +136,10 @@ commit;
 --  Pflege (Betreiber, SQL-Editor)
 -- =====================================================================
 --
---    -- neuen Code anlegen (Grossbuchstaben, Ziffern, - und _)
---    insert into public.promo_codes (code, partner) values ('PARTNER10', 'Name des Partners');
+--    -- neuen Code anlegen (Grossbuchstaben, Ziffern, - und _). `email`
+--    -- ist seit `migration-2026-09-15-promo-code-email.sql` Pflicht.
+--    insert into public.promo_codes (code, partner, email)
+--    values ('PARTNER10', 'Name des Partners', 'partner@example.com');
 --
 --    -- abschalten
 --    update public.promo_codes set aktiv = false where code = 'PARTNER10';

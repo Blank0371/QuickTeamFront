@@ -605,7 +605,8 @@ Expo-App hat keine Registrierung und damit kein Gegenstück.
 - **Kein Riegel:** schlägt das Schreiben fehl, steht `[promo] …` im
   Serverprotokoll und die Einrichtung läuft weiter.
 - **Nur zugelassene Codes** (Nachtrag, ebenfalls 2026-09-15). `promo_codes`
-  (`code`, `partner`, `aktiv`) ist die Liste, gepflegt vom Betreiber im
+  (`code`, `partner`, `email` des Partners — Pflicht, `aktiv`) ist die Liste,
+  gepflegt vom Betreiber im
   SQL-Editor; `betrieb_promo_codes.promo_code` ist Fremdschlüssel darauf.
   `registrieren()` fragt **vor** dem `signUp` über die RPC
   `promo_code_gueltig(text)` und zeigt einen unbekannten Code am Feld an. Die
@@ -1970,7 +1971,8 @@ nicht geraten und nicht aus dieser Datei extrapoliert. `list_tables` für Strukt
   `docs/backend/migration-2026-09-15-promo-code-liste.sql`): Tabelle
   `promo_codes` ohne Client-Rechte, RPC `promo_code_gueltig(text)` für `anon` und
   `authenticated`, Fremdschlüssel und verschärfte INSERT-Policy auf
-  `betrieb_promo_codes`. Abschnitt „Änderung vom 2026-09-15: Promo-Code bei der
+  `betrieb_promo_codes`; danach `promo_code_email` (Spalte `promo_codes.email`,
+  Pflicht, Quelle `docs/backend/migration-2026-09-15-promo-code-email.sql`). Abschnitt „Änderung vom 2026-09-15: Promo-Code bei der
   Registrierung" oben. Der Satz oben gilt für alles Weitere unverändert.
 
   **`docs/backend/migration-2026-09-14-vertragsende-und-loeschung.sql` darf nicht
