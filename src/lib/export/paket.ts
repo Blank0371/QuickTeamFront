@@ -379,6 +379,7 @@ async function leseTabelle(
  * nachgezogen werden, ohne dass jemand es merkt.
  */
 const VERWEISE: readonly { von: string; feld: string; nach: string; schluessel: string }[] = [
+  { von: "notfall_gruende", feld: "notfall_id", nach: "notfaelle", schluessel: "id" },
   { von: "schicht_zuweisungen", feld: "schicht_instanz_id", nach: "schicht_instanzen", schluessel: "id" },
   { von: "schicht_zuweisungen", feld: "mitarbeiter_id", nach: "mitarbeiter", schluessel: "id" },
   { von: "schicht_zuweisungen", feld: "rolle_id", nach: "rollen", schluessel: "id" },

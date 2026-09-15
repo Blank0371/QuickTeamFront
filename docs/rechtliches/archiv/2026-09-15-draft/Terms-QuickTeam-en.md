@@ -206,7 +206,6 @@ Other parts: meta contains business details, generation interval, time-zone info
 | benachrichtigung_gelesen | Message read records | benachrichtigung_id, mitarbeiter_id |
 | nachricht_anhaenge | Attachment index; file contents require separate delivery | id |
 | schichttausch_anfragen | Shift-swap records | id |
-| notfall_gruende | Protected optional emergency reasons. Linked to notfaelle through notfall_id; authorised managers only. | notfall_id |
 | notfaelle | Emergency and cover records | id |
 | plan_aenderungen | Change log, with redacted before/after JSON values | id |
 | einladungen | Invitation details without access secret | erstellt_am |

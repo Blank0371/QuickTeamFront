@@ -1,6 +1,6 @@
 # PRIVACY POLICY
 
-**Last updated: 15 September 2026**
+**Last updated: 14 September 2026**
 
 This Privacy Policy informs you, in accordance with Articles 13 and 14 of the General Data Protection Regulation (GDPR), how BlankTrading UG (haftungsbeschränkt) ("we" or "us") processes personal data when you
 
@@ -25,7 +25,7 @@ Phone: +43 664 2538798
 
 **Data-protection contact:** blanktrading@web.de. Please also send all requests to exercise your rights (Section 17) to this address.
 
-**Data protection contact:** No data protection officer is currently appointed. Management handles privacy enquiries at the address above.
+**Data protection officer:** We are not required to appoint a data protection officer (Art. 37 GDPR, Sec. 38(1) BDSG) and have not appointed one. Data-protection requests are handled directly by our management.
 
 ---
 
@@ -37,8 +37,8 @@ QuickTeam is a shift and staff-scheduling tool used by businesses (each an "Empl
 |---|---|---|
 | Website visits, cookies (Sections 3 and 4) | us | controller |
 | Registration, contract and payment of a business (Sections 5 and 6) | us | controller |
-| Your login account, sessions, email contact, bug reports (Sections 7.1, 11, 12) | us | controller |
-| Operational data: your profile within the business, shifts, availability, preferences, vacation, shift swaps, emergencies, messages, polls, change log and delivery of business push messages (Sections 7.2 to 10) | your Employer | processor (Art. 28 GDPR) |
+| Your login account, sessions, push delivery, email contact, bug reports (Sections 7.1, 10, 11, 12) | us | controller |
+| Operational data: your profile within the business, shifts, availability, preferences, vacation, shift swaps, emergencies, messages, polls, change log (Sections 7.2 to 9) | your Employer | processor (Art. 28 GDPR) |
 
 **Operational data.** Your Employer decides which data about you it records in QuickTeam, who in the business may see which information, and when data is deleted. We process this data only on the Employer's instructions under a data processing agreement. Your Employer is obliged to inform you about this processing itself; Sections 7.2 to 9 describe what the Service does technically but do not replace that information. Please direct requests about operational data to your Employer first. If such a request reaches us, we forward it to your Employer without undue delay and support them in responding.
 
@@ -67,7 +67,7 @@ We use **no** analytics, tracking or advertising services and do not embed socia
 
 ## 4. Cookies and similar technologies on the website
 
-The website uses the following cookies for sign-in, chosen settings, registration and payment:
+We use only cookies that are technically necessary for the service you are using:
 
 | Cookie | Purpose | Retention | When set |
 |---|---|---|---|
@@ -77,9 +77,9 @@ The website uses the following cookies for sign-in, chosen settings, registratio
 | **qt_registrierung** | holds the business name, country and your first and last name during registration until the confirmation code has been entered; readable only on the registration page | 24 hours; deleted after confirmation | during registration |
 | **__stripe_mid**, **__stripe_sid** | fraud prevention during payment (Stripe) | 1 year and 30 minutes respectively | only on pages with the payment form (Section 6) |
 
-**Legal basis:** Storage access required for sign-in, registration and the expressly selected language or position is based on Section 25(2) no. 2 TDDDG or, in Austria, Section 165(3) TKG 2021. Personal-data processing relies on Article 6(1)(b) GDPR for our own contractual relationships or (f) for secure access and administration for company representatives. Stripe uses cookies and device signals for fraud prevention in the payment form. An exemption from consent applies there only to storage access strictly necessary for the expressly requested payment service; a general reference to security or legitimate interests does not replace that requirement.
+**Legal basis:** Storing and reading these cookies is strictly necessary for us to provide the service you have explicitly requested (Sec. 25(2) no. 2 TDDDG; in Austria Sec. 165(3) TKG 2021). No consent is required for this. The related processing of personal data is based on Art. 6(1)(b) GDPR (use of the Service) or Art. 6(1)(f) GDPR (security, language choice, fraud prevention).
 
-The website currently displays no cookie banner. No analytics or advertising cookies are used. You can delete or block cookies in your browser settings; without the login cookies, however, you cannot sign in.
+Because we do not use any cookies for analytics or advertising, we do not display a cookie banner. You can delete or block cookies in your browser settings; without the login cookies, however, you cannot sign in.
 
 ---
 
@@ -91,7 +91,7 @@ To register a business we collect: the name of the business, its country (German
 
 To confirm your email address, we send you an eight-digit code (Section 12.1). Only after you enter the code is the business created and your account linked to it as manager ("Chef"). Until then, the business details are held with your not-yet-confirmed account.
 
-**Unconfirmed registrations are deleted automatically.** If the code is not entered within 24 hours, the account and associated details are deleted in the next hourly cleanup run, normally after no more than approximately 25 hours.
+**Unconfirmed registrations are deleted automatically.** If the code is not entered within 24 hours, an hourly process deletes the account together with the details stored with it.
 
 ### 5.2 Record of acceptance of the Terms, the DPA and this Privacy Policy
 
@@ -112,14 +112,14 @@ When the Terms and the DPA are accepted, we additionally make a copy at the time
 After registering, you choose a plan. The subscription begins with a 14-day trial, even if you have not yet added a payment method. You can add a payment method immediately or at any time before the trial ends; if the trial ends without one, the subscription is paused (for the consequences for your data, see Section 15.3).
 
 - **We collect billing details before a paid subscription begins.** When you store a means of payment, we ask for the legal company name, street and house number, postal code, city and country. These details are required for a proper invoice (Section 14(4) of the German VAT Act); the legal basis is Art. 6(1)(b) and (c) GDPR. As long as you only use the free trial and store no means of payment, we do not ask for them.
-- **We transmit to Stripe:** your email address, the billing details listed above (company name, street and house number, postal code, city, country), an internal identifier of your business, the preferred language for invoices and the chosen plan. Stripe needs the address and country to calculate VAT and issue the invoice. If, as an Austrian business, you voluntarily provide your **VAT identification number (UID)**, we transmit that as well; Stripe checks its validity through the European Commission’s VAT Information Exchange System (VIES). The applicable statutory conditions determine tax treatment; we remain responsible for correct invoicing.
+- **We transmit to Stripe:** your email address, the billing details listed above (company name, street and house number, postal code, city, country), an internal identifier of your business, the preferred language for invoices and the chosen plan. Stripe needs the address and country to calculate VAT and issue the invoice. If, as an Austrian business, you voluntarily provide your **VAT identification number (UID)**, we transmit that as well; Stripe verifies it against the European Commission's VAT Information Exchange System (VIES) and uses it to decide whether the reverse-charge procedure applies.
 - **The billing details are stored at Stripe**, not in our database, which holds only your business's country. You can change them at any time via the customer portal (see below).
 - **Payment details** (such as card details or an IBAN for SEPA Direct Debit) are entered directly into Stripe's form, which is embedded on our page and loaded from Stripe's servers. This data goes straight to Stripe; we do not receive or store full card numbers or bank details.
 - **We store:** the Stripe customer ID, the subscription ID, the plan and the subscription status (such as trial, active, paused). Stripe notifies us of status changes automatically.
 - **Customer portal:** Via "Abo verwalten" (manage subscription) in the dashboard settings, managers reach Stripe's customer portal, where you can cancel the subscription, change the payment method and download invoices. The portal is operated by Stripe; for this we transmit only your Stripe customer ID and the address you return to afterwards.
 - **Fraud prevention:** On pages with the payment form, Stripe collects device and usage data (e.g. IP address, browser characteristics, interactions with the form) and sets the cookies listed in Section 4 in order to detect fraudulent payments.
 
-**Responsibility:** We use Stripe Payments Europe, Limited, Ireland. Under the [Stripe Data Processing Agreement](https://stripe.com/legal/dpa), Stripe acts, depending on the processing, as our processor, for example when providing its payment and subscription services on our instructions, or as an independent controller, particularly for its own fraud prevention, regulatory obligations and other independent purposes described there. We remain responsible for selecting and transmitting customer and billing data. This payment integration does not transmit business scheduling data. Details of Stripe’s own processing are available in the [Stripe Privacy Policy](https://stripe.com/privacy). Transfers to the USA are addressed in Section 14.
+**Responsibility:** Payments are processed by **Stripe Payments Europe, Limited, Ireland**. Stripe processes payment and billing data as an independent controller, in particular to execute payments, prevent fraud and meet its own legal obligations (for example anti-money-laundering rules). Details can be found in Stripe's privacy policy at stripe.com/privacy. Stripe also transfers data to Stripe, Inc. in the USA (Section 14).
 
 **Legal bases:** Art. 6(1)(b) or (f) GDPR (see Section 5.3) for handling the subscription; Art. 6(1)(f) GDPR for fraud prevention; Art. 6(1)(c) GDPR for retaining invoices and accounting records.
 
@@ -159,27 +159,29 @@ For each position we process: first and last name, email address, optionally a p
 - **Managers** of your business see all operational data of the business.
 - **Employees** see their own data. Colleagues' names and shifts are visible only to the extent your Employer has enabled this in the business settings. Messages, polls, open shifts and cover requests are addressed to the team or to the people eligible for them.
 - **Vacation requests** are visible only to you and the managers.
-- **Emergency reports** are visible to members of your business. The optional reason is separate and readable only by the reporting person and active managers of that business (Section 8).
+- **Emergency reports**, including the optional reason, are visible to the members of your business (see Section 8).
 
 ### 7.5 Purposes and legal bases of operational processing
 
-Business data is used to organise shifts, availability, vacation, cover and communication. Your Employer determines the legal basis for each processing activity and informs you about it. Article 6 GDPR and applicable national employee-data rules apply; Article 88 GDPR is not a standalone permission. Works agreements and employee-representation rights must be observed where required. Blanket consent to using the app does not replace this assessment. Health information additionally falls under Article 9 GDPR (Section 8). We process business data as processor on documented instructions.
+The processing serves to plan and organise work in the business: scheduling, taking availability and wishes into account, managing vacation, shift swaps, emergency cover and internal team communication. The legal basis is determined by your Employer as controller. In particular, Art. 6(1)(b) GDPR in conjunction with Art. 88 GDPR and national employee data-protection law (in Germany, Sec. 26 BDSG) may apply to the extent the processing is necessary for the employment relationship; Art. 6(1)(c) GDPR to the extent your Employer uses the schedule for statutory working-time record-keeping obligations; and Art. 6(1)(f) GDPR for organisational features such as polls and announcements. We process this data as a processor under Art. 28 GDPR.
 
 ---
 
 ## 8. Free text and health data
 
-Several functions have optional free-text fields: emergency reasons, vacation comments, shift notes and messages. Please do not enter diagnoses, details of illness or certificates of incapacity for work. Finding cover normally requires only the information that a shift cannot be worked.
+Several features contain optional free-text fields: the reason for an emergency report, the comment on a vacation request, notes on shifts, and messages. We do not analyse free text.
 
-**Visibility:** An entered emergency reason is stored separately from general emergency information. Only the reporting person and active managers of the same business may read it. Other employees, including a person taking over the shift, cannot access the reason through emergency information. Even within this restricted group, processing must be limited to necessary information.
+**Please do not enter information about your health there.** Even a reason such as "sick" is health data and thus a special category of personal data (Art. 9 GDPR). You are not required to give a reason in the Service. The reason for an emergency report is visible to the members of your business. How you report an inability to work is governed by the rules of your employment relationship, not by QuickTeam.
 
-Even a brief mention of illness may be health data. Processing then also requires an applicable exception under Article 9(2) GDPR in the specific case, for example where necessary for employment-law obligations and permitted under national law. Voluntary entry alone does not automatically establish such an exception. Your Employer must assess necessity and recipients; we remain responsible for our safeguards. Unnecessary information must be removed. Contact your Employer or our privacy contact for this purpose.
+If you nevertheless enter such information, your Employer processes it as controller. The legal basis is then Art. 9(2)(b) GDPR in conjunction with employee data-protection law (in Germany, Sec. 26(3) BDSG).
+
+---
 
 ## 9. Automatically generated plan proposals
 
 Managers can have a schedule proposal generated automatically for a planning period. The procedure takes into account the staffing need per shift and role, the employees' job roles, availability, shift preferences, approved vacation, target and maximum hours, existing assignments and statutory rest periods and maximum working hours.
 
-- The calculation runs on our own infrastructure at Supabase in the EU. **No additional external AI services** are called for the calculation; Supabase remains involved as infrastructure processor.
+- The calculation runs on our own infrastructure at Supabase in the EU. **No data is transmitted to third parties or to AI services.**
 - The result is a **proposal**. A manager reviews it, can change or discard it, and makes it binding only by publishing it.
 - The procedure neither assesses your performance or behaviour nor makes predictions about you.
 
@@ -197,8 +199,8 @@ There is therefore no decision based solely on automated processing that produce
 - For every notification addressed to you, our server transmits to the push service of **Expo (650 Industries, Inc., USA)**: the push token, a title, a text and technical details (the type of notification and internal identifiers of the notification and the business). **For announcements and polls, the title and text written by the author are transmitted in full;** for system notifications, it is a standard text such as "One of your shifts was changed."
 - Expo forwards the message to the **Apple Push Notification service (Apple Inc., USA)** or to **Firebase Cloud Messaging (Google LLC, USA)**, which deliver it to your device.
 - You can switch off individual notification types in the app settings, and push messages altogether in your device's system settings.
-- **Responsibility and legal bases:** We deliver business push messages on your Employer’s behalf; its legal basis is addressed in Section 7.5. Device permission is a prerequisite for push but does not replace any required data-protection consent or a basis for third-country transfers. Device access is exempt from consent under Section 25(2) no. 2 TDDDG or Section 165(3) TKG 2021 only insofar as strictly necessary for the push function you expressly enable. Any additional consent required must be informed. You can disable push in system settings. Section 14 addresses third-country transfers.
-- **Retention:** The push token is deleted when you delete your account. If another account signs in on the same device, the token is assigned to that account. The updated app removes this device’s push token and scheduled local reminders during normal sign-out. If a connection error prevents completion, the app displays a notice; retry or disable push in system settings. Notifications already delivered or in transit cannot reliably be recalled. Older app versions do not yet remove the token on sign-out.
+- **Legal basis:** for accessing the push token, your consent via your device's system dialog (Sec. 25(1) TDDDG or Sec. 165(3) TKG 2021, Art. 6(1)(a) GDPR), which you can withdraw at any time in the system settings; for delivery, Art. 6(1)(f) GDPR (timely information about your shifts and your team). For the transfer to the USA, see Section 14.
+- **Retention:** The push token is deleted when you delete your account. If another account signs in on the same device, the token is assigned to that account. Signing out alone does not currently remove the token; if you no longer want to receive push messages after signing out, please switch them off in your system settings.
 
 **Local reminders.** On request, the app schedules shift reminders solely on your device. They are triggered without a network connection; no data is transmitted to us or to third parties.
 
@@ -208,7 +210,7 @@ There is therefore no decision based solely on automated processing that produce
 
 The app stores on your device: your login session (access and refresh identifiers), a cache of recently loaded data for display without a network connection (e.g. calendar data), your chosen language and appearance (light/dark), a note of which messages have already been shown, and the accepted version of the legal documents.
 
-This data stays on your device. Storing it is strictly necessary for the features you use (Sec. 25(2) no. 2 TDDDG or Sec. 165(3) TKG 2021; Art. 6(1)(b) or (f) GDPR). On successful normal sign-out, the updated app removes the login session, calendar cache, local message-read markers, notification preferences and local privacy acknowledgements. Language and appearance remain. In older app versions, other local data may remain until you uninstall the app or clear its data.
+This data stays on your device. Storing it is strictly necessary for the features you use (Sec. 25(2) no. 2 TDDDG or Sec. 165(3) TKG 2021; Art. 6(1)(b) or (f) GDPR). The login session is removed when you sign out; the remaining data stays until you uninstall the app or clear the app data in your device settings.
 
 **App stores.** When you download and update the app, Apple (App Store) and Google (Google Play) process data as controllers in their own right under their own privacy policies. We receive only aggregated statistics from the stores, not information about individual persons.
 
@@ -245,10 +247,10 @@ We disclose personal data only to the extent necessary for the respective purpos
 | Apple Inc. (APNs) | delivering push messages on iOS | delivery service | USA |
 | Google LLC (Firebase Cloud Messaging) | delivering push messages on Android | delivery service | USA |
 | 1&1 Mail & Media GmbH (WEB.DE) | email mailbox | processor | Germany |
-| Stripe Payments Europe, Limited | payment processing, fraud prevention | processor or independent controller depending on purpose (Section 6) | EU (Ireland); transfers to the USA |
+| Stripe Payments Europe, Limited | payment processing, fraud prevention | independent controller | EU (Ireland); transfer to Stripe, Inc., USA |
 | Apple Inc. / Google LLC (app stores) | distributing the app | independent controllers | as stated by them |
 
-Processing by processors requires an agreement under Article 28 GDPR; we are responsible for concluding and checking those agreements. Listing a provider does not replace that agreement. Within your business, your Employer and – within the limits of Section 7.4 – your colleagues have access to operational data.
+Agreements under Art. 28 GDPR are in place with all processors. Within your business, your Employer and – within the limits of Section 7.4 – your colleagues have access to operational data.
 
 We **do not sell personal data**, do **not use it for advertising**, and disclose it to authorities only where we are legally required to do so.
 
@@ -262,7 +264,7 @@ The Service's database is operated in the EU (Ireland). Transfers to the USA tak
 - when confirmation codes are sent via Resend (Section 12.1),
 - when push messages are sent via Expo, Apple and Google (Section 10),
 - through access by Supabase, Inc. to the infrastructure, for example for support and maintenance,
-- by Stripe within the processing described in Section 6.
+- by Stripe within the scope of its own responsibility (Section 6).
 
 The European Commission has adopted an adequacy decision for the USA (EU-US Data Privacy Framework, Art. 45 GDPR). It covers recipients certified under this framework; this applies to Vercel, Resend, Apple, Google and Stripe. For recipients without certification, and additionally for the certified ones, we base the transfer on the European Commission's Standard Contractual Clauses (Art. 46(2)(c) GDPR). You can obtain a copy of the safeguards relied upon by contacting blanktrading@web.de.
 
@@ -278,7 +280,7 @@ We store personal data only for as long as necessary for the respective purpose 
 | Logs of database, authentication and server functions (Supabase) | deleted automatically after 7 days |
 | Database backups | daily backup; each backup is overwritten after 7 days |
 | Cookies | see Section 4 |
-| Unconfirmed registration | from 24 hours in the next hourly cleanup run, normally within approximately 25 hours |
+| Unconfirmed registration | deleted automatically after 24 hours |
 | Confirmation codes | expire after a short time, at most 24 hours |
 | Linking code for merging accounts | valid for 15 minutes |
 | Email logs at the sending provider (Resend) | 30 days |
@@ -316,14 +318,13 @@ Managers can pseudonymise a person's profile within the business. This removes t
 
 ### 15.3 End of the contract and expired trial
 
-- **After termination**, business data is normally available for export for 30 calendar days. For a timely export request, retrieval remains available for at least 30 calendar days after complete delivery. For switching, it remains available for at least 30 calendar days after the transitional period ends. Data concerned is not deleted while delivery is outstanding or transition or retrieval periods are running (Section 6(4) to (7) of the Terms, Section 8 DPA). It is then removed in the next daily deletion run; expressly requested earlier deletion and statutory retention duties remain unaffected.
-- **Trial without a payment method:** The subscription is paused when the trial expires. Without resumption, the contract ends after 90 days; the normal 30-day export period and subsequent deletion follow (90 + 30 days, plus the extensions described and the next daily run). Termination during suspension starts the period at that termination date, not retroactively at trial expiry.
-- **Login accounts** without remaining employment in another business are deleted with the business, including sessions and push tokens. Accounts with other employment remain.
-- **Contract evidence:** Copies of acceptance of the Terms and DPA remain until the end of the third calendar year after termination under Section 5.2. Privacy acknowledgements are deleted with the business. Billing records have the separate periods listed in Section 15.
+- **After the contract ends**, we make the business's data available for export for 30 days (Section 6(4) of the Terms). We then delete all data of the business, including the employees' profiles, the scheduling and communication data, the change log and the records of taking note of the Privacy Policy, unless a statutory retention obligation applies. We continue to keep the records of acceptance of the Terms and the DPA in accordance with Section 5.2.
+- **If the trial ends without a payment method**, the subscription is paused and management of the business is locked. If it is not resumed within 90 days by adding a payment method, we delete the business and its data in the same way as after the end of the contract.
+- **Login accounts** that are no longer linked to employment in any other business once the business is deleted are deleted together with the business, including sessions and push tokens. This applies to managers and employees alike. Accounts linked to other businesses remain.
 
 ### 15.4 Backups
 
-The database is backed up daily; each backup is overwritten after 7 days. Separately stored attachment files are not included in these database backups. Deleted data is therefore also removed from the backups no later than 7 days after deletion. We use backups solely to restore data after a loss. If we ever had to restore a backup, we would delete again any data whose deletion had been requested or carried out in the meantime.
+The database is backed up daily; each backup is overwritten after 7 days. Deleted data is therefore also removed from the backups no later than 7 days after deletion. We use backups solely to restore data after a loss. If we ever had to restore a backup, we would delete again any data whose deletion had been requested or carried out in the meantime.
 
 ---
 

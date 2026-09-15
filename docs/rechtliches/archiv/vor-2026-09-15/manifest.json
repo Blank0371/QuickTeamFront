@@ -1,0 +1,32 @@
+[
+  {
+    "datei": "AGB-QuickTeam-de.md",
+    "version": "2026-09-13-r2-draft",
+    "sha256_lf": "aded8384036108c75faddad055aa1d8fccf1c3c06f41c62c1c704ab067ecece1"
+  },
+  {
+    "datei": "Terms-QuickTeam-en.md",
+    "version": "2026-09-13-r2-draft",
+    "sha256_lf": "7736825e26097a8075a24b7e008d5d22c81d95a7c641423bb454e2bc3a2471f4"
+  },
+  {
+    "datei": "AVV-QuickTeam-de.md",
+    "version": "2026-09-13-draft",
+    "sha256_lf": "76443615a8ca489ac3728e9c6a1f25a0eb84b03d43306a2280083b9b54a294e1"
+  },
+  {
+    "datei": "DPA-QuickTeam-en.md",
+    "version": "2026-09-13-draft",
+    "sha256_lf": "b879da760f9aca9f742ca8aff1a9d57c018d2a81e34fc151d3f48add29d75501"
+  },
+  {
+    "datei": "datenschutzerklaerung-de.md",
+    "version": "2026-09-14-draft",
+    "sha256_lf": "ca3a914963c7d3a29a71983776edd8bbeeb10a90a328c52407fc7486cccadbb2"
+  },
+  {
+    "datei": "privacy-policy-en.md",
+    "version": "2026-09-14-draft",
+    "sha256_lf": "6815688a1099a9eaeee7d113167e68338772c8a771653869af72ec8faa24b612"
+  }
+]

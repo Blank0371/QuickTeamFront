@@ -748,3 +748,15 @@ describe("findeOffeneVerweise", () => {
     assert.ok(paket.hinweise.some((h) => h.includes("ins Leere")));
   });
 });
+
+it("exportiert geschuetzte Gruende nur fuer den gewaehlten Betrieb und prueft ihren Bezug", async () => {
+  const daten = basis();
+  daten.notfaelle = [{ id: "n1", betrieb_id: BETRIEB }];
+  daten.notfall_gruende = [
+    { notfall_id: "n1", betrieb_id: BETRIEB, grund: "Eigener Testgrund" },
+    { notfall_id: "n2", betrieb_id: FREMD, grund: "Fremder Testgrund" },
+  ];
+  const paket = await baueExportPaket(klient(daten), AUFTRAG);
+  assert.deepEqual(paket.tabellen.notfall_gruende, [daten.notfall_gruende[0]]);
+  assert.ok(findeOffeneVerweise({ notfall_gruende: [{ notfall_id: "fehlt" }], notfaelle: [] }).length > 0);
+});

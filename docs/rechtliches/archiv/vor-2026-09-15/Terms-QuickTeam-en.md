@@ -1,6 +1,6 @@
 # General Terms and Conditions for the Use of QuickTeam
 
-**Last updated: 15 September 2026**
+**Last updated: 13 September 2026 (revision r2)**
 
 ## Section 1 — Provider, scope, contracting party, definitions
 
@@ -10,7 +10,7 @@
 
 (3) The Service is directed exclusively at entrepreneurs within the meaning of Section 14 of the German Civil Code (BGB), at legal entities under public law, and at special funds under public law. It is not directed at consumers within the meaning of Section 13 BGB. By registering, the customer confirms that it uses the Service in the exercise of its commercial or independent professional activity.
 
-(4) The Customer and sole contracting party is the entrepreneur for whose business the account is established ("Customer"), rather than a mere trading name or the person registering where that person validly represents another entrepreneur. The Customer ensures that it can be clearly identified from the account and billing details. "Users" are natural persons, in particular employees, whom the Customer authorises to use the Service under this contract. The Customer instructs its Users on the applicable usage obligations and is responsible for their conduct in accordance with statutory law. The Provider’s own obligations remain unaffected.
+(4) The customer and sole contracting party is the business that orders the Service and creates the account (the "Customer"). "Users" are the natural persons — in particular the Customer's staff — whom the Customer invites into the Service and for whom accounts are created or activated. Users use the Service within the scope of the contract concluded by the Customer; the usage obligations under Section 7 apply to them as well. The Customer is responsible for its Users' compliance with these Terms as for its own conduct.
 
 (5) These Terms apply exclusively. Conflicting, deviating or supplementary terms and conditions of the Customer do not become part of the contract unless the Provider has expressly consented to their validity in text form. This applies even where the Provider renders the Service without reservation while aware of such terms.
 
@@ -48,7 +48,7 @@
 
 (3) The Provider offers support in German and English by email. Requests are handled within a reasonable period; the Provider owes specific response times only where they are stated in the service description or individually agreed.
 
-(4) The Provider backs up the database regularly, at least daily. This database backup does not include separately stored attachment files. The Provider must ensure separate backup and recovery measures appropriate to the risk for those files. Details, in particular the retention period of the backups, are set out in Annex 2 of the data-processing agreement (Section 7(3)).
+(4) The Provider backs up the Customer's data regularly, at least daily, in accordance with the state of the art. Details, in particular the retention period of the backups, are set out in Annex 2 of the data-processing agreement (Section 7(3)).
 
 ## Section 5 — Prices, trial period and payment terms
 
@@ -60,35 +60,31 @@
 
 (4) The subscription is billed monthly; the fee is due in advance for the respective billing month. The Provider may additionally offer billing periods of longer duration (e.g. annual billing); in that case the fee is due in advance for the selected period.
 
-(5) Payments are processed through Stripe (Stripe Payments Europe, Limited). The Customer stores a payment method and gives the authorisation required for that method, such as a SEPA direct debit mandate. Payment conditions are displayed in the payment form. The Provider makes electronic invoices available, for example in the customer portal; the Customer agrees to this form where consent is required. Before paid activation, the Customer provides its legal company name or name and full billing address. An existing VAT identification number must be provided where needed for correct tax treatment. Tax treatment depends on the statutory conditions; the absence of a VAT ID or pending verification does not by itself conclusively determine tax status.
+(5) Payment is made cashless via the payment service provider Stripe (Stripe Payments Europe, Limited). For this purpose the Customer stores a valid means of payment and authorizes the Provider to collect the fee due at the beginning of the respective billing period via Stripe. Stripe's terms apply in addition to the processing of payments. The Provider issues invoices in electronic form, for example as a PDF by email or in the payment service provider's customer portal; the Customer agrees to this. The Customer provides the Provider with the information required for a proper invoice, in particular its company name and address and, if it is established outside Germany, its VAT identification number.
 
-(6) If collection of a fee due fails, collection is attempted again within the following fourteen (14) days and the Customer is informed. Until payment is received, the Provider may restrict management functions. If the fee remains unpaid fourteen (14) days after it fell due, the contract ends upon expiry of the last paid billing period; no fee is owed for the unpaid period. An exception applies to a new subscription without a further trial: if its first payment is initially processed with delayed confirmation and is subsequently reported as failed although the new subscription was already activated, the Provider may end that subscription immediately. No fee is then owed for the unpaid first period; the Customer may subscribe again using a valid payment method. Conversely, if a payment already successfully made for a period used is subsequently reversed, the fee owed for that period remains due; the Customer bears necessary bank charges insofar as it is responsible for the reversal. Statutory defences remain unaffected.
+(6) If collection of a fee due fails, collection is attempted again within the following fourteen (14) days and the Customer is informed. The Provider is entitled to restrict the management functions of the Service until payment is received. If the fee has not been paid fourteen (14) days after it fell due, the contract ends upon expiry of the last paid billing period without the need for termination; no fee is owed for the unpaid billing period. If a payment already made is subsequently reversed (e.g. by objecting to a direct debit), the fee for the billing period concerned remains owed; the Customer bears the resulting bank charges insofar as it is responsible for the reversal.
 
-(7) Changes to the agreed net price under an existing contract require the Customer’s consent. The Provider may offer them in text form at least six (6) weeks before the proposed effective date; Section 13(2) and (3) applies accordingly. Silence is not consent. Without consent, the existing price continues for as long as the contract continues. Changes to the amount of VAT legally due are applied at the statutory time and do not change the net price.
+(7) The Provider is entitled to adjust the prices for future billing periods. It communicates a price change in text form at least six (6) weeks before it takes effect. The changed prices apply from the first billing period that begins after this notice period has expired; the price does not change for billing periods already paid. Until the change takes effect, the Customer may terminate the contract at any time under Section 6(2) as of the end of the current billing period; the notice points this out.
 
-(8) The Customer may set off counterclaims that are undisputed, finally adjudicated or reciprocal to the Provider’s claim under the same exchange of obligations. Statutory rights of retention for claims arising from the same contractual relationship remain unaffected.
+(8) The Customer may set off against the Provider's claims only with undisputed or legally established counterclaims. The Customer may exercise a right of retention only where its counterclaim is based on the same contractual relationship.
 
 ## Section 6 — Term and termination
 
 (1) After the trial period, a contract for a monthly-billed subscription has a term of one (1) month and renews automatically for one further month at a time for as long as it is not terminated. Where the Provider offers a billing period of longer duration (e.g. annual) and the Customer selects it, the term equals the selected period and renews for the same period each time.
 
-(2) The Customer may terminate at any time as of the end of the current, already-paid billing period or the trial period, through the customer portal in the web dashboard or in text form to the Provider. During suspension after a trial has already expired, termination with immediate effect is possible. If the person acting for the Customer deletes their account while no one else is listed in the business, this constitutes termination with immediate effect. The contract also ends in the cases in Section 5(3) or (6). Regular use ends with the contract; export and switching rights under paragraphs 4 to 7 remain available. Ordinary termination at period end does not result in a pro-rata refund of fees already paid. Statutory refund and price-reduction claims, and the special billing rule for switching in paragraph 6, remain unaffected.
+(2) The Customer may terminate the contract — including during the trial period — at any time with effect from the end of the current, already-paid billing period or from the end of the trial period. Termination may be declared via the function provided for this purpose in the web dashboard (the payment service provider's customer portal) or in text form to the Provider. If the person acting for the Customer deletes their account while no one else is listed in the business, this is deemed termination with immediate effect. Without termination, the contract ends if the fee for a new billing period is not paid (Section 5(6)) or if the suspended subscription is not resumed (Section 5(3)). Access to the Service ends when the contract ends; paragraph 4 remains unaffected. Fees already paid are not refunded on a pro-rata basis.
 
 (3) Each party's right to extraordinary termination for good cause remains unaffected. Good cause exists for the Provider in particular where the Customer materially breaches essential obligations under these Terms and fails to remedy the breach within a reasonable period despite a warning, or where a reversed payment (Section 5(6)) is not settled within fourteen (14) days despite a request to do so.
 
-(4) The Customer may retrieve its data through the export function during the contract and for thirty (30) calendar days after it ends. Authorised managers retain access to it despite a payment restriction. Without a usable account, the Customer may request delivery in text form, subject to appropriate checks of identity and authority. An export request received within this period is fulfilled without undue delay and within thirty (30) calendar days at the latest. The Provider may refer to a complete export that is actually available for retrieval; missing data or attachments must be supplied. Export is free of charge. Where a request is timely, the data concerned is retained until complete delivery and for at least thirty (30) calendar days thereafter for retrieval; the Customer is informed of the start and end. Data is not deleted before any ongoing switching or retrieval period under paragraph 6 ends. It is then deleted under paragraph 7.
+(4) During the term of the contract and until thirty (30) days after it ends, the Customer may retrieve its data at any time itself via the export function of the Service. For that purpose the export function remains reachable even where access to the Service is otherwise blocked under Section 5(3) or Section 5(6), or where the contract has ended. Within the same period the Customer may also request in text form that the Provider make its data available in a structured, commonly used and machine-readable format (e.g. CSV or JSON); the Provider makes the data available within thirty (30) days of receiving the request and may refer the Customer to the export function. In both cases the export is free of charge. After the period under sentence 1 has expired, the Provider deletes the Customer's data, unless statutory retention obligations prevent this. Where a request under sentence 3 is received in time, the Provider does not delete the data covered by it before it has made that data available and fourteen (14) days for retrieval have passed since it was made available; the Provider points out the start of this retrieval period when making the data available. The processing of personal data on the Customer's behalf is additionally governed by the data-processing agreement (Section 7(3)).
 
-(5) Exportable data and digital assets include data entered by the Customer and its Users and generated for its business through use: business and employee data, roles, settings, shift templates, planning periods, shifts and assignments, availability, preferences, vacation and absences, swaps and emergency records, messages with polls, checklists and attachments, and change logs. The "Export and switching information" annex at the end of these Terms is the online register available at [quickteam.at/agb](/agb), describing data structures, formats, procedures and known limitations. Exclusions are explained individually there. Other persons’ rights and access secrets are protected without unjustifiably obstructing switching; lawfully exportable data is not excluded merely because of a technical gap.
-
-(6) The Customer may request in text form a switch to another provider of data processing services or to its own ICT infrastructure, including from a free offering. No additional notice period applies before switching begins. The Customer identifies the destination and any authorised participants; alternatively, it may request termination and deletion. The transitional period starts upon receipt of the switching request or at a later time requested by the Customer. The Provider completes the switch without undue delay and normally within no more than thirty (30) calendar days. It supports the exit strategy, provides relevant information, reasonably assists authorised participants, continues the contracted services with due care during transition and explains known continuity risks. If the period is technically unfeasible, the Provider explains the reasons within fourteen (14) working days of the request and specifies an alternative transitional period of no more than seven months. The Customer may extend the transitional period once by a period appropriate for its purposes. Upon successful completion, the contract ends and the Provider confirms its termination in text form. A retrieval period of at least thirty (30) calendar days follows the end of transition. If the Customer requests termination and deletion without switching, the contract ends at the requested time, no earlier than receipt of the declaration; statutory retention duties remain unaffected. No switching charges or contractual penalties apply. Ordinary usage fees accrue only until the contract ends; amounts prepaid for later periods are refunded pro rata. Data security is maintained during transfer and retrieval.
-
-(7) Once the applicable periods end, the business’s data, including remaining copies, is deleted; in a switching case, deletion requires successful completion of the switch. Earlier deletion expressly requested by the Customer under the DPA remains possible. Database backups expire within seven days after deletion; when restoring a backup, previously instructed deletions are applied again. Exceptions cover records subject to statutory retention and the Provider’s own purpose-limited contract evidence: records of acceptance of the Terms and DPA are kept until the end of the third calendar year following termination, as described in Section 5.2 of the Privacy Policy. This independent processing is distinct from processing on the Customer’s behalf and does not permit further productive use of the business’s data. The Privacy Policy explains the relevant legal bases and retention periods.
+(5) Exportable within the meaning of paragraph 4 is all data that the Customer and its Users have entered into the Service or that has been generated there for the Customer's business, in particular information on employees and roles, shift templates, planning cycles, shifts and assignments, vacation, availability and preference information, messages including polls and checklists, swap and emergency records, and the change log. Data that serves solely the internal operation and security of the Service is not exported, in particular password hashes, session and security data, push tokens and program code. The export contains a description of the contents of each section and a list of the data not included, with reasons. On this basis, the Customer may request switching to another provider of data processing services, or the transfer of its data to its own systems, under Regulation (EU) 2023/2854 (Data Act); the Provider supports the Customer in doing so to a reasonable extent and charges no fee for it.
 
 ## Section 7 — Customer's obligations and responsibility
 
 (1) The Customer uses the Service exclusively within applicable law and these Terms. It ensures that it and its Users do not misuse the Service, in particular do not upload unlawful, offensive or third-party-rights-infringing content, do not attempt unauthorized access, do not disrupt the functioning of the Service, and do not introduce malware.
 
-(2) The Customer is the controller for processing of employee data that it initiates. It determines and documents the applicable legal bases, informs data subjects and respects required employee-representation rights, including under Section 87 BetrVG or Sections 96 and 96a ArbVG. Use of the Service does not replace a legal basis or a required works agreement. Article 6 and, where relevant, Article 9 GDPR and applicable national employee-data rules must be observed. The Provider remains responsible for its own obligations, particularly as processor and for privacy-compliant design of its Service.
+(2) With respect to the personal data — in particular staff data — entered into the Service by it and its Users, the Customer is the data controller within the meaning of Art. 4(7) GDPR. It is solely responsible for ensuring that a valid legal basis exists for processing such data (in particular under Art. 6 and Art. 88 GDPR in conjunction with the national rules on employee data protection), that data subjects are properly informed, that any required consents or works-council agreements are in place, and that any co-determination rights of a works council (e.g. under Section 87(1) no. 6 of the German Works Constitution Act (BetrVG) or Sections 96, 96a of the Austrian Labour Constitution Act (ArbVG)) are observed.
 
 (3) Insofar as the Provider processes personal data on behalf of the Customer within the Service, the data-processing agreement (DPA) concluded between the parties under Art. 28 GDPR applies, which the Customer concludes with the Provider upon registration. The DPA forms part of the contract and prevails over these Terms in the event of conflicts on data-protection matters.
 
@@ -122,11 +118,11 @@
 
 (3) Any further liability of the Provider is excluded. In particular, in the case of slight negligence the Provider is not liable for the breach of non-essential contractual obligations.
 
-(4) The preceding paragraphs apply to data loss without an additional limitation solely to the cost of restoring a backup. Contributory fault by the Customer is considered only under statutory law; this does not transfer the Provider’s backup obligations to the Customer.
+(4) For loss of data, the Provider is liable in accordance with the preceding paragraphs. In the case of slight negligence, liability is limited to the effort required to restore the data from a backup under Section 4(4).
 
 (5) The above limitations of liability also apply in favor of the Provider's legal representatives, employees and vicarious agents.
 
-(6) Statutory limitation periods apply. This Section does not restrict mandatory claims, in particular under Article 82 GDPR.
+(6) The Customer's claims for damages become time-barred within one (1) year from the statutory commencement of the limitation period. This does not apply in the cases referred to in paragraph 1 or to fraudulently concealed defects.
 
 ## Section 11 — Force majeure
 
@@ -164,67 +160,3 @@ The parties undertake to keep confidential all confidential information of the o
 
 Provider: BlankTrading UG (haftungsbeschränkt), Gabriele-Münter-Straße 31, 73760 Ostfildern, Germany. Phone number and further details: see the legal notice (Impressum).
 Questions about these Terms and declarations in text form (e.g. termination or export requests): blanktrading@web.de.
-
-## Annex — Export and switching information
-
-**Register version: 15 September 2026.** This annex is available before contracting at [quickteam.at/agb](/agb) and can be saved using the browser’s print/save function. Use the language selector for the English version.
-
-### Procedures, formats and interface
-
-Authorised managers download the package through [Export business data](/api/betrieb-export) in their signed-in session (HTTP GET, JSON, UTF-8). Customers need not share passwords with a new provider; they can hand over the package themselves or request verified delivery to an authorised recipient. Contact blanktrading@web.de for export requests, missing parts and switching coordination. The Service currently provides no general import of third-party scheduling files, continuous synchronisation with external systems or automatic transfer assistant. Mapping data to the receiving system may be necessary.
-
-The package format identifier is quickteam-betriebsexport/2. It is a JSON object. tabellen contains arrays of record objects per table. Identifiers link records through fields such as mitarbeiter_id, rolle_id, schicht_instanz_id and betrieb_id. Dates represent calendar days; timestamps with a time zone use ISO 8601 in UTC. Shift start/end values are local business times. Numbers, booleans, strings and null remain JSON values. Identifiers and status values require mapping on import.
-
-Other parts: meta contains business details, generation interval, time-zone information, size and legal-document versions; beschreibungen describes sections; ausschluesse and hinweise explain interventions; vollstaendig, vollstaendigkeit and unvollstaendig indicate detected gaps. umfrage_ergebnisse_anonym contains aggregate poll results. rechtliche_zustimmungen holds business acceptances, kenntnisnahmen_datenschutz personal acknowledgements, insofar as accessible to the exporting account. referenz.gesetzliche_parameter holds rules for the business’s country. dateien contains the attachment index.
-
-### Data structures
-
-| Section under tabellen | Contents | Sort fields |
-|---|---|---|
-| betriebe | Business master data | id |
-| betriebs_einstellungen | Business settings | betrieb_id |
-| mitarbeiter | Employment records, including inactive records | id |
-| rollen | Business roles | id |
-| mitarbeiter_rollen | Role assignments to employees | mitarbeiter_id, rolle_id |
-| schicht_vorlagen | Recurring shift templates; weekday 0 = Monday | id |
-| schicht_vorlage_mindestbesetzung | Minimum staffing per template | schicht_vorlage_id, rolle_id |
-| planungszyklen | Planning periods and solver runs | id |
-| schicht_instanzen | Dated shifts and their status | id |
-| schicht_instanz_mindestbesetzung | Minimum staffing per shift | schicht_instanz_id, rolle_id |
-| schicht_zuweisungen | Employee assignments to shifts | id |
-| schicht_ausschreibung_bedarf | Open staffing requirements | id |
-| schicht_notizen | Shift notes | id |
-| urlaub | Vacation requests and decisions | id |
-| abwesenheit | Other absences | id |
-| verfuegbarkeiten | Availability per shift | mitarbeiter_id, schicht_instanz_id |
-| mitarbeiter_schicht_vorlieben | Recurring shift preferences | mitarbeiter_id, schicht_vorlage_id |
-| mitarbeiter_schicht_tagesvorlieben | Dated shift preferences | mitarbeiter_id, schicht_vorlage_id, datum |
-| benachrichtigungen | Announcements, polls, checklists and system messages | id |
-| umfrage_optionen | Poll choices | id |
-| umfrage_stimmen | Identified votes only for non-anonymous polls | id |
-| aufgaben | Checklist items | id |
-| benachrichtigung_gelesen | Message read records | benachrichtigung_id, mitarbeiter_id |
-| nachricht_anhaenge | Attachment index; file contents require separate delivery | id |
-| schichttausch_anfragen | Shift-swap records | id |
-| notfall_gruende | Protected optional emergency reasons. Linked to notfaelle through notfall_id; authorised managers only. | notfall_id |
-| notfaelle | Emergency and cover records | id |
-| plan_aenderungen | Change log, with redacted before/after JSON values | id |
-| einladungen | Invitation details without access secret | erstellt_am |
-| betrieb_abonnements | Plan and subscription status; invoices through the payment portal | betrieb_id |
-
-einladungen contains betrieb_id, mitarbeiter_id, ablaufdatum, erstellt_am and eingeloest_am; betrieb_abonnements contains betrieb_id, plan, status and aktualisiert_am. Other sections contain the record fields readable by the authorised account, with the interventions explained below. This register describes the current interface; the Provider supplies additional field and status descriptions needed for a specific migration.
-
-### Limitations and exclusions
-
-- The package is not a shared database snapshot. Changes during generation may create inconsistencies or unresolved references. An agreed export time without concurrent changes is useful for a final state. Detected unresolved references appear in vollstaendigkeit.offene_verweise.
-- Attachment files are not currently included in the JSON. Where attachments exist, the package is marked incomplete. The files must additionally be supplied in response to a complete export request; a file path alone does not fulfil that obligation.
-- Password hashes, session, recovery, account-linking and invitation tokens and push tokens are withheld to protect access. The receiving service needs its own credentials. Business profile and invitation details are included.
-- Personal account-wide notification preferences, other businesses’ data and business-independent bug reports are outside the business export. Data subjects’ individual access rights remain unaffected.
-- Individual votes in anonymous polls are replaced by aggregate results. Removed names are not restored; secrets and sensitive information are redacted from the change log. Necessary additional disclosures are assessed against authority and data subjects’ rights.
-- Stripe customer and subscription identifiers are omitted from the download; they are not payment methods and are not transferred as such. Authorised customers can obtain contract information and invoices through the customer portal or on request. The Provider’s program code and internal security configuration are not customer content supplied for use.
-
-### Infrastructure and international access
-
-The database is hosted by Supabase in Ireland; the website and server-side web processing run on Vercel’s international infrastructure. The companies involved are subject in particular to Irish/EU and US law; email and push services may process data in the USA. Providers and locations are listed in [DPA, Annex 3](/avv) and [Privacy Policy, Sections 13 and 14](/datenschutz).
-
-TLS, server-side authorisation, separated business access and restricted administrative access also protect non-personal business data. The Provider must check government disclosure requests for a valid legal basis, use legal remedies where necessary, limit disclosure to what is legally required and inform the Customer unless legally prohibited. Article 32 of the Data Act remains applicable; a foreign request alone does not create authority to transfer data under Union law. No guarantee excluding every access risk is given.

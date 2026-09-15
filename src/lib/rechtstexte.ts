@@ -1,49 +1,10 @@
 /**
- * Fassungen der drei zustimmungspflichtigen Rechtstexte.
- *
- * ─────────────────────────────────────────────────────────────────────
- *  Warum hier eine Konstante und kein Parser
- * ─────────────────────────────────────────────────────────────────────
- *
- * Die Dokumente tragen ihre Fassung bereits: `**Stand: 10. September
- * 2026**` in der zweiten Zeile, in beiden Sprachfassungen dieselbe.
- * Einen zweiten Marker daneben zu setzen, hiesse zwei Stellen zu
- * pflegen, die auseinanderlaufen können — deshalb steht hier keine
- * Zweitschrift des Datums, sondern der maschinenlesbare Schlüssel dazu.
- *
- * Aus der Zeile zur Laufzeit zu lesen wäre die Alternative gewesen und
- * ist verworfen: „10. September 2026" ist ein deutscher Fliesstext, das
- * englische Gegenstück schreibt „10 September 2026", und ein
- * Datumsparser über Rechtstexte ist genau die Art Mechanik, die
- * unbemerkt das falsche Ergebnis liefert. Eine Zustimmung, die auf die
- * falsche Fassung verweist, ist schlimmer als keine.
- *
- * ─────────────────────────────────────────────────────────────────────
- *  Format und `-draft`
- * ─────────────────────────────────────────────────────────────────────
- *
- * `YYYY-MM-DD` mit optionalem Zusatz — übernommen aus der Expo-App
- * (`../QuickTeam App/src/lib/terms.ts`, `TERMS_VERSION =
- * "2026-08-07-draft"`), damit beide Seiten dieselbe Schreibweise
- * benutzen, falls die App ihre Zustimmung eines Tages ebenfalls
- * serverseitig ablegt.
- *
- * Der Zusatz `-draft` ist keine Formalie: `docs/rechtliches/legals/
- * README.md` bezeichnet alle Dokumente ausdrücklich als „pre-lawyer
- * drafts". Fällt die anwaltliche Prüfung, wird der Zusatz entfernt —
- * und weil die Fassung sich damit ändert, ist an der geänderten
- * Zeichenkette ablesbar, wer noch der Entwurfsfassung zugestimmt hat.
- *
- * ─────────────────────────────────────────────────────────────────────
- *  Beim Ändern eines Rechtstextes
- * ─────────────────────────────────────────────────────────────────────
- *
- *   1. Text in `docs/rechtliches/legals/` ändern — **beide** Sprachen.
- *   2. `**Stand:**` in beiden Dateien auf das neue Datum setzen.
- *   3. Den Wert hier auf dasselbe Datum setzen.
- *
- * Schritt 3 zu vergessen heisst: neue Zustimmungen verweisen auf eine
- * Fassung, die es nicht mehr gibt.
+ * Fassungen von AGB, AVV und Datenschutzinformation.
+ * AGB/AVV werden für den Betrieb angenommen; Datenschutz wird persönlich
+ * zur Kenntnis genommen und ist keine pauschale Verarbeitungseinwilligung.
+ * Bei Änderungen beide Sprachfassungen, Dokumentdatum und Versionsschlüssel
+ * gemeinsam aktualisieren. Vorgängertexte samt Hash archivieren.
+ * Der Zusatz -draft kennzeichnet den noch nicht anwaltlich geprüften Stand.
  */
 
 /** Die Dokumente, denen bei der Registrierung zugestimmt wird. */
@@ -119,10 +80,13 @@ export const ZUSTIMMUNG_ART: Record<ZustimmungDokument, ZustimmungArt> = {
  * zugestimmt hat, bekommt einen Hinweis und arbeitet nach § 13 Abs. 3
  * der AGB unter den bisherigen Bedingungen weiter.
  */
+// Überarbeitung 15.09.2026: AGB, AVV und Datenschutz in beiden Sprachen.
+// Vorgängerfassungen: docs/rechtliches/archiv/vor-2026-09-15/.
+// Betriebsabhängigkeiten vor Veröffentlichung: docs/rechtliches/ABGLEICH-2026-09-15.md.
 export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
-  agb: "2026-09-13-r2-draft",
-  avv: "2026-09-13-draft",
-  datenschutz: "2026-09-14-draft",
+  agb: "2026-09-15-r2-draft",
+  avv: "2026-09-15-r2-draft",
+  datenschutz: "2026-09-15-r2-draft",
 };
 
 /**

@@ -290,6 +290,14 @@ export const EXPORT_TABELLEN: readonly TabellenSpec[] = [
     sicht: "voll",
   },
   {
+    name: "notfall_gruende",
+    beschreibung: "Geschützte Notfallgründe; nur im berechtigten Leitungsexport. Bezug über notfall_id.",
+    schluessel: "betrieb_id",
+    ordnung: ["notfall_id"],
+    eindeutig: true,
+    sicht: "voll",
+  },
+  {
     name: "notfaelle",
     beschreibung: "Notfallmeldungen und Vertretungen.",
     schluessel: "betrieb_id",

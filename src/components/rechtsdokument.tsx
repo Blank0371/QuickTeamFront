@@ -89,7 +89,7 @@ export async function RechtsDokument({
           {t.rechtliches.bereich}
         </p>
 
-        <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">{titel[sprache]}</h1>
+        <h1 className="mt-3 text-3xl leading-[1.1] [overflow-wrap:anywhere] sm:text-4xl">{titel[sprache]}</h1>
 
         {hinweis}
 

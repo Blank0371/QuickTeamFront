@@ -159,7 +159,7 @@ Je Anstellung werden verarbeitet: Vor- und Nachname, E-Mail-Adresse, optional Te
 - **Führungskräfte** Ihres Betriebs sehen alle betrieblichen Daten des Betriebs.
 - **Beschäftigte** sehen ihre eigenen Daten. Namen und Schichten von Kolleginnen und Kollegen sind nur sichtbar, soweit Ihr Arbeitgeber das in den Einstellungen des Betriebs freigegeben hat. Mitteilungen, Umfragen, offene Schichten und Vertretungsgesuche richten sich an das Team oder an die dafür in Frage kommenden Personen.
 - **Urlaubsanträge** sehen nur Sie und die Führungskräfte.
-- **Notfallmeldungen** sind für Mitglieder Ihres Betriebs einsehbar. Der optionale Grund ist davon getrennt und nur für die meldende Person und aktive Führungskräfte desselben Betriebs lesbar (Ziffer 8).
+- **Notfallmeldungen** einschließlich des optionalen Grundes sind für die Mitglieder Ihres Betriebs einsehbar (siehe Ziffer 8).
 
 ### 7.5 Zwecke und Rechtsgrundlagen der betrieblichen Verarbeitung
 
@@ -171,7 +171,7 @@ Die betrieblichen Daten dienen der Organisation von Schichten, Verfügbarkeiten,
 
 Mehrere Funktionen enthalten freiwillige Freitextfelder: Notfallgründe, Urlaubskommentare, Schichtnotizen und Mitteilungen. Bitte tragen Sie dort keine Diagnosen, Krankheitsdetails oder Arbeitsunfähigkeitsbescheinigungen ein. Für eine Vertretung genügt regelmäßig die Information, dass eine Schicht nicht übernommen werden kann.
 
-**Sichtbarkeit:** Ein eingetragener Notfallgrund wird getrennt von den allgemeinen Notfallinformationen gespeichert. Lesen dürfen ihn nur die meldende Person und aktive Führungskräfte desselben Betriebs. Andere Beschäftigte, einschließlich einer übernehmenden Vertretung, erhalten über die Notfallinformationen keinen Zugriff auf den Grund. Auch innerhalb dieses eingeschränkten Kreises dürfen nur erforderliche Angaben verarbeitet werden.
+**Aktuelle Sichtbarkeit:** Ein eingetragener Notfallgrund ist für Mitglieder des Betriebs einsehbar. Das gilt auch dann, wenn die Oberfläche ihn nicht an jeder Stelle anzeigt. Diese Information ist keine Einwilligung oder Rechtsgrundlage für eine unnötige Offenlegung.
 
 Auch eine kurze Krankheitsangabe kann ein Gesundheitsdatum sein. Eine Verarbeitung erfordert dann zusätzlich zu den sonstigen Voraussetzungen eine im Einzelfall einschlägige Ausnahme nach Art. 9 Abs. 2 DSGVO, etwa soweit sie zur Erfüllung arbeitsrechtlicher Pflichten notwendig und national zulässig ist. Die bloße freiwillige Eingabe begründet eine solche Ausnahme nicht automatisch. Ihr Arbeitgeber muss Erforderlichkeit und Empfängerkreis prüfen; wir bleiben für unsere Schutzpflichten verantwortlich. Unnötige Angaben sind zu entfernen. Wenden Sie sich hierfür an Ihren Arbeitgeber oder unseren Datenschutzkontakt.
 
@@ -198,7 +198,7 @@ Eine ausschließlich auf automatisierter Verarbeitung beruhende Entscheidung, di
 - Expo leitet die Nachricht an den **Apple Push Notification service (Apple Inc., USA)** bzw. an **Firebase Cloud Messaging (Google LLC, USA)** weiter, die sie auf Ihr Gerät zustellen.
 - Einzelne Benachrichtigungsarten können Sie in den Einstellungen der App abschalten, Push-Nachrichten insgesamt in den Systemeinstellungen Ihres Geräts.
 - **Verantwortlichkeit und Rechtsgrundlagen:** Betriebliche Push-Mitteilungen stellen wir im Auftrag Ihres Arbeitgebers zu; dessen Rechtsgrundlage richtet sich nach Ziffer 7.5. Die technische Gerätefreigabe ist Voraussetzung für Push, ersetzt aber keine erforderliche datenschutzrechtliche Einwilligung und keine Grundlage für Drittlandübermittlungen. Der Gerätezugriff ist nur insoweit nach § 25 Abs. 2 Nr. 2 TDDDG bzw. § 165 Abs. 3 TKG 2021 einwilligungsfrei, wie er für die von Ihnen ausdrücklich aktivierte Push-Funktion unbedingt erforderlich ist. Eine darüber hinaus erforderliche Einwilligung muss informiert eingeholt werden. Sie können Push in den Systemeinstellungen abschalten. Ziffer 14 erläutert Drittlandübermittlungen.
-- **Speicherdauer:** Der Push-Token wird gelöscht, wenn Sie Ihr Konto löschen. Meldet sich auf demselben Gerät ein anderes Konto an, wird der Token diesem Konto zugeordnet. Die aktualisierte App entfernt beim regulären Abmelden den Push-Token dieses Geräts und geplante lokale Erinnerungen. Kann die Abmeldung wegen eines Verbindungsfehlers nicht vollständig abgeschlossen werden, zeigt sie einen Hinweis; versuchen Sie es erneut oder deaktivieren Sie Push in den Systemeinstellungen. Bereits zugestellte oder unterwegs befindliche Nachrichten lassen sich nicht zuverlässig zurückrufen. Ältere App-Versionen entfernen den Token beim Abmelden noch nicht.
+- **Speicherdauer:** Der Push-Token wird gelöscht, wenn Sie Ihr Konto löschen. Meldet sich auf demselben Gerät ein anderes Konto an, wird der Token diesem Konto zugeordnet. Ein Abmelden allein entfernt den Token derzeit nicht; wenn Sie nach dem Abmelden keine Push-Nachrichten mehr erhalten möchten, schalten Sie diese bitte in den Systemeinstellungen ab.
 
 **Lokale Erinnerungen.** Auf Wunsch plant die App Schichterinnerungen ausschließlich auf Ihrem Gerät. Sie werden ohne Netzwerkverbindung ausgelöst; dabei werden keine Daten an uns oder Dritte übermittelt.
 
@@ -208,7 +208,7 @@ Eine ausschließlich auf automatisierter Verarbeitung beruhende Entscheidung, di
 
 Die App speichert auf Ihrem Gerät: Ihre Anmeldesitzung (Zugriffs- und Erneuerungskennungen), einen Zwischenspeicher zuletzt geladener Daten für die Anzeige ohne Netzverbindung (etwa Kalenderdaten), die gewählte Sprache und Darstellung (hell/dunkel), einen Vermerk, welche Mitteilungen bereits angezeigt wurden, sowie die bestätigte Fassung der Rechtstexte.
 
-Diese Daten bleiben auf Ihrem Gerät. Das Speichern ist für die von Ihnen genutzten Funktionen unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG bzw. § 165 Abs. 3 TKG 2021; Art. 6 Abs. 1 lit. b bzw. f DSGVO). Bei erfolgreicher regulärer Abmeldung entfernt die aktualisierte App die Anmeldesitzung, den Kalender-Zwischenspeicher, lokale Mitteilungs-Lesevermerke, Benachrichtigungseinstellungen und lokale Datenschutz-Kenntnisnahmen. Sprache und Darstellung bleiben erhalten. Bei älteren App-Versionen können weitere lokale Daten bis zur Deinstallation oder zum Löschen der App-Daten bestehen bleiben.
+Diese Daten bleiben auf Ihrem Gerät. Das Speichern ist für die von Ihnen genutzten Funktionen unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG bzw. § 165 Abs. 3 TKG 2021; Art. 6 Abs. 1 lit. b bzw. f DSGVO). Die Anmeldesitzung wird beim Abmelden entfernt; die übrigen Daten bleiben bis zur Deinstallation der App oder bis Sie die App-Daten in den Einstellungen Ihres Geräts löschen.
 
 **App-Stores.** Beim Herunterladen und Aktualisieren der App verarbeiten Apple (App Store) und Google (Google Play) Daten in eigener Verantwortung nach ihren eigenen Datenschutzbestimmungen. Von den Stores erhalten wir nur zusammengefasste Statistiken, keine Angaben zu einzelnen Personen.
 
