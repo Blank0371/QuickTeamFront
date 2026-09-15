@@ -272,6 +272,12 @@ export const en: Dictionary = {
     leeren: "Clear",
   },
 
+  registrierung: {
+    promoCode: "Promo code (optional)",
+    promoCodeHinweis:
+      "Did someone tell you about QuickTeam and give you a code? Enter it here.",
+  },
+
   auswahl: {
     landAT: "Austria",
     landDE: "Germany",
@@ -335,6 +341,8 @@ export const en: Dictionary = {
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
     "v.uid.form": "An Austrian VAT ID (UID) consists of ATU and 8 digits, e.g. ATU12345678.",
+    "v.promo.form": "A promo code consists of letters, digits, - and _, at most {max} characters.",
+    "v.promo.unbekannt": "We don't recognize this promo code. Check the spelling — or leave the field empty.",
     "v.plz.ziffern": "The postal code consists of digits only.",
     "v.plz.at": "Austrian postal codes have {anzahl} digits.",
     "v.plz.de": "German postal codes have {anzahl} digits.",

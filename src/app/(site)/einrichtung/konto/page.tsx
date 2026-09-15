@@ -7,6 +7,7 @@ import { einzelwert, meldungFuer } from "@/lib/auth-meldungen";
 import { betreteSchritt } from "@/lib/einrichtung";
 import { leseBetriebsdaten } from "@/lib/registrierung-merker";
 import { FormMeldung } from "@/components/formular/felder";
+import { holeTexte } from "@/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { TESTPHASE_TAGE } from "@/lib/site";
 import { feldSchemata } from "@/lib/validierung";
@@ -151,6 +152,7 @@ export default async function KontoSeite({
    * leeres Formular die richtige Antwort.
    */
   const gemerkt = wartetAufCode ? await leseBetriebsdaten() : null;
+  const texte = (await holeTexte()).registrierung;
 
   return (
     <SchrittRahmen
@@ -222,13 +224,14 @@ export default async function KontoSeite({
               <DatenAbschnitt
                 idPraefix="aendern-"
                 vorbelegung={{ ...(gemerkt ?? {}), email }}
+                texte={texte}
               />
             </div>
           </details>
         </>
       ) : (
         <>
-          <DatenAbschnitt />
+          <DatenAbschnitt texte={texte} />
 
           <p className="mt-6 border-t border-line pt-5 text-xs leading-relaxed text-muted">
             Der Betrieb wird erst angelegt, wenn du den Code aus der Bestätigungsmail

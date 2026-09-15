@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-import { betriebsMetadatenSchema } from "@/lib/validierung";
+import { betriebsMetadatenSchema, feldSchemata } from "@/lib/validierung";
 
 /**
  * Die Betriebsdaten aus Abschnitt A, bis der Code bestätigt ist.
@@ -39,6 +39,8 @@ export type Vorbelegung = {
   land: string;
   vorname: string;
   nachname: string;
+  /** Freiwillig; fehlt er im Merker, bleibt das Feld leer. */
+  promo_code?: string;
 };
 
 export async function merkeBetriebsdaten(daten: Vorbelegung): Promise<void> {
@@ -71,8 +73,17 @@ export async function leseBetriebsdaten(): Promise<Vorbelegung | null> {
   if (!roh) return null;
 
   try {
-    const geprueft = betriebsMetadatenSchema.safeParse(JSON.parse(roh));
-    return geprueft.success ? geprueft.data : null;
+    const json: unknown = JSON.parse(roh);
+    const geprueft = betriebsMetadatenSchema.safeParse(json);
+    if (!geprueft.success) return null;
+
+    // Getrennt geprüft: ein kaputter Code soll nicht die übrigen Felder leeren.
+    const promo = feldSchemata.promo_code.safeParse(
+      (json as Record<string, unknown>)["promo_code"] ?? "",
+    );
+    return promo.success && promo.data !== ""
+      ? { ...geprueft.data, promo_code: promo.data }
+      : geprueft.data;
   } catch {
     return null;
   }

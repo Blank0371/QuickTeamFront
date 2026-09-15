@@ -81,6 +81,13 @@ export const PASSWORT_MAX = 72;
  */
 export const CODE_LAENGE = 8;
 
+/**
+ * Obergrenze des Promo-Codes. Muss mit dem CHECK auf
+ * `betrieb_promo_codes.promo_code` übereinstimmen
+ * (`docs/backend/migration-2026-09-15-promo-code.sql`).
+ */
+export const PROMO_CODE_MAX = 40;
+
 function pflichtText(bez: ValidierungsSchluessel, max: number) {
   return z
     .string()
@@ -162,6 +169,23 @@ export const feldSchemata = {
     .refine((wert) => wert === "" || /^ATU\d{8}$/u.test(wert), {
       error: vm("v.uid.form"),
     }),
+  /*
+   * Promo-Code eines Werbepartners, freiwillig. Leer heisst „keiner".
+   *
+   * Leerraum fällt weg und alles wird gross geschrieben, bevor geprüft
+   * wird: „partner 10" und „PARTNER10" sind derselbe Code, und die
+   * Auswertung zählt je Schreibweise. Der CHECK in der Datenbank
+   * verlangt genau diese Form — hier wird sie hergestellt, dort nur
+   * noch festgehalten.
+   */
+  promo_code: z
+    .string()
+    .transform((wert) => wert.replace(/\s+/gu, "").toUpperCase())
+    .refine(
+      (wert) =>
+        wert === "" || new RegExp(`^[A-Z0-9_-]{1,${PROMO_CODE_MAX}}$`, "u").test(wert),
+      { error: vm("v.promo.form", { max: PROMO_CODE_MAX }) },
+    ),
 
   /* ---------------------------------------------------------------- */
   /* Rechnungsangaben — seit dem 2026-09-14 vor der Aktivierung Pflicht */
@@ -246,6 +270,7 @@ export const registrierungSchema = z
     passwort: feldSchemata.passwort,
     wiederholung: feldSchemata.wiederholung,
     zustimmung: feldSchemata.zustimmung,
+    promo_code: feldSchemata.promo_code,
   })
   .refine((werte) => werte.passwort === werte.wiederholung, {
     /*

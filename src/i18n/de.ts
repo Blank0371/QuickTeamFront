@@ -246,6 +246,17 @@ export const de = {
     leeren: "Leeren",
   },
 
+  /**
+   * Beschriftungen der Registrierung. Bisher nur das Promo-Code-Feld —
+   * der übrige Text des Formulars steht noch im JSX (CLAUDE.md,
+   * „Aufgabe für die nächste Sitzung", Punkt 1).
+   */
+  registrierung: {
+    promoCode: "Promo-Code (optional)",
+    promoCodeHinweis:
+      "Hat dich jemand auf QuickTeam aufmerksam gemacht und dir einen Code gegeben? Dann trag ihn hier ein.",
+  },
+
   auswahl: {
     landAT: "Österreich",
     landDE: "Deutschland",
@@ -324,6 +335,8 @@ export const de = {
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
     "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
+    "v.promo.form": "Ein Promo-Code besteht aus Buchstaben, Ziffern, - und _, höchstens {max} Zeichen.",
+    "v.promo.unbekannt": "Diesen Promo-Code kennen wir nicht. Prüf die Schreibweise — oder lass das Feld leer.",
     "v.plz.ziffern": "Die Postleitzahl besteht nur aus Ziffern.",
     "v.plz.at": "Österreichische Postleitzahlen haben {anzahl} Ziffern.",
     "v.plz.de": "Deutsche Postleitzahlen haben {anzahl} Ziffern.",

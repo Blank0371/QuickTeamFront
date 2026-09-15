@@ -7,8 +7,9 @@ import { FormMeldung, SelectFeld, TextFeld } from "@/components/formular/felder"
 import { ZustimmungFeld } from "@/components/formular/zustimmung-feld";
 import { PasswortKriterien } from "@/components/formular/passwort-kriterien";
 import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
+import type { Dictionary } from "@/i18n/de";
 import { leererZustand } from "@/lib/formular";
-import { LAENDER } from "@/lib/validierung";
+import { LAENDER, PROMO_CODE_MAX } from "@/lib/validierung";
 
 import { registrieren } from "./aktionen";
 
@@ -34,8 +35,11 @@ import { registrieren } from "./aktionen";
 export function DatenAbschnitt({
   idPraefix = "",
   vorbelegung,
+  texte,
 }: {
   idPraefix?: string;
+  /** Vom Server-Elternteil in der Sprache der Anfrage hereingereicht. */
+  texte: Dictionary["registrierung"];
   /**
    * Was in Abschnitt A schon eingetippt wurde. Nur in Lage B gesetzt —
    * im leeren Formular wäre eine Vorbelegung aus einem früheren Anlauf
@@ -186,6 +190,23 @@ export function DatenAbschnitt({
         beiEingabe={(wert) =>
           setzePasswortStand((vorher) => ({ ...vorher, wiederholung: wert }))
         }
+      />
+
+      {/*
+        Freiwillig und deshalb `required={false}` — die Voreinstellung von
+        `TextFeld` ist Pflicht. Kein `autoComplete`: ein Promo-Code ist
+        nichts, was der Browser von woanders her kennen könnte.
+      */}
+      <TextFeld
+        id={`${idPraefix}promo_code`}
+        name="promo_code"
+        label={texte.promoCode}
+        required={false}
+        autoComplete="off"
+        maxLength={PROMO_CODE_MAX}
+        defaultValue={werte["promo_code"]}
+        fehler={fehler("promo_code")}
+        hinweis={texte.promoCodeHinweis}
       />
 
       <ZustimmungFeld

@@ -586,6 +586,44 @@ Steppers: `resetPasswordForEmail(email)` ohne `redirectTo`, Weiterleitung auf
 **Validierung:** Betriebsname, Vor- und Nachname nach `trim()` nicht leer — Zod
 clientseitig **und** in der Server-Action.
 
+### Änderung vom 2026-09-15: Promo-Code bei der Registrierung
+
+**Vorher:** Abschnitt A fragte nur Betriebs- und Zugangsdaten ab. **Jetzt:** ein
+freiwilliges Feld „Promo-Code". Wer QuickTeam für uns bewirbt, gibt einen Code
+weiter; trägt ein Betrieb ihn ein, steht in `betrieb_promo_codes`, welcher Betrieb
+ihn wann benutzt hat. Auf Anweisung des Nutzers — neue Produktentscheidung, die
+Expo-App hat keine Registrierung und damit kein Gegenstück.
+
+- **Weg:** derselbe wie die Zustimmung. `options.data.promo_code` beim `signUp`
+  (Schlüssel fehlt ganz, wenn das Feld leer ist), geschrieben in `bestaetigen()`
+  und `betriebNachtragen()` direkt nach der Zustimmung — `src/lib/promo-code.ts`.
+- **Schreibweise:** Leerraum raus, gross geschrieben, `[A-Z0-9_-]{1,40}`
+  (`feldSchemata.promo_code`). Der CHECK der Tabelle verlangt genau das, damit
+  die Auswertung nicht an „partner10" gegen „PARTNER10" zerfällt.
+- **Ein Code je Betrieb**, `betrieb_id` ist Primärschlüssel, `ignoreDuplicates`
+  — der erste Eintrag gewinnt.
+- **Kein Riegel:** schlägt das Schreiben fehl, steht `[promo] …` im
+  Serverprotokoll und die Einrichtung läuft weiter.
+- **Nur zugelassene Codes** (Nachtrag, ebenfalls 2026-09-15). `promo_codes`
+  (`code`, `partner`, `aktiv`) ist die Liste, gepflegt vom Betreiber im
+  SQL-Editor; `betrieb_promo_codes.promo_code` ist Fremdschlüssel darauf.
+  `registrieren()` fragt **vor** dem `signUp` über die RPC
+  `promo_code_gueltig(text)` und zeigt einen unbekannten Code am Feld an. Die
+  Liste selbst ist für Clients nicht lesbar — die RPC ist SECURITY DEFINER und
+  gibt nur Ja/Nein für genau einen Code. Die INSERT-Policy verlangt zusätzlich
+  einen **aktiven** Code; wird einer zwischen Registrierung und Bestätigung
+  abgeschaltet, entsteht keine Zeile.
+- **Ist die Prüfung nicht erreichbar, sperrt sie nicht** (`nicht-pruefbar`) — das
+  Feld ist freiwillig. Fremdschlüssel und Policy halten einen unbekannten Code
+  dann trotzdem aus der Tabelle, nur ohne Rückmeldung am Feld.
+- **Folge für den Betrieb:** solange `promo_codes` leer ist, wird **jeder**
+  eingetippte Code als unbekannt abgewiesen. Codes also anlegen, bevor sie
+  verteilt werden. Abschalten statt löschen — ein benutzter Code ist über
+  `on delete restrict` nicht löschbar. Ein Rabatt hängt nicht daran.
+
+Pflege und Auswertung (Betreiber, SQL-Editor) stehen im Fuss von
+`docs/backend/migration-2026-09-15-promo-code-liste.sql`.
+
 ## Das Web-Dashboard
 
 Gebaut ab 2026-08-26, Schale zuerst. Es liegt unter `/dashboard` und ist von der
@@ -1694,8 +1732,8 @@ weiterhin nie aus dem Formular, der Export kennt keinen `?betrieb=`-Parameter.
 
 ## Der Betriebsexport
 
-Gebaut am 2026-09-13. `GET /api/betrieb-export` liefert ein JSON-Paket mit 21
-Tabellen und fünf abgeleiteten Abschnitten; die Liste steht in
+Gebaut am 2026-09-13. `GET /api/betrieb-export` liefert ein JSON-Paket mit 30
+Tabellen (Stand 2026-09-15) und fünf abgeleiteten Abschnitten; die Liste steht in
 `src/lib/export/tabellen.ts`, der Bauer in `src/lib/export/paket.ts`.
 Vollständige Beschreibung: `docs/export/README.md`.
 
@@ -1920,6 +1958,20 @@ nicht geraten und nicht aus dieser Datei extrapoliert. `list_tables` für Strukt
   (pausiert → gekündigt stellt die 30-Tage-Uhr neu; `private.loeschsperre` hält
   den Job bei einem Exportverlangen in Textform an). Der Satz oben gilt für alles
   Weitere unverändert.
+
+  **Dritte Ausnahme, am 2026-09-15 vom Nutzer angewiesen:** die Tabelle
+  `betrieb_promo_codes` (Migration `promo_code_betrieb`, Quelle
+  `docs/backend/migration-2026-09-15-promo-code.sql`). **Rein additiv** wie die
+  erste: eine neue Tabelle, an nichts Bestehendem geändert. RLS: INSERT und SELECT
+  nur `ist_chef(betrieb_id)`, kein UPDATE/DELETE; `anon` hat keinerlei Rechte.
+  `ON DELETE CASCADE` auf `betriebe`, weil `private.betrieb_endgueltig_loeschen()`
+  sich auf die Kaskade verlässt. Am selben Tag, ebenfalls angewiesen, die Liste
+  zugelassener Codes (Migration `promo_code_liste`, Quelle
+  `docs/backend/migration-2026-09-15-promo-code-liste.sql`): Tabelle
+  `promo_codes` ohne Client-Rechte, RPC `promo_code_gueltig(text)` für `anon` und
+  `authenticated`, Fremdschlüssel und verschärfte INSERT-Policy auf
+  `betrieb_promo_codes`. Abschnitt „Änderung vom 2026-09-15: Promo-Code bei der
+  Registrierung" oben. Der Satz oben gilt für alles Weitere unverändert.
 
   **`docs/backend/migration-2026-09-14-vertragsende-und-loeschung.sql` darf nicht
   zusätzlich eingespielt werden** — sie ist ein paralleler, nie angewendeter Entwurf
