@@ -1,6 +1,6 @@
 # DATENSCHUTZERKLÄRUNG
 
-**Stand: 16. September 2026**
+**Stand: 15. September 2026**
 
 Diese Datenschutzerklärung informiert Sie nach Art. 13 und 14 der Datenschutz-Grundverordnung (DSGVO) darüber, wie die BlankTrading UG (haftungsbeschränkt) (nachfolgend „wir“ oder „uns“) personenbezogene Daten verarbeitet, wenn Sie
 
@@ -25,7 +25,7 @@ Telefon: +43 664 2538798
 
 **Datenschutzkontakt:** blanktrading@web.de. An diese Adresse richten Sie bitte auch alle Anfragen zur Ausübung Ihrer Rechte (Ziffer 17).
 
-**Datenschutzbeauftragter:** Ein Datenschutzbeauftragter ist derzeit nicht benannt. Datenschutzanfragen bearbeitet die Geschäftsführung unter der oben genannten Adresse.
+**Datenschutzkontakt:** Ein Datenschutzbeauftragter ist derzeit nicht benannt. Datenschutzanfragen bearbeitet die Geschäftsführung unter der oben genannten Adresse.
 
 ---
 
@@ -74,7 +74,7 @@ Die Website verwendet die nachfolgenden Cookies für Anmeldung, gewählte Einste
 | **qt_sprache** | speichert die gewählte Sprache (Deutsch oder Englisch) | 1 Jahr | nur wenn Sie die Sprache umschalten |
 | **sb-…-auth-token** (ggf. in mehrere Teile aufgeteilt) | hält Sie nach der Anmeldung angemeldet; enthält Ihre Sitzungs- und Zugriffskennungen | bis zur Abmeldung, längstens 400 Tage | bei der Anmeldung |
 | **qt_position** | merkt sich, mit welcher Ihrer Anstellungen Sie im Dashboard arbeiten, wenn Ihr Konto mehreren Betrieben oder Positionen zugeordnet ist | 1 Jahr; wird beim Abmelden gelöscht | bei der Auswahl einer Position |
-| **qt_registrierung** | hält während der Registrierung Betriebsname, Land, Vor- und Nachname sowie einen optional eingegebenen Promo-Code bereit, bis der Bestätigungscode eingegeben ist; nur auf der Registrierungsseite lesbar | 24 Stunden; wird nach der Bestätigung gelöscht | bei der Registrierung |
+| **qt_registrierung** | hält während der Registrierung Betriebsname, Land sowie Vor- und Nachname bereit, bis der Bestätigungscode eingegeben ist; nur auf der Registrierungsseite lesbar | 24 Stunden; wird nach der Bestätigung gelöscht | bei der Registrierung |
 | **__stripe_mid**, **__stripe_sid** | Betrugsprävention bei der Zahlung (Stripe) | 1 Jahr bzw. 30 Minuten | nur auf den Seiten mit Zahlungsformular (Ziffer 6) |
 
 **Rechtsgrundlage:** Für die zur Anmeldung, Registrierung und ausdrücklich gewählten Sprache oder Position erforderlichen Speicherzugriffe gilt § 25 Abs. 2 Nr. 2 TDDDG bzw. in Österreich § 165 Abs. 3 TKG 2021. Die Verarbeitung personenbezogener Daten richtet sich nach Art. 6 Abs. 1 lit. b DSGVO für eigene Vertragsbeziehungen bzw. lit. f DSGVO für sichere Zugänge und die Abwicklung für Unternehmensvertreter. Stripe verwendet im Zahlungsformular Cookies und Gerätesignale zur Betrugsprävention. Eine Einwilligungsausnahme gilt auch dort nur für Speicherzugriffe, die für den ausdrücklich verlangten Zahlungsdienst unbedingt erforderlich sind; eine allgemeine Berufung auf Sicherheit oder berechtigte Interessen ersetzt diese Voraussetzung nicht.
@@ -88,8 +88,6 @@ Auf der Website wird derzeit kein Cookie-Banner angezeigt. Analyse- und Werbe-Co
 ### 5.1 Welche Daten wir erheben
 
 Zur Registrierung eines Betriebs erheben wir: Name des Betriebs, Land (Deutschland oder Österreich), Ihren Vor- und Nachnamen, Ihre E-Mail-Adresse und ein Passwort. Das Passwort wird verschlüsselt (TLS) an unseren Server übertragen, der es unmittelbar an unseren Authentifizierungsdienst weiterreicht; das gilt ebenso bei jeder Anmeldung und beim Zurücksetzen des Passworts. Wir protokollieren das Passwort nicht und speichern es nicht. Dauerhaft gespeichert wird ausschließlich ein kryptografischer Hashwert, aus dem sich das Passwort nicht zurückrechnen lässt.
-
-Wenn Sie freiwillig einen **Promo-Code** angeben, speichern wir ihn zunächst beim Anmeldekonto und ordnen ihn nach der Bestätigung Ihrem Betrieb zu. Wir verwenden ihn zur Prüfung und Zuordnung der angegebenen Aktion. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt in der Verwaltung dieser Zuordnung. Der Code bleibt beim Konto beziehungsweise Betrieb bis zu dessen Löschung gespeichert. Ein Code bewirkt in der aktuellen Anwendung nicht automatisch einen Preisnachlass.
 
 Zur Bestätigung Ihrer E-Mail-Adresse senden wir Ihnen einen achtstelligen Code (Ziffer 12.1). Erst nach Eingabe des Codes wird der Betrieb angelegt und Ihr Konto als Führungskraft („Chef“) mit ihm verknüpft. Bis dahin liegen die Angaben zum Betrieb bei Ihrem noch unbestätigten Konto.
 

@@ -1,4 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { gewuenschtePositionsId, holePositionen, waehleAktive } from "@/lib/dashboard/position";
+import { wechselAdresse } from "@/lib/dashboard/pfad";
 import { betriebsMetadatenSchema, feldSchemata, type LandCode } from "@/lib/validierung";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -94,17 +97,22 @@ export async function sucheChefBetrieb(
   return { art: "keiner" };
 }
 
-/**
- * Bequeme Kurzform für Seiten, die nur wissen wollen, welchen Betrieb sie
- * anzeigen sollen. Fehler und „keiner" fallen hier absichtlich zusammen:
- * für eine Seite ist beides gleichbedeutend mit „nichts anzuzeigen".
- * Wer schreibt, nimmt `sucheChefBetrieb` und unterscheidet.
+/** Gewählten Chef-Betrieb für Einrichtung und Abrechnung auflösen.
+ * Mehrdeutige Positionen verlangen eine Auswahl; Lesefehler bleiben Fehler.
  */
 export async function holeChefBetriebId(
   supabase: SupabaseServerClient,
 ): Promise<string | null> {
-  const ergebnis = await sucheChefBetrieb(supabase);
-  return ergebnis.art === "gefunden" ? ergebnis.betriebId : null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) redirect("/login");
+  const positionen = await holePositionen(supabase, user.id);
+  if (positionen.length === 0) return null;
+  const aktiv = waehleAktive(positionen, await gewuenschtePositionsId());
+  if (!aktiv) redirect(wechselAdresse("/einrichtung"));
+  // Dieselbe Position wie im Dashboard: weder ein anderer Betrieb noch
+  // eine Mitarbeiterposition darf still zum ersten Chef-Betrieb werden.
+  if (aktiv.rolleTyp !== "chef") redirect("/dashboard");
+  return aktiv.betriebId;
 }
 
 /**

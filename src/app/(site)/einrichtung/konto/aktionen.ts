@@ -25,6 +25,8 @@ import {
   aktuelleZustimmungVersionen,
   schreibeZustimmungen,
   ZUSTIMMUNG_METADATEN_SCHLUESSEL,
+  ZUSTIMMUNG_NACHWEIS_SCHLUESSEL,
+  zustimmungNachweisAusMetadaten,
   zustimmungAusMetadaten,
 } from "@/lib/zustimmung";
 import {
@@ -178,7 +180,7 @@ export async function bestaetigen(
       ergebnis.betriebId,
       data.session.user.id,
       zustimmungVersionen,
-      { sprache: await leseSprache(), hashes: await zustimmungHashes() },
+      zustimmungNachweisAusMetadaten(data.session.user.user_metadata),
     );
   }
 
@@ -320,6 +322,7 @@ export async function registrieren(
          * als die, der jemand tatsächlich zugestimmt hat.
          */
         [ZUSTIMMUNG_METADATEN_SCHLUESSEL]: aktuelleZustimmungVersionen(),
+        [ZUSTIMMUNG_NACHWEIS_SCHLUESSEL]: { sprache: await leseSprache(), hashes: await zustimmungHashes() },
         // Ohne Code gar kein Schlüssel — ein leerer String wäre eine Angabe.
         ...(daten.promo_code ? { [PROMO_METADATEN_SCHLUESSEL]: daten.promo_code } : {}),
       },
@@ -446,7 +449,7 @@ export async function betriebNachtragen(
       ergebnis.betriebId,
       user.id,
       zustimmungVersionen,
-      { sprache: await leseSprache(), hashes: await zustimmungHashes() },
+      zustimmungNachweisAusMetadaten(user.user_metadata),
     );
   }
 

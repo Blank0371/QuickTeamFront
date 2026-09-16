@@ -192,7 +192,7 @@ export async function holeZuweisbareMitarbeiter(
   betriebId: string,
 ): Promise<ZuweisbarerMitarbeiter[]> {
   const [{ data: mitarbeiter }, { data: rollen }, { data: zuordnung }] = await Promise.all([
-    supabase.from("mitarbeiter").select("id, vorname, nachname").eq("betrieb_id", betriebId).order("nachname"),
+    supabase.from("mitarbeiter").select("id, vorname, nachname").eq("betrieb_id", betriebId).in("status", ["aktiv", "eingeladen"]).is("anonymisiert_am", null).order("nachname"),
     supabase.from("rollen").select("id, name").eq("betrieb_id", betriebId).eq("aktiv", true),
     supabase.from("mitarbeiter_rollen").select("mitarbeiter_id, rolle_id").eq("betrieb_id", betriebId),
   ]);

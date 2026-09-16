@@ -171,107 +171,113 @@ function Formular({
      * (`rechnungVollstaendig`) und lässt sich von hier aus nicht
      * umgehen.
      */
-    const geprueft = rechnungSchema.safeParse(werte);
-    if (!geprueft.success) {
-      setFelder(feldFehler(geprueft.error, validierung));
-      setFehler("Bitte vervollständige die Rechnungsangaben.");
+    try {
+      const geprueft = rechnungSchema.safeParse(werte);
+      if (!geprueft.success) {
+        setFelder(feldFehler(geprueft.error, validierung));
+        setFehler("Bitte vervollständige die Rechnungsangaben.");
+        setLaeuft(false);
+        return;
+      }
+
+      const gespeichert = await rechnungSpeichern(werte);
+      if (!gespeichert.ok) {
+        setFehler(gespeichert.nachricht);
+        if (gespeichert.felder) setFelder(gespeichert.felder);
+        setLaeuft(false);
+        return;
+      }
+
+      /*
+       * `redirect: "if_required"` ist der Grund, warum dieser Schritt
+       * überhaupt eingebettet funktioniert: Karten und SEPA werden ohne
+       * Weiterleitung bestätigt, nur 3DS-Fälle verlassen die Seite kurz und
+       * kommen über `return_url` zurück.
+       *
+       * ───────────────────────────────────────────────────────────────
+       *  Das Ziel ist DIESE Seite — Korrektur vom 2026-09-14.
+       * ───────────────────────────────────────────────────────────────
+       *
+       * Hier stand fest verdrahtet `/einrichtung/zahlung`. Dieses Formular
+       * steht aber an **zwei** Stellen, und für die zweite war das ein
+       * stiller Totalausfall:
+       *
+       * Wer auf `/einrichtung/testphase-abgelaufen` ein pausiertes Abo mit
+       * einer 3DS-pflichtigen Karte fortsetzen wollte, kam von der Bank auf
+       * `/einrichtung/zahlung?setup_intent=…` zurück. Dort läuft
+       * `betreteSchritt("zahlung")` zuerst, sieht `stand.gesperrt` — der
+       * Webhook hat den neuen Status ja noch nicht geschrieben — und leitet
+       * auf die Sperrseite um. **Dabei fällt der Query-Parameter weg.**
+       * Ergebnis: die Zahlungsmethode ist bei Stripe bestätigt, wird nie
+       * übernommen, das Abo bleibt pausiert, und der Kunde steht wieder vor
+       * derselben Sperrseite — ohne Fehlermeldung, weil aus Sicht des
+       * Codes nichts fehlgeschlagen ist.
+       *
+       * `pathname` statt eines festen Pfades trifft automatisch die Seite,
+       * auf der das Formular gerade steht; beide Seiten werten
+       * `?setup_intent=` aus. Die Suchparameter bleiben absichtlich weg —
+       * `?zahlen=1` soll nicht zurückkommen, und `setup_intent` hängt
+       * Stripe selbst an.
+       */
+      const { error, setupIntent } = await stripe.confirmSetup({
+        elements,
+        confirmParams: {
+          /*
+           * Beide Seiten hatten diesen Fehler unabhängig gefunden und
+           * verschieden gelöst — hier stehen beide Lösungen übereinander,
+           * weil sie verschiedene Fehlerarten abdecken:
+           *
+           *   * `rueckkehrPfad` ist die **ausdrückliche** Angabe der
+           *     aufrufenden Seite. Sie ist serverseitig gesetzt und hält
+           *     auch dort, wo `pathname` täuschen könnte (Rewrite,
+           *     abweichender Basispfad).
+           *   * `window.location.pathname` ist der **Rückfall**. Vorher
+           *     stand hier als Vorgabe `/einrichtung/zahlung` — damit wäre
+           *     genau derselbe stille Totalausfall zurückgekehrt, sobald
+           *     jemand eine dritte Einbindung ergänzt und die Prop
+           *     vergisst. Der Rückfall auf die aktuelle Seite kann nicht
+           *     vergessen werden.
+           *
+           * Eine feste Vorgabe wäre die schlechteste der drei Varianten:
+           * sie sieht aus wie eine Entscheidung und ist eine Falle.
+           */
+          return_url: `${window.location.origin}${rueckkehrPfad ?? window.location.pathname}`,
+        },
+        redirect: "if_required",
+      });
+
+      if (error) {
+        setFehler(error.message ?? "Die Zahlungsmethode liess sich nicht bestätigen.");
+        setLaeuft(false);
+        return;
+      }
+
+      if (!setupIntent) {
+        setFehler("Stripe hat kein Ergebnis zurückgemeldet. Versuch es noch einmal.");
+        setLaeuft(false);
+        return;
+      }
+
+      /*
+       * Übernommen wird serverseitig, und zwar über die ID statt über das
+       * hier vorliegende Objekt: der Server schlägt den Intent selbst nach
+       * und prüft, dass er zu diesem Betrieb gehört. Was der Browser
+       * behauptet, zählt dabei nicht.
+       */
+      const ergebnis = await zahlungsmittelUebernehmen(setupIntent.id);
+
+      if (!ergebnis.ok) {
+        setFehler(ergebnis.nachricht);
+        setLaeuft(false);
+        return;
+      }
+
+      router.push("/einrichtung");
+    } catch {
+      setFehler("Die Verbindung wurde unterbrochen. Bitte versuch es erneut; prüfe bei einer bereits bestätigten Zahlung zunächst den Abostatus.");
+    } finally {
       setLaeuft(false);
-      return;
     }
-
-    const gespeichert = await rechnungSpeichern(werte);
-    if (!gespeichert.ok) {
-      setFehler(gespeichert.nachricht);
-      if (gespeichert.felder) setFelder(gespeichert.felder);
-      setLaeuft(false);
-      return;
-    }
-
-    /*
-     * `redirect: "if_required"` ist der Grund, warum dieser Schritt
-     * überhaupt eingebettet funktioniert: Karten und SEPA werden ohne
-     * Weiterleitung bestätigt, nur 3DS-Fälle verlassen die Seite kurz und
-     * kommen über `return_url` zurück.
-     *
-     * ───────────────────────────────────────────────────────────────
-     *  Das Ziel ist DIESE Seite — Korrektur vom 2026-09-14.
-     * ───────────────────────────────────────────────────────────────
-     *
-     * Hier stand fest verdrahtet `/einrichtung/zahlung`. Dieses Formular
-     * steht aber an **zwei** Stellen, und für die zweite war das ein
-     * stiller Totalausfall:
-     *
-     * Wer auf `/einrichtung/testphase-abgelaufen` ein pausiertes Abo mit
-     * einer 3DS-pflichtigen Karte fortsetzen wollte, kam von der Bank auf
-     * `/einrichtung/zahlung?setup_intent=…` zurück. Dort läuft
-     * `betreteSchritt("zahlung")` zuerst, sieht `stand.gesperrt` — der
-     * Webhook hat den neuen Status ja noch nicht geschrieben — und leitet
-     * auf die Sperrseite um. **Dabei fällt der Query-Parameter weg.**
-     * Ergebnis: die Zahlungsmethode ist bei Stripe bestätigt, wird nie
-     * übernommen, das Abo bleibt pausiert, und der Kunde steht wieder vor
-     * derselben Sperrseite — ohne Fehlermeldung, weil aus Sicht des
-     * Codes nichts fehlgeschlagen ist.
-     *
-     * `pathname` statt eines festen Pfades trifft automatisch die Seite,
-     * auf der das Formular gerade steht; beide Seiten werten
-     * `?setup_intent=` aus. Die Suchparameter bleiben absichtlich weg —
-     * `?zahlen=1` soll nicht zurückkommen, und `setup_intent` hängt
-     * Stripe selbst an.
-     */
-    const { error, setupIntent } = await stripe.confirmSetup({
-      elements,
-      confirmParams: {
-        /*
-         * Beide Seiten hatten diesen Fehler unabhängig gefunden und
-         * verschieden gelöst — hier stehen beide Lösungen übereinander,
-         * weil sie verschiedene Fehlerarten abdecken:
-         *
-         *   * `rueckkehrPfad` ist die **ausdrückliche** Angabe der
-         *     aufrufenden Seite. Sie ist serverseitig gesetzt und hält
-         *     auch dort, wo `pathname` täuschen könnte (Rewrite,
-         *     abweichender Basispfad).
-         *   * `window.location.pathname` ist der **Rückfall**. Vorher
-         *     stand hier als Vorgabe `/einrichtung/zahlung` — damit wäre
-         *     genau derselbe stille Totalausfall zurückgekehrt, sobald
-         *     jemand eine dritte Einbindung ergänzt und die Prop
-         *     vergisst. Der Rückfall auf die aktuelle Seite kann nicht
-         *     vergessen werden.
-         *
-         * Eine feste Vorgabe wäre die schlechteste der drei Varianten:
-         * sie sieht aus wie eine Entscheidung und ist eine Falle.
-         */
-        return_url: `${window.location.origin}${rueckkehrPfad ?? window.location.pathname}`,
-      },
-      redirect: "if_required",
-    });
-
-    if (error) {
-      setFehler(error.message ?? "Die Zahlungsmethode liess sich nicht bestätigen.");
-      setLaeuft(false);
-      return;
-    }
-
-    if (!setupIntent) {
-      setFehler("Stripe hat kein Ergebnis zurückgemeldet. Versuch es noch einmal.");
-      setLaeuft(false);
-      return;
-    }
-
-    /*
-     * Übernommen wird serverseitig, und zwar über die ID statt über das
-     * hier vorliegende Objekt: der Server schlägt den Intent selbst nach
-     * und prüft, dass er zu diesem Betrieb gehört. Was der Browser
-     * behauptet, zählt dabei nicht.
-     */
-    const ergebnis = await zahlungsmittelUebernehmen(setupIntent.id);
-
-    if (!ergebnis.ok) {
-      setFehler(ergebnis.nachricht);
-      setLaeuft(false);
-      return;
-    }
-
-    router.push("/einrichtung");
   }
 
   return (

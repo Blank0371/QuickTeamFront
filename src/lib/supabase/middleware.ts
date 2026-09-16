@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { mitSprachKopfzeile } from "@/i18n/sprach-parameter";
 import { PFAD_KOPFZEILE } from "@/lib/dashboard/pfad";
 
+import { beschaedigteSessionCookies } from "./session-cookie";
+
 import { supabaseAnonKey, supabaseKonfiguriert, supabaseUrl } from "./env";
 
 /**
@@ -48,6 +50,15 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Schon vor der SDK-Initialisierung bereinigen: ungültiges UTF-8 kann
+  // sonst sowohl die Middleware als auch öffentliche Rechtsseiten lahmlegen.
+  const defekt = beschaedigteSessionCookies(request.cookies.getAll(), supabaseUrl);
+  for (const name of defekt) request.cookies.delete(name);
+  if (defekt.length) {
+    supabaseResponse = antwort();
+    for (const name of defekt) supabaseResponse.cookies.set(name, "", { path: "/", maxAge: 0 });
+  }
+
   // Explizit typisiert: `cookies` nimmt eine Union aus aktueller und
   // veralteter Signatur an, deshalb greift die Kontext-Inferenz nicht.
   const cookies: CookieMethodsServer = {
@@ -59,6 +70,7 @@ export async function updateSession(request: NextRequest) {
         request.cookies.set(name, value);
       }
       supabaseResponse = antwort();
+      for (const name of defekt) supabaseResponse.cookies.set(name, "", { path: "/", maxAge: 0 });
       for (const { name, value, options } of cookiesToSet) {
         supabaseResponse.cookies.set(name, value, options);
       }

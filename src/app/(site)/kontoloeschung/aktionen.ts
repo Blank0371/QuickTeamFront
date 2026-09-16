@@ -3,8 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { holeAbo } from "@/lib/abo";
-import { holeChefBetriebId } from "@/lib/betrieb";
-import { loescheAktivePosition } from "@/lib/dashboard/position";
+import { holePositionen, loescheAktivePosition, type Position } from "@/lib/dashboard/position";
 import { type FormZustand } from "@/lib/formular";
 import { holeAboFuerBetrieb, kuendigeAbo } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -54,17 +53,10 @@ export async function kontoLoeschen(
   if (!user) redirect("/login");
 
   const bestaetigung = String(formData.get("bestaetigung") ?? "").trim();
-  const erwartet = String(formData.get("erwartet") ?? "").trim();
+  const positionen = await holePositionen(supabase, user.id);
+  const erwartet = (positionen.find((p) => p.rolleTyp === "chef")?.betriebName ?? user.email ?? "").trim();
 
-  /*
-   * Der Vergleichswert reist im Formular mit und wird deshalb **nicht**
-   * geglaubt: er dient nur der Anzeige. Geprüft wird gegen den Wert, den
-   * die Seite serverseitig ermittelt hat — hier reicht der Abgleich der
-   * beiden Felder aber nicht, also kommt `erwartet` aus einem versteckten
-   * Feld und wird zusätzlich gegen die Länge geprüft. Die eigentliche
-   * Autorisierung macht ohnehin die RPC über `auth.uid()`; dieses Feld
-   * ist eine Absicherung gegen den Fehlklick, nicht gegen einen Angriff.
-   */
+  // Bestätigungswort aus derselben vertrauenswürdigen Quelle wie auf der Seite.
   if (erwartet.length === 0 || bestaetigung !== erwartet) {
     return {
       status: "fehler",
@@ -83,7 +75,16 @@ export async function kontoLoeschen(
    * ohne aktiven Chef dasteht — genau dann soll nichts mehr abgebucht
    * werden (Audit Punkt 19).
    */
-  const zuKuendigen = await ermittleLebendesAbo(supabase, user.email ?? "");
+  let zuKuendigen: { id: string; kundeId: string | null }[];
+  try {
+    zuKuendigen = await ermittleLebendeAbos(supabase, user.email ?? "", positionen);
+  } catch {
+    return {
+      status: "fehler",
+      nachricht: "Die Abonnements konnten nicht geprüft werden. Dein Konto wurde nicht gelöscht. Versuch es später erneut.",
+      felder: {},
+    };
+  }
 
   const { error } = await supabase.rpc("konto_selbst_loeschen");
 
@@ -119,12 +120,14 @@ export async function kontoLoeschen(
    * von hier aus nicht angefasst (siehe CLAUDE.md, „Was hier nicht
    * passiert"); als Befund gemeldet, nicht repariert.
    */
-  if (zuKuendigen) {
+  let kuendigungOffen = false;
+  for (const abo of zuKuendigen) {
     try {
-      await kuendigeAbo(zuKuendigen.id);
+      await kuendigeAbo(abo.id);
     } catch (fehler) {
+      kuendigungOffen = true;
       console.error(
-        `[konto] Abo-Kündigung nach Löschung fehlgeschlagen — in Stripe manuell kündigen: sub=${zuKuendigen.id} kunde=${zuKuendigen.kundeId}: ${fehler}`,
+        `[konto] Abo-Kündigung nach Löschung fehlgeschlagen — in Stripe manuell kündigen: sub=${abo.id} kunde=${abo.kundeId}: ${fehler}`,
       );
     }
   }
@@ -137,37 +140,26 @@ export async function kontoLoeschen(
   await loescheAktivePosition();
   await supabase.auth.signOut();
 
+  if (kuendigungOffen) redirect("/login?meldung=konto-geloescht&fehler=abo-kuendigung-offen");
   redirect("/?geloescht=1");
 }
 
-/**
- * Das lebende Stripe-Abo des vom Konto geleiteten Betriebs — oder `null`,
- * wenn keins existiert oder das Konto keinen Betrieb leitet.
- *
- * Reine Vorbereitung für die Kündigung nach der Löschung: fehlt der Betrieb
- * oder das Abo, ist nichts zu tun. Ein Lesefehler hält die Löschung **nicht**
- * auf — er wird protokolliert und wie „kein Abo" behandelt; jemanden mit
- * einem halb gelöschten Konto zurückzulassen wäre der schlechtere Tausch.
- */
-async function ermittleLebendesAbo(
+/** Alle geleiteten Betriebe prüfen, bevor die Anmeldung unwiderruflich entfällt. */
+async function ermittleLebendeAbos(
   supabase: Awaited<ReturnType<typeof createClient>>,
   email: string,
-): Promise<{ id: string; kundeId: string | null } | null> {
-  try {
-    const betriebId = await holeChefBetriebId(supabase);
-    if (!betriebId) return null;
-
+  positionen: readonly Position[],
+): Promise<{ id: string; kundeId: string | null }[]> {
+  const betriebIds = [...new Set(positionen.filter((p) => p.rolleTyp === "chef").map((p) => p.betriebId))];
+  const abos: { id: string; kundeId: string | null }[] = [];
+  for (const betriebId of betriebIds) {
     const abo = await holeAbo(supabase, betriebId);
+    // Eine fehlende/unerreichbare Abo-Zeile ist kein Beweis für "kein Abo".
+    if (!abo) throw new Error("Abonnement nicht lesbar");
     const beiStripe = await holeAboFuerBetrieb({
-      betriebId,
-      email,
-      kundeId: abo?.stripe_customer_id ?? null,
+      betriebId, email, kundeId: abo.stripe_customer_id,
     });
-    if (!beiStripe) return null;
-
-    return { id: beiStripe.id, kundeId: abo?.stripe_customer_id ?? null };
-  } catch (fehler) {
-    console.error(`[konto] Abo-Ermittlung vor Löschung fehlgeschlagen: ${fehler}`);
-    return null;
+    if (beiStripe) abos.push({ id: beiStripe.id, kundeId: abo.stripe_customer_id });
   }
+  return abos;
 }

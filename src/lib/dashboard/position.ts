@@ -108,7 +108,7 @@ export async function holePositionen(
 
   if (error) {
     console.error(`[dashboard] holePositionen: ${error.message}`);
-    return [];
+    throw new Error("Die Betriebszugehörigkeiten konnten nicht geladen werden.");
   }
 
   return data

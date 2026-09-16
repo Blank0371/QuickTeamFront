@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Container } from "@/components/container";
-import { holeChefBetriebId } from "@/lib/betrieb";
 import { holePositionen } from "@/lib/dashboard/position";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,10 +55,7 @@ export default async function KontoloeschungSeite() {
 
   if (!user) redirect("/login");
 
-  const [betriebId, positionen] = await Promise.all([
-    holeChefBetriebId(supabase),
-    holePositionen(supabase, user.id),
-  ]);
+  const positionen = await holePositionen(supabase, user.id);
 
   /*
    * Der Name kommt aus den Positionen und nicht aus einer eigenen
@@ -67,9 +63,7 @@ export default async function KontoloeschungSeite() {
    * `betrieb_select` gäbe ihn für einen Betrieb, in dem man nicht aktiv
    * ist, gar nicht heraus.
    */
-  const chefPosition = betriebId
-    ? positionen.find((p) => p.betriebId === betriebId && p.rolleTyp === "chef")
-    : undefined;
+  const chefPosition = positionen.find((p) => p.rolleTyp === "chef");
 
   const erwartet = chefPosition?.betriebName ?? user.email ?? "";
 
@@ -129,16 +123,14 @@ export default async function KontoloeschungSeite() {
             <>
               <h2 className="mt-6 font-display text-lg text-text">Abo und Abrechnung</h2>
               <p className="mt-4 text-sm leading-relaxed text-muted">
-                Führst du <span className="text-text">{chefPosition.betriebName}</span>{" "}
-                allein, endet mit der Löschung auch das Abonnement: es wird sofort
-                gekündigt, und danach wird <span className="text-text">nichts mehr
-                abgebucht</span>. Bereits abgebuchte Zeiträume werden nicht anteilig
-                erstattet.
+                Die Löschung betrifft alle Betriebe, die du leitest. Ihre laufenden
+                Abonnements werden anschließend sofort gekündigt. Bereits abgebuchte
+                Zeiträume werden nicht anteilig erstattet. Falls die Kündigung technisch
+                fehlschlägt, muss der Support sie nachholen.
               </p>
 
               <p className="mt-6 rounded-blk border border-line-strong bg-surface-sunk px-4 py-3 text-sm leading-relaxed text-muted">
-                Stehen in <span className="text-text">{chefPosition.betriebName}</span>{" "}
-                noch weitere Personen, lässt sich dein Konto nicht löschen — sonst bliebe
+                Stehen in einem deiner geleiteten Betriebe noch weitere Personen, lässt sich dein Konto nicht löschen — sonst bliebe
                 ein Betrieb ohne Leitung zurück, und das Abo liefe weiter. Entferne sie
                 zuvor unter{" "}
                 <Link

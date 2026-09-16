@@ -86,7 +86,7 @@ export const ZUSTIMMUNG_ART: Record<ZustimmungDokument, ZustimmungArt> = {
 export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
   agb: "2026-09-15-r2-draft",
   avv: "2026-09-15-r2-draft",
-  datenschutz: "2026-09-15-r2-draft",
+  datenschutz: "2026-09-16-draft",
 };
 
 /**

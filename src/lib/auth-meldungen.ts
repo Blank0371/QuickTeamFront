@@ -7,6 +7,8 @@
  * auf die Seite schreiben.
  */
 const MELDUNGEN: Record<string, string> = {
+  "konto-geloescht": "Dein Konto wurde gelöscht.",
+  "abo-kuendigung-offen": "Mindestens ein Abonnement konnte anschließend nicht gekündigt werden. Bitte kontaktiere umgehend blanktrading@web.de, damit keine weiteren Abbuchungen erfolgen.",
   abgemeldet: "Du bist abgemeldet.",
   "app-url-fehlt":
     "Dein Konto ist bereit, aber das Ziel der Weiterleitung ist nicht konfiguriert (NEXT_PUBLIC_APP_URL). Meld dich beim Support.",

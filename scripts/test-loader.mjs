@@ -45,6 +45,11 @@ function ersteVorhandene(basis) {
 }
 
 export async function resolve(specifier, context, nextResolve) {
+  // Next dokumentiert endungslose Subpfade; Node ESM braucht die Datei.
+  // Damit können Server-Grenzen in Tests durch mock.module ersetzt werden.
+  if (/^next\/(navigation|headers|cache|server)$/.test(specifier)) {
+    return nextResolve(`${specifier}.js`, context);
+  }
   if (specifier.startsWith("@/")) {
     const treffer = ersteVorhandene(path.join(src, specifier.slice(2)));
     if (treffer) return { url: pathToFileURL(treffer).href, shortCircuit: true };

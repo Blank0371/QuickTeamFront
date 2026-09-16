@@ -31,8 +31,13 @@ export type ChefUrlaubsantrag = MeinUrlaub & {
 
 /** Inklusive Tagesdifferenz — Spiegel von `dayDiff` in `manager.tsx`. */
 export function tageDiff(von: string, bis: string): number {
-  const ms = new Date(`${bis}T00:00:00`).getTime() - new Date(`${von}T00:00:00`).getTime();
+  const ms = Date.parse(`${bis}T00:00:00Z`) - Date.parse(`${von}T00:00:00Z`);
   return Math.max(0, Math.floor(ms / 86_400_000) + 1);
+}
+
+export function tageImJahr(von: string, bis: string, jahr: number): number {
+  return tageDiff(von < `${jahr}-01-01` ? `${jahr}-01-01` : von,
+    bis > `${jahr}-12-31` ? `${jahr}-12-31` : bis);
 }
 
 /**
@@ -41,26 +46,15 @@ export function tageDiff(von: string, bis: string): number {
  * zählen mit, und ein Zeitraum, der über den Jahreswechsel reicht, wird an
  * beiden Rändern gekappt.
  *
- * Das ist bewusst eine andere Rechnung als `genehmigteTageOhne()` unten
- * (Spiegel von `approvedDays` in `manager.tsx`): dort zählt nur `approved`,
- * ungekappt, gefiltert nach dem Jahr von `von` — die App führt beide
- * Berechnungen nebeneinander, für zwei verschiedene Fragen.
+ * Bei Genehmigungen zählt nur `approved`; die Jahresgrenzen sind gleich.
  */
 export function verbrauchteTage(
   urlaube: readonly MeinUrlaub[],
   jahr: number = new Date().getFullYear(),
 ): number {
-  const jahresanfang = new Date(jahr, 0, 1).getTime();
-  const jahresende = new Date(jahr, 11, 31).getTime();
-
   return urlaube
     .filter((u) => u.status === "approved" || u.status === "requested")
-    .reduce((summe, u) => {
-      const start = Math.max(new Date(`${u.von}T00:00:00`).getTime(), jahresanfang);
-      const ende = Math.min(new Date(`${u.bis}T00:00:00`).getTime(), jahresende);
-      const tage = Math.floor((ende - start) / 86_400_000) + 1;
-      return summe + Math.max(0, tage);
-    }, 0);
+    .reduce((summe, u) => summe + tageImJahr(u.von, u.bis, jahr), 0);
 }
 
 /**
@@ -80,10 +74,9 @@ export function genehmigteTageOhne(
       (a) =>
         a.id !== ausschlussId &&
         a.mitarbeiterId === mitarbeiterId &&
-        a.status === "approved" &&
-        new Date(`${a.von}T00:00:00`).getFullYear() === jahr,
+        a.status === "approved",
     )
-    .reduce((summe, a) => summe + tageDiff(a.von, a.bis), 0);
+    .reduce((summe, a) => summe + tageImJahr(a.von, a.bis, jahr), 0);
 }
 
 export async function holeMeineUrlaube(

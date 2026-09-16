@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { betriebsZeitpunkt, istKalendertag } from "@/lib/datum";
 
 import {
   findeUeberschneidung,
@@ -16,8 +17,6 @@ const PFAD = "/dashboard/planung";
 function fehler(nachricht: string, felder: Record<string, string> = {}): FormZustand {
   return { status: "fehler", nachricht, felder };
 }
-
-const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Legt einen Planungszeitraum an.
@@ -46,8 +45,8 @@ export async function zyklusAnlegen(
   const trotzdem = String(formData.get("trotzdem") ?? "") === "ja";
   const fristEgal = String(formData.get("frist_trotzdem") ?? "") === "ja";
 
-  if (!DATUM.test(start)) return fehler("Der Beginn fehlt.", { start: "Datum fehlt." });
-  if (!DATUM.test(ende)) return fehler("Das Ende fehlt.", { ende: "Datum fehlt." });
+  if (!istKalendertag(start)) return fehler("Der Beginn fehlt oder ist ungültig.", { start: "Datum prüfen." });
+  if (!istKalendertag(ende)) return fehler("Das Ende fehlt oder ist ungültig.", { ende: "Datum prüfen." });
 
   /*
    * Dieselbe Bedingung wie `chk_zeitraum` und der RPC: das Ende muss
@@ -61,7 +60,7 @@ export async function zyklusAnlegen(
     });
   }
 
-  if (deadlineRoh && !DATUM.test(deadlineRoh)) {
+  if (deadlineRoh && !istKalendertag(deadlineRoh)) {
     return fehler("Die Frist ist kein gültiges Datum.", { deadline: "Datum prüfen." });
   }
 
@@ -125,7 +124,7 @@ export async function zyklusAnlegen(
    * Tagesende in Ortszeit; ohne Zonenangabe deutete Postgres den Wert
    * in seiner eigenen Zone, und die ist UTC.
    */
-  const deadline = deadlineRoh ? `${deadlineRoh}T23:59:59+02:00` : null;
+  const deadline = betriebsZeitpunkt(deadlineRoh || start, Boolean(deadlineRoh));
 
   const { error } = await supabase.rpc("planungszyklus_erstellen", {
     p_betrieb_id: position.betriebId,
