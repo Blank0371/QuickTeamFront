@@ -55,7 +55,23 @@ const AUTH_PUNKTE = [
  * Bedingung waere die zweite Gelegenheit, in die falsche Richtung zu
  * zeigen, vor der `CLAUDE.md` warnt.
  */
-export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
+/**
+ * `promoHref` / `promoLabel` sind die Registerkarte zur
+ * Promo-Code-Anfrageseite — gesetzt nur, wenn `PROMO_CODE=an`. Wie
+ * `authOffen` kommen sie als Prop aus `src/app/(landing)/layout.tsx`,
+ * weil diese Client-Insel den serverseitigen Schalter nicht selbst lesen
+ * kann. Anders als die Auth-Knöpfe hängt sie **nicht** am Soft-Launch:
+ * die Seite legt kein Konto an, sondern bietet ein Formular an.
+ */
+export function LandingNavigation({
+  authOffen,
+  promoHref,
+  promoLabel,
+}: {
+  authOffen: boolean;
+  promoHref?: string;
+  promoLabel?: string;
+}) {
   const [aktiv, setAktiv] = useState<string | null>(null);
   const [offen, setOffen] = useState(false);
   const knopfRef = useRef<HTMLButtonElement>(null);
@@ -196,13 +212,27 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
 
         {/*
           Rechts neben den Abschnitten, nicht zwischen ihnen: die
-          Sprungmarken beschreiben **diese** Seite, die zwei Knoepfe
+          Sprungmarken beschreiben **diese** Seite, die uebrigen Punkte
           fuehren von ihr weg. In derselben Liste haetten sie
           ausgesehen, als gaebe es einen Abschnitt „Anmelden".
+
+          Die Promo-Registerkarte steht hier ausserhalb der
+          Soft-Launch-Bedingung: sie fuehrt nicht in einen
+          Vertragsabschluss.
         */}
-        {authOffen ? (
+        {promoHref || authOffen ? (
           <div className="hidden shrink-0 items-center gap-2 md:flex">
-            {AUTH_PUNKTE.map((punkt) => (
+            {promoHref ? (
+              <Link
+                href={promoHref}
+                className="touch-manipulation rounded-blk px-3 py-2 text-sm font-medium transition-colors hover:text-[var(--qt-c-bone)]"
+                style={{ color: "color-mix(in oklab, var(--qt-c-bone) 62%, transparent)" }}
+              >
+                {promoLabel}
+              </Link>
+            ) : null}
+            {authOffen
+              ? AUTH_PUNKTE.map((punkt) => (
               <Link
                 key={punkt.href}
                 href={punkt.href}
@@ -219,7 +249,8 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
               >
                 {punkt.label}
               </Link>
-            ))}
+                ))
+              : null}
           </div>
         ) : null}
 
@@ -268,6 +299,19 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
               </a>
             </li>
           ))}
+
+          {promoHref ? (
+            <li>
+              <Link
+                href={promoHref}
+                onClick={() => setOffen(false)}
+                className="flex min-h-[2.75rem] touch-manipulation items-center rounded-blk px-2 text-base font-medium"
+                style={{ color: "color-mix(in oklab, var(--qt-c-bone) 70%, transparent)" }}
+              >
+                {promoLabel}
+              </Link>
+            </li>
+          ) : null}
 
           {authOffen ? (
             <li

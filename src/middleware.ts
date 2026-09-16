@@ -1,10 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { mitSprachKopfzeile } from "@/i18n/sprach-parameter";
+import { promoSeiteGesperrt } from "@/lib/promo-code-seite";
 import { istGesperrt, softLaunchAktiv } from "@/lib/soft-launch";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  /*
+   * Die Promo-Code-Anfrageseite steht **vor** der Soft-Launch-Sperre und
+   * unabhängig von ihr: sie legt kein Konto und keinen Vertrag an, sondern
+   * bietet ein Formular zum Herunterladen. Steht `PROMO_CODE` auf etwas
+   * anderes als „an", ist `/promocode` (und der Formular-Download darunter)
+   * auf keinem Weg erreichbar — dieselbe Umleitung auf `/` wie beim
+   * Soft-Launch, aus demselben Grund: die Startseite ist die Antwort auf
+   * eine gesperrte Route, eine zweite Seite wäre eine zweite Pflegestelle.
+   */
+  if (promoSeiteGesperrt(request.nextUrl.pathname)) {
+    const ziel = new URL("/", request.url);
+    return NextResponse.redirect(ziel, request.method === "GET" ? 307 : 303);
+  }
+
   /*
    * Die Soft-Launch-Sperre steht **vor** dem Auffrischen der Sitzung.
    *

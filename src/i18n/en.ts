@@ -41,6 +41,7 @@ export const en: Dictionary = {
     ],
     login: "Sign in",
     registrieren: "Start free trial",
+    promoPartner: "Promo partner",
   },
   footer: {
     claim: "Staff scheduling for restaurants and bars in Austria and Germany.",
@@ -72,6 +73,22 @@ export const en: Dictionary = {
   },
   platzhalter: {
     hinweis: "Placeholder — content to follow.",
+  },
+  promo: {
+    augenbraue: "Promo partnership",
+    titel: "Become a QuickTeam promo partner",
+    lead: "Do you recommend QuickTeam to restaurants and bars? Then you get your own promo code that new businesses enter when they sign up — so we can see which registrations came through you.",
+    schritteTitel: "How to apply",
+    schritt1: "Download the application form.",
+    schritt2: "Fill it in completely and sign it.",
+    schritt3:
+      "Send it to blanktrading@web.de with the subject “Request Promo Partnership”.",
+    formularHerunterladen: "Download application form (PDF)",
+    perMailSenden: "Send the completed form by email",
+    mailBetreff: "Request Promo Partnership",
+    hinweisTitel: "What happens next",
+    hinweisText:
+      "We review your request and reply by email. Once approved, you receive your personal promo code. It carries no discount — the code only records which businesses found QuickTeam through you.",
   },
   /*
    * Dashboard vocabulary follows the Expo app, not this file's own taste.

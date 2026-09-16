@@ -34,6 +34,9 @@ export const de = {
     ],
     login: "Anmelden",
     registrieren: "Kostenlos testen",
+    /* Registerkarte zur Promo-Code-Anfrageseite. Erscheint nur, wenn
+       `PROMO_CODE=an` — der Header hängt sie dann an `links` an. */
+    promoPartner: "Promo-Partner",
   },
   footer: {
     claim: "Dienstpläne für Gastronomiebetriebe in Österreich und Deutschland.",
@@ -65,6 +68,22 @@ export const de = {
   },
   platzhalter: {
     hinweis: "Platzhalter — Inhalt folgt.",
+  },
+  promo: {
+    augenbraue: "Promo-Partnerschaft",
+    titel: "Werde Promo-Partner von QuickTeam",
+    lead: "Du empfiehlst QuickTeam an Gastronomiebetriebe weiter? Dann bekommst du einen eigenen Promo-Code, den neue Betriebe bei der Registrierung eintragen — so sehen wir, welche Anmeldungen von dir kommen.",
+    schritteTitel: "So läuft die Anfrage",
+    schritt1: "Lade das Antragsformular herunter.",
+    schritt2: "Fülle es vollständig aus und unterschreibe es.",
+    schritt3:
+      "Sende es an blanktrading@web.de mit dem Betreff „Request Promo Partnership“.",
+    formularHerunterladen: "Antragsformular herunterladen (PDF)",
+    perMailSenden: "Ausgefülltes Formular per E-Mail senden",
+    mailBetreff: "Request Promo Partnership",
+    hinweisTitel: "Was danach passiert",
+    hinweisText:
+      "Wir prüfen deine Anfrage und melden uns per E-Mail. Nach der Freigabe erhältst du deinen persönlichen Promo-Code. Ein Rabatt ist damit nicht verbunden — der Code hält nur fest, welche Betriebe über dich zu QuickTeam gefunden haben.",
   },
   dashboard: {
     navigation: "Dashboard-Navigation",

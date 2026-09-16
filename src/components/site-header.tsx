@@ -7,11 +7,23 @@ import { NavLink } from "@/components/nav-link";
 import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
 import { SprachWahl } from "@/components/sprach-wahl";
+import { promoCodeSeiteAktiv, PROMO_CODE_PRAEFIX } from "@/lib/promo-code-seite";
 import { softLaunchAktiv } from "@/lib/soft-launch";
 
 export async function SiteHeader() {
   const sprache = await leseSprache();
   const t = getDictionary(sprache);
+  /*
+   * Die Promo-Partner-Registerkarte hängt am selben Schalter wie die
+   * Route selbst (`PROMO_CODE=an`). Sie wird an die Navigationsliste
+   * angehängt, nicht ins Wörterbuch geschrieben — das Wörterbuch kennt
+   * den Schalter nicht, und der Eintrag soll verschwinden, sobald die
+   * Seite aus ist. Dieselbe Liste geht an die `MobileMenu`, damit die
+   * Registerkarte auch dort erscheint.
+   */
+  const navLinks = promoCodeSeiteAktiv()
+    ? [...t.nav.links, { href: PROMO_CODE_PRAEFIX, label: t.nav.promoPartner }]
+    : t.nav.links;
   /*
    * Ein Schalter, zwei Wirkungen. `softLaunchAktiv()` entscheidet in
    * `src/middleware.ts` darueber, ob `/login` und `/registrieren`
@@ -37,7 +49,7 @@ export async function SiteHeader() {
 
         <nav aria-label={t.nav.hauptnavigation} className="hidden md:block">
           <ul className="flex items-center gap-7">
-            {t.nav.links.map((link) => (
+            {navLinks.map((link) => (
               <li key={link.href}>
                 <NavLink href={link.href}>{link.label}</NavLink>
               </li>
@@ -74,7 +86,7 @@ export async function SiteHeader() {
         ) : null}
 
         <MobileMenu
-          links={t.nav.links}
+          links={navLinks}
           login={authOffen ? t.nav.login : undefined}
           registrieren={authOffen ? t.nav.registrieren : undefined}
           oeffnenLabel={t.nav.menueOeffnen}

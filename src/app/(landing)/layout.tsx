@@ -4,6 +4,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { LandingNavigation } from "@/components/landing/landing-navigation";
 import { LichtEbene } from "@/components/landing/licht-ebene";
 import { gabarito } from "@/components/schriften";
+import { holeTexte } from "@/i18n/server";
+import { promoCodeSeiteAktiv, PROMO_CODE_PRAEFIX } from "@/lib/promo-code-seite";
 import { softLaunchAktiv } from "@/lib/soft-launch";
 
 /**
@@ -64,7 +66,12 @@ export const viewport: Viewport = {
  */
 const SCHRIFT_REGEL = `.qt-landing,.qt-landing h1,.qt-landing h2,.qt-landing h3,.qt-landing h4,.qt-landing h5,.qt-landing h6,.qt-landing button,.qt-landing input,.qt-landing select,.qt-landing textarea{font-family:var(--font-gabarito),ui-sans-serif,system-ui,sans-serif}`;
 
-export default function LandingLayout({ children }: { children: ReactNode }) {
+export default async function LandingLayout({ children }: { children: ReactNode }) {
+  const t = await holeTexte();
+  // Beides oder nichts: steht der Schalter aus, reist auch die
+  // Beschriftung nicht mit — sonst stünde „Promo-Partner" als toter
+  // Prop-Wert in der RSC-Nutzlast der Startseite.
+  const promoAktiv = promoCodeSeiteAktiv();
   return (
     <div
       className={`qt-landing ${gabarito.variable} relative flex min-h-dvh flex-col bg-[var(--qt-c-carbon)]`}
@@ -113,7 +120,11 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
         hätte sie exakt null Pixel Spielraum zum Kleben. Direkt als Kind
         dieser Seitenspalte ist ihr Elternelement die ganze Seite.
       */}
-      <LandingNavigation authOffen={!softLaunchAktiv()} />
+      <LandingNavigation
+        authOffen={!softLaunchAktiv()}
+        promoHref={promoAktiv ? PROMO_CODE_PRAEFIX : undefined}
+        promoLabel={promoAktiv ? t.nav.promoPartner : undefined}
+      />
 
       <div className="relative z-10 flex-1">{children}</div>
     </div>
