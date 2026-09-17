@@ -6,7 +6,12 @@ import {
   findeOffeneVerweise,
   imBetriebsordner,
   ordnePfadEin,
+  verdichteAenderung,
+  PROTOKOLL_ABRUF,
+  PROTOKOLL_TABELLE,
+  type PaketAuftrag,
 } from "./paket";
+import { serialisierePaket } from "./serialisierung";
 import { AUSSCHLUESSE, EXPORT_TABELLEN } from "./tabellen";
 
 /**
@@ -172,13 +177,25 @@ function klient(
   return api as any;
 }
 
-const AUFTRAG = {
+/**
+ * Der Auftrag der meisten Tests — **mit** Änderungsprotokoll.
+ *
+ * Nicht der Standardumfang, und das mit Absicht: die Tests hier prüfen
+ * das Lesen, Eingrenzen und Redigieren *aller* Tabellen, und das
+ * Protokoll ist die einzige, an der eine Redaktion hängt. Der
+ * Standardumfang bekommt eigene Tests weiter unten.
+ */
+const AUFTRAG: PaketAuftrag = {
   betriebId: BETRIEB,
   betriebName: "Café Beispiel",
   authId: "auth-1",
   mitarbeiterId: "ma-1",
   rolleTyp: "chef",
+  protokoll: "voll",
 };
+
+/** Derselbe Auftrag im Standardumfang: ohne Änderungsprotokoll. */
+const AUFTRAG_OHNE_PROTOKOLL: PaketAuftrag = { ...AUFTRAG, protokoll: "keins" };
 
 function basis(): Record<string, Zeile[]> {
   return {
@@ -687,11 +704,16 @@ describe("Vollständigkeit: drei getrennte Fragen", () => {
     assert.match(paket.meta.konsistenz, /KEIN transaktionaler Schnappschuss/);
   });
 
-  it("nennt die Paketgrösse", async () => {
+  it("nennt die Paketgrösse — gemessen an der ausgelieferten Fassung", async () => {
     const paket = await baueExportPaket(klient(basis()), AUFTRAG);
     assert.ok(paket.meta.groesse_bytes > 0);
+    /*
+     * Gegen `serialisierePaket` und nicht gegen `JSON.stringify`: der
+     * Route Handler liefert diese Fassung aus, und eine Grössenangabe,
+     * die für keine existierende Datei gilt, ist schlimmer als keine.
+     */
     assert.ok(
-      Math.abs(paket.meta.groesse_bytes - Buffer.byteLength(JSON.stringify(paket), "utf8")) < 64,
+      Math.abs(paket.meta.groesse_bytes - Buffer.byteLength(serialisierePaket(paket), "utf8")) < 64,
       "die gemeldete Grösse muss der tatsächlichen entsprechen",
     );
   });
@@ -759,4 +781,139 @@ it("exportiert geschuetzte Gruende nur fuer den gewaehlten Betrieb und prueft ih
   const paket = await baueExportPaket(klient(daten), AUFTRAG);
   assert.deepEqual(paket.tabellen.notfall_gruende, [daten.notfall_gruende[0]]);
   assert.ok(findeOffeneVerweise({ notfall_gruende: [{ notfall_id: "fehlt" }], notfaelle: [] }).length > 0);
+});
+
+describe("baueExportPaket — Umfang des Änderungsprotokolls", () => {
+  function mitProtokoll(): Record<string, Zeile[]> {
+    const daten = basis();
+    daten["plan_aenderungen"] = [
+      {
+        id: 1,
+        betrieb_id: BETRIEB,
+        tabelle: "schicht_instanzen",
+        datensatz_id: "s1",
+        aktion: "insert",
+        alte_werte: null,
+        neue_werte: { id: "s1", datum: "2026-09-01", status: "geplant" },
+      },
+    ];
+    return daten;
+  }
+
+  it("liest die Protokolltabelle im Standardpaket gar nicht erst ab", async () => {
+    const k = klient(mitProtokoll());
+    const paket = await baueExportPaket(k, AUFTRAG_OHNE_PROTOKOLL);
+
+    assert.deepEqual(paket.tabellen[PROTOKOLL_TABELLE], []);
+    assert.equal(
+      k.abfragen.some((a: { tabelle: string }) => a.tabelle === PROTOKOLL_TABELLE),
+      false,
+      "die grösste Tabelle wird nicht geholt, um sie dann wegzuwerfen",
+    );
+  });
+
+  it("nennt den Abrufweg, statt das Fehlen erschliessen zu lassen", async () => {
+    const paket = await baueExportPaket(klient(mitProtokoll()), AUFTRAG_OHNE_PROTOKOLL);
+
+    assert.equal(paket.protokoll.umfang, "keins");
+    assert.equal(paket.protokoll.eintraege, 0);
+    assert.equal(paket.protokoll.vollstaendig_abrufbar_unter, PROTOKOLL_ABRUF);
+    assert.ok(
+      paket.hinweise.some((h) => h.includes(PROTOKOLL_ABRUF)),
+      "der Abrufweg steht auch im Klartext zwischen den Hinweisen",
+    );
+    assert.ok(
+      paket.beschreibungen[PROTOKOLL_TABELLE]?.includes(PROTOKOLL_ABRUF),
+      "die Beschreibung des leeren Abschnitts sagt, warum er leer ist",
+    );
+  });
+
+  it("nennt das Standardpaket trotzdem vollständig — ein Umfang ist kein Mangel", async () => {
+    const paket = await baueExportPaket(klient(mitProtokoll()), AUFTRAG_OHNE_PROTOKOLL);
+
+    assert.equal(paket.vollstaendig, true);
+    assert.deepEqual(paket.unvollstaendig, []);
+  });
+
+  it("liefert beim Vollabruf das Protokoll mit", async () => {
+    const paket = await baueExportPaket(klient(mitProtokoll()), AUFTRAG);
+
+    assert.equal(paket.protokoll.umfang, "voll");
+    assert.equal(paket.protokoll.eintraege, 1);
+    assert.equal(paket.tabellen[PROTOKOLL_TABELLE]?.length, 1);
+  });
+});
+
+describe("verdichteAenderung", () => {
+  it("behält bei `update` nur die Felder, die sich geändert haben", () => {
+    const aus = verdichteAenderung({
+      id: 1,
+      aktion: "update",
+      alte_werte: { id: "s1", status: "geplant", datum: "2026-09-01", notiz: null },
+      neue_werte: { id: "s1", status: "veroeffentlicht", datum: "2026-09-01", notiz: null },
+    });
+
+    assert.deepEqual(aus["alte_werte"], { status: "geplant" });
+    assert.deepEqual(aus["neue_werte"], { status: "veroeffentlicht" });
+    assert.equal(aus["id"], 1, "die Protokollzeile selbst bleibt unangetastet");
+  });
+
+  it("nimmt ein Feld mit, das hinzukommt oder wegfällt", () => {
+    const aus = verdichteAenderung({
+      aktion: "update",
+      alte_werte: { status: "offen" },
+      neue_werte: { status: "offen", vertretung_id: "m2" },
+    });
+
+    assert.deepEqual(aus["alte_werte"], { vertretung_id: null });
+    assert.deepEqual(aus["neue_werte"], { vertretung_id: "m2" });
+  });
+
+  it("lässt `insert` und `delete` unangetastet — dort ist die ganze Zeile die Auskunft", () => {
+    const eingefuegt = { aktion: "insert", alte_werte: null, neue_werte: { id: "s1", status: "geplant" } };
+    const geloescht = { aktion: "delete", alte_werte: { id: "s1", status: "geplant" }, neue_werte: null };
+
+    assert.deepEqual(verdichteAenderung(eingefuegt), eingefuegt);
+    assert.deepEqual(verdichteAenderung(geloescht), geloescht);
+  });
+
+  it("kennzeichnet ein `update` ohne jede Änderung, statt es verschwinden zu lassen", () => {
+    /*
+     * Der Auslöser feuert bei jedem UPDATE, auch bei einem, das
+     * denselben Wert noch einmal schreibt. Der Eintrag bleibt — das
+     * Protokoll bezeugt auch, wer wann an einem Dienstplan war.
+     */
+    const aus = verdichteAenderung({
+      id: 7,
+      aktion: "update",
+      geaendert_von: "ma-1",
+      alte_werte: { id: "s1", status: "geplant", start_zeit: "14:00:00" },
+      neue_werte: { id: "s1", status: "geplant", start_zeit: "14:00:00" },
+    });
+
+    assert.equal(aus["ohne_wirkung"], true);
+    assert.deepEqual(aus["alte_werte"], {});
+    assert.deepEqual(aus["neue_werte"], {});
+    assert.equal(aus["geaendert_von"], "ma-1", "wer geschrieben hat, bleibt sichtbar");
+  });
+
+  it("kennzeichnet einen echten Unterschied nicht als wirkungslos", () => {
+    const aus = verdichteAenderung({
+      aktion: "update",
+      alte_werte: { status: "geplant" },
+      neue_werte: { status: "veroeffentlicht" },
+    });
+
+    assert.equal(aus["ohne_wirkung"], undefined);
+  });
+
+  it("vergleicht verschachtelte Werte inhaltlich, nicht nach Identität", () => {
+    const aus = verdichteAenderung({
+      aktion: "update",
+      alte_werte: { meta: { a: 1 }, status: "offen" },
+      neue_werte: { meta: { a: 1 }, status: "zu" },
+    });
+
+    assert.deepEqual(Object.keys(aus["neue_werte"] as Zeile), ["status"]);
+  });
 });

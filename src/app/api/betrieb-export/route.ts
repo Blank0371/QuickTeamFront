@@ -1,4 +1,5 @@
-import { baueExportPaket } from "@/lib/export/paket";
+import { baueExportPaket, type ProtokollUmfang } from "@/lib/export/paket";
+import { serialisierePaket } from "@/lib/export/serialisierung";
 import { betreteOhneTore, istChef } from "@/lib/dashboard/zugang";
 
 /**
@@ -52,7 +53,7 @@ import { betreteOhneTore, istChef } from "@/lib/dashboard/zugang";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
   const { supabase, position } = await betreteOhneTore();
 
   if (!istChef(position)) {
@@ -66,12 +67,32 @@ export async function GET(): Promise<Response> {
     data: { user },
   } = await supabase.auth.getUser();
 
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   *  Der einzige Parameter — und warum er einer sein darf
+   * ───────────────────────────────────────────────────────────────────
+   *
+   * `?protokoll=voll` bestimmt den **Umfang**, nicht den Betrieb. Die
+   * Regel „jede hereingereichte Id wird serverseitig neu abgeleitet,
+   * nie geglaubt" bleibt davon unberührt: ein `?betrieb=` gibt es
+   * weiterhin nicht, und wer hier `voll` anhängt, bekommt genau die
+   * Daten, die er auch sonst sähe — nur mehr davon.
+   *
+   * Alles, was nicht `voll` ist, ist `keins`. Ein Tippfehler liefert
+   * damit das Standardpaket statt eines Fehlers; das ist die richtige
+   * Richtung, weil das Standardpaket vollständig **sagt**, was ihm
+   * fehlt und wo es liegt.
+   */
+  const protokoll: ProtokollUmfang =
+    new URL(request.url).searchParams.get("protokoll") === "voll" ? "voll" : "keins";
+
   const paket = await baueExportPaket(supabase, {
     betriebId: position.betriebId,
     betriebName: position.betriebName,
     authId: user?.id ?? "",
     mitarbeiterId: position.mitarbeiterId,
     rolleTyp: position.rolleTyp,
+    protokoll,
   });
 
   const datum = new Date().toISOString().slice(0, 10);
@@ -89,15 +110,31 @@ export async function GET(): Promise<Response> {
    * Stelle, an der ein Skript ihn auswerten kann, ohne das ganze JSON zu
    * lesen.
    */
-  const dateiname = paket.vollstaendig
-    ? `quickteam-export-${dateiSicher(position.betriebName)}-${datum}.json`
-    : `quickteam-export-${dateiSicher(position.betriebName)}-${datum}-UNVOLLSTAENDIG.json`;
+  const teile = [
+    "quickteam-export",
+    dateiSicher(position.betriebName),
+    /*
+     * Der Umfang gehört in den Dateinamen, weil zwei Pakete desselben
+     * Betriebs vom selben Tag sonst gleich heissen und sich dabei um
+     * ein Vielfaches unterscheiden. Wer beide abgelegt hat, kann sie
+     * ohne Hineinsehen auseinanderhalten.
+     */
+    ...(protokoll === "voll" ? ["mit-aenderungsprotokoll"] : []),
+    datum,
+    ...(paket.vollstaendig ? [] : ["UNVOLLSTAENDIG"]),
+  ];
+  const dateiname = `${teile.join("-")}.json`;
 
-  return new Response(JSON.stringify(paket, null, 2), {
+  return new Response(serialisierePaket(paket), {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "content-disposition": `attachment; filename="${dateiname}"`,
       "x-quickteam-export-vollstaendig": paket.vollstaendig ? "ja" : "nein",
+      /*
+       * Wie der Vollständigkeitskopf: damit ein Skript den Umfang
+       * auswerten kann, ohne die ganze Datei zu lesen.
+       */
+      "x-quickteam-export-protokoll": protokoll,
       /*
        * Ein Export ist eine Momentaufnahme personenbezogener Daten. Er
        * gehört in keinen Zwischenspeicher — weder in den des Browsers

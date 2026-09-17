@@ -16,7 +16,8 @@ Verantwortlicher gegenüber seinen Beschäftigten erfüllen muss.
 ## Wie
 
 ```
-GET /api/betrieb-export      →  quickteam-export-<betrieb>-<datum>.json
+GET /api/betrieb-export                 →  quickteam-export-<betrieb>-<datum>.json
+GET /api/betrieb-export?protokoll=voll  →  quickteam-export-<betrieb>-mit-aenderungsprotokoll-<datum>.json
 ```
 
 Ein Link, kein Formular. Erreichbar
@@ -45,6 +46,62 @@ und nicht über `betreteDashboard()`.
   `betrieb_id IN (SELECT meine_betriebe())` und lieferten einem Konto
   mit zwei Anstellungen die Daten **beider** Betriebe.
 
+## Zwei Umfänge, seit dem 2026-09-17
+
+Der Standardabruf enthält das **Änderungsprotokoll nicht**;
+`?protokoll=voll` enthält es. Alles andere ist in beiden gleich.
+
+**Warum.** Gemessen an Testbetrieb 12 — 21 Anstellungen, 164 Schichten,
+533 Zuweisungen, also wenig Daten: 5.719 Protokollzeilen, rund 3,95 MB
+von 4,4 MB des ganzen Pakets, 122.863 der 140.000 Textzeilen. Jede
+Änderung an `schicht_instanzen` und `schicht_zuweisungen` legt die ganze
+Zeile vorher **und** nachher ab, und ein verworfener Solver-Lauf
+erzeugt für jede Schicht ein Einfüge- und ein Löschpaar. Alle 5.719
+Einträge stammten aus vier Wochen — ein Zeitfenster hätte davon nichts
+abgeschnitten, ein getrennter Abruf schon.
+
+**Warum das trägt.** Das Protokoll sind exportierbare Daten (Art. 2
+Nr. 38 der Verordnung (EU) 2023/2854 nennt Metadaten ausdrücklich), es
+darf also nicht fehlen. Es muss aber nicht in dieselbe Datei: Art. 30
+Abs. 5 verlangt den Export „auf Verlangen des Kunden" — und das
+Verlangen ist hier ein zweiter Knopf in `/dashboard/einstellungen`,
+unentgeltlich, für dieselbe berechtigte Person, ohne Wartezeit.
+
+**Drei Bedingungen hängen daran**, und sie sind Teil der Umsetzung, nicht
+Beiwerk:
+
+1. „Änderungsprotokolle" bleiben in der erschöpfenden Kategorienliste des
+   Vertrags (§ 6 Abs. 5 AGB; Art. 25 Abs. 2 lit. e der Verordnung). Dort
+   wurde nichts gestrichen — nur die Anlage beschreibt jetzt das
+   Verfahren.
+2. Der Abruf ist unentgeltlich und ohne Umweg erreichbar (Art. 29).
+3. Das Paket behauptet keine Vollständigkeit, die es nicht hat: `protokoll`
+   nennt Umfang, Anzahl der Einträge und die Abrufadresse, `hinweise` sagt
+   dasselbe im Klartext, und die Beschreibung des leeren Abschnitts
+   erklärt, warum er leer ist.
+
+**`vollstaendig` bleibt davon unberührt** und ist im Standardpaket weiter
+`true`. Das Feld bezeichnet einen **Mangel** — eine nicht lesbare
+Tabelle, eine fehlende Anhangsdatei —, und ein bewusst gewählter Umfang
+ist keiner. Stünde `UNVOLLSTAENDIG` im Dateinamen jedes gewöhnlichen
+Exports, wäre die Markierung dort wertlos, wo sie gebraucht wird.
+
+**Was das nicht löst:** der Vollabruf wächst weiter. Die Warnschwelle von
+40 MB (`GROESSE_WARNUNG`) gilt für ihn unverändert; wird sie erreicht,
+braucht es eine andere Auslieferung (Streaming, zeilenweises JSON), nicht
+eine weitere Auslassung.
+
+## Die Ausgabe: ein Datensatz je Zeile
+
+`src/lib/export/serialisierung.ts` statt `JSON.stringify(paket, null, 2)`.
+Die Struktur bleibt eingerückt und lesbar, jede Tabellenzeile steht auf
+**einer** Zeile. Aus 140.000 Textzeilen werden rund 7.000, ohne dass ein
+Wert fehlt — es ist gewöhnliches JSON, nur mit anderen Zeilenumbrüchen.
+
+`meta.groesse_bytes` wird mit demselben Serialisierer gemessen. Liefe dort
+`JSON.stringify` und hier `serialisierePaket`, stünde im Paket eine Zahl,
+die für keine existierende Datei gilt.
+
 ## Inhalt
 
 21 Tabellen, dazu fünf abgeleitete Abschnitte. Die maßgebliche Liste
@@ -62,6 +119,7 @@ Das Paket selbst trägt zu jedem Abschnitt eine Beschreibung
 | -------- | ----- |
 | Einzelstimmen anonymer Umfragen fallen heraus, **auch die eigene** | `us_select` lässt die eigene Stimme durch; ohne den Filter verlöre eine zugesagte Anonymität durch den Export einen Teil ihrer Wirkung. Stattdessen die Auszählung über `umfrage_ergebnis()`. |
 | Geheimnisse im Änderungsprotokoll werden zu `[entfernt]` | `plan_aenderungen` hält ganze Zeilen als JSON. Was heute aus einer Tabelle gefiltert wird — Einladungs-Hash, Token, Kennungen des Zahlungsdienstleisters —, steht dort noch im Klartext. |
+| Bei `update` bleiben nur die geänderten Felder | Der Auslöser legt links **und** rechts die ganze Zeile ab; im Schnitt ändert sich 1,0 von 10,9 Feldern. Verglichen wird auf den rohen Werten, damit eine Änderung, die nur ein Geheimnis betrifft, nicht als „nichts geändert" verschwindet. `insert` und `delete` bleiben unangetastet — dort ist die ganze Zeile bei einem gelöschten Datensatz die einzige verbliebene Spur. Ein `update`, bei dem sich **kein** Feld geändert hat (in Testbetrieb 12 acht Stück: aufgemacht, gespeichert, nichts getan), bleibt als Schreibvorgang erhalten und trägt `ohne_wirkung: true` — das Protokoll bezeugt auch, wer wann an einem Dienstplan war, und zwei leere Objekte ohne Erklärung sähen aus wie ein Datenverlust. |
 | Der Notfallgrund fällt aus dem Änderungsprotokoll | Die App schlägt „Ich bin krank." vor; das ist regelmässig ein Gesundheitsdatum nach Art. 9 DSGVO. Solange `notfaelle.grund` breit lesbar ist (siehe `docs/backend/migration-2026-09-13-notfallgrund.sql`), soll der Export ihn wenigstens nicht dauerhaft aus dem Rechtekreis der Datenbank heraustragen. |
 | Namen und Kontaktdaten pseudonymisierter Anstellungen fallen aus dem Änderungsprotokoll | Wer sein Konto gelöscht hat, ist in `mitarbeiter` anonymisiert — im Protokoll steht sein Name aber noch in `alte_werte`. Ein Export, der ihn mitnimmt, macht die Löschung rückgängig, und zwar ausserhalb unserer Reichweite. |
 

@@ -1,5 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
 import { RECHTSTEXT_VERSIONEN } from "@/lib/rechtstexte";
+import { serialisierePaket } from "./serialisierung";
 
 import {
   AUSSCHLUESSE,
@@ -40,7 +41,67 @@ const SEITEN_MAX = 500;
  */
 const GROESSE_WARNUNG = 40 * 1_048_576;
 
-export const PAKET_FORMAT = "quickteam-betriebsexport/2";
+export const PAKET_FORMAT = "quickteam-betriebsexport/3";
+
+/** Die Tabelle, die das Änderungsprotokoll trägt. */
+export const PROTOKOLL_TABELLE = "plan_aenderungen";
+
+/** Die Adresse, unter der das vollständige Protokoll abrufbar ist. */
+export const PROTOKOLL_ABRUF = "/api/betrieb-export?protokoll=voll";
+
+/**
+ * Wie viel Änderungsprotokoll in das Paket geht.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das Protokoll nicht mehr im Standardpaket steht
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Weil es alles andere erdrückt. Gemessen am 2026-09-17 an Testbetrieb
+ * 12 — einem Betrieb mit 21 Anstellungen, 164 Schichten und 533
+ * Zuweisungen, also wenig Daten: 5.719 Protokollzeilen, rund 3,95 MB
+ * von 4,4 MB des ganzen Pakets. Jede Änderung an `schicht_instanzen`
+ * und `schicht_zuweisungen` legt die **vollständige Zeile vorher und
+ * nachher** ab, und ein verworfener Solver-Lauf erzeugt für jede
+ * einzelne Schicht ein Einfüge- und ein Löschpaar. Alle 5.719 Einträge
+ * stammten aus vier Wochen; ein Zeitfenster hätte davon nichts
+ * abgeschnitten.
+ *
+ * Wer die Datei herunterlädt, will in aller Regel den **Bestand**:
+ * Mitarbeiter, Rollen, Schichten, Urlaub — das, was ein neuer Anbieter
+ * einliest. Die Entstehungsgeschichte braucht er dafür nicht. Sie ist
+ * trotzdem nicht entbehrlich: für einen Nachweis, wer wann welche
+ * Schicht geändert hat, ist sie die einzige Quelle.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum das rechtlich trägt
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Das Protokoll sind **exportierbare Daten** — Art. 2 Nr. 38 der
+ * Verordnung (EU) 2023/2854 zählt ausdrücklich „Metadaten, die
+ * unmittelbar oder mittelbar durch die Nutzung … generiert werden" dazu.
+ * Weglassen dürfte man es also nicht. Man muss es aber auch nicht in
+ * dieselbe Datei legen: Art. 30 Abs. 5 verlangt, dass der Anbieter
+ * „**auf Verlangen des Kunden** alle exportierbaren Daten in einem
+ * strukturierten, gängigen und maschinenlesbaren Format" exportiert.
+ * Genau das ist `PROTOKOLL_ABRUF` — ein Verlangen, das keine E-Mail und
+ * keine Wartezeit kostet, sondern einen zweiten Knopf.
+ *
+ * Drei Bedingungen hängen daran, und sie sind keine Kür:
+ *
+ *  1. „Änderungsprotokolle" bleiben in der erschöpfenden Kategorienliste
+ *     des Vertrags (§ 6 Abs. 5 AGB, Art. 25 Abs. 2 lit. e der
+ *     Verordnung). Dort wird nichts gestrichen.
+ *  2. Der Abruf ist unentgeltlich und für dieselbe berechtigte Person
+ *     ohne Umweg erreichbar (Art. 29).
+ *  3. **Das Paket behauptet keine Vollständigkeit, die es nicht hat.**
+ *     Der Umfang steht als eigenes Feld darin, mit der Adresse des
+ *     Vollabrufs — siehe `ExportPaket.protokoll`.
+ */
+export type ProtokollUmfang =
+  /** Standardpaket: das Protokoll bleibt draussen, der Abrufweg steht drin. */
+  | "keins"
+  /** Vollabruf: das Protokoll geht vollständig mit. */
+  | "voll";
 
 /**
  * Wie ein Dateiverweis aussieht — **ohne** ihn abzurufen.
@@ -172,6 +233,29 @@ export type ExportPaket = {
   ausschluesse: readonly { name: string; grund: string }[];
   /** Auffälligkeiten des Laufs: Redaktionen, Fehlschläge, Grenzen. */
   hinweise: string[];
+  /**
+   * Umfang des Änderungsprotokolls in **diesem** Paket, maschinenlesbar.
+   *
+   * Steht als eigenes Feld da und nicht bloss als Satz unter
+   * `hinweise`, weil ein Empfänger es auswerten können muss, ohne
+   * Fliesstext zu lesen: „ist das Protokoll hier drin, und wenn nicht,
+   * wo bekomme ich es?" ist eine Frage mit zwei möglichen Antworten,
+   * nicht eine Nuance.
+   *
+   * Es geht **nicht** in `vollstaendig` ein. Das Feld bezeichnet einen
+   * Mangel — eine nicht lesbare Tabelle, eine fehlende Anhangsdatei —,
+   * und ein bewusst gewählter Umfang ist keiner. Stünde `UNVOLLSTAENDIG`
+   * im Dateinamen jedes gewöhnlichen Exports, wäre die Markierung dort
+   * wertlos, wo sie wirklich gebraucht wird.
+   */
+  protokoll: {
+    umfang: ProtokollUmfang;
+    /** Anzahl der enthaltenen Protokolleinträge. */
+    eintraege: number;
+    /** Wo das vollständige Protokoll abrufbar ist. */
+    vollstaendig_abrufbar_unter: typeof PROTOKOLL_ABRUF;
+    hinweis: string;
+  };
   tabellen: Record<string, Zeile[]>;
   umfrage_ergebnisse_anonym: {
     benachrichtigung_id: string;
@@ -578,6 +662,91 @@ function bereinigeProtokoll(zeilen: Zeile[], anonymisierte: Set<string>): Zeile[
   });
 }
 
+/**
+ * Bei `update` bleiben nur die Felder, die sich tatsächlich geändert
+ * haben.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Was der Trigger ablegt und was davon Auskunft ist
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * `alte_werte` und `neue_werte` halten bei einer Änderung **beide Male
+ * die ganze Zeile** — auch die zehn Felder, die gleich geblieben sind.
+ * Gemessen an Testbetrieb 12: im Schnitt ändert sich **1,0 von 10,9
+ * Feldern**, und die 492 Änderungseinträge belegen 394 kB statt 34 kB.
+ * Neun Zehntel davon sind dieselbe Angabe, links und rechts.
+ *
+ * Verglichen wird auf den **rohen** Werten, nicht auf den redigierten:
+ * sonst fiele eine Änderung, die ausschliesslich ein Geheimnis betrifft,
+ * als „[entfernt] = [entfernt]" unter den Tisch, und das Protokoll
+ * behauptete, es habe sich nichts geändert. Redigiert wird danach, auf
+ * dem verbliebenen Teil.
+ *
+ * `insert` und `delete` bleiben unangetastet: dort trägt genau eine
+ * Seite die ganze Zeile, und sie ist bei einem gelöschten Datensatz die
+ * einzige Spur, die es überhaupt noch gibt.
+ */
+export function verdichteAenderung(zeile: Zeile): Zeile {
+  if (zeile["aktion"] !== "update") return zeile;
+
+  const alt = zeile["alte_werte"];
+  const neu = zeile["neue_werte"];
+  if (!istDatensatz(alt) || !istDatensatz(neu)) return zeile;
+
+  const altAus: Zeile = {};
+  const neuAus: Zeile = {};
+
+  for (const schluessel of new Set([...Object.keys(alt), ...Object.keys(neu)])) {
+    if (gleich(alt[schluessel], neu[schluessel])) continue;
+    altAus[schluessel] = alt[schluessel] ?? null;
+    neuAus[schluessel] = neu[schluessel] ?? null;
+  }
+
+  /*
+   * ─────────────────────────────────────────────────────────────────
+   *  Der Eintrag, bei dem sich gar nichts geändert hat
+   * ─────────────────────────────────────────────────────────────────
+   *
+   * Es gibt ihn wirklich — am 2026-09-17 in Testbetrieb 12 acht Stück:
+   * ein `update`, bei dem `alte_werte` und `neue_werte` Feld für Feld
+   * gleich sind. Der Auslöser feuert bei jedem `UPDATE`, auch bei
+   * einem, das denselben Wert noch einmal schreibt. Der erste dieser
+   * Fälle liegt sechzehn Sekunden nach dem Anlegen der Schicht:
+   * aufgemacht, angesehen, gespeichert.
+   *
+   * Nach der Verdichtung bliebe davon zweimal `{}` übrig — ein Eintrag,
+   * der aussieht, als sei unterwegs etwas verlorengegangen. Er wird
+   * deshalb **gekennzeichnet, nicht weggelassen**: das Protokoll ist
+   * auch ein Nachweis darüber, wer wann an einem Dienstplan war, und
+   * einen Schreibvorgang aus einer Beweisspur zu nehmen, um acht
+   * Einträge zu sparen, ist der schlechteste der drei möglichen
+   * Tausche. Entschieden am 2026-09-17.
+   */
+  if (Object.keys(neuAus).length === 0) {
+    return { ...zeile, alte_werte: {}, neue_werte: {}, ohne_wirkung: true };
+  }
+
+  return { ...zeile, alte_werte: altAus, neue_werte: neuAus };
+}
+
+function istDatensatz(wert: unknown): wert is Zeile {
+  return typeof wert === "object" && wert !== null && !Array.isArray(wert);
+}
+
+/**
+ * Wertgleichheit über den JSON-Text.
+ *
+ * Für die Werte, die hier vorkommen — Skalare und die verschachtelten
+ * JSON-Werte einer Zeile — ist das der ehrlichere Vergleich als `===`,
+ * das zwei inhaltsgleiche Objekte für verschieden hielte und damit
+ * unveränderte Felder als Änderung ausgäbe. Die Schlüsselreihenfolge
+ * stammt bei beiden Seiten aus derselben Zeile, ist also stabil; im
+ * Zweifel bleibt ein Feld drin, und das ist die richtige Richtung.
+ */
+function gleich(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
 /* ------------------------------------------------------------------ */
 /* Das Paket                                                           */
 /* ------------------------------------------------------------------ */
@@ -588,6 +757,13 @@ export type PaketAuftrag = {
   authId: string;
   mitarbeiterId: string;
   rolleTyp: string;
+  /**
+   * Ohne Vorgabewert, mit Absicht: der Umfang ist eine Zusage an den
+   * Kunden, und eine Zusage soll an der Aufrufstelle sichtbar stehen.
+   * Ein stillschweigendes „keins" wäre genau die Art von Vorgabe, die
+   * beim nächsten Aufrufer niemandem auffällt.
+   */
+  protokoll: ProtokollUmfang;
 };
 
 /**
@@ -643,6 +819,17 @@ export async function baueExportPaket(
   const tabellen: Record<string, Zeile[]> = {};
 
   for (const spec of EXPORT_TABELLEN) {
+    /*
+     * Das Protokoll wird im Standardlauf gar nicht erst gelesen, nicht
+     * nur nicht ausgegeben: es ist die mit Abstand grösste Tabelle, und
+     * sie zu holen, um sie wegzuwerfen, kostet bei einem gewachsenen
+     * Betrieb Dutzende Seitenabrufe und den ganzen Arbeitsspeicher.
+     */
+    if (spec.name === PROTOKOLL_TABELLE && auftrag.protokoll === "keins") {
+      tabellen[spec.name] = [];
+      continue;
+    }
+
     tabellen[spec.name] = await leseTabelle(
       supabase,
       spec,
@@ -665,13 +852,22 @@ export async function baueExportPaket(
     );
   }
 
-  tabellen["plan_aenderungen"] = bereinigeProtokoll(
-    tabellen["plan_aenderungen"] ?? [],
-    anonymisierte,
-  );
-  hinweise.push(
-    "Im Änderungsprotokoll sind Geheimnisse (Hashes, Token, Kennungen des Zahlungsdienstleisters) und der Notfallgrund durch „[entfernt]“ ersetzt.",
-  );
+  if (auftrag.protokoll === "voll") {
+    tabellen[PROTOKOLL_TABELLE] = bereinigeProtokoll(
+      (tabellen[PROTOKOLL_TABELLE] ?? []).map(verdichteAenderung),
+      anonymisierte,
+    );
+    hinweise.push(
+      "Im Änderungsprotokoll sind Geheimnisse (Hashes, Token, Kennungen des Zahlungsdienstleisters) und der Notfallgrund durch „[entfernt]“ ersetzt.",
+    );
+    hinweise.push(
+      "Bei Einträgen der Aktion „update“ enthalten `alte_werte` und `neue_werte` ausschliesslich die Felder, die sich geändert haben — der Datenbank-Auslöser legt dort jeweils die ganze Zeile ab, auch die unveränderten Felder. Bei „insert“ und „delete“ steht die vollständige Zeile. Ein „update“, bei dem sich kein Feld geändert hat, trägt `ohne_wirkung: true` und bleibt als Schreibvorgang erhalten.",
+    );
+  } else {
+    hinweise.push(
+      `Das Änderungsprotokoll (\`${PROTOKOLL_TABELLE}\`) ist in diesem Paket leer. Es ist nicht ausgeschlossen, sondern wird gesondert abgerufen: ${PROTOKOLL_ABRUF}. Grund ist der Umfang — bei einem Betrieb mittlerer Grösse macht es ein Vielfaches aller übrigen Daten aus. Siehe die Anlage „Export- und Wechselinformationen“ der AGB.`,
+    );
+  }
 
   /* --- Anonyme Umfragen ---------------------------------------------- */
 
@@ -805,6 +1001,15 @@ export async function baueExportPaket(
   for (const abschnitt of ZUSATZ_ABSCHNITTE) {
     beschreibungen[abschnitt.name] = abschnitt.beschreibung;
   }
+  /*
+   * Die Beschreibung eines leeren Abschnitts muss sagen, warum er leer
+   * ist — sonst liest sie sich wie eine Zusage, die das Paket nicht
+   * einlöst („Änderungsprotokoll des Betriebs." über einer leeren Liste).
+   */
+  if (auftrag.protokoll === "keins") {
+    beschreibungen[PROTOKOLL_TABELLE] =
+      `Änderungsprotokoll des Betriebs — in diesem Paket leer. Vollständig abrufbar unter ${PROTOKOLL_ABRUF}; siehe \`protokoll\` und \`hinweise\`.`;
+  }
 
   const offeneVerweise = findeOffeneVerweise(tabellen);
   if (offeneVerweise.length > 0) {
@@ -847,6 +1052,15 @@ export async function baueExportPaket(
     beschreibungen,
     ausschluesse: AUSSCHLUESSE,
     hinweise,
+    protokoll: {
+      umfang: auftrag.protokoll,
+      eintraege: (tabellen[PROTOKOLL_TABELLE] ?? []).length,
+      vollstaendig_abrufbar_unter: PROTOKOLL_ABRUF,
+      hinweis:
+        auftrag.protokoll === "voll"
+          ? "Dieses Paket enthält das vollständige Änderungsprotokoll. Bei der Aktion „update“ sind nur die geänderten Felder aufgeführt."
+          : "Dieses Paket enthält das Änderungsprotokoll nicht — es ist wegen seines Umfangs gesondert abrufbar, unentgeltlich und über dieselbe Anmeldung. Alle übrigen Abschnitte sind vollständig.",
+    },
     tabellen,
     umfrage_ergebnisse_anonym: ergebnisse,
     rechtliche_zustimmungen: alleZustimmungen.filter((zeile) => zeile["art"] === "betrieblich"),
@@ -856,17 +1070,18 @@ export async function baueExportPaket(
   };
 
   /*
-   * Die Grösse wird gemessen, nicht geschätzt — und zwar an der Fassung,
-   * die tatsächlich ausgeliefert wird. Der zweite `stringify` im Route
-   * Handler kostet bei einem Gastrobetrieb Millisekunden; die
-   * Alternative wäre eine Zahl, die nicht stimmt.
+   * Die Grösse wird gemessen, nicht geschätzt — und zwar mit demselben
+   * Serialisierer, den der Route Handler benutzt. Liefe hier
+   * `JSON.stringify` und dort `serialisierePaket`, stünde im Paket eine
+   * Zahl, die für keine existierende Datei gilt. Der zweite Durchlauf
+   * kostet bei einem Gastrobetrieb Millisekunden.
    *
    * Warum überhaupt: das Paket entsteht vollständig im Arbeitsspeicher.
    * Die Grenzen der Laufzeitumgebung stehen in `docs/export/README.md`;
    * hier wird nur gemessen und ab einer Schwelle gewarnt, damit ein
    * wachsender Betrieb es merkt, bevor die Antwort abbricht.
    */
-  paket.meta.groesse_bytes = Buffer.byteLength(JSON.stringify(paket), "utf8");
+  paket.meta.groesse_bytes = Buffer.byteLength(serialisierePaket(paket), "utf8");
 
   if (paket.meta.groesse_bytes > GROESSE_WARNUNG) {
     const mb = (paket.meta.groesse_bytes / 1_048_576).toFixed(1);

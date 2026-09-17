@@ -175,6 +175,21 @@ export default async function TestphaseAbgelaufenSeite({
           >
             Daten exportieren
           </a>
+          {/*
+            Auch hier zwei Wege, nicht nur in den Einstellungen: § 6
+            Abs. 4 gibt den Export bis dreissig Tage nach Vertragsende,
+            und das Änderungsprotokoll gehört dazu. Wer ausgesperrt ist,
+            kommt an die Einstellungen nicht mehr heran — stünde der
+            Vollabruf nur dort, wäre er genau dann unerreichbar, wenn man
+            ihn braucht.
+          */}
+          <a
+            href="/api/betrieb-export?protokoll=voll"
+            download
+            className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+          >
+            Mit Änderungsprotokoll
+          </a>
         </div>
       </div>
     </Container>

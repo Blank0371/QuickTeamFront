@@ -1,3 +1,24 @@
+## Änderung am 17.09.2026 — Änderungsprotokoll im Export
+
+**Nur AGB und Terms, Schlüssel `2026-09-17-r2-draft`.** AVV und
+Datenschutzinformation bleiben auf `2026-09-15-r2-draft`; ein gemeinsamer
+Wert hätte eine Änderung behauptet, die es dort nicht gab. Die Fassung
+davor liegt mit Prüfsummen unter
+[archiv/2026-09-15-r2-draft](../archiv/2026-09-15-r2-draft/).
+
+Geändert ist ausschliesslich die **Anlage „Export- und
+Wechselinformationen"**: das Änderungsprotokoll wird wegen seines Umfangs
+über einen zweiten, ebenfalls unentgeltlichen Selbstbedienungsabruf
+bereitgestellt (`/api/betrieb-export?protokoll=voll`) statt im
+Standardpaket. § 6 Abs. 5 selbst ist **unverändert** — „Änderungsprotokolle"
+bleiben in der erschöpfenden Kategorienliste, die Art. 25 Abs. 2 lit. e
+der Verordnung (EU) 2023/2854 verlangt. Tragende Norm für die Trennung
+ist Art. 30 Abs. 5 („auf Verlangen des Kunden"); Begründung und Messwerte
+in [docs/export/README.md](../../export/README.md).
+
+**Für die anwaltliche Durchsicht vorzulegen.** Wie alle Texte hier ein
+Entwurf; die Einschätzung stammt nicht von einer Rechtsanwältin.
+
 ## Umsetzung am 15.09.2026, Revision r2
 
 Aktueller Schlüssel aller drei Dokumente: **2026-09-15-r2-draft**. Die Version ohne r2 ist archiviert. Notfallgründe sind jetzt in Supabase geschützt; App-Quelltexte liegen in QuickTeamMobile und wurden synchronisiert. Export umfasst jetzt 30 Bereiche. Aktueller Status und noch offene Schritte: [UMSETZUNG-2026-09-15.md](../UMSETZUNG-2026-09-15.md). Die folgenden älteren Aussagen zu offenem Notfallgrund-Umbau und fehlender App-Synchronisierung sind insoweit überholt.

@@ -1,6 +1,6 @@
 # Allgemeine Geschäftsbedingungen (AGB) für die Nutzung von QuickTeam
 
-**Stand: 17. September 2026**
+**Stand: 15. September 2026**
 
 ## § 1 Anbieter, Geltungsbereich, Vertragspartner, Begriffe
 
@@ -167,15 +167,15 @@ Fragen zu diesen AGB sowie Erklärungen in Textform (etwa Kündigung oder Export
 
 ## Anlage — Export- und Wechselinformationen
 
-**Verzeichnisstand: 17. September 2026.** Diese Anlage ist unter [quickteam.at/agb](/agb) vor Vertragsschluss lesbar und über die Druck-/Speicherfunktion des Browsers speicherbar. Die englische Fassung wird über die Sprachwahl angeboten.
+**Verzeichnisstand: 15. September 2026.** Diese Anlage ist unter [quickteam.at/agb](/agb) vor Vertragsschluss lesbar und über die Druck-/Speicherfunktion des Browsers speicherbar. Die englische Fassung wird über die Sprachwahl angeboten.
 
 ### Verfahren, Formate und Schnittstelle
 
-Berechtigte Führungskräfte laden das Paket über [Betriebsdaten exportieren](/api/betrieb-export) in ihrer angemeldeten Sitzung herunter (HTTP GET, JSON, UTF-8). Das Änderungsprotokoll wird wegen seines Umfangs gesondert abgerufen: über [Betriebsdaten mit Änderungsprotokoll](/api/betrieb-export?protokoll=voll), ebenfalls als Selbstbedienung in der angemeldeten Sitzung, unentgeltlich und ohne Wartezeit. Beide Abrufe stehen denselben berechtigten Führungskräften und während derselben Fristen offen; auf Wunsch stellt der Anbieter das Protokoll auch in Textform bereit. Das Standardpaket weist unter protokoll aus, dass es das Protokoll nicht enthält, und nennt die Abrufadresse. Ein Kundenpasswort muss nicht an einen neuen Anbieter weitergegeben werden; der Kunde kann das Paket selbst übergeben oder eine verifizierte Bereitstellung an einen bevollmächtigten Empfänger verlangen. Für Exportverlangen, fehlende Bestandteile und Wechselkoordination ist blanktrading@web.de zuständig. Einen allgemeinen Import fremder Dienstplandateien, eine laufende Synchronisation mit Fremdsystemen oder einen automatischen Übertragungsassistenten bietet der Dienst derzeit nicht. Eine fachliche Zuordnung im Zielsystem kann erforderlich sein.
+Berechtigte Führungskräfte laden das Paket über [Betriebsdaten exportieren](/api/betrieb-export) in ihrer angemeldeten Sitzung herunter (HTTP GET, JSON, UTF-8). Ein Kundenpasswort muss nicht an einen neuen Anbieter weitergegeben werden; der Kunde kann das Paket selbst übergeben oder eine verifizierte Bereitstellung an einen bevollmächtigten Empfänger verlangen. Für Exportverlangen, fehlende Bestandteile und Wechselkoordination ist blanktrading@web.de zuständig. Einen allgemeinen Import fremder Dienstplandateien, eine laufende Synchronisation mit Fremdsystemen oder einen automatischen Übertragungsassistenten bietet der Dienst derzeit nicht. Eine fachliche Zuordnung im Zielsystem kann erforderlich sein.
 
-Das Paket trägt die Formatkennung quickteam-betriebsexport/3. Es ist ein JSON-Objekt. Unter tabellen stehen Listen von Datensatzobjekten je Tabelle. Kennungen verknüpfen die Datensätze; Beziehungen ergeben sich aus Feldern wie mitarbeiter_id, rolle_id, schicht_instanz_id und betrieb_id. Datum ist ein Kalendertag; zeitzonenbezogene Zeitstempel sind ISO-8601-Werte in UTC. Schichtbeginn und -ende sind lokale Uhrzeiten des Betriebs. Zahlen, Wahrheitswerte, Texte und null bleiben JSON-Werte. Die Kennungen und Statuswerte müssen beim Import fachlich zugeordnet werden.
+Das Paket trägt die Formatkennung quickteam-betriebsexport/2. Es ist ein JSON-Objekt. Unter tabellen stehen Listen von Datensatzobjekten je Tabelle. Kennungen verknüpfen die Datensätze; Beziehungen ergeben sich aus Feldern wie mitarbeiter_id, rolle_id, schicht_instanz_id und betrieb_id. Datum ist ein Kalendertag; zeitzonenbezogene Zeitstempel sind ISO-8601-Werte in UTC. Schichtbeginn und -ende sind lokale Uhrzeiten des Betriebs. Zahlen, Wahrheitswerte, Texte und null bleiben JSON-Werte. Die Kennungen und Statuswerte müssen beim Import fachlich zugeordnet werden.
 
-Weitere Bestandteile: meta enthält Betrieb, Erzeugungszeitraum, Zeitzonenhinweis, Größe und Rechtstextfassungen; beschreibungen erläutert die Abschnitte; ausschluesse und hinweise erklären Eingriffe; vollstaendig, vollstaendigkeit und unvollstaendig zeigen erkannte Lücken; protokoll nennt den Umfang des Änderungsprotokolls in diesem Paket und die Adresse des Vollabrufs. umfrage_ergebnisse_anonym enthält zusammengefasste Ergebnisse. rechtliche_zustimmungen enthält betriebliche Annahmen, kenntnisnahmen_datenschutz persönliche Kenntnisnahmen, jeweils soweit für das exportierende Konto zugänglich. referenz.gesetzliche_parameter enthält die Regelwerte für das Betriebsland. dateien enthält das Anhangverzeichnis.
+Weitere Bestandteile: meta enthält Betrieb, Erzeugungszeitraum, Zeitzonenhinweis, Größe und Rechtstextfassungen; beschreibungen erläutert die Abschnitte; ausschluesse und hinweise erklären Eingriffe; vollstaendig, vollstaendigkeit und unvollstaendig zeigen erkannte Lücken. umfrage_ergebnisse_anonym enthält zusammengefasste Ergebnisse. rechtliche_zustimmungen enthält betriebliche Annahmen, kenntnisnahmen_datenschutz persönliche Kenntnisnahmen, jeweils soweit für das exportierende Konto zugänglich. referenz.gesetzliche_parameter enthält die Regelwerte für das Betriebsland. dateien enthält das Anhangverzeichnis.
 
 ### Datenstrukturen
 
@@ -208,7 +208,7 @@ Weitere Bestandteile: meta enthält Betrieb, Erzeugungszeitraum, Zeitzonenhinwei
 | schichttausch_anfragen | Schichttausch: Angebot, Annahme, Genehmigung. | id |
 | notfall_gruende | Geschützte optionale Notfallgründe. Bezug zu notfaelle über notfall_id; nur für berechtigte Führungskräfte. | notfall_id |
 | notfaelle | Notfallmeldungen und Vertretungen. | id |
-| plan_aenderungen | Änderungsprotokoll des Betriebs. Alte und neue Werte liegen als JSON vor; bei der Aktion update sind dort die geänderten Felder aufgeführt, bei insert und delete die vollständige Zeile. Ein update ohne jede Feldänderung bleibt als Schreibvorgang erhalten und trägt ohne_wirkung. Nur im gesonderten Abruf mit Änderungsprotokoll enthalten. | id |
+| plan_aenderungen | Änderungsprotokoll des Betriebs. Alte und neue Werte liegen als JSON vor. | id |
 | einladungen | Offene und eingelöste Einladungen. Der Einladungs-Hash ist ein Zugangsgeheimnis und fehlt. | erstellt_am |
 | betrieb_abonnements | Tarif und Abrechnungsstand. Rechnungen und Zahlungsmittel liegen beim Zahlungsdienstleister und sind über das Kundenportal abrufbar. | betrieb_id |
 
@@ -218,7 +218,6 @@ Bei einladungen werden betrieb_id, mitarbeiter_id, ablaufdatum, erstellt_am und 
 
 - Das Paket ist kein gemeinsamer Datenbankschnappschuss. Änderungen während der Erzeugung können zu Abweichungen und offenen Verweisen führen. Für einen Abschlussstand ist ein abgestimmter Exportzeitpunkt ohne parallele Änderungen sinnvoll. Erkannte offene Verweise stehen in vollstaendigkeit.offene_verweise.
 - Anhangdateien sind derzeit nicht im JSON enthalten. Sind Anhänge vorhanden, wird das Paket als unvollständig gekennzeichnet. Die Dateien sind im Rahmen eines vollständigen Exportverlangens zusätzlich bereitzustellen; ein Dateipfad allein erfüllt diesen Anspruch nicht.
-- Das Änderungsprotokoll ist nicht Teil des Standardpakets, sondern eines gesonderten, ebenfalls unentgeltlichen Abrufs. Grund ist allein der Umfang: es übersteigt bei einem Betrieb mittlerer Grösse alle übrigen Daten um ein Vielfaches und wächst mit jeder Planung weiter. Es ist damit weder ausgeschlossen noch eingeschränkt; es wird auf Verlangen vollständig bereitgestellt.
 - Passwort-Hashes, Sitzungs-, Wiederherstellungs-, Verknüpfungs- und Einladungstoken sowie Push-Token werden zum Schutz der Zugänge nicht weitergegeben. Der neue Dienst benötigt eigene Zugänge. Die fachlichen Profil- und Einladungsdaten sind enthalten.
 - Persönliche, kontoweite Benachrichtigungseinstellungen, fremde Betriebsdaten und betriebsunabhängige Fehlermeldungen gehören nicht zum Betriebsexport. Eigene Auskunftsrechte betroffener Personen bleiben unberührt.
 - Einzelstimmen anonymer Umfragen werden durch zusammengefasste Ergebnisse ersetzt. Entfernte Namen werden nicht wiederhergestellt; Geheimnisse und sensible Angaben werden im Änderungsprotokoll redigiert. Erforderliche weitergehende Herausgaben werden anhand der Berechtigung und Rechte Betroffener geprüft.

@@ -1,6 +1,6 @@
 # General Terms and Conditions for the Use of QuickTeam
 
-**Last updated: 17 September 2026**
+**Last updated: 15 September 2026**
 
 ## Section 1 — Provider, scope, contracting party, definitions
 
@@ -167,15 +167,15 @@ Questions about these Terms and declarations in text form (e.g. termination or e
 
 ## Annex — Export and switching information
 
-**Register version: 17 September 2026.** This annex is available before contracting at [quickteam.at/agb](/agb) and can be saved using the browser’s print/save function. Use the language selector for the English version.
+**Register version: 15 September 2026.** This annex is available before contracting at [quickteam.at/agb](/agb) and can be saved using the browser’s print/save function. Use the language selector for the English version.
 
 ### Procedures, formats and interface
 
-Authorised managers download the package through [Export business data](/api/betrieb-export) in their signed-in session (HTTP GET, JSON, UTF-8). Because of its volume, the change log is retrieved separately through [Business data including the change log](/api/betrieb-export?protokoll=voll), likewise self-service in the signed-in session, free of charge and without delay. Both retrievals are open to the same authorised managers and during the same periods; on request the Provider also supplies the change log in text form. The standard package states under protokoll that it does not contain the change log and gives the retrieval address. Customers need not share passwords with a new provider; they can hand over the package themselves or request verified delivery to an authorised recipient. Contact blanktrading@web.de for export requests, missing parts and switching coordination. The Service currently provides no general import of third-party scheduling files, continuous synchronisation with external systems or automatic transfer assistant. Mapping data to the receiving system may be necessary.
+Authorised managers download the package through [Export business data](/api/betrieb-export) in their signed-in session (HTTP GET, JSON, UTF-8). Customers need not share passwords with a new provider; they can hand over the package themselves or request verified delivery to an authorised recipient. Contact blanktrading@web.de for export requests, missing parts and switching coordination. The Service currently provides no general import of third-party scheduling files, continuous synchronisation with external systems or automatic transfer assistant. Mapping data to the receiving system may be necessary.
 
-The package format identifier is quickteam-betriebsexport/3. It is a JSON object. tabellen contains arrays of record objects per table. Identifiers link records through fields such as mitarbeiter_id, rolle_id, schicht_instanz_id and betrieb_id. Dates represent calendar days; timestamps with a time zone use ISO 8601 in UTC. Shift start/end values are local business times. Numbers, booleans, strings and null remain JSON values. Identifiers and status values require mapping on import.
+The package format identifier is quickteam-betriebsexport/2. It is a JSON object. tabellen contains arrays of record objects per table. Identifiers link records through fields such as mitarbeiter_id, rolle_id, schicht_instanz_id and betrieb_id. Dates represent calendar days; timestamps with a time zone use ISO 8601 in UTC. Shift start/end values are local business times. Numbers, booleans, strings and null remain JSON values. Identifiers and status values require mapping on import.
 
-Other parts: meta contains business details, generation interval, time-zone information, size and legal-document versions; beschreibungen describes sections; ausschluesse and hinweise explain interventions; vollstaendig, vollstaendigkeit and unvollstaendig indicate detected gaps; protokoll states the scope of the change log in this package and the address of the full retrieval. umfrage_ergebnisse_anonym contains aggregate poll results. rechtliche_zustimmungen holds business acceptances, kenntnisnahmen_datenschutz personal acknowledgements, insofar as accessible to the exporting account. referenz.gesetzliche_parameter holds rules for the business’s country. dateien contains the attachment index.
+Other parts: meta contains business details, generation interval, time-zone information, size and legal-document versions; beschreibungen describes sections; ausschluesse and hinweise explain interventions; vollstaendig, vollstaendigkeit and unvollstaendig indicate detected gaps. umfrage_ergebnisse_anonym contains aggregate poll results. rechtliche_zustimmungen holds business acceptances, kenntnisnahmen_datenschutz personal acknowledgements, insofar as accessible to the exporting account. referenz.gesetzliche_parameter holds rules for the business’s country. dateien contains the attachment index.
 
 ### Data structures
 
@@ -208,7 +208,7 @@ Other parts: meta contains business details, generation interval, time-zone info
 | schichttausch_anfragen | Shift-swap records | id |
 | notfall_gruende | Protected optional emergency reasons. Linked to notfaelle through notfall_id; authorised managers only. | notfall_id |
 | notfaelle | Emergency and cover records | id |
-| plan_aenderungen | Change log, with redacted before/after JSON values; for the update action only the changed fields are listed, for insert and delete the complete row. An update with no field change is retained as a write event and carries ohne_wirkung. Included only in the separate retrieval with the change log. | id |
+| plan_aenderungen | Change log, with redacted before/after JSON values | id |
 | einladungen | Invitation details without access secret | erstellt_am |
 | betrieb_abonnements | Plan and subscription status; invoices through the payment portal | betrieb_id |
 
@@ -218,7 +218,6 @@ einladungen contains betrieb_id, mitarbeiter_id, ablaufdatum, erstellt_am and ei
 
 - The package is not a shared database snapshot. Changes during generation may create inconsistencies or unresolved references. An agreed export time without concurrent changes is useful for a final state. Detected unresolved references appear in vollstaendigkeit.offene_verweise.
 - Attachment files are not currently included in the JSON. Where attachments exist, the package is marked incomplete. The files must additionally be supplied in response to a complete export request; a file path alone does not fulfil that obligation.
-- The change log is not part of the standard package but of a separate, likewise free retrieval. The reason is volume alone: in a mid-sized business it exceeds all other data many times over and keeps growing with every planning run. It is therefore neither excluded nor restricted; it is provided in full on request.
 - Password hashes, session, recovery, account-linking and invitation tokens and push tokens are withheld to protect access. The receiving service needs its own credentials. Business profile and invitation details are included.
 - Personal account-wide notification preferences, other businesses’ data and business-independent bug reports are outside the business export. Data subjects’ individual access rights remain unaffected.
 - Individual votes in anonymous polls are replaced by aggregate results. Removed names are not restored; secrets and sensitive information are redacted from the change log. Necessary additional disclosures are assessed against authority and data subjects’ rights.

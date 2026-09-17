@@ -81,10 +81,12 @@ export const ZUSTIMMUNG_ART: Record<ZustimmungDokument, ZustimmungArt> = {
  * der AGB unter den bisherigen Bedingungen weiter.
  */
 // Überarbeitung 15.09.2026: AGB, AVV und Datenschutz in beiden Sprachen.
-// Vorgängerfassungen: docs/rechtliches/archiv/vor-2026-09-15/.
+// Vorgängerfassungen: docs/rechtliches/archiv/vor-2026-09-15/ und
+// docs/rechtliches/archiv/2026-09-15-r2-draft/ (AGB vor dem gesonderten
+// Abruf des Änderungsprotokolls).
 // Betriebsabhängigkeiten vor Veröffentlichung: docs/rechtliches/ABGLEICH-2026-09-15.md.
 export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
-  agb: "2026-09-15-r2-draft",
+  agb: "2026-09-17-r2-draft",
   avv: "2026-09-15-r2-draft",
   datenschutz: "2026-09-15-r2-draft",
 };

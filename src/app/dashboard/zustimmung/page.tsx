@@ -223,6 +223,14 @@ export default async function ZustimmungSeite({
             >
               Daten exportieren
             </a>
+            {/* Wie auf der Sperrseite: der Vollabruf muss dort erreichbar
+                sein, wo jemand festhängt, nicht nur hinter dem Tor. */}
+            <a
+              href="/api/betrieb-export?protokoll=voll"
+              className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
+            >
+              Mit Änderungsprotokoll
+            </a>
           </div>
         )}
 

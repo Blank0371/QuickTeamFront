@@ -118,16 +118,26 @@ export default async function EinstellungenSeite({
             </h2>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
               Alle Daten deines Betriebs als eine JSON-Datei: Mitarbeiter und Rollen,
-              Vorlagen und Schichten, Urlaub, Verfügbarkeiten, Mitteilungen, Tausch,
-              Notfälle und das Änderungsprotokoll. Das Paket nennt zu jedem Abschnitt,
-              was er enthält, und listet auf, was bewusst fehlt.
+              Vorlagen und Schichten, Urlaub, Verfügbarkeiten, Mitteilungen, Tausch und
+              Notfälle. Das Paket nennt zu jedem Abschnitt, was er enthält, und listet
+              auf, was bewusst fehlt.
             </p>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
               Einzelstimmen anonymer Umfragen sind nicht enthalten — für sie steht die
               Auszählung im Paket. Der Export ist kostenlos und beliebig oft möglich,
               auch nach einer Kündigung.
             </p>
-            <p className="mt-4">
+            {/*
+              Zwei Knöpfe statt eines versteckten Parameters: das
+              Änderungsprotokoll — wer hat wann welche Schicht geändert —
+              ist bei einem gewachsenen Betrieb ein Vielfaches aller
+              übrigen Daten und liegt deshalb nicht im Standardpaket.
+              Abrufbar bleiben muss es trotzdem, und zwar ohne Umweg über
+              eine E-Mail (Art. 30 Abs. 5 der Verordnung (EU) 2023/2854:
+              „auf Verlangen des Kunden"). Ein Verlangen, das man anklickt,
+              ist die ehrlichste Form davon.
+            */}
+            <p className="mt-4 flex flex-wrap gap-3">
               <a
                 href="/api/betrieb-export"
                 download
@@ -135,6 +145,19 @@ export default async function EinstellungenSeite({
               >
                 Export herunterladen
               </a>
+              <a
+                href="/api/betrieb-export?protokoll=voll"
+                download
+                className="inline-flex rounded-blk border border-line-strong px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
+              >
+                Mit Änderungsprotokoll
+              </a>
+            </p>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+              Das Änderungsprotokoll hält fest, wer wann welche Schicht angelegt,
+              geändert oder gelöscht hat. Es wächst mit jeder Planung und macht die
+              Datei um ein Vielfaches grösser — deshalb steht es in einem eigenen
+              Download, ebenfalls kostenlos.
             </p>
           </section>
         ) : null}

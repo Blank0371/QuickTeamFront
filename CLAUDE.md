@@ -1723,6 +1723,10 @@ maschinenlesbaren Format" — es gab dafür keine Funktion, nur den Satz.
    Änderungsprotokoll zu `[entfernt]`; Namen pseudonymisierter Anstellungen
    kehren aus `alte_werte` nicht zurück.
 
+**Seit dem 2026-09-14 blättert der Export per Keyset; seit dem 2026-09-17
+liegt das Änderungsprotokoll in einem eigenen Abruf** — siehe die datierten
+Abschnitte unten.
+
 **Zwei benannte Grenzen:** kein Schnappschuss (jede Tabelle ist eine eigene
 Transaktion — `meta.konsistenz` sagt es, `docs/export/migration-export-schnappschuss.sql`
 skizziert die Fassung mit `repeatable read`), und **Anhänge nur als Verzeichnis**:
@@ -1821,6 +1825,83 @@ ist von jedem Betriebsmitglied beschreibbar; ein serverseitiger Abruf
 wäre SSRF mit Ansage (`http://169.254.169.254/…`). Jeder Eintrag trägt
 `pfad_art`, `im_betriebsordner` und `datei_enthalten: false`. Die
 Tabellenzeile ist über `betrieb_id` eingegrenzt — **der Pfad darin nicht**.
+
+### Änderung vom 2026-09-17: das Änderungsprotokoll verlässt das Standardpaket
+
+**Vorher:** ein Abruf, ein Paket, alles darin — und eingerückt
+ausgegeben (`JSON.stringify(paket, null, 2)`). Gemessen an Testbetrieb 12,
+einem Betrieb mit **wenig** Daten (21 Anstellungen, 164 Schichten, 533
+Zuweisungen): **140.000 Zeilen, rund 4,9 MB**. Davon entfielen
+**122.863 Zeilen und 3,95 MB auf `plan_aenderungen` allein** — 5.719
+Protokollzeilen aus vier Wochen. Jede Änderung an `schicht_instanzen` und
+`schicht_zuweisungen` legt die ganze Zeile vorher **und** nachher ab, und
+ein verworfener Solver-Lauf erzeugt je Schicht ein Einfüge- und ein
+Löschpaar.
+
+**Jetzt** drei Änderungen, gemessen am selben Betrieb:
+
+| | Zeilen | Grösse |
+| --- | --- | --- |
+| vorher | ~140.000 | ~4,9 MB |
+| `/api/betrieb-export` | ~1.100 | ~0,35 MB |
+| `…?protokoll=voll` | ~7.000 | ~4,0 MB |
+
+1. **Ein Datensatz je Zeile** (`src/lib/export/serialisierung.ts`). Die
+   Struktur bleibt eingerückt und lesbar, Tabellenzeilen werden einzeilig.
+   Gewöhnliches JSON, nur andere Zeilenumbrüche — es fehlt kein Wert.
+   `meta.groesse_bytes` misst mit demselben Serialisierer, sonst stünde im
+   Paket eine Zahl, die für keine existierende Datei gilt.
+2. **Das Protokoll wird gesondert abgerufen**, über
+   `?protokoll=voll` — im Standardlauf wird die Tabelle **gar nicht erst
+   gelesen**. Im Dashboard stehen dafür zwei Knöpfe nebeneinander; ein
+   versteckter Parameter wäre kein Abrufweg.
+3. **Bei `aktion = 'update'` bleiben nur die geänderten Felder.** Im
+   Schnitt ändert sich 1,0 von 10,9 Feldern. Verglichen wird auf den
+   **rohen** Werten, sonst verschwände eine Änderung, die nur ein Geheimnis
+   betrifft, als „[entfernt] = [entfernt]". `insert` und `delete` bleiben
+   unangetastet — dort ist die ganze Zeile bei einem gelöschten Datensatz
+   die einzige verbliebene Spur. Ein `update` **ohne** jede Feldänderung
+   (der Auslöser feuert auch dann) bleibt als Schreibvorgang erhalten und
+   trägt `ohne_wirkung: true`: das Protokoll bezeugt auch, wer wann an
+   einem Dienstplan war, und es aus einer Beweisspur zu nehmen, um acht
+   Einträge zu sparen, wäre der schlechteste Tausch.
+
+**Warum das rechtlich trägt, und was daran hängt.** Das Protokoll sind
+**exportierbare Daten** (Art. 2 Nr. 38 der Verordnung (EU) 2023/2854
+nennt Metadaten ausdrücklich), es darf also nicht fehlen. Es muss aber
+nicht in dieselbe Datei: Art. 30 Abs. 5 verlangt den Export „**auf
+Verlangen des Kunden**". Drei Bedingungen sind deshalb Teil der
+Umsetzung, nicht Beiwerk — wer eine davon aufhebt, bricht die Zusage:
+
+- „Änderungsprotokolle" bleiben in der erschöpfenden Kategorienliste des
+  Vertrags (§ 6 Abs. 5 AGB, Art. 25 Abs. 2 lit. e). Dort wurde nichts
+  gestrichen; nur die Anlage beschreibt jetzt das Verfahren.
+- Der Abruf bleibt **unentgeltlich, für dieselbe berechtigte Person und
+  ohne Wartezeit** erreichbar (Art. 29), auch von der Sperrseite und vom
+  Zustimmungs-Tor — er läuft wie der andere über `betreteOhneTore()`.
+- **Das Paket behauptet keine Vollständigkeit, die es nicht hat:** das
+  Feld `protokoll` nennt Umfang, Anzahl und Abrufadresse, `hinweise` sagt
+  dasselbe im Klartext, und die Beschreibung des leeren Abschnitts
+  erklärt, warum er leer ist.
+
+**`vollstaendig` bleibt im Standardpaket `true`.** Das Feld bezeichnet
+einen **Mangel** — eine nicht lesbare Tabelle, eine fehlende Anhangsdatei
+—, und ein bewusst gewählter Umfang ist keiner. Stünde `UNVOLLSTAENDIG`
+im Dateinamen jedes gewöhnlichen Exports, wäre die Markierung dort
+wertlos, wo sie gebraucht wird.
+
+**Was nicht gelöst ist:** der Vollabruf wächst weiter, die Warnschwelle
+von 40 MB gilt für ihn unverändert. Wird sie erreicht, braucht es eine
+andere Auslieferung — Streaming oder zeilenweises JSON —, **keine weitere
+Auslassung**. Ein Zeitfenster wurde geprüft und verworfen: alle 5.719
+Einträge stammten aus vier Wochen, es hätte nichts abgeschnitten.
+
+**Formatkennung `quickteam-betriebsexport/3`.** AGB und Terms stehen
+deshalb auf `2026-09-17-r2-draft` (AVV und Datenschutzerklärung
+unverändert); die Vorfassung liegt mit Prüfsummen unter
+`docs/rechtliches/archiv/2026-09-15-r2-draft/`. **Die Einschätzung ist
+keine anwaltliche** — sie gehört in die nächste Durchsicht, wie Befund 5
+vom 2026-09-13.
 
 ### Korrektur vom 2026-09-14: ein Spaltenrecht entzieht kein Tabellenrecht
 
