@@ -1907,6 +1907,95 @@ die Exportfristen nachweislich greifen, Klarheit über
 `trg_letzter_chef`, und eine Erprobung an einem Wegwerfbetrieb in
 `QT-Sandbox-Test`. Die Sperrliste steht im Kopf der Datei.
 
+## Konto und Daten löschen
+
+**Änderung vom 2026-09-17.** Auf Anweisung des Nutzers.
+
+**Vorher:** `/kontoloeschung` setzte eine bestehende Anmeldung voraus und
+leitete sonst auf `/login`. Die Route stand in `GESPERRTE_PRAEFIXE`, war
+während des Soft-Launches also gar nicht da. Eine Adresse, unter der man
+eine Datenlöschung ohne vorherige Anmeldung beginnen kann, gab es nicht.
+
+**Jetzt:** dieselbe Route nimmt die Anmeldung **selbst** entgegen und
+führt in drei Stufen:
+
+| Stufe | Inhalt | Was sie abfängt |
+| ----- | ------ | --------------- |
+| 1 | E-Mail und Passwort auf der Seite | wer hier ist |
+| 2 | Was gelöscht wird, was bleibt, Abo und Abrechnung | den Ahnungslosen |
+| 3 | Betriebsnamen abtippen + Häkchen, roter Knopf | den Fehlklick |
+
+**Eine Seite, zwei Adressen.** `/datenloeschung` ist eine
+`permanentRedirect` (308) auf `/kontoloeschung` und ausdrücklich keine
+zweite Umsetzung. Dass `/kontoloeschung` die echte ist und nicht
+umgekehrt, hat einen handfesten Grund: die Datenschutzerklärung nennt in
+Ziffer 15.2 wörtlich `quickteam.at/kontoloeschung`. Ein Umzug hätte den
+Rechtstext geändert, damit sein `Stand:`-Datum und den Wert in
+`rechtstexte.ts` — und `pruefeZustimmung()` hätte anschliessend **jeden
+Bestandsbetrieb** neu gefragt. Ein Zustimmungs-Durchlauf für alle,
+ausgelöst durch eine Umbenennung, ist der teuerste Weg zu einer URL.
+
+**Kein Weg dorthin, und das ist Absicht.** Weder Landing noch Kopf- oder
+Fussbereich verlinken die Seite; sie steht auf `robots: index:false` und
+ist in keiner Sitemap. Man tippt die Adresse ein.
+
+**Die Stufe steht im Query-String** (`?schritt=folgen|endgueltig`), nicht
+im Client-Zustand — sonst lieferte `curl` den sichtbaren Text nicht, und
+genau das verlangt „Harte Vorgaben". Stufe 3 ist damit direkt
+ansteuerbar; das ist kein Leck, weil die Warnungen zum Nachdenken
+zwingen sollen und nicht den Zugang regeln. Den regeln die Anmeldung und
+das abgetippte Wort, und beide leitet `aktionen.ts` serverseitig neu ab.
+Ohne Sitzung fällt jede Stufe auf Stufe 1 zurück — am 2026-09-17 mit
+`curl` gegen `SOFT_LAUNCH=an` geprüft.
+
+**Die Logik liegt in `src/lib/konto-loeschung.ts`**, nicht in der Route:
+`konto_selbst_loeschen()` aufrufen, vorher alle geleiteten Betriebe auf
+lebende Abos prüfen, nachher kündigen. Was die RPC tut und was sie
+ausdrücklich **nicht** tut — der Betrieb bleibt, die `mitarbeiter`-Zeilen
+werden anonymisiert — steht dort.
+
+### Drei Ausnahmen vom Soft-Launch, die zusammengehören
+
+Die Seite soll unter `SOFT_LAUNCH=an` arbeiten. Dafür reicht es **nicht**,
+die Route aus `GESPERRTE_PRAEFIXE` zu nehmen: `createClient()` und
+`stripeKlient()` leiten unabhängig davon auf `/` um. Es sind deshalb drei
+Eingriffe, und wer einen zurücknimmt, muss die anderen mitnehmen —
+sonst entsteht eine Seite, die sich öffnet und dann nichts kann.
+
+1. `/kontoloeschung` steht nicht mehr in `GESPERRTE_PRAEFIXE`.
+2. `createClientOhneRiegel()` in `src/lib/supabase/server.ts` — **ein
+   einziger Aufrufer**, diese Seite samt ihren Server Actions. Eine
+   zweite Stelle ist ein Fehler, kein Ausbau.
+3. `trotzSoftLaunch` an `sucheKunde` / `holeAboVerlauf` /
+   `holeAboFuerBetrieb` / `kuendigeAbo`. Durchgereichtes Argument statt
+   globalem Zustand, damit an jeder Aufrufstelle im Klartext steht, ob
+   sie an der Sperre vorbei arbeitet. Ohne das bräche die Löschung
+   ausgerechnet für Chefs ab: ein ungeprüftes Abo lässt
+   `fuehreLoeschungAus()` verweigern.
+
+**Begründung:** der Soft-Launch verhindert, dass ein Konto, eine Sitzung
+oder ein Vertrag **entsteht**, solange die Rechtstexte Entwürfe sind.
+Löschen erzeugt nichts davon. Und es hängt als einziges nicht am Stand
+der Texte: Art. 17 DSGVO gilt unabhängig davon, und Ziffer 15.2 sagt zu,
+man könne sein Konto „jederzeit selbst" löschen. Eine Sperre, die das
+mitsperrt, macht die eigene Zusage unwahr.
+
+**Der Preis, ausdrücklich benannt:** `/kontoloeschung` ist während des
+Soft-Launches die einzige Adresse, an der ein Passwort geprüft wird.
+Gegen Durchprobieren schützt die Ratenbegrenzung von GoTrue — dieselbe,
+die `/login` nach dem Launch schützt —, nicht unser Code. Die hier
+entstehende Sitzung kommt nirgendwo hin: `/dashboard`, `/einrichtung` und
+`/login` bleiben von der Middleware gesperrt, jeder andere Codepfad geht
+über `createClient()` mit Riegel.
+
+**Am Schema ändert sich nichts.** `konto_selbst_loeschen()` gibt es seit
+Längerem (SECURITY DEFINER, ohne Parameter, am 2026-09-17 in `pg_proc`
+nachgesehen); es wird aufgerufen, nicht angefasst.
+
+**Noch nicht geprüft:** Stufe 2 und 3 sind bisher nur ohne Sitzung
+getestet — der vollständige Durchlauf bis zur echten Löschung braucht ein
+Wegwerfkonto in `QT-Sandbox-Test` und steht aus.
+
 ## Prüfungen laufen mit `npm test`
 
 Seit dem 2026-09-13 gibt es einen Testlauf: `node --test` über

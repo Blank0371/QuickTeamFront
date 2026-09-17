@@ -101,9 +101,10 @@ export function stripeKlient(): Stripe {
 
 /**
  * Derselbe Client ohne Soft-Launch-Sperre — nur für Arbeit an **bestehenden**
- * Abonnements, die keinen Vertrag schliesst und von keinem Besucher ausgelöst
- * wird. Einziger Aufrufer ist `beendeUeberfaelligePausen()`; die Begründung
- * ist dieselbe wie beim Webhook in `soft-launch.ts`.
+ * Abonnements, die keinen Vertrag schliesst. Zwei Aufrufer:
+ * `beendeUeberfaelligePausen()` (Cron) und die Kontolöschung über
+ * `klientFuer()` unten. Die Begründung ist dieselbe wie beim Webhook in
+ * `soft-launch.ts`.
  */
 function stripeKlientOhneRiegel(): Stripe {
   const secret = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
@@ -111,6 +112,25 @@ function stripeKlientOhneRiegel(): Stripe {
     throw new KonfigurationsFehler("STRIPE_SECRET_KEY fehlt in der Umgebung.");
   }
   return new Stripe(secret);
+}
+
+/**
+ * Der Client für die Lesewege, die auch die **Datenlöschung** geht.
+ *
+ * `trotzSoftLaunch` ist kein Bequemlichkeitsschalter, sondern der einzige
+ * Weg, auf dem `/kontoloeschung` während des Soft-Launches überhaupt
+ * arbeiten kann: `stripeKlient()` leitet dort auf `/` um, und ein
+ * ungeprüftes Abo lässt `fuehreLoeschungAus()` die Löschung verweigern —
+ * ausgerechnet für Chefs, also für die, bei denen etwas abgebucht wird.
+ * Die Begründung im Ganzen steht an `createClientOhneRiegel()` in
+ * `src/lib/supabase/server.ts`.
+ *
+ * Bewusst ein durchgereichtes Argument und kein globaler Zustand: so
+ * steht an jeder Aufrufstelle im Klartext, ob sie an der Sperre vorbei
+ * arbeitet, und der Compiler zeigt beim Suchen jede einzelne.
+ */
+function klientFuer(trotzSoftLaunch: boolean): Stripe {
+  return trotzSoftLaunch ? stripeKlientOhneRiegel() : stripeKlient();
 }
 
 /* ------------------------------------------------------------------ */
@@ -170,13 +190,16 @@ export async function sucheKunde({
   betriebId,
   email,
   kundeId = null,
+  trotzSoftLaunch = false,
 }: {
   betriebId: string;
   email: string;
   /** `betrieb_abonnements.stripe_customer_id`, sofern der Webhook schon lief. */
   kundeId?: string | null;
+  /** Siehe `klientFuer()`. Nur die Kontolöschung setzt das. */
+  trotzSoftLaunch?: boolean;
 }): Promise<Stripe.Customer | null> {
-  const stripe = stripeKlient();
+  const stripe = klientFuer(trotzSoftLaunch);
 
   if (kundeId) {
     try {
@@ -560,9 +583,12 @@ export async function holeAboFuerBetrieb({
   betriebId,
   email,
   kundeId = null,
+  trotzSoftLaunch = false,
 }: {
   betriebId: string;
   email: string;
+  /** Siehe `klientFuer()`. Nur die Kontolöschung setzt das. */
+  trotzSoftLaunch?: boolean;
   /**
    * `betrieb_abonnements.stripe_customer_id`. Wird durchgereicht an
    * `sucheKunde`, dessen Kommentar erklärt, warum sie der E-Mail vorgeht.
@@ -577,7 +603,7 @@ export async function holeAboFuerBetrieb({
    */
   kundeId?: string | null;
 }): Promise<Stripe.Subscription | null> {
-  return (await holeAboVerlauf({ betriebId, email, kundeId })).lebend;
+  return (await holeAboVerlauf({ betriebId, email, kundeId, trotzSoftLaunch })).lebend;
 }
 
 /**
@@ -598,18 +624,24 @@ export async function holeAboVerlauf({
   betriebId,
   email,
   kundeId = null,
+  trotzSoftLaunch = false,
 }: {
   betriebId: string;
   email: string;
   kundeId?: string | null;
+  /** Siehe `klientFuer()`. Nur die Kontolöschung setzt das. */
+  trotzSoftLaunch?: boolean;
 }): Promise<AboVerlauf> {
-  const kunde = await sucheKunde({ betriebId, email, kundeId });
+  const kunde = await sucheKunde({ betriebId, email, kundeId, trotzSoftLaunch });
   if (!kunde) return { lebend: null, anzahl: 0 };
-  return verlaufFuerKunde(kunde.id);
+  return verlaufFuerKunde(kunde.id, trotzSoftLaunch);
 }
 
-async function verlaufFuerKunde(kundeId: string): Promise<AboVerlauf> {
-  const abos = await stripeKlient().subscriptions.list({
+async function verlaufFuerKunde(
+  kundeId: string,
+  trotzSoftLaunch = false,
+): Promise<AboVerlauf> {
+  const abos = await klientFuer(trotzSoftLaunch).subscriptions.list({
     customer: kundeId,
     status: "all",
     limit: 100,
@@ -832,8 +864,12 @@ export async function wechslePlan(
  * gekündigt. Aufgerufen wird das nur mit der Id eines Abos, das kurz zuvor
  * als lebend gefunden wurde.
  */
-export async function kuendigeAbo(aboId: string): Promise<Stripe.Subscription> {
-  return stripeKlient().subscriptions.cancel(aboId);
+export async function kuendigeAbo(
+  aboId: string,
+  /** Siehe `klientFuer()`. Nur die Kontolöschung setzt das. */
+  trotzSoftLaunch = false,
+): Promise<Stripe.Subscription> {
+  return klientFuer(trotzSoftLaunch).subscriptions.cancel(aboId);
 }
 
 /** AGB § 5 Abs. 3: so lange lässt sich ein pausiertes Abo fortsetzen. */
