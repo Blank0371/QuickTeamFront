@@ -385,13 +385,23 @@ export const uidSchema = z.object({ uid: feldSchemata.uid });
  * auseinander.
  *
  * ─────────────────────────────────────────────────────────────────────
- *  Die UID bleibt freiwillig und österreichisch
+ *  Die UID ist für österreichische Rechnungsempfänger Pflicht
  * ─────────────────────────────────────────────────────────────────────
  *
- * Unverändert zum bestehenden Steuerablauf: `feldSchemata.uid` lässt
- * den leeren String zu, und für deutsche Betriebe wird das Feld gar
- * nicht erst angezeigt. Kommt trotzdem ein Wert herein, verwirft ihn
- * die Server Action — ein Inlandsumsatz ändert sich dadurch nicht.
+ * Produktentscheidung vom 2026-09-18 (siehe `CLAUDE.md`, Abschnitt
+ * „Abo & Zahlung"): QuickTeam verkauft ausschliesslich an Unternehmer.
+ * Für einen österreichischen Rechnungsempfänger heisst das eine gültige
+ * UID — ohne sie behandelte Stripe Tax den Betrieb wie einen
+ * Privatkunden, und genau das soll nicht vorkommen.
+ *
+ * Die Pflicht sitzt **hier** am Rechnungstor und nicht in Schritt 2:
+ * dieselbe Schwelle wie bei der Anschrift — sie greift erst, wenn eine
+ * Rechnung entstehen kann. Kostenloses Testen ohne Zahlungsmittel bleibt
+ * ohne UID möglich; wer aktiviert, braucht sie. Das Feldschema
+ * `feldSchemata.uid` lässt den leeren String weiterhin zu (für
+ * deutsche Betriebe wird das Feld gar nicht angezeigt, ein trotzdem
+ * hereingereichter Wert wird verworfen); die Pflicht für `AT` prüft
+ * dieses zusammengesetzte Schema, weil erst hier das Land bekannt ist.
  */
 export const rechnungSchema = z
   .object({
@@ -410,6 +420,9 @@ export const rechnungSchema = z
         path: ["rechnung_plz"],
         message: vm(werte.land === "AT" ? "v.plz.at" : "v.plz.de", { anzahl: erwartet }),
       });
+    }
+    if (werte.land === "AT" && werte.uid === "") {
+      ctx.addIssue({ code: "custom", path: ["uid"], message: vm("v.uid.pflicht") });
     }
   });
 

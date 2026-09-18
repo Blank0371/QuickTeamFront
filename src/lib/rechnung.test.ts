@@ -128,10 +128,20 @@ describe("pruefeRechnung", () => {
     assert.equal(ergebnis.profil.uid, "ATU12345678");
   });
 
-  it("lässt eine leere UID bei österreichischen Betrieben zu", () => {
-    // Freiwillig: ohne UID behandelt Stripe Tax den Betrieb wie einen
-    // Privatkunden, das ist eine gültige Lage und kein Fehler.
+  it("lehnt eine leere UID bei österreichischen Betrieben ab", () => {
+    // Seit dem 2026-09-18 Pflicht: QuickTeam verkauft nur an Unternehmer,
+    // ein AT-Rechnungsempfänger ohne UID würde von Stripe Tax wie ein
+    // Privatkunde behandelt — genau das soll nicht vorkommen.
     const ergebnis = pruefeRechnung({ ...VOLLSTAENDIG_AT, uid: "" }, TEXTE);
+    assert.equal(ergebnis.ok, false);
+    if (ergebnis.ok) return;
+    assert.ok(ergebnis.felder["uid"]);
+  });
+
+  it("lässt eine leere UID bei deutschen Betrieben zu", () => {
+    // Für einen Inlandsumsatz ist die UID belanglos; das Feld wird
+    // deutschen Betrieben gar nicht erst angezeigt.
+    const ergebnis = pruefeRechnung({ ...VOLLSTAENDIG_DE, uid: "" }, TEXTE);
     assert.equal(ergebnis.ok, true);
   });
 

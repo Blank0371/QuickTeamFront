@@ -53,8 +53,10 @@ export type RechnungsPruefung =
  * hier ist die Verteidigung. Wer das Formular umgeht, kommt nicht an ihr
  * vorbei.
  *
- * **Für deutsche Betriebe wird eine hereingereichte UID verworfen**,
- * nicht abgelehnt. Das ist dieselbe Behandlung wie in `planWaehlen()`:
+ * **Für österreichische Rechnungsempfänger ist die UID Pflicht**
+ * (Produktentscheidung vom 2026-09-18): das erzwingt `rechnungSchema`,
+ * eine leere UID bei `land = "AT"` fällt hier durch. **Für deutsche
+ * Betriebe wird eine hereingereichte UID verworfen**, nicht abgelehnt:
  * das Feld wird dort gar nicht angezeigt, ein Wert kann also nur aus
  * einer manipulierten Anfrage stammen — und für einen Inlandsumsatz
  * ändert er ohnehin nichts. Ein Fehler wäre eine Meldung zu einem Feld,

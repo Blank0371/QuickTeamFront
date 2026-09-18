@@ -52,10 +52,12 @@ import type { Dictionary } from "@/i18n/de";
  *  Die UID hängt am Rechnungsland
  * ─────────────────────────────────────────────────────────────────────
  *
- * Unverändert zum bestehenden Steuerablauf: nur für `AT`, freiwillig.
- * Sie entscheidet bei Stripe Tax über das Reverse-Charge-Verfahren; für
- * einen deutschen Inlandsumsatz ändert sie nichts, deshalb gibt es dort
- * kein Feld. Weil das Land hier **wählbar** ist, erscheint und
+ * Nur für `AT`, und dort seit dem 2026-09-18 **Pflicht** (QuickTeam
+ * verkauft nur an Unternehmer — siehe `rechnungSchema`). Sie entscheidet
+ * bei Stripe Tax über das Reverse-Charge-Verfahren; für einen deutschen
+ * Inlandsumsatz ändert sie nichts, deshalb gibt es dort kein Feld —
+ * ein trotzdem hereingereichter Wert wird verworfen. Weil das Land hier
+ * **wählbar** ist, erscheint und
  * verschwindet das Feld mit der Auswahl — die Server Action verwirft
  * einen Wert, der trotzdem zu einem deutschen Rechnungsland hereinkommt,
  * und **entfernt eine bereits hinterlegte UID**, sobald das
@@ -197,7 +199,7 @@ export function RechnungsFelder({
           name="uid"
           label={texte.uidLabel}
           maxLength={20}
-          required={false}
+          required={true}
           wert={werte.uid}
           beiEingabe={(wert) => beiAenderung("uid", wert)}
           fehler={felder["uid"]}

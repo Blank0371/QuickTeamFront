@@ -435,9 +435,9 @@ export const de = {
         "Gilt nur für die Rechnung. Der Standort deines Betriebs und die Arbeitszeitregeln deines Dienstplans ändern sich dadurch nicht.",
       uidWarnung:
         "Mit einem Rechnungsland ausserhalb Österreichs wird deine hinterlegte UID-Nummer entfernt — sie gilt nur für österreichische Rechnungsempfänger. Das kann die Umsatzsteuer künftiger Abrechnungen ändern. Bereits gestellte Rechnungen bleiben davon unberührt.",
-      uidLabel: "UID-Nummer (freiwillig)",
+      uidLabel: "UID-Nummer",
       uidHinweis:
-        "Mit gültiger UID rechnet Stripe im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern.",
+        "Für eine österreichische Rechnung erforderlich: Stripe rechnet damit im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern.",
     },
     team: {
       titel: "Wer arbeitet bei dir",
@@ -642,6 +642,8 @@ export const de = {
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
     "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
+    "v.uid.pflicht":
+      "Für ein kostenpflichtiges Abo mit österreichischer Rechnung ist eine gültige UID-Nummer erforderlich.",
     "v.promo.form": "Ein Promo-Code besteht aus Buchstaben, Ziffern, - und _, höchstens {max} Zeichen.",
     "v.promo.unbekannt": "Diesen Promo-Code kennen wir nicht. Prüf die Schreibweise — oder lass das Feld leer.",
     "v.plz.ziffern": "Die Postleitzahl besteht nur aus Ziffern.",

@@ -477,9 +477,15 @@ export async function speichereRechnungAmKunden(
  *
  * Verlangt werden genau die Felder, die § 14 Abs. 4 UStG für eine
  * Rechnung an einen Unternehmer braucht und die wir nicht selbst
- * kennen: Firma, Straße, Postleitzahl, Ort, Land. **Die UID gehört
- * nicht dazu** — sie ist freiwillig und nur für österreichische
- * Betriebe überhaupt von Belang.
+ * kennen: Firma, Straße, Postleitzahl, Ort, Land. **Für österreichische
+ * Rechnungsempfänger zählt seit dem 2026-09-18 die UID dazu**
+ * (Produktentscheidung — QuickTeam verkauft nur an Unternehmer; siehe
+ * `rechnungSchema`). Dieselbe Prüfung läuft schon beim Speichern über
+ * `pruefeRechnung`, aber sie wird hier wiederholt, weil dieser Riegel
+ * auch auf dem 3DS-Rückweg und bei direktem Aufruf von
+ * `zahlungsmittelUebernehmen()` greift, wo kein Formularinhalt mehr
+ * existiert — und weil eine Anschrift auch über das Kundenportal ohne
+ * UID an den Kunden geraten kann. Für Deutschland ist die UID belanglos.
  *
  * Ein Fehlschlag beim Abruf gilt als „nicht vollständig". Das ist die
  * sichere Richtung: lieber eine Aktivierung zu viel verweigern als eine
@@ -491,13 +497,23 @@ export async function rechnungVollstaendig(kundeId: string): Promise<boolean> {
     if (kunde.deleted) return false;
 
     const a = kunde.address;
-    return Boolean(
+    const anschriftDa = Boolean(
       kunde.name?.trim() &&
         a?.line1?.trim() &&
         a?.postal_code?.trim() &&
         a?.city?.trim() &&
         a?.country?.trim(),
     );
+    if (!anschriftDa) return false;
+
+    /*
+     * Österreichischer Rechnungsempfänger ohne UID: unvollständig. Der
+     * Wert steht als `eu_vat`-Steuer-ID am Kunden (`setzeUid`), nicht in
+     * der Adresse — deshalb ein eigener Abruf.
+     */
+    if (a?.country === "AT" && !(await holeUid(kundeId))) return false;
+
+    return true;
   } catch (ursache) {
     const text = ursache instanceof Error ? ursache.message : String(ursache);
     console.error(`[stripe] Rechnungsangaben von ${kundeId} nicht prüfbar: ${text}`);
