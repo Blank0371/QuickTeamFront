@@ -18,6 +18,7 @@ import {
   PROMO_METADATEN_SCHLUESSEL,
   promoCodeAusMetadaten,
   pruefePromoCode,
+  type PromoPruefung,
   schreibePromoCode,
 } from "@/lib/promo-code";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
@@ -43,6 +44,7 @@ import { createClient } from "@/lib/supabase/server";
 import { holeAuthTexte, holeValidierung } from "@/i18n/server";
 import {
   bestaetigungSchema,
+  feldSchemata,
   passwortVergessenSchema,
   registrierungSchema,
 } from "@/lib/validierung";
@@ -367,6 +369,28 @@ export async function registrieren(
    * fuehrt auf einem zweiten Geraet an dieselbe Stelle.
    */
   redirect(`/einrichtung/konto?email=${encodeURIComponent(daten.email)}`);
+}
+
+/**
+ * Prüft einen einzelnen Promo-Code für den „Prüfen"-Knopf in Abschnitt A.
+ *
+ * Dieselbe Prüfung wie in `registrieren()`, nur einzeln und schon vor dem
+ * Absenden aufrufbar: die Client-Insel ruft sie direkt als Server-Funktion,
+ * damit ein Vertipper am Feld auffällt, solange die Person noch tippt.
+ * Der Wert läuft durch dasselbe `feldSchemata.promo_code` (Leerraum raus,
+ * Grossschreibung), damit „partner10" und „PARTNER10" gleich behandelt
+ * werden wie beim eigentlichen Anlegen.
+ *
+ * Ein leeres oder formwidriges Feld ist keine Prüfung wert — das Feld ist
+ * freiwillig, und `nicht-pruefbar` sperrt bewusst nicht (siehe
+ * `pruefePromoCode`).
+ */
+export async function promoCodePruefen(code: string): Promise<PromoPruefung> {
+  const geprueft = feldSchemata.promo_code.safeParse(code);
+  if (!geprueft.success || geprueft.data === "") return "nicht-pruefbar";
+
+  const supabase = await createClient();
+  return pruefePromoCode(supabase, geprueft.data);
 }
 
 /* ------------------------------------------------------------------ */

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AuthRahmen } from "@/components/auth/auth-rahmen";
 import { SessionHinweis } from "@/components/auth/session-hinweis";
 import { FormMeldung } from "@/components/formular/felder";
+import { holeTexte } from "@/i18n/server";
 import { einzelwert, meldungFuer } from "@/lib/auth-meldungen";
 
 import { LoginFormular } from "./login-formular";
@@ -22,22 +23,23 @@ export default async function LoginSeite({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const fehler = meldungFuer(einzelwert(params["fehler"]));
-  const meldung = meldungFuer(einzelwert(params["meldung"]));
+  const t = await holeTexte();
+  const fehler = meldungFuer(einzelwert(params["fehler"]), t.login.meldungen);
+  const meldung = meldungFuer(einzelwert(params["meldung"]), t.login.meldungen);
 
   return (
     <AuthRahmen
-      kicker="Anmelden"
-      titel="Willkommen zurück"
-      lead="E-Mail-Adresse und Passwort eingeben — danach geht es direkt in die Planung deines Betriebs."
+      kicker={t.login.kicker}
+      titel={t.login.titel}
+      lead={t.login.lead}
       fuss={
         <p>
-          Noch keinen Betrieb?{" "}
+          {t.login.fussFrage}{" "}
           <Link
             href="/registrieren"
             className="font-medium text-signal underline underline-offset-4 hover:text-signal-hover"
           >
-            Jetzt anlegen
+            {t.login.fussLink}
           </Link>
         </p>
       }
@@ -56,14 +58,14 @@ export default async function LoginSeite({
         </div>
       ) : null}
 
-      <LoginFormular />
+      <LoginFormular texte={t.login} />
 
       <p className="mt-6 border-t border-line pt-5 text-sm text-muted">
         <Link
           href="/passwort-vergessen"
           className="font-medium text-signal underline underline-offset-4 hover:text-signal-hover"
         >
-          Passwort vergessen?
+          {t.login.passwortVergessen}
         </Link>
       </p>
     </AuthRahmen>

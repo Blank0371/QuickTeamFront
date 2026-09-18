@@ -2,21 +2,17 @@
  * Meldungen, die per Query-Parameter von einer Weiterleitung übergeben
  * werden.
  *
- * Der Parameter wird nie direkt angezeigt, sondern nur als Schlüssel
- * benutzt. Sonst könnte man über einen präparierten Link beliebigen Text
- * auf die Seite schreiben.
+ * Der Parameter wird nie direkt angezeigt, sondern nur als Schlüssel in
+ * die übergebene, sprachabhängige Tabelle (`t.login.meldungen`)
+ * nachgeschlagen. Sonst könnte man über einen präparierten Link
+ * beliebigen Text auf die Seite schreiben.
  */
-const MELDUNGEN: Record<string, string> = {
-  "konto-geloescht": "Dein Konto wurde gelöscht.",
-  "abo-kuendigung-offen": "Mindestens ein Abonnement konnte anschließend nicht gekündigt werden. Bitte kontaktiere umgehend blanktrading@web.de, damit keine weiteren Abbuchungen erfolgen.",
-  abgemeldet: "Du bist abgemeldet.",
-  "app-url-fehlt":
-    "Dein Konto ist bereit, aber das Ziel der Weiterleitung ist nicht konfiguriert (NEXT_PUBLIC_APP_URL). Meld dich beim Support.",
-};
-
-export function meldungFuer(schluessel: string | undefined): string | null {
+export function meldungFuer(
+  schluessel: string | undefined,
+  meldungen: Record<string, string>,
+): string | null {
   if (!schluessel) return null;
-  return MELDUNGEN[schluessel] ?? null;
+  return meldungen[schluessel] ?? null;
 }
 
 /** Query-Parameter kommen als string | string[] | undefined. */

@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
 import type { Rechnungsangaben } from "@/lib/betrieb";
-import { plaene, TESTPHASE_TAGE, type PlanId } from "@/lib/site";
+import { plaene, TESTPHASE_TAGE, type Abrechnung, type PlanId } from "@/lib/site";
 import type { LandCode } from "@/lib/validierung";
 import type { RechnungsProfil } from "@/lib/rechnung-pruefung";
 import { verlangeSoftLaunchFrei } from "@/lib/soft-launch-riegel";
@@ -38,29 +38,36 @@ export class KonfigurationsFehler extends Error {
 }
 
 /**
- * Statische Zugriffe, kein dynamischer Index über den Plan-Namen — sonst
- * kann Next beim Bündeln nichts einsetzen und alle drei Werte sind zur
+ * Statische Zugriffe, kein dynamischer Index über Plan-Namen oder Intervall
+ * — sonst kann Next beim Bündeln nichts einsetzen und die Werte sind zur
  * Laufzeit leer. Die Aufzählung ist über `PlanId` vollständig; kommt ein
  * vierter Plan dazu, meldet sich der Compiler hier.
+ *
+ * Ein Plan hat zwei Preise: die Basisvariable ist der Monatspreis, die
+ * `_JAHR`-Variante der Jahrespreis (Jahresabo seit dem 2026-09-17). Das
+ * Intervall ist damit eine zweite Dimension neben dem Plan und **keine**
+ * eigene Plan-ID — siehe `Abrechnung` in `src/lib/site.ts`.
  */
-function priceIdAusEnv(plan: PlanId): string {
+function priceIdAusEnv(plan: PlanId, intervall: Abrechnung): string {
+  const jahr = intervall === "jahr";
   switch (plan) {
     case "basic":
-      return process.env.STRIPE_PRICE_BASIC?.trim() ?? "";
+      return (jahr ? process.env.STRIPE_PRICE_BASIC_JAHR : process.env.STRIPE_PRICE_BASIC)?.trim() ?? "";
     case "pro":
-      return process.env.STRIPE_PRICE_PRO?.trim() ?? "";
+      return (jahr ? process.env.STRIPE_PRICE_PRO_JAHR : process.env.STRIPE_PRICE_PRO)?.trim() ?? "";
     case "business":
-      return process.env.STRIPE_PRICE_BUSINESS?.trim() ?? "";
+      return (jahr ? process.env.STRIPE_PRICE_BUSINESS_JAHR : process.env.STRIPE_PRICE_BUSINESS)?.trim() ?? "";
   }
 }
 
 /** Wirft mit dem Namen der fehlenden Variablen, nicht mit „undefined". */
-export function priceIdFuer(plan: PlanId): string {
-  const priceId = priceIdAusEnv(plan);
+export function priceIdFuer(plan: PlanId, intervall: Abrechnung): string {
+  const priceId = priceIdAusEnv(plan, intervall);
   if (priceId.length === 0) {
+    const variable = `STRIPE_PRICE_${plan.toUpperCase()}${intervall === "jahr" ? "_JAHR" : ""}`;
     throw new KonfigurationsFehler(
-      `Für den Plan "${plan}" ist keine Stripe-Price-ID hinterlegt. ` +
-        `Erwartet wird STRIPE_PRICE_${plan.toUpperCase()} in der Umgebung.`,
+      `Für den Plan "${plan}" (${intervall === "jahr" ? "jährlich" : "monatlich"}) ist keine ` +
+        `Stripe-Price-ID hinterlegt. Erwartet wird ${variable} in der Umgebung.`,
     );
   }
   return priceId;
@@ -75,14 +82,21 @@ export function priceIdFuer(plan: PlanId): string {
  * Wer im Stripe-Dashboard den Posten ändert, ändert damit auch das, was
  * bei uns steht, und nicht nur die Hälfte davon.
  *
- * `null`, wenn der Preis keiner der drei ist. Das ist kein Fehler,
+ * `null`, wenn der Preis keiner der bekannten ist. Das ist kein Fehler,
  * sondern eine Beobachtung: dann gehört das Abo nicht zu unseren Plänen,
  * und wir schreiben lieber nichts als etwas Geratenes.
+ *
+ * Beide Intervalle desselben Plans führen auf **dieselbe** Plan-ID —
+ * `betrieb_abonnements.plan` kennt kein Intervall, das steht am Price. Ein
+ * Betrieb, der von monatlich auf jährlich wechselt, bleibt also `pro`, und
+ * der Webhook schreibt nichts Falsches.
  */
 export function planAusPriceId(priceId: string | null | undefined): PlanId | null {
   if (!priceId) return null;
   for (const plan of plaene) {
-    if (priceIdAusEnv(plan.id) === priceId) return plan.id;
+    if (priceIdAusEnv(plan.id, "monat") === priceId || priceIdAusEnv(plan.id, "jahr") === priceId) {
+      return plan.id;
+    }
   }
   return null;
 }
@@ -758,18 +772,21 @@ export async function aboLageBeiStripe({
 export async function erstelleAbo({
   betriebId,
   plan,
+  intervall,
   email,
   kundeId = null,
   rechnung,
 }: {
   betriebId: string;
   plan: PlanId;
+  /** Monatlich oder jährlich — bestimmt den Stripe-Price (siehe `priceIdFuer`). */
+  intervall: Abrechnung;
   email: string;
   kundeId?: string | null;
   rechnung: Rechnungsangaben | null;
 }): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
-  const preis = priceIdFuer(plan);
+  const preis = priceIdFuer(plan, intervall);
 
   const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
 
@@ -804,18 +821,33 @@ export async function erstelleAbo({
       metadata: { [BETRIEB_SCHLUESSEL]: betriebId },
     },
     /*
-     * Plan und Anzahl der bisherigen Abos stehen im Schlüssel, beides mit
-     * Absicht. Der Schlüssel soll genau den Doppelklick abfangen — zwei
-     * Anfragen, die dieselbe Liste gesehen haben — und sonst nichts:
+     * Plan, Intervall und Anzahl der bisherigen Abos stehen im Schlüssel,
+     * alles mit Absicht. Der Schlüssel soll genau den Doppelklick abfangen
+     * — zwei Anfragen, die dieselbe Liste gesehen haben — und sonst nichts:
      *
      *   - ohne den Plan liefe ein späterer Wechsel auf denselben
      *     Schlüssel, und Stripe würfe, weil die Parameter nicht passen
+     *   - ohne das Intervall bekäme jemand, der monatlich anlegt und
+     *     gleich darauf auf jährlich umstellt, mit demselben Schlüssel das
+     *     monatliche Abo zurück — die andere Preis-ID würde ignoriert
      *   - ohne die Anzahl bekäme ein Betrieb, der binnen 24 Stunden
      *     kündigt und neu abschliesst, von Stripe das alte, gekündigte
      *     Abo als Antwort zurück — und es entstünde gar keins
      */
-    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}:${anzahl}` },
+    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}:${intervall}:${anzahl}` },
   );
+}
+
+/**
+ * Das Abrechnungsintervall eines bestehenden Abos als unser `Abrechnung`.
+ *
+ * Damit ein Wechsel, für den keine neue Intervall-Wahl vorliegt, das Abo auf
+ * seinem bisherigen Intervall lässt, statt es auf den monatlichen Standard
+ * zurückzustellen. Alles ausser einem ausdrücklichen Jahres-Price gilt als
+ * monatlich — dieselbe sichere Richtung wie in `alsAbrechnung`.
+ */
+export function intervallVonAbo(abo: Stripe.Subscription): Abrechnung {
+  return abo.items.data[0]?.price.recurring?.interval === "year" ? "jahr" : "monat";
 }
 
 /**
@@ -833,9 +865,10 @@ export async function erstelleAbo({
 export async function wechslePlan(
   abo: Stripe.Subscription,
   plan: PlanId,
+  intervall: Abrechnung,
 ): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
-  const preis = priceIdFuer(plan);
+  const preis = priceIdFuer(plan, intervall);
 
   const posten = abo.items.data[0];
   if (!posten) {

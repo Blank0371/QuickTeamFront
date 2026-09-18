@@ -11,6 +11,8 @@ import {
   type RechnungsWerte,
 } from "@/components/einrichtung/rechnungs-felder";
 import { useKlientTexte } from "@/i18n/sprach-provider";
+import type { Dictionary } from "@/i18n/de";
+import type { Locale } from "@/i18n/config";
 import { rechnungSchema } from "@/lib/validierung";
 import { feldFehler } from "@/lib/formular";
 
@@ -116,13 +118,24 @@ type Abschluss = {
  */
 type Rueckkehr = { rueckkehrPfad?: string };
 
+/** Übersetzte Strings dieses Schritts, vom Server hereingereicht. */
+type StepTexte = {
+  texte: Dictionary["stepper"]["zahlungsFormular"];
+  rechnungTexte: Dictionary["stepper"]["rechnung"];
+  laender: readonly { code: string; name: string }[];
+  locale: Locale;
+};
+
 /** Innenteil — muss innerhalb von `<Elements>` stehen, sonst greifen die Hooks nicht. */
 function Formular({
   zusammenfassung = [],
-  knopfText = "Zahlungsmittel hinterlegen",
+  knopfText,
   rechnung,
   rueckkehrPfad,
-}: Abschluss & Rueckkehr & { rechnung: RechnungsWerte }) {
+  texte,
+  rechnungTexte,
+  laender,
+}: Abschluss & Rueckkehr & { rechnung: RechnungsWerte } & Omit<StepTexte, "locale">) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -175,7 +188,7 @@ function Formular({
       const geprueft = rechnungSchema.safeParse(werte);
       if (!geprueft.success) {
         setFelder(feldFehler(geprueft.error, validierung));
-        setFehler("Bitte vervollständige die Rechnungsangaben.");
+        setFehler(texte.rechnungUnvollstaendig);
         setLaeuft(false);
         return;
       }
@@ -247,13 +260,13 @@ function Formular({
       });
 
       if (error) {
-        setFehler(error.message ?? "Die Zahlungsmethode liess sich nicht bestätigen.");
+        setFehler(error.message ?? texte.bestaetigungFehlgeschlagen);
         setLaeuft(false);
         return;
       }
 
       if (!setupIntent) {
-        setFehler("Stripe hat kein Ergebnis zurückgemeldet. Versuch es noch einmal.");
+        setFehler(texte.keinErgebnis);
         setLaeuft(false);
         return;
       }
@@ -274,7 +287,7 @@ function Formular({
 
       router.push("/einrichtung");
     } catch {
-      setFehler("Die Verbindung wurde unterbrochen. Bitte versuch es erneut; prüfe bei einer bereits bestätigten Zahlung zunächst den Abostatus.");
+      setFehler(texte.verbindungUnterbrochen);
     } finally {
       setLaeuft(false);
     }
@@ -289,6 +302,8 @@ function Formular({
         beiAenderung={aendere}
         felder={felder}
         uidVorhanden={uidVorhanden}
+        texte={rechnungTexte}
+        laender={laender}
       />
 
       <PaymentElement />
@@ -311,7 +326,7 @@ function Formular({
         aria-describedby={zusammenfassung.length > 0 ? "zahlung-konditionen" : undefined}
         className="w-full rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {laeuft ? "Wird hinterlegt …" : knopfText}
+        {laeuft ? texte.wirdHinterlegt : (knopfText ?? texte.knopfStandard)}
       </button>
     </form>
   );
@@ -323,7 +338,11 @@ export function ZahlungsFormular({
   knopfText,
   rechnung,
   rueckkehrPfad,
-}: { clientSecret: string; rechnung: RechnungsWerte } & Abschluss & Rueckkehr) {
+  texte,
+  rechnungTexte,
+  laender,
+  locale,
+}: { clientSecret: string; rechnung: RechnungsWerte } & Abschluss & Rueckkehr & StepTexte) {
   /*
    * Das Erscheinungsbild entsteht erst im Browser — `getComputedStyle`
    * gibt es auf dem Server nicht. Bis dahin rendert `<Elements>` nichts,
@@ -338,18 +357,21 @@ export function ZahlungsFormular({
   if (!aussehen) {
     return (
       <p className="text-sm text-muted" role="status">
-        Zahlungsformular wird geladen …
+        {texte.wirdGeladen}
       </p>
     );
   }
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret, appearance: aussehen, locale: "de" }}>
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: aussehen, locale }}>
       <Formular
         zusammenfassung={zusammenfassung}
         knopfText={knopfText}
         rechnung={rechnung}
         rueckkehrPfad={rueckkehrPfad}
+        texte={texte}
+        rechnungTexte={rechnungTexte}
+        laender={laender}
       />
     </Elements>
   );

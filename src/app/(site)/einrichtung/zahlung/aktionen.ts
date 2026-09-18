@@ -4,15 +4,18 @@ import { redirect } from "next/navigation";
 
 import { holeValidierung } from "@/i18n/server";
 import { holeAbo } from "@/lib/abo";
+import { leseAbrechnung, vergissAbrechnung } from "@/lib/abrechnung-merker";
 import { holeChefBetriebId, holeRechnungsangaben, type Rechnungsangaben } from "@/lib/betrieb";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import {
   erstelleAbo,
   holeAboFuerBetrieb,
   holeOderErstelleKunde,
+  intervallVonAbo,
   setzeUid,
   wechslePlan,
 } from "@/lib/stripe";
+import { ABRECHNUNG_STANDARD } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { planOderBasic, uidSchema } from "@/lib/validierung";
 
@@ -105,6 +108,21 @@ export async function planWaehlen(
   const ueberspringen = formData.get("absicht") === "ueberspringen";
 
   /*
+   * Monatlich oder jährlich hat der Besucher auf der Preisseite gewählt;
+   * die Wahl liegt seit dem Klick auf „Kostenlos testen" im Cookie
+   * (`abrechnung-merker.ts`). Schritt 2 zeigt dafür keinen eigenen
+   * Schalter — die gewählte Abrechnung steht als Zeile in `plan-auswahl`
+   * und, sobald das Abo existiert, in der Zahlungs-Zusammenfassung aus dem
+   * echten Stripe-Price.
+   *
+   * `null` heisst „keine Wahl im Cookie": beim neuen Abo gilt dann der
+   * monatliche Standard, bei einem bestehenden bleibt dessen Intervall
+   * (siehe unten) — ein Planwechsel soll ein Jahresabo nicht heimlich auf
+   * monatlich zurückstellen.
+   */
+  const gewaehlt = await leseAbrechnung();
+
+  /*
    * Die UID wird nur für österreichische Betriebe angenommen — dasselbe
    * Kriterium, nach dem die Seite das Feld zeigt. Ein hereingereichter
    * Wert eines deutschen Betriebs wird nicht geprüft, sondern ignoriert.
@@ -140,10 +158,25 @@ export async function planWaehlen(
      */
     const abo =
       vorhanden && vorhanden.status !== "incomplete"
-        ? await wechslePlan(vorhanden, plan)
-        : await erstelleAbo({ betriebId, plan, email, kundeId, rechnung });
+        ? await wechslePlan(vorhanden, plan, gewaehlt ?? intervallVonAbo(vorhanden))
+        : await erstelleAbo({
+            betriebId,
+            plan,
+            intervall: gewaehlt ?? ABRECHNUNG_STANDARD,
+            email,
+            kundeId,
+            rechnung,
+          });
 
     sofortFaellig = abo.status === "incomplete";
+
+    /*
+     * Das Abo trägt das Intervall jetzt selbst (am Stripe-Price) — der
+     * Merker hat ausgedient. Erst hier gelöscht, nicht schon beim Lesen:
+     * scheitert das Anlegen und der Betrieb versucht es erneut, soll die
+     * einmal getroffene Wahl noch stehen.
+     */
+    await vergissAbrechnung();
   } catch (ursache) {
     protokolliere("planWaehlen", ursache);
     return fehler(

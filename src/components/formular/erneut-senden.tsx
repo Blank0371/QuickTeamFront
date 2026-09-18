@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import type { Dictionary } from "@/i18n/de";
+
 /**
  * Supabase weist einen zweiten Versand an dieselbe Adresse innerhalb
  * dieser Frist ab („Minimum interval" / `mailer_max_frequency`, Standard
@@ -22,7 +24,14 @@ const SPERRE_SEKUNDEN = 60;
  * Hydrieren einen Mismatch. Heruntergezählt wird erst im Effekt, also
  * ausschliesslich im Browser.
  */
-export function ErneutSendenButton({ neuGesendet }: { neuGesendet: boolean }) {
+export function ErneutSendenButton({
+  neuGesendet,
+  texte,
+}: {
+  neuGesendet: boolean;
+  /** Vom Server-Elternteil in der Sprache der Anfrage hereingereicht. */
+  texte: Dictionary["codeVersand"];
+}) {
   const [rest, setRest] = useState(SPERRE_SEKUNDEN);
   const { pending } = useFormStatus();
   const warPending = useRef(false);
@@ -49,7 +58,7 @@ export function ErneutSendenButton({ neuGesendet }: { neuGesendet: boolean }) {
 
   return (
     <div className="border-t border-line pt-5">
-      <p className="mb-3 text-sm text-muted">Nichts angekommen? Sieh im Spam-Ordner nach.</p>
+      <p className="mb-3 text-sm text-muted">{texte.spamHinweis}</p>
 
       <button
         type="submit"
@@ -60,7 +69,7 @@ export function ErneutSendenButton({ neuGesendet }: { neuGesendet: boolean }) {
         aria-describedby="erneut-frist"
         className="w-full rounded-blk border border-line-strong px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
       >
-        Code erneut senden
+        {texte.erneutSenden}
       </button>
 
       {/*
@@ -70,8 +79,8 @@ export function ErneutSendenButton({ neuGesendet }: { neuGesendet: boolean }) {
        */}
       <p id="erneut-frist" className="mt-2 text-xs text-muted">
         {rest > 0
-          ? `Aus Sicherheitsgründen erst in ${rest} Sekunden wieder möglich.`
-          : "Du kannst dir jetzt einen neuen Code schicken lassen."}
+          ? texte.fristAktiv.replace("{n}", String(rest))
+          : texte.fristBereit}
       </p>
     </div>
   );

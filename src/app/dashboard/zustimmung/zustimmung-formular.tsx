@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { AbsendenButton } from "@/components/formular/absenden-button";
 import { FormMeldung } from "@/components/formular/felder";
 import { ZustimmungFeld } from "@/components/formular/zustimmung-feld";
+import type { Dictionary } from "@/i18n/de";
 import { ZIEL_PARAMETER } from "@/lib/dashboard/pfad";
 import { leererZustand } from "@/lib/formular";
 
@@ -22,7 +23,14 @@ import { zustimmen } from "./aktionen";
  * automatisch, und der Wert wird serverseitig ohnehin durch
  * `sicheresZiel()` gefiltert.
  */
-export function ZustimmungFormular({ ziel }: { ziel: string }) {
+export function ZustimmungFormular({
+  ziel,
+  zustimmungTexte,
+}: {
+  ziel: string;
+  /** Der Zustimmungssatz in der Sprache der Anfrage, vom Server-Elternteil. */
+  zustimmungTexte: Dictionary["zustimmungFeld"];
+}) {
   const [zustand, aktion] = useActionState(zustimmen, leererZustand);
 
   return (
@@ -33,7 +41,7 @@ export function ZustimmungFormular({ ziel }: { ziel: string }) {
 
       <input type="hidden" name={ZIEL_PARAMETER} value={ziel} />
 
-      <ZustimmungFeld fehler={zustand.felder?.["zustimmung"]} />
+      <ZustimmungFeld fehler={zustand.felder?.["zustimmung"]} texte={zustimmungTexte} />
 
       <div>
         <AbsendenButton laufend="Wird gespeichert …">

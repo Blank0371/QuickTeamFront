@@ -41,7 +41,7 @@ const PUNKTE = [
  * mehr.
  */
 const AUTH_PUNKTE = [
-  { href: "/registrieren", label: "Kostenlos testen", stark: true },
+  { href: "/registrieren", label: "Registrieren", stark: true },
   { href: "/login", label: "Anmelden", stark: false },
 ] as const;
 

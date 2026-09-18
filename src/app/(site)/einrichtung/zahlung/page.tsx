@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { SchrittRahmen } from "@/components/einrichtung/schritt-rahmen";
 import { FormMeldung } from "@/components/formular/felder";
 import { holeAbo } from "@/lib/abo";
+import { leseAbrechnung } from "@/lib/abrechnung-merker";
 import { holeVorbelegung } from "@/lib/rechnung";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { holeRechnungsangaben } from "@/lib/betrieb";
@@ -23,14 +24,16 @@ import {
   holeAboFuerBetrieb,
   holeAboVerlauf,
   holeUid,
+  intervallVonAbo,
 } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { planOderBasic } from "@/lib/validierung";
+import { LAENDER, planOderBasic } from "@/lib/validierung";
 
 import { zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
 import { PlanAuswahl } from "./plan-auswahl";
 import { ZahlungsFormular } from "@/components/einrichtung/zahlungs-formular";
 import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
 
 export const metadata: Metadata = {
   title: "Plan und Zahlung",
@@ -60,6 +63,10 @@ export default async function ZahlungSeite({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const t = await holeTexte();
+  const laender = LAENDER.map((land) => ({
+    code: land.code,
+    name: land.code === "AT" ? t.auswahl.landAT : t.auswahl.landDE,
+  }));
   const stand = await betreteSchritt("zahlung");
   if (stand === null) redirect("/einrichtung/konto");
 
@@ -129,18 +136,20 @@ export default async function ZahlungSeite({
      */
     const sofort = stripeAbo.status === "incomplete";
 
+    const sz = t.stepper.zahlung;
+    const preisTeil = preis ? `, ${preis}` : "";
+    const vorlage = konditionen.testphaseEnde
+      ? sz.leadTestphase.replace("{datum}", formatiereDatum(konditionen.testphaseEnde))
+      : sofort
+        ? sz.leadSofort
+        : sz.leadNur;
+
     return (
       <SchrittRahmen
         schritt="zahlung"
         stand={stand}
-        titel="Zahlungsmittel hinterlegen"
-        lead={
-          konditionen.testphaseEnde
-            ? `Plan ${planName}${preis ? `, ${preis}` : ""}. Jetzt wird nichts abgebucht — die Testphase läuft bis ${formatiereDatum(konditionen.testphaseEnde)}.`
-            : sofort
-              ? `Plan ${planName}${preis ? `, ${preis}` : ""}. Mit dem Hinterlegen beginnt dein Abo, und der erste Zeitraum wird abgebucht.`
-              : `Plan ${planName}${preis ? `, ${preis}` : ""}.`
-        }
+        titel={sz.titelMittel}
+        lead={vorlage.replace("{plan}", planName).replace("{preis}", preisTeil)}
       >
         {uebernahmeFehler ? (
           <div className="mb-6">
@@ -155,7 +164,11 @@ export default async function ZahlungSeite({
               ? zusammenfassungNeuabschluss(konditionen)
               : zusammenfassungSchritt(konditionen)
           }
-          knopfText={sofort ? "Kostenpflichtig abonnieren" : undefined}
+          knopfText={sofort ? sz.knopfSofort : undefined}
+          texte={t.stepper.zahlungsFormular}
+          rechnungTexte={t.stepper.rechnung}
+          laender={laender}
+          locale={await leseSprache()}
           rechnung={await holeVorbelegung(
             rechnung?.name ?? null,
             rechnung?.land ?? null,
@@ -168,9 +181,9 @@ export default async function ZahlungSeite({
             href="/einrichtung/zahlung"
             className="font-medium text-signal underline underline-offset-4 hover:text-signal-hover"
           >
-            Zurück zur Plan-Auswahl
+            {sz.zurueckLink}
           </Link>
-          {" "}— dort kannst du den Schritt auch überspringen.
+          {sz.zurueckRest}
         </p>
       </SchrittRahmen>
     );
@@ -214,11 +227,26 @@ export default async function ZahlungSeite({
   const ohneTestphase =
     verlauf.anzahl > 0 && (verlauf.lebend === null || verlauf.lebend.status === "incomplete");
 
+  /*
+   * Monatlich oder jährlich hat der Besucher auf der Preisseite gewählt
+   * (`abrechnung-merker.ts`). Schritt 2 zeigt keinen eigenen Schalter,
+   * sondern nur den passenden Preis und eine lesende Zeile — die Wahl selbst
+   * fällt auf `/preise`. Ohne Cookie zählt das Intervall eines schon
+   * bestehenden Abos, sonst monatlich — dieselbe Rangfolge wie in
+   * `planWaehlen`, damit Anzeige und späterer Abschluss übereinstimmen.
+   */
+  const intervall =
+    (await leseAbrechnung()) ??
+    (verlauf.lebend ? intervallVonAbo(verlauf.lebend) : "monat");
+  const jaehrlich = intervall === "jahr";
+
+  const sz = t.stepper.zahlung;
+
   return (
     <SchrittRahmen
       schritt="zahlung"
       stand={stand}
-      titel="Plan wählen"
+      titel={sz.titelPlan}
       lead={
         /*
          * Die vierzehn Tage gelten ab der ersten Planwahl, nicht ab jedem
@@ -226,19 +254,24 @@ export default async function ZahlungSeite({
          * nicht (`wechslePlan` lässt `trial_end` unberührt).
          */
         ohneTestphase
-          ? "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits. Im nächsten Schritt hinterlegst du ein Zahlungsmittel, und dein Abo beginnt sofort."
+          ? sz.leadOhneTestphase
           : verlauf.lebend
-            ? "Deine Testphase läuft bereits seit der ersten Planwahl; ein Planwechsel verlängert sie nicht. Das Zahlungsmittel kannst du jetzt hinterlegen oder später nachtragen."
-            : `${TESTPHASE_TAGE} Tage kostenlos, danach monatlich. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.`
+            ? sz.leadLebend
+            : sz.leadNeu
+                .replace("{tage}", String(TESTPHASE_TAGE))
+                .replace("{intervall}", jaehrlich ? sz.jaehrlich : sz.monatlich)
       }
     >
       <PlanAuswahl
         aktuell={gewaehlt}
+        intervall={intervall}
         grenzen={t.planGrenzen}
         proMonat={t.landing.proMonat}
+        proJahr={t.landing.proJahr}
         ustHinweis={t.landing.preiseUstAlle}
         uidFeld={uidFeld}
         ohneTestphase={ohneTestphase}
+        texte={sz}
       />
     </SchrittRahmen>
   );

@@ -6,12 +6,20 @@ import { AbsendenButton } from "@/components/formular/absenden-button";
 import { ErneutSendenButton } from "@/components/formular/erneut-senden";
 import { CodeFeld, FormMeldung, TextFeld } from "@/components/formular/felder";
 import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
+import type { Dictionary } from "@/i18n/de";
 import { leererZustand } from "@/lib/formular";
 import { CODE_LAENGE } from "@/lib/validierung";
 
 import { passwortSetzen } from "./aktionen";
 
-export function PasswortNeuFormular({ email }: { email: string | null }) {
+export function PasswortNeuFormular({
+  email,
+  versandTexte,
+}: {
+  email: string | null;
+  /** „Code erneut senden" in der Sprache der Anfrage, vom Server-Elternteil. */
+  versandTexte: Dictionary["codeVersand"];
+}) {
   const [zustand, aktion] = useActionState(passwortSetzen, leererZustand);
 
   /*
@@ -71,7 +79,7 @@ export function PasswortNeuFormular({ email }: { email: string | null }) {
 
       <AbsendenButton laufend="Wird gespeichert …">Passwort speichern</AbsendenButton>
 
-      <ErneutSendenButton neuGesendet={zustand.status === "erfolg"} />
+      <ErneutSendenButton neuGesendet={zustand.status === "erfolg"} texte={versandTexte} />
     </form>
   );
 }

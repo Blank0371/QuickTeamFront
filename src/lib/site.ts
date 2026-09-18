@@ -51,17 +51,25 @@ export const siteName = "QuickTeam";
  * reiner Anzeigetext und darf sich ändern, ohne dass die Datenbank etwas
  * davon merkt. Genau deshalb sind es zwei Felder und nicht eins.
  *
- * `preis` ist der Monatsbetrag in Euro, festgelegt am 2026-08-23. Dieser
- * Wert wird nur **angezeigt** — abgerechnet wird nach dem Stripe-Preis
- * hinter der jeweiligen `STRIPE_PRICE_*`-Variablen. Nichts im Code hält
- * die beiden synchron, und ein Auseinanderlaufen fällt niemandem auf,
- * bevor eine Rechnung mit dem falschen Betrag rausgeht.
+ * `preis` ist der Monatsbetrag, `preisJahr` der Jahresbetrag in Euro
+ * (Preiserhöhung + Jahresabo am 2026-09-17). Beide Werte werden nur
+ * **angezeigt** — abgerechnet wird nach dem Stripe-Preis hinter der
+ * jeweiligen `STRIPE_PRICE_*`-Variablen (`_JAHR` für das Jahresabo).
+ * Nichts im Code hält Anzeige und Stripe synchron, und ein
+ * Auseinanderlaufen fällt niemandem auf, bevor eine Rechnung mit dem
+ * falschen Betrag rausgeht — deshalb meldet `pruefePreisGleichstand`
+ * (src/lib/abo-konditionen.ts) eine Abweichung ins Log.
  *
- * Wer den Betrag ändert, ändert deshalb zwingend beides — und in Stripe
+ * Wer einen Betrag ändert, ändert deshalb zwingend beides — und in Stripe
  * heisst das: einen **neuen** Price anlegen. Beträge sind dort
  * unveränderlich; `prices.update` kann alles ausser `unit_amount`. Danach
  * die neue ID in die Umgebung eintragen und den alten Price archivieren
  * (vorher `default_price` am Produkt umhängen, sonst weigert sich Stripe).
+ *
+ * Das Jahresabo ist **kein** eigener Plan: `betrieb_abonnements.plan` kennt
+ * per CHECK nur `basic|pro|business`, und das Intervall steht nicht in
+ * unserer Datenbank, sondern am Stripe-Price (`recurring.interval`). Ein
+ * Plan hat damit zwei Preise, aber nur eine ID.
  */
 /*
  * **Die Teilnehmergrenze steht seit dem 2026-09-10 im Wörterbuch**
@@ -76,9 +84,9 @@ export const siteName = "QuickTeam";
  * beiden Sprachen gleich lautet.
  */
 export const plaene = [
-  { id: "basic", name: "Low", preis: 29 },
-  { id: "pro", name: "Medium", preis: 49 },
-  { id: "business", name: "Business", preis: 69 },
+  { id: "basic", name: "Low", preis: 39, preisJahr: 390 },
+  { id: "pro", name: "Medium", preis: 69, preisJahr: 690 },
+  { id: "business", name: "Business", preis: 99, preisJahr: 990 },
 ] as const;
 
 /**
@@ -102,6 +110,46 @@ export const customTarif = {
 export const kontaktEmail = env(process.env.NEXT_PUBLIC_KONTAKT_EMAIL);
 
 export type PlanId = (typeof plaene)[number]["id"];
+
+/**
+ * Das Abrechnungsintervall — monatlich oder jährlich (Jahresabo seit dem
+ * 2026-09-17). Bewusst **kein** Teil der Plan-ID: der CHECK auf
+ * `betrieb_abonnements.plan` kennt nur `basic|pro|business`, und ob monatlich
+ * oder jährlich abgerechnet wird, steht am Stripe-Price
+ * (`recurring.interval`), nicht in unserer Datenbank. Die Werte sind kurz
+ * gehalten, weil sie auch als Cookie- und Query-Wert durch den
+ * Registrierungs-Trichter reisen (`abrechnung-merker.ts`).
+ */
+export type Abrechnung = "monat" | "jahr";
+
+/** Ohne Angabe wird monatlich abgerechnet — der bisherige und häufigere Fall. */
+export const ABRECHNUNG_STANDARD: Abrechnung = "monat";
+
+/**
+ * Name und Lebensdauer des Cookies, in dem die Abrechnungs-Wahl durch den
+ * Trichter reist. Steht hier — in einer Datei ohne `next/headers` — damit
+ * **beide** Schreiber denselben Namen nehmen: die Middleware (Edge, setzt
+ * ihn beim Klick auf die Registrierung) und `abrechnung-merker.ts` (liest
+ * und löscht ihn). Zwei Literale wären zwei Gelegenheiten, sich zu
+ * vertippen, ohne dass es beim Bauen auffiele.
+ */
+export const ABRECHNUNG_COOKIE = "qt_abrechnung";
+export const ABRECHNUNG_COOKIE_MAX_AGE = 60 * 60 * 24;
+
+/** Ein hereingereichter Wert (Query, Cookie) als `Abrechnung`, sonst der Standard. */
+export function alsAbrechnung(wert: unknown): Abrechnung {
+  return wert === "jahr" ? "jahr" : "monat";
+}
+
+/**
+ * Ersparnis in Euro pro Jahr gegenüber zwölf Monatszahlungen — die Zahl
+ * hinter „statt 468 € nur 390 €". Kommt aus `plaene`, damit die Werbeaussage
+ * nie einen anderen Betrag nennt als die Preiskarten daneben.
+ */
+export function ersparnisProJahr(plan: PlanId): number {
+  const p = plaene.find((x) => x.id === plan);
+  return p ? p.preis * 12 - p.preisJahr : 0;
+}
 
 /**
  * Länge der Testphase, Entscheidung vom 2026-08-10. Steht hier und nicht

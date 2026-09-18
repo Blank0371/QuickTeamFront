@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 
 import { alsUhrzeit, WOCHENTAGE, type Vorlage } from "@/lib/schichten";
+import type { Dictionary } from "@/i18n/de";
 
 /**
  * Die angelegten Vorlagen als Wochenraster.
@@ -157,10 +158,16 @@ export function WochenRaster({
   vorlagen,
   rollenName,
   entfernenAktion,
+  texte,
+  tagKurz,
+  tagLang,
 }: {
   vorlagen: readonly Vorlage[];
   rollenName: (id: string) => string;
   entfernenAktion: (formData: FormData) => void;
+  texte: Dictionary["stepper"]["schichten"];
+  tagKurz: readonly string[];
+  tagLang: readonly string[];
 }) {
   const { von, bis } = fenster(vorlagen);
   const hoehe = (bis - von) * PRO_MINUTE;
@@ -190,8 +197,8 @@ export function WochenRaster({
             className="border-b border-l border-line px-2 pb-2 text-center"
           >
             <span className="font-display text-xs font-bold uppercase tracking-[0.1em] text-muted">
-              <span aria-hidden="true">{tag.kurz}</span>
-              <span className="sr-only">{tag.name}</span>
+              <span aria-hidden="true">{tagKurz[tag.wert]}</span>
+              <span className="sr-only">{tagLang[tag.wert]}</span>
             </span>
           </div>
         ))}
@@ -236,9 +243,10 @@ export function WochenRaster({
                 <Block
                   key={platz.vorlage.id}
                   platz={platz}
-                  tagName={tag.name}
+                  tagName={tagLang[tag.wert] ?? ""}
                   rollenName={rollenName}
                   entfernenAktion={entfernenAktion}
+                  texte={texte}
                 />
               ))}
             </div>
@@ -254,11 +262,13 @@ function Block({
   tagName,
   rollenName,
   entfernenAktion,
+  texte,
 }: {
   platz: Platziert;
   tagName: string;
   rollenName: (id: string) => string;
   entfernenAktion: (formData: FormData) => void;
+  texte: Dictionary["stepper"]["schichten"];
 }) {
   const { vorlage, oben, hoehe, spur, spuren } = platz;
   const nacht = ueberNacht(vorlage);
@@ -341,8 +351,9 @@ function Block({
           also trägt ihn die vorgelesene Fassung.
         */}
         <span className="sr-only">
-          {eng ? ` bis ${alsUhrzeit(vorlage.end_zeit)}` : ""} am {tagName}
-          {nacht ? ", endet am Folgetag" : ""}
+          {eng ? texte.bisZeit.replace("{zeit}", alsUhrzeit(vorlage.end_zeit)) : ""}
+          {texte.amTag.replace("{tag}", tagName)}
+          {nacht ? texte.folgetag : ""}
         </span>
       </p>
 
@@ -350,7 +361,7 @@ function Block({
         <p
           className={`mt-1 text-[0.6rem] leading-tight text-muted ${eng ? "sr-only" : ""}`}
         >
-          Ohne Mindestbesetzung — in der App unsichtbar
+          {texte.ohneBedarf}
         </p>
       ) : (
         <ul className={`mt-1 ${eng ? "sr-only" : ""}`}>
@@ -376,7 +387,10 @@ function Block({
         <input type="hidden" name="vorlage_id" value={vorlage.id} />
         <button
           type="submit"
-          aria-label={`${vorlage.bezeichnung} am ${tagName}, ${zeit}, entfernen`}
+          aria-label={texte.blockEntfernen
+            .replace("{bezeichnung}", vorlage.bezeichnung)
+            .replace("{tag}", tagName)
+            .replace("{zeit}", zeit)}
           className="flex size-9 items-center justify-center rounded-blk text-muted transition-colors hover:text-stop focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-signal"
         >
           <X className="size-3.5" aria-hidden="true" />

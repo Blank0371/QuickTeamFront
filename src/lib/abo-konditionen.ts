@@ -169,11 +169,19 @@ export function pruefePreisGleichstand(plan: PlanId, k: AboKonditionen): void {
     );
   }
 
-  const anzeige = plaene.find((p) => p.id === plan)?.preis;
+  /*
+   * Je nach Intervall der andere Anzeigepreis: das Jahresabo bucht
+   * `preisJahr` ab, nicht das Zwölffache von `preis`. Verglichen mit `preis`
+   * meldete jede Jahresrechnung fälschlich eine Divergenz.
+   */
+  const eintrag = plaene.find((p) => p.id === plan);
+  const jaehrlich = k.intervall === "year";
+  const anzeige = eintrag ? (jaehrlich ? eintrag.preisJahr : eintrag.preis) : undefined;
   if (anzeige === undefined || k.betragCent === null) return;
   if (anzeige * 100 !== k.betragCent) {
     console.error(
-      `[preise] Plan ${plan}: Website zeigt ${anzeige} €, Stripe rechnet ${k.betragCent / 100} ${k.waehrung.toUpperCase()} ab — plaene in src/lib/site.ts oder STRIPE_PRICE_* angleichen.`,
+      `[preise] Plan ${plan} (${jaehrlich ? "jährlich" : "monatlich"}): Website zeigt ${anzeige} €, ` +
+        `Stripe rechnet ${k.betragCent / 100} ${k.waehrung.toUpperCase()} ab — plaene in src/lib/site.ts oder STRIPE_PRICE_* angleichen.`,
     );
   }
 }

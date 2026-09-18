@@ -1,7 +1,7 @@
 "use client";
 
 import { SelectFeld, TextFeld } from "@/components/formular/felder";
-import { LAENDER } from "@/lib/validierung";
+import type { Dictionary } from "@/i18n/de";
 
 /**
  * Die Rechnungsanschrift über dem Zahlungsformular.
@@ -80,9 +80,13 @@ export function RechnungsFelder({
   beiAenderung,
   felder,
   uidVorhanden,
+  texte,
+  laender,
 }: {
   werte: RechnungsWerte;
   beiAenderung: (feld: keyof RechnungsWerte, wert: string) => void;
+  texte: Dictionary["stepper"]["rechnung"];
+  laender: readonly { code: string; name: string }[];
   /** Feldfehler aus der Browser- oder der Serverprüfung. */
   felder: Record<string, string>;
   /**
@@ -98,31 +102,29 @@ export function RechnungsFelder({
   return (
     <fieldset className="flex flex-col gap-4 rounded-panel border border-line bg-surface-sunk p-4 sm:p-5">
       <legend className="px-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-        Rechnungsangaben
+        {texte.legende}
       </legend>
 
       <p className="text-sm leading-relaxed text-muted">
-        Diese Angaben stehen auf jeder Rechnung. Ändern kannst du sie später
-        jederzeit unter Einstellungen → „Abo verwalten". Bereits gestellte
-        Rechnungen bleiben unverändert.
+        {texte.intro}
       </p>
 
       <TextFeld
         id="rechnung-firma"
         name="rechnung_firma"
-        label="Rechtlicher Unternehmensname"
+        label={texte.firma}
         autoComplete="organization"
         maxLength={120}
         wert={werte.rechnung_firma}
         beiEingabe={(wert) => beiAenderung("rechnung_firma", wert)}
         fehler={felder["rechnung_firma"]}
-        hinweis="Wie im Firmenbuch bzw. Handelsregister — nicht unbedingt derselbe Name wie im Dienstplan."
+        hinweis={texte.firmaHinweis}
       />
 
       <TextFeld
         id="rechnung-strasse"
         name="rechnung_strasse"
-        label="Straße und Hausnummer"
+        label={texte.strasse}
         autoComplete="street-address"
         maxLength={120}
         wert={werte.rechnung_strasse}
@@ -139,7 +141,7 @@ export function RechnungsFelder({
         <TextFeld
           id="rechnung-plz"
           name="rechnung_plz"
-          label="Postleitzahl"
+          label={texte.plz}
           autoComplete="postal-code"
           maxLength={10}
           wert={werte.rechnung_plz}
@@ -149,7 +151,7 @@ export function RechnungsFelder({
         <TextFeld
           id="rechnung-ort"
           name="rechnung_ort"
-          label="Ort"
+          label={texte.ort}
           autoComplete="address-level2"
           maxLength={80}
           wert={werte.rechnung_ort}
@@ -161,12 +163,12 @@ export function RechnungsFelder({
       <SelectFeld
         id="rechnung-land"
         name="land"
-        label="Land der Rechnungsanschrift"
-        optionen={LAENDER}
+        label={texte.land}
+        optionen={laender}
         defaultValue={werte.land}
         beiAenderung={(wert) => beiAenderung("land", wert)}
         fehler={felder["land"]}
-        hinweis="Gilt nur für die Rechnung. Der Standort deines Betriebs und die Arbeitszeitregeln deines Dienstplans ändern sich dadurch nicht."
+        hinweis={texte.landHinweis}
       />
 
       {/*
@@ -185,10 +187,7 @@ export function RechnungsFelder({
           role="status"
           className="rounded-blk border border-line bg-surface px-3.5 py-3 text-sm leading-relaxed text-text"
         >
-          Mit einem Rechnungsland ausserhalb Österreichs wird deine hinterlegte
-          UID-Nummer entfernt — sie gilt nur für österreichische Rechnungsempfänger.
-          Das kann die Umsatzsteuer künftiger Abrechnungen ändern. Bereits gestellte
-          Rechnungen bleiben davon unberührt.
+          {texte.uidWarnung}
         </p>
       ) : null}
 
@@ -196,13 +195,13 @@ export function RechnungsFelder({
         <TextFeld
           id="rechnung-uid"
           name="uid"
-          label="UID-Nummer (freiwillig)"
+          label={texte.uidLabel}
           maxLength={20}
           required={false}
           wert={werte.uid}
           beiEingabe={(wert) => beiAenderung("uid", wert)}
           fehler={felder["uid"]}
-          hinweis="Mit gültiger UID rechnet Stripe im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern."
+          hinweis={texte.uidHinweis}
         />
       ) : null}
     </fieldset>

@@ -8,6 +8,7 @@ import { ZahlStepper } from "@/components/formular/zahl-stepper";
 import { leererZustand } from "@/lib/formular";
 import { WOCHENTAGE, type Vorlage } from "@/lib/schichten";
 import type { Rolle } from "@/lib/team";
+import type { Dictionary } from "@/i18n/de";
 
 import { vorlageAnlegen, vorlageEntfernen } from "./aktionen";
 import { WochenRaster } from "./wochen-raster";
@@ -23,25 +24,31 @@ import { WochenRaster } from "./wochen-raster";
 export function VorlagenAbschnitt({
   rollen,
   vorlagen,
+  texte,
+  tagKurz,
+  tagLang,
 }: {
   rollen: readonly Rolle[];
   vorlagen: readonly Vorlage[];
+  texte: Dictionary["stepper"]["schichten"];
+  /** Wochentagsnamen, montagsbasiert (Index = `wochentag`-Wert). */
+  tagKurz: readonly string[];
+  tagLang: readonly string[];
 }) {
   const [anlegen, anlegenAktion] = useActionState(vorlageAnlegen, leererZustand);
   const [entfernen, entfernenAktion] = useActionState(vorlageEntfernen, leererZustand);
 
   const werte = anlegen.werte ?? {};
-  const rollenName = (id: string) => rollen.find((r) => r.id === id)?.name ?? "unbekannt";
+  const rollenName = (id: string) => rollen.find((r) => r.id === id)?.name ?? texte.unbekannteRolle;
 
   return (
     <>
       <section aria-labelledby="neue-vorlage">
         <h2 id="neue-vorlage" className="font-display text-lg text-text">
-          Schicht anlegen
+          {texte.anlegenTitel}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Eine Vorlage je Schicht und Wochentag. Nachtschichten über Mitternacht sind in
-          Ordnung — trag einfach 22:00 bis 06:00 ein.
+          {texte.anlegenText}
         </p>
 
         {anlegen.nachricht ? (
@@ -63,15 +70,15 @@ export function VorlagenAbschnitt({
           <TextFeld
             id="vorlage-bezeichnung"
             name="bezeichnung"
-            label="Bezeichnung"
+            label={texte.bezeichnung}
             maxLength={60}
             defaultValue={werte["bezeichnung"]}
             fehler={anlegen.felder["bezeichnung"]}
-            hinweis="Zum Beispiel Frühdienst, Abenddienst oder Küche spät."
+            hinweis={texte.bezeichnungHinweis}
           />
 
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-text">Wochentag</legend>
+            <legend className="mb-2 text-sm font-medium text-text">{texte.wochentag}</legend>
             <div className="flex flex-wrap gap-2">
               {WOCHENTAGE.map((tag) => (
                 <label
@@ -88,8 +95,8 @@ export function VorlagenAbschnitt({
                     }
                     className="sr-only"
                   />
-                  <span aria-hidden="true">{tag.kurz}</span>
-                  <span className="sr-only">{tag.name}</span>
+                  <span aria-hidden="true">{tagKurz[tag.wert]}</span>
+                  <span className="sr-only">{tagLang[tag.wert]}</span>
                 </label>
               ))}
             </div>
@@ -102,7 +109,7 @@ export function VorlagenAbschnitt({
             <TextFeld
               id="vorlage-start"
               name="start_zeit"
-              label="Beginn"
+              label={texte.beginn}
               defaultValue={werte["start_zeit"] ?? "09:00"}
               fehler={anlegen.felder["start_zeit"]}
               hinweis="HH:MM"
@@ -110,7 +117,7 @@ export function VorlagenAbschnitt({
             <TextFeld
               id="vorlage-ende"
               name="end_zeit"
-              label="Ende"
+              label={texte.ende}
               defaultValue={werte["end_zeit"] ?? "17:00"}
               fehler={anlegen.felder["end_zeit"]}
               hinweis="HH:MM"
@@ -118,10 +125,9 @@ export function VorlagenAbschnitt({
           </div>
 
           <fieldset>
-            <legend className="mb-1 text-sm font-medium text-text">Mindestbesetzung</legend>
+            <legend className="mb-1 text-sm font-medium text-text">{texte.mindestbesetzung}</legend>
             <p className="mb-3 text-xs leading-relaxed text-muted">
-              Wie viele Leute welcher Rolle müssen mindestens da sein? Ohne mindestens
-              eine Angabe taucht die Schicht in der App nicht auf.
+              {texte.mindestbesetzungText}
             </p>
             <div className="flex flex-col gap-3">
               {rollen.map((rolle) => (
@@ -142,22 +148,25 @@ export function VorlagenAbschnitt({
             </div>
           </fieldset>
 
-          <AbsendenButton laufend="Wird angelegt …">Schicht hinzufügen</AbsendenButton>
+          <AbsendenButton laufend={texte.anlegenLaufend}>{texte.schichtHinzufuegen}</AbsendenButton>
         </form>
       </section>
 
       <section aria-labelledby="woche" className="mt-10 border-t border-line pt-8">
         <h2 id="woche" className="font-display text-lg text-text">
-          Eure Woche
+          {texte.wocheTitel}
         </h2>
 
         {vorlagen.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">Noch keine Schicht angelegt.</p>
+          <p className="mt-3 text-sm text-muted">{texte.keineSchicht}</p>
         ) : (
           <WochenRaster
             vorlagen={vorlagen}
             rollenName={rollenName}
             entfernenAktion={entfernenAktion}
+            texte={texte}
+            tagKurz={tagKurz}
+            tagLang={tagLang}
           />
         )}
       </section>
