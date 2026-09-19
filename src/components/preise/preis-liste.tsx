@@ -63,8 +63,8 @@ export function PreisListe({
           >
             <h3 className="font-display text-xl">{karte.name}</h3>
 
-            <p className="mt-3 flex items-baseline gap-1.5">
-              <span className="font-display text-3xl text-text">
+            <p className="mt-3 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+              <span className="whitespace-nowrap font-display text-3xl text-text">
                 {istJahr ? karte.jahrBetrag : karte.monatBetrag}
               </span>
               <span className="text-sm text-muted">{istJahr ? proJahr : proMonat}</span>
@@ -85,8 +85,8 @@ export function PreisListe({
             <p className="mt-3 text-sm font-medium text-text">{karte.grenze}</p>
 
             <p className="mt-4 grow text-sm leading-relaxed text-muted">
-              {testphaseTage} Tage testen, danach {istJahr ? "jährlich" : "monatlich"}. Jederzeit
-              kündbar.
+              {testphaseTage} Tage testen, danach {istJahr ? "jährliche" : "monatliche"} Abrechnung im Voraus.{" "}
+              {istJahr ? karte.jahrKuendigung : karte.monatKuendigung}
             </p>
           </li>
         ))}

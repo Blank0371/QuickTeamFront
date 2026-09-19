@@ -22,6 +22,8 @@ export type PreisKarte = {
   id: PlanId;
   name: string;
   grenze: string;
+  monatKuendigung: string;
+  jahrKuendigung: string;
   /** „39 €" */
   monatBetrag: string;
   /** „390 €" */
@@ -35,6 +37,8 @@ export function bauePreisKarten(t: Dictionary): PreisKarte[] {
     id: plan.id,
     name: plan.name,
     grenze: t.planGrenzen[plan.id],
+    monatKuendigung: t.landing.preiseKuendigungMonat,
+    jahrKuendigung: t.landing.preiseKuendigungJahr,
     monatBetrag: `${plan.preis} €`,
     jahrBetrag: `${plan.preisJahr} €`,
     jahrStatt: `${t.landing.preiseStattLabel} ${plan.preis * 12} €`,

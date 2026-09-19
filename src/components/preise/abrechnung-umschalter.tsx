@@ -49,7 +49,7 @@ export function AbrechnungUmschalter({
   function knopf(intervall: Abrechnung, beschriftung: string) {
     const aktiv = wert === intervall;
     const basis =
-      "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors touch-manipulation";
+      "min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition-colors touch-manipulation";
 
     if (dunkel) {
       return (

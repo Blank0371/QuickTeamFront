@@ -188,7 +188,7 @@ export function LandingNavigation({
           </span>
         </a>
 
-        <ul className="hidden items-center gap-1 md:flex">
+        <ul className="hidden items-center gap-1 lg:flex">
           {PUNKTE.map((punkt) => (
             <li key={punkt.id}>
               <a
@@ -221,7 +221,7 @@ export function LandingNavigation({
           Vertragsabschluss.
         */}
         {promoHref || authOffen ? (
-          <div className="hidden shrink-0 items-center gap-2 md:flex">
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
             {promoHref ? (
               <Link
                 href={promoHref}
@@ -260,7 +260,7 @@ export function LandingNavigation({
           onClick={() => setOffen((o) => !o)}
           aria-expanded={offen}
           aria-controls="landing-nav-menue"
-          className="flex h-11 touch-manipulation items-center gap-2 rounded-blk px-3 text-sm font-medium md:hidden"
+          className="flex h-11 touch-manipulation items-center gap-2 rounded-blk px-3 text-sm font-medium lg:hidden"
           style={{
             border: "1px solid var(--qt-border-control)",
             color: "var(--qt-c-bone)",
@@ -271,14 +271,14 @@ export function LandingNavigation({
           ) : (
             <Menu aria-hidden="true" className="size-4" strokeWidth={2} />
           )}
-          Abschnitte
+          {offen ? "Schließen" : "Menü"}
         </button>
       </nav>
 
       {offen ? (
         <ul
           id="landing-nav-menue"
-          className="flex flex-col gap-1 px-5 pb-4 md:hidden"
+          className="absolute inset-x-0 top-full max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain bg-[var(--qt-c-carbon)] px-5 pb-5 pt-2 shadow-xl lg:hidden"
           style={{ borderTop: "1px solid color-mix(in oklab, var(--qt-c-bone) 8%, transparent)" }}
         >
           {PUNKTE.map((punkt) => (

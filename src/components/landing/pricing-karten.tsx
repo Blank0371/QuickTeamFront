@@ -53,7 +53,7 @@ export function PricingKarten({
 
   return (
     <div>
-      <div className="mt-12 flex justify-center">
+      <div className="mt-8 flex justify-center sm:mt-12">
         <AbrechnungUmschalter
           wert={intervall}
           beiWechsel={setIntervall}
@@ -64,7 +64,7 @@ export function PricingKarten({
         />
       </div>
 
-      <ul className="mt-12 grid gap-6 sm:mt-14 lg:grid-cols-3 lg:items-end lg:gap-8">
+      <ul className="mt-8 grid gap-4 sm:mt-14 lg:grid-cols-3 lg:items-end lg:gap-8">
         {karten.map((karte) => {
           const hervorgehoben = karte.id === HERVORGEHOBEN;
           return (
@@ -72,8 +72,8 @@ export function PricingKarten({
               key={karte.id}
               className={
                 hervorgehoben
-                  ? "flex flex-col rounded-panel p-10 lg:scale-105"
-                  : "flex flex-col rounded-panel p-10"
+                  ? "flex flex-col rounded-panel p-6 sm:p-8 lg:p-10 lg:scale-105"
+                  : "flex flex-col rounded-panel p-6 sm:p-8 lg:p-10"
               }
               style={{
                 background: "var(--qt-c-graphite)",
@@ -98,8 +98,8 @@ export function PricingKarten({
                 {karte.name}
               </h3>
 
-              <p className="mt-5 flex items-baseline gap-1.5">
-                <span className="text-4xl font-bold" style={{ color: "var(--qt-c-bone)" }}>
+              <p className="mt-4 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+                <span className="whitespace-nowrap text-4xl font-bold" style={{ color: "var(--qt-c-bone)" }}>
                   {istJahr ? karte.jahrBetrag : karte.monatBetrag}
                 </span>
                 <span className="text-sm" style={{ color: gedaempft(65) }}>
@@ -131,6 +131,9 @@ export function PricingKarten({
               <p className="mt-5 text-sm font-medium" style={{ color: gedaempft(85) }}>
                 {karte.grenze}
               </p>
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: gedaempft(75) }}>
+                {istJahr ? karte.jahrKuendigung : karte.monatKuendigung}
+              </p>
             </li>
           );
         })}
@@ -144,10 +147,10 @@ export function PricingKarten({
       </p>
 
       {authOffen ? (
-        <div className="mt-12 flex justify-center sm:mt-16">
+        <div className="mt-8 flex justify-center sm:mt-12 sm:mt-16">
           <Link
             href={`/registrieren?abrechnung=${intervall}`}
-            className="flex min-h-[3.5rem] touch-manipulation items-center justify-center rounded-blk px-10 text-base font-semibold transition-colors hover:bg-[var(--qt-c-bronze-hi)] active:translate-y-px"
+            className="flex w-full sm:w-auto min-h-[3.5rem] touch-manipulation items-center justify-center rounded-blk px-10 text-base font-semibold transition-colors hover:bg-[var(--qt-c-bronze-hi)] active:translate-y-px"
             style={{ background: "var(--qt-c-bronze)", color: "var(--qt-c-carbon)" }}
           >
             {ctaText}

@@ -203,6 +203,8 @@ export const de = {
     preiseBald: "Bald verfügbar",
     preiseTitel: "Ein Preis pro Betrieb. Keine Rechnung pro Kopf.",
     preiseEmpfehlung: "Unsere Empfehlung",
+    preiseKuendigungMonat: "Kündbar zum Ende des Abrechnungsmonats.",
+    preiseKuendigungJahr: "Kündbar zum Ende des Abrechnungsjahres.",
     preiseTesten: "Registrieren",
     proMonat: "/ Monat",
     proJahr: "/ Jahr",
@@ -232,8 +234,8 @@ export const de = {
 
   /** Teilnehmerzahl je Plan. Schlüssel sind die Plan-IDs aus `site.ts`. */
   planGrenzen: {
-    basic: "bis 15 Mitarbeiter",
-    pro: "bis 30 Mitarbeiter",
+    basic: "bis 15 Mitarbeiter, 1 Standort",
+    pro: "bis 30 Mitarbeiter, 1 Standort",
     business: "bis 50 Mitarbeiter, 1 Standort",
   },
 
@@ -253,7 +255,7 @@ export const de = {
       "Ankündigungen, Verfügbarkeiten und Rückmeldungen laufen sichtbar zusammen, bevor der erste Tag beginnt.",
     notfallTitel: "Ein Ausfall, sofort sichtbar",
     notfallText:
-      "Fällt jemand aus, springt der Tausch ein und schließt die Lücke, ohne eine einzige Telefonkette.",
+      "Fällt jemand aus, macht QuickTeam die offene Schicht sichtbar und hilft deinem Team, eine passende Vertretung zu finden.",
   },
 
   /** Die drei Karten vor dem Preisabschnitt. */

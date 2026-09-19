@@ -37,7 +37,7 @@ export async function VersprechenKarten() {
       className="relative w-full overflow-hidden"
       style={{ scrollMarginTop: "3.5rem" }}
     >
-      <Container className="relative pb-10 pt-24 sm:pb-12 sm:pt-28 lg:pb-16 lg:pt-32 xl:pb-20">
+      <Container className="relative pb-10 pt-10 sm:pb-12 sm:pt-28 lg:pb-16 lg:pt-32 xl:pb-20">
         <div className="mx-auto max-w-2xl text-center">
           <h2
             id="versprechen-titel"
@@ -54,11 +54,11 @@ export async function VersprechenKarten() {
           </p>
         </div>
 
-        <ul className="mt-16 grid gap-6 sm:mt-20 lg:grid-cols-3 lg:gap-8">
+        <ul className="mt-8 grid gap-4 sm:mt-20 lg:grid-cols-3 lg:gap-8">
           {karten.map((karte) => (
             <li
               key={karte.id}
-              className="relative flex min-h-[22rem] flex-col overflow-hidden rounded-panel p-10"
+              className="relative flex lg:min-h-[22rem] flex-col overflow-hidden rounded-panel p-6 sm:p-8 lg:p-10"
               style={{
                 background: "var(--qt-c-graphite)",
                 border: "1px solid color-mix(in oklab, var(--qt-c-bone) 12%, transparent)",
@@ -77,13 +77,13 @@ export async function VersprechenKarten() {
                   style={{ background: KACHEL_FARBE[karte.farbe] }}
                 />
                 <h3
-                  className="mt-6 text-2xl font-semibold leading-snug"
+                  className="mt-4 text-xl sm:mt-6 sm:text-2xl font-semibold leading-snug"
                   style={{ color: "var(--qt-c-bone)" }}
                 >
                   {karte.titel}
                 </h3>
                 <p
-                  className="mt-5 text-base leading-relaxed"
+                  className="mt-3 text-base sm:mt-5 leading-relaxed"
                   style={{ color: "color-mix(in oklab, var(--qt-c-bone) 80%, transparent)" }}
                 >
                   {karte.zeilen[0]}

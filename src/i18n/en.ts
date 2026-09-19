@@ -227,6 +227,8 @@ export const en: Dictionary = {
     preiseBald: "Coming soon",
     preiseTitel: "One price per business. No per-head invoice.",
     preiseEmpfehlung: "Our recommendation",
+    preiseKuendigungMonat: "Cancellation takes effect at the end of the billing month.",
+    preiseKuendigungJahr: "Cancellation takes effect at the end of the billing year.",
     preiseTesten: "Register",
     proMonat: "/ month",
     proJahr: "/ year",
@@ -248,8 +250,8 @@ export const en: Dictionary = {
 
   /* Headcount per plan. Keys are the plan IDs from `site.ts`. */
   planGrenzen: {
-    basic: "up to 15 employees",
-    pro: "up to 30 employees",
+    basic: "up to 15 employees, 1 location",
+    pro: "up to 30 employees, 1 location",
     business: "up to 50 employees, 1 location",
   },
 
@@ -269,7 +271,7 @@ export const en: Dictionary = {
       "Announcements, availability and replies come together visibly, before the first day begins.",
     notfallTitel: "An absence, visible at once",
     notfallText:
-      "If someone drops out, a swap steps in and closes the gap — without a single round of phone calls.",
+      "If someone drops out, QuickTeam highlights the open shift and helps your team find a suitable replacement.",
   },
 
   /* The three cards above the pricing section. */

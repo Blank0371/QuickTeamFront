@@ -35,7 +35,7 @@ export async function PricingAbschnitt() {
       className="relative w-full overflow-hidden"
       style={{ scrollMarginTop: "3.5rem" }}
     >
-      <Container className="relative pb-28 pt-10 sm:pb-32 sm:pt-12 lg:pb-40 xl:pt-16">
+      <Container className="relative pb-16 pt-10 sm:pb-32 sm:pt-12 lg:pb-40 xl:pt-16">
         <div className="mx-auto max-w-2xl text-center">
           <p
             className="text-xs font-medium uppercase tracking-[0.14em]"
