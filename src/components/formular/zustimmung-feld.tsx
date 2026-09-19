@@ -31,10 +31,13 @@
  * belegt am 2026-09-10, indem das Attribut im Browser entfernt und
  * abgeschickt wurde: der Server hat abgelehnt.
  */
+import type { Dictionary } from "@/i18n/de";
+
 export function ZustimmungFeld({
   idPraefix = "",
   vorbelegt = false,
   fehler,
+  texte,
 }: {
   /** Trennt die Feld-Ids, wenn zwei Formulare auf derselben Seite stehen. */
   idPraefix?: string;
@@ -42,6 +45,12 @@ export function ZustimmungFeld({
   vorbelegt?: boolean;
   /** Meldung aus der Server Action, sonst `undefined`. */
   fehler?: string;
+  /**
+   * Der Zustimmungssatz in Segmenten, in der Sprache der Anfrage. Kommt
+   * vom Server-Elternteil — sowohl bei der Registrierung als auch im
+   * Zustimmungs-Tor des Dashboards.
+   */
+  texte: Dictionary["zustimmungFeld"];
 }) {
   const fehlerId = `${idPraefix}zustimmung-fehler`;
 
@@ -64,34 +73,34 @@ export function ZustimmungFeld({
           man zur Kenntnis — sie ist eine Information, kein Vertrag.
         */}
         <span>
-          Ich schliesse für meinen Betrieb die{" "}
+          {texte.vorAgb}
           <a
             href="/agb"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2 hover:text-signal"
           >
-            AGB
-          </a>{" "}
-          und die{" "}
+            {texte.agb}
+          </a>
+          {texte.zwischen}
           <a
             href="/avv"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2 hover:text-signal"
           >
-            Auftragsverarbeitungsvereinbarung (AVV)
-          </a>{" "}
-          ab und bestätige, dass ich berechtigt bin, den Betrieb dabei zu vertreten. Die{" "}
+            {texte.avv}
+          </a>
+          {texte.nachAvv}
           <a
             href="/datenschutz"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2 hover:text-signal"
           >
-            Datenschutzerklärung
-          </a>{" "}
-          habe ich zur Kenntnis genommen.
+            {texte.datenschutz}
+          </a>
+          {texte.nachDatenschutz}
         </span>
       </label>
 

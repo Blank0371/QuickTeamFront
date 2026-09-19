@@ -1,8 +1,8 @@
 import Link from "next/link";
 
+import { holeTexte } from "@/i18n/server";
 import {
   SCHRITTE,
-  SCHRITT_TITEL,
   darfSehen,
   schrittIndex,
   type Schritt,
@@ -21,7 +21,7 @@ import {
  * hinführt, wird von der Tastatur trotzdem angesprungen und von
  * Screenreadern angesagt.
  */
-export function Fortschritt({
+export async function Fortschritt({
   aktuell,
   stand,
 }: {
@@ -29,14 +29,17 @@ export function Fortschritt({
   /** `null`, solange niemand angemeldet ist — dann ist nur Schritt 1 offen. */
   stand: Stand | null;
 }) {
+  const t = (await holeTexte()).registrierung.fortschritt;
   const aktuellerIndex = schrittIndex(aktuell);
   const erreicht = stand ? schrittIndex(stand.offen) : 0;
   const anteil = ((aktuellerIndex + 1) / SCHRITTE.length) * 100;
 
   return (
-    <nav aria-label="Fortschritt der Einrichtung" className="mb-10">
+    <nav aria-label={t.aria} className="mb-10">
       <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">
-        Schritt {aktuellerIndex + 1} von {SCHRITTE.length}
+        {t.schrittVon
+          .replace("{n}", String(aktuellerIndex + 1))
+          .replace("{gesamt}", String(SCHRITTE.length))}
       </p>
 
       {/*
@@ -61,7 +64,7 @@ export function Fortschritt({
           const anklickbar =
             !istAktuell && stand !== null && darfSehen(schritt, stand);
 
-          const beschriftung = `${index + 1}. ${SCHRITT_TITEL[schritt]}`;
+          const beschriftung = `${index + 1}. ${t.schritte[schritt]}`;
           const stil = istAktuell
             ? "text-text font-semibold"
             : istErledigt

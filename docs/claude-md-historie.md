@@ -1,0 +1,388 @@
+# CLAUDE.md — Änderungshistorie
+
+Dieses Dokument trägt die **datierte Entscheidungshistorie**, die früher direkt in
+`CLAUDE.md` stand. `CLAUDE.md` ist der aktuelle Stand; hier steht, wie er entstanden
+ist — alter Zustand, neuer Zustand, Datum, Begründung.
+
+`.claude/rules/product.md` verlangt, dass Umfangs- und Verhaltensänderungen als
+datierter Abschnitt festgehalten werden, nie als stille Überschreibung. Diese Datei
+erfüllt das: Wer eine Regel in `CLAUDE.md` verändert oder umkehrt, hängt hier einen
+datierten Eintrag an (neuestes oben) und schreibt in `CLAUDE.md` nur den neuen Stand.
+
+Die technischen Einzelheiten des jeweils **aktuellen** Standes (Spaltennamen,
+Signaturen, Schwellwerte, Dateipfade) stehen in `CLAUDE.md`. Hier steht das *Warum*
+und das *Vorher*.
+
+---
+
+## 2026-09-15 — Promo-Code bei der Registrierung
+
+**Vorher:** Abschnitt A der Registrierung fragte nur Betriebs- und Zugangsdaten ab.
+**Jetzt:** ein freiwilliges Feld „Promo-Code"; der benutzte Code je Betrieb steht in
+`betrieb_promo_codes`. Neue Produktentscheidung auf Nutzer-Anweisung — die Expo-App
+hat keine Registrierung und damit kein Gegenstück.
+
+Nachtrag am selben Tag: nur zugelassene Codes (`promo_codes`-Liste, RPC
+`promo_code_gueltig`), Prüfung vor dem `signUp`. Solange `promo_codes` leer ist, wird
+jeder Code als unbekannt abgewiesen — Codes anlegen, bevor sie verteilt werden.
+Details und aktueller Stand in `CLAUDE.md`, Abschnitt „Promo-Code".
+
+Schema-Ausnahme (dritte überhaupt), auf Nutzer-Anweisung: Tabellen
+`betrieb_promo_codes` und `promo_codes`, RPC `promo_code_gueltig`, Spalte
+`promo_codes.email`. Rein additiv. Quellen `docs/backend/migration-2026-09-15-*.sql`.
+
+---
+
+## 2026-09-14 — Sammeltag: Abo-Härtung, Löschung, Export, Rechnungsdaten
+
+**Zwei Fehler auf dem Weg aus der Sperre.**
+- `ZahlungsFormular` schickte die `return_url` fest auf `/einrichtung/zahlung`, auch
+  von der Sperrseite. Da Schritt 2 einen gesperrten Betrieb vorher auf die Sperrseite
+  umleitet und `redirect()` den Query-String verwirft, kam `?setup_intent=` nie an —
+  die bestätigte Zahlungsmethode wurde ohne Fehlermeldung nie übernommen (jedes
+  Zahlungsmittel mit Weiterleitung: PayPal, Bank, 3DS). Jetzt gibt die Sperrseite
+  `rueckkehrPfad` mit.
+- `pausiert`/`gekuendigt` wird jetzt bei Stripe gegengefragt (`aboLageBeiStripe()`),
+  weil die Zeile nur der Webhook ändert und ein zahlender Kunde sonst wieder vor
+  „Kostenpflichtig fortsetzen" stand. Beide Tore (`ermittleStandFuer`, `pruefeSperre`)
+  fragen dieselbe Frage, sonst schicken sie den Kunden im Kreis. Stripe kann die Sperre
+  aufheben, nicht erfinden; ist Stripe nicht erreichbar, bleibt sie.
+
+**Eine Testphase je Betrieb.** Vorher gab `erstelleAbo()` jedem neuen Abo
+`trial_period_days` — ein gekündigter Betrieb bekam beim Neuabschluss die nächste
+Testphase, kündbar/neu abschliessbar in Endlosschleife (unbegrenzt kostenlos). Jetzt
+gibt es die Testphase nur, wenn der Stripe-Kunde nie ein Abo hatte
+(`holeAboVerlauf()`, `status: "all"`); jedes weitere Abo entsteht
+`default_incomplete` (offene Erstrechnung, kein Einzug ohne Karte, verfällt nach 23 h).
+AGB § 5 Abs. 2 deckt die Regel.
+
+**Gescheiterte Erst-Lastschrift kündigt das Abo.** Vorher blieb ein per SEPA
+neu abgeschlossenes Abo `active`, auch wenn die Lastschrift scheiterte (Stripe
+storniert nur die Rechnung) — ein Monat ohne Zahlung, nach jeder Kündigung
+wiederholbar. Jetzt behandelt der Webhook `invoice.payment_failed` für die Erstrechnung
+(`billing_reason = subscription_create`) und kündigt das Abo bei Stripe. Das ist die
+**einzige Stelle, an der der Webhook bei Stripe schreibt**; in der DB bleibt es bei
+`betrieb_abonnements`. Restlücke: bis die Bank zurückgibt, läuft der Zugang (Tage).
+
+**Vertragsende sperrt alle, pausierte Abos enden nach 90 Tagen.** Vorher sperrte das
+Dashboard-Tor nur Chefs (Angestellte eines gekündigten Betriebs arbeiteten unbegrenzt
+weiter, entgegen AGB § 6 Abs. 2), und ein pausiertes Abo blieb bei Stripe für immer
+pausiert (der Löschjob fasst `pausiert` nie an). Jetzt: `pruefeSperre()` fragt für
+Nicht-Chefs `betrieb_vertrag_beendet()` → `/dashboard/beendet`; Cron
+`/api/cron/testphasen-beenden` (täglich 02:00 UTC) kündigt pausierte Abos, deren
+`trial_end` > 90 Tage zurückliegt; DB-Job löscht 30 Tage später (Tag 90+30, AGB r2
+§ 5 Abs. 3). Teile B/C aus `docs/backend-befunde-2026-09-14.md` auf DB-Teil A.
+
+**Rechnungsangaben vor der Aktivierung** (Entscheidung der Betreiberin). Vorher ging
+nur das Land an Stripe. § 5 Abs. 5 AGB / § 14 Abs. 4 UStG verlangen Firma und Anschrift.
+Jetzt fünf Pflichtfelder über dem Zahlungsformular; das Tor sitzt in
+`zahlungsmittelUebernehmen()` (`rechnungVollstaendig(kundeId)` liest den Stand bei
+Stripe, wegen 3DS-Rückkehr ohne Formular und wegen direkter Server-Action-Aufrufe).
+Kostenloses Testen ohne Karte/Anschrift bleibt möglich; Pflicht wird es erst, wenn
+eine Rechnung entstehen kann.
+
+**Export: Keyset-Blättern statt `range()`, und Unvollständigkeit wird benannt.**
+Versatz-Blättern übersprang/dupliziert Zeilen bei gleichzeitigen Änderungen. Jetzt
+Keyset nach Primärschlüssel; Garantie im Paket („jede während des Lesens unveränderte
+Zeile erscheint genau einmal", kein Schnappschuss). Fehlende Anhänge:
+`vollstaendig: false`, `-UNVOLLSTAENDIG.json`, Antwortkopf. Gespeicherte Pfade werden
+eingeordnet, nie abgerufen (SSRF-Schutz).
+
+**Korrektur: ein Spaltenrecht entzieht kein Tabellenrecht.** Der Entwurf
+`migration-2026-09-13-notfallgrund.sql` benutzte `revoke select (grund) …`, was
+wirkungslos ist, solange `authenticated` SELECT auf der ganzen Tabelle hält. Richtig:
+erst `revoke select on <tabelle>`, dann `grant select (<erlaubte Spalten>)`, im selben
+Lauf mit `has_column_privilege()` geprüft. Wer eine Spalte schützt, prüft fünf weitere
+Wege (geerbte Rechte, PUBLIC-Grants, Views, SECURITY-DEFINER-Funktionen,
+Filter/`RETURNING`).
+
+**Schema-Ausnahme (zweite):** Löschung nach Vertragsende, Teil A aus
+`docs/backend-befunde-2026-09-14.md` (`loeschung_a1`–`a5`). Nicht rein additiv:
+`betrieb_abonnements.beendet_am` + Trigger, Trigger auf `rechtliche_zustimmungen` und
+`betriebe`, Schema `private`, Cron `betriebe-aufraeumen`, RPC `betrieb_vertrag_beendet()`.
+Eingespielt ohne Test, auf Anweisung. Grund: AGB § 5 Abs. 3 / § 6 Abs. 4 und
+Datenschutzerklärung 15.3 versprachen eine Löschung, die es nicht gab.
+Achtung: `migration-2026-09-14-vertragsende-und-loeschung.sql` ist ein paralleler,
+nie angewendeter Entwurf und darf **nicht** zusätzlich eingespielt werden.
+
+**`?lang=de|en` für Links aus der App.** Vorher kam die Sprache nur aus `qt_sprache`.
+Die Expo-App öffnet Rechtstexte im In-App-Browser ohne Cookie — jeder sah Deutsch.
+Jetzt geht `?lang=` dem Cookie vor, nur für diese Anfrage, ohne etwas zu speichern
+(Kopfzeile `x-qt-sprache`, `src/i18n/sprach-parameter.ts`). Nur GET/HEAD, damit der
+Umschalter-POST weiter gewinnt.
+
+---
+
+## 2026-09-13 — Rechtliche Durchsicht: Portal, Steuer, Zustimmung, Export
+
+**Kündigung über das Stripe-Kundenportal** (Befund 5 der externen rechtlichen
+Durchsicht; Betreiberin entschied Portal statt eigenem Knopf). Vorher gab es keine
+Oberfläche zum Kündigen, nur E-Mail. Jetzt „Abo verwalten" in
+`/dashboard/einstellungen` (`aboVerwalten()`). Kunden-Id serverseitig abgeleitet.
+Dazu: Zahlungsansichten lesen Betrag/Testphasenende/erste Abbuchung aus dem Stripe-Abo,
+nicht aus `plaene`/`TESTPHASE_TAGE` (`src/lib/abo-konditionen.ts`).
+
+**Umsatzsteuer über Stripe Tax.** Vorher trug kein Abo `automatic_tax` — Stripe buchte
+netto als brutto ab, obwohl AGB § 5 Abs. 1 „zzgl. USt." sagt. Jetzt `automatic_tax:
+{ enabled: true }` in `erstelleAbo()`, `wechslePlan()`, `uebernimmZahlungsmittel()`;
+Standort aus `betriebe.land`; österreichische Betriebe bekommen ein freiwilliges
+UID-Feld (`eu_vat`, Reverse Charge). Voraussetzung im Stripe-Dashboard: Stripe Tax
+aktiv, Registrierung für Deutschland, Preise `tax_behavior: exclusive`.
+
+**Eine neue Fassung sperrt nicht mehr.** Vorher verlangte `ermittleZustimmungStand()`
+für alle drei Dokumente die aktuelle Fassung und sperrte sonst die ganze Verwaltung.
+Jetzt (`ermittleZustimmungBefund()`): fehlende AGB/AVV-Zeile sperrt; ältere Fassung →
+Hinweisstreifen; Datenschutzerklärung sperrt gar nicht (Art. 13 DSGVO informiert, nicht
+zustimmen). Grund: AGB § 13 Abs. 2/3 — solange der Kunde einer Änderung nicht zustimmt,
+gelten die bisherigen Bedingungen. Dazu: Datenschutz wird je Person geprüft (nicht je
+Betrieb); `sprache` und `inhalt_hash` (sha256 der deutschen Fassung) werden jetzt
+geschrieben. Fassungen dürfen auseinanderlaufen (AGB/Datenschutz `2026-09-13-r2-draft`,
+AVV `2026-09-13-draft`).
+
+**Kündigung und Export kommen an jeder Sperre vorbei.** `betreteOhneTore()` prüft
+Anmeldung/Anstellung/Position, lässt aber die wirtschaftlichen Tore weg. Zwei Aufrufer:
+`aboVerwalten()` und `/api/betrieb-export`. Vorher fingen die Tore genau die Zustände
+ab, in denen man kündigen oder Daten exportieren will. Berechtigung unverändert.
+
+**Betriebsexport gebaut.** `GET /api/betrieb-export`, JSON-Paket. Füllt AGB § 6 Abs. 4/5
+(„strukturiertes, gängiges, maschinenlesbares Format"), das es vorher nur als Satz gab.
+Vier Regeln (Tabellenliste gepflegt, eigene `betrieb_id`-Eingrenzung, Seiten,
+vier Anonymisierungs-Eingriffe) und die aktuellen Grenzen stehen in `CLAUDE.md`.
+
+**Landingpage bewegt sich nur ab 1024px.** Vorher lief die Bewegung auf jeder Breite,
+obwohl die grosse Kalender-Sequenz mobil per `display:none` fehlte — Hero-Inhalt zog
+sich vor nichts zurück, Versprechen-Blöcke blieben bei fehlendem/spätem JS oder
+schnellem Wischen unsichtbar, der Sprunganker `#kalender` sass auf der desktop-only
+Section. Jetzt kapseln alle vier Client-Inseln ihre Bewegung in
+`gsap.matchMedia("(min-width:1024px)")` mit `mm.revert()`-Cleanup; der mobile
+Kalenderabschnitt ist statisches Markup; der Anker sitzt am immer dargestellten Wrapper.
+`gsap.matchMedia` (nicht ein `if`), damit GSAP beim Verkleinern die Inline-Stile und
+ScrollTrigger selbst zurücknimmt. `prefers-reduced-motion` gilt vor der Breitenabfrage.
+
+**Die Löschmigration ist gesperrt.** `migration-2026-09-13-aufbewahrung.sql` wird nicht
+angewendet, bis vier Punkte erledigt sind (belastbares Vertragsende-Datum, Exportfristen
+nachgewiesen, `trg_letzter_chef` geklärt, Sandbox-Erprobung). Sperrliste im Kopf der
+Datei.
+
+---
+
+## 2026-09-11 — Öffentliche Registrierung bleibt offen; Bestandsbetriebe nachgefragt
+
+**`disable_signup` wird zurückgenommen.** Regel vom 2026-09-09 hatte
+`disable_signup = true` verlangt (Registrierung als „unterste Sperre" unter
+`SOFT_LAUNCH`); Testkonten nur über `auth.admin.createUser()`. Jetzt: `disable_signup`
+bleibt `false`, die öffentliche Registrierung ist dauerhaft offen und **kein
+Sicherheitsproblem** — ein Auth-Konto ohne Anstellung ist wertlos (`meine_betriebe()`
+leer, `ist_chef()` überall falsch). Die Zugriffskontrolle liegt bei Vertragsannahme und
+Zahlung, nicht bei der Kontoerstellung. `SOFT_LAUNCH` bleibt unberührt und in Produktion
+`an`. Ausführlich in `docs/audit-a/entscheidung-disable-signup-2026-09-11.md`. Für
+Testkonten sind seither beide Wege erlaubt (`/registrieren` + `hole-code.mjs`, oder
+Service-Role).
+
+**Bestandsbetriebe werden zur Zustimmung nachgefragt.** Wer vor dem 2026-09-10
+registriert hatte, hatte den Zustimmungshaken nie gesehen. Jetzt fragt
+`pruefeZustimmung()` im Dashboard-Tor für Chefs, ob der Betrieb zu allen drei Dokumenten
+eine Zeile in der aktuellen Fassung hat; fehlt eine → `/dashboard/zustimmung`. Gefragt
+wird nach dem Betrieb, geschrieben mit der eigenen `auth_id`. Angestellte bleiben
+unberührt. Reihenfolge: erst `pruefeSperre`, dann `pruefeZustimmung`.
+
+---
+
+## 2026-09-10 — i18n-Mechanik, Rechtstexte als Dokumente, Zustimmungstabelle
+
+**i18n-Mechanik für Seiteninhalt.** Vorher war Zweisprachigkeit nur Wörterbuchpaar +
+Umschalter; Client-Inseln und Zod-Meldungen hatten keinen Weg zur Übersetzung. Jetzt
+drei Bausteine: `src/i18n/server.ts` (Server-Helfer), `sprach-provider.tsx` (Context
+für Fehlergrenzen + Validierung, sonst Props), `text.ts` (Zod-Meldungsschlüssel). Details
+in `CLAUDE.md`, Abschnitt „Zweisprachigkeit". Nebenbei behoben: fünf `getDictionary()`
+ohne Locale lieferten immer Deutsch.
+
+**Aus Gerüsten werden Dokumente.** Vorher: `/impressum`, `/datenschutz`, `/agb` als
+Gerüste mit markierten Platzhaltern. Jetzt liegen die Texte vor und werden gerendert;
+`PH`/`EntwurfsHinweis` entfernt; `/avv` neu (Vorlage mit Kundenlücken, Hinweiskasten).
+`RechtsDokument` liest die Datei nach `qt_sprache`; der eigene `?sprache=`-Umschalter
+auf `/datenschutz` ist entfallen. Das Impressum übersetzt Rubriken, keine Angaben.
+`MarkdownText` kann seither Tabellen und Blockzitate (AVV Anlage 3). Reviewer-Hinweis
+aus den englischen Fassungen entfernt (`/agb` ist öffentlich). `SOFT_LAUNCH` bleibt —
+die Texte sind vollständig, aber laut README „pre-lawyer drafts", also nicht final.
+Ein Verzeichnis statt zwei: alle Rechtsrouten lesen aus `docs/rechtliches/legals/`.
+
+**Zustimmungstabelle gebaut** (erste Schema-Ausnahme, ausdrücklich freigegeben).
+Rechtliche Vorprüfung: AGB § 7 Abs. 3 setzt Abschluss des AVV bei Registrierung voraus,
+im Formular stand nichts. Die Expo-App fragt zu, legt es aber gerätelokal in
+AsyncStorage ab — serverseitig gab es nie einen Nachweis. Neue, additive Tabelle
+`rechtliche_zustimmungen`. Aktueller Schema-/RLS-/Flow-Stand in `CLAUDE.md`.
+
+---
+
+## 2026-09-09 — Zweisprachigkeit live; Lighthouse belegt; disable_signup (überholt)
+
+**Die Seite liefert `de` und `en` aus**, Umschalter oben rechts. Wörterbücher als
+getippte Objekte, kein next-intl.
+
+**Lighthouse erstmals gemessen** (nicht behauptet): Accessibility 100 auf `/dashboard`
+und beiden Kalender-Varianten; Übersicht startete auf 96 (ein `color-contrast`-Fehler an
+den Sidebar-Initialen, `text-signal` auf `bg-signal-weak` 3.94:1, behoben mit
+`text-text`). SEO/Agentic Browsing niedrig, aber für `index:false`-Dashboards ohne
+Aussagekraft.
+
+**`disable_signup = true`** eingeführt — am 2026-09-11 wieder zurückgenommen (siehe dort).
+
+---
+
+## 2026-09-08 — Zwei Testbetriebe, zwei Zwecke
+
+Nach einem nicht sauber rückbaubaren Solver-Testlauf festgelegt: „Test" trägt dauerhafte
+Fixtures (nur Lesen/gezielte Einzeländerung mit Rückbau), „QT-Sandbox-Test" ist für
+zustandsverändernde Läufe. Grund: `geplante_schichten_verwerfen(p_betrieb_id)` löscht
+**jede** `geplant`-Instanz im Betrieb, nicht die eines Laufs — ein Rückbau in „Test"
+hätte einen vorbestehenden Datensatz mitgenommen. Testbetrieb 12 bleibt für beides
+gesperrt (Testsuite der App).
+
+---
+
+## 2026-09-07 — Wizard-Feinschliff aus einem Kollegen-Test
+
+**Rollen werden gesammelt, nicht sofort geschrieben.** Vorher ging jede Rolle beim
+Klick sofort in `rollen`. Da `rollen` keine DELETE-Policy hat (RLS filtert das DELETE
+still, null Zeilen) und `UNIQUE (betrieb_id, name)` den Namen blockiert, lief „anlegen,
+vertippt, weg damit" in eine Sackgasse. Jetzt hält Schritt 3 die Rollen im
+Formularzustand und schreibt gebündelt beim Weitergehen/ersten Einladen. Kompensation,
+kein Fix — für schon geschriebene Rollen gilt die Sperre unverändert (`art: "gesperrt"`).
+Preis: der Rollen-Editor braucht JavaScript.
+
+**Doppelprüfung beim Einladen ist Name *und* Kontakt.** Vorher verhinderte eine
+übereinstimmende E-Mail/Telefon im selben Betrieb das Anlegen. Das verbot, was das
+Datenmodell überall annimmt: eine Adresse kann mehrere Anstellungen tragen (Testbetrieb
+12: Chef, Anna, Tim unter einer Adresse). Jetzt blockiert nur zusätzlich gleicher Vor-
+und Nachname (Doppelklick-Schutz).
+
+**`qt_position` ist `Secure` nach Protokoll, nicht nach `NODE_ENV`.** Ein
+Produktionsbuild über `http://` setzte das Cookie `Secure`, der Browser verwarf es still
+— Konten mit mehreren Anstellungen sahen bei jedem Aufruf „keine Position gewählt".
+Jetzt aus `x-forwarded-proto` abgeleitet. Dazu reist das Ziel als `?weiter=` durch die
+Positionswahl (vorher fest `/dashboard`).
+
+---
+
+## 2026-08-29 — Kein Abschluss-Screen mehr; zwei Kontrast-Ausnahmen
+
+**`/einrichtung/fertig` entfernt.** Die Seite war richtig, solange die native App das
+Ziel war. Mit dem Web-Dashboard baute sie eine Lücke: die Wiedereinstiegs-Ableitung
+läuft bei jeder Anmeldung, also landete auch die tägliche Anmeldung eines fertigen
+Betriebs auf „Dein Betrieb steht". Der Zustand `fertig` bleibt als Endpunkt der
+Ableitung, war nie der Name einer Seite.
+
+**Zwei Kontrast-Ausnahmen freigegeben** (`--qt-muted-sunk`, `--qt-border-control`),
+beide im Browser gemessen und in `globals.css` begründet. Aktuelle Fassung in
+`CLAUDE.md`, „Harte Vorgaben".
+
+---
+
+## 2026-08-26 — Kursänderung: das Dashboard wird hier gebaut
+
+**Vorher galt:** Dashboard, Schichtplanung, laufende Mitarbeiterverwaltung und der
+mobile Login gehörten ausschliesslich in die Expo-App; der Wizard schrieb einmalig die
+Grundausstattung, alles Spätere gehörte der App. Der Abschluss-Screen verwies auf die
+Stores. Drei Prüffragen unterschieden „gehört hierher" an „läuft einmalig, keine
+Bestandsliste"; `schicht_instanzen`, `schicht_zuweisungen`, `urlaub`,
+`benachrichtigungen`, `notfaelle` galten als Beweis, vom Weg abgekommen zu sein.
+
+**Jetzt gilt:** dieses Repo baut das Betriebs-Dashboard funktional 1:1 zur Expo-App
+nach — beide Rollensichten, Chef wie Mitarbeiter. Der Urlaubs-/Vorlieben-Teil
+(App: `scheduling.tsx`) wurde am selben Tag ausdrücklich dazugenommen. Die alten
+Prüffragen sind hinfällig; an ihre Stelle tritt: **kann die Expo-App das?** Ja → gehört
+hierher (ausser Push). Nein → neue Produktentscheidung, erst besprechen. Begründung:
+beide Wege (Expo-Web-Target vs. eigene Weboberfläche) wurden getestet, die Entscheidung
+fiel für ein eigenständiges Dashboard.
+
+Ausnahme Push: `expo-notifications` braucht einen nativen Build und funktioniert im Web
+nicht — die Geräte-Registrierung (`push_token_speichern`) und On-Device-Erinnerungen
+bleiben der App. `benachrichtigungen` (die Tabelle) wird hier gelesen und geschrieben;
+nur der Klingelton fehlt.
+
+**Befunde am selben Tag:**
+- `pruefe_letzter_chef()` ist an keine Tabelle angehängt (nur
+  `trg_mitarbeiter_spaltenschutz` auf `mitarbeiter`) — läuft nie, obwohl
+  `DOCUMENTATION.md` sie unter integritätserzwingenden Triggern führt. Zwei Betriebe
+  haben schon null aktive Chefs. Gemeldet, nicht repariert; die Oberfläche fängt es ab.
+- `planungszyklus_erstellen` prüft keine Überschneidung, obwohl `TESTING.md` es
+  behauptet. Das Dashboard warnt selbst und verlangt Bestätigung.
+- Dashboard-Schale + Sperre (`betreteDashboard()`) gebaut; Sperre nur für Chefs
+  (`betrieb_abonnements` trägt nur `abonnement_select_chef`).
+- Position in `qt_position` (`httpOnly`), weil Server Components vor jedem React-Context
+  rendern und ein Reload die App-Auswahl verlöre. Cookie ist Hinweis, kein Nachweis.
+
+---
+
+## 2026-08-24 — `mitarbeiter_einladung_annehmen` ist weg
+
+Im Katalog nachgesehen: die code-basierte Einladungs-RPC, die zur Laufzeit warf (schrieb
+`mitarbeiter.auth_user_id`, eine Spalte, die es nicht gibt), existiert nicht mehr. Es
+gibt nur noch `meine_einladungen()` und `einladung_annehmen(p_mitarbeiter_id)`. Die
+Tabelle `einladungen` steht weiter da; ihr einziger Konsument ist die deployte, aber
+aufruferlose Edge Function `einladung-einloesen` (verwaister aktiver Datenweg — vor
+Arbeit an Einladungen beim Kollegen klären).
+
+---
+
+## 2026-08-23 — Preise festgelegt; Sperrlogik mit Testuhr durchgespielt
+
+Preise: Low 29 €, Medium 49 €, Business 69 €/Monat (bis 15/30/50 Mitarbeiter, Business
++ ein Standort). Anzeige in `plaene`; abgerechnet nach dem Stripe-Preis hinter
+`STRIPE_PRICE_*`.
+
+Mit einer Stripe-Testuhr bestätigt: Testphase ohne Karte → `paused` → Webhook schreibt
+`pausiert` → Karte nachgereicht → dasselbe Abo läuft `active` weiter. Dabei entdeckt:
+`resume` erzeugt eine offene Rechnung (`auto_advance: false`), das Abo bleibt `paused`
+bis zur Zahlung — deshalb bezahlt `nimmAboWiederAuf()` sofort mit `invoices.pay()`.
+
+---
+
+## 2026-08-19 — Der Einrichtungs-Stepper ersetzt Checkout-mit-Weiterleitung
+
+**Vorher** (2026-08-10 beschlossen, 2026-08-18 gebaut): Stripe Checkout mit
+Weiterleitung auf eine fremde Domain. **Jetzt:** vier zusammenhängende Stepper-Schritte
+mit Fortschrittsbalken, Zahlung eingebettet über Stripe Elements. Eine Weiterleitung
+mitten im Balken bricht dessen Zusage und macht das Überspringen unmöglich.
+
+Dabei: eigener SetupIntent statt `pending_setup_intent` (zeigt SEPA über
+`automatic_payment_methods`, ist an zwei Zeitpunkten neu erzeugbar); Plan reist nicht
+mehr als `?plan=` mit; das Formular für einen zweiten Betrieb wird entfernt (bis
+2026-08-21 noch sichtbar).
+
+---
+
+## 2026-08-18 — Wizard deckt Rollen, Mitarbeiter, Schichtvorlagen ab
+
+Bewusste Dopplung mit der App: die Grundausstattung ist Masseneingabe, wofür ein
+Web-Formular besser ist als eine Handy-Maske. Daraus folgt die Verpflichtung, sich nach
+`manager.tsx` zu richten (montagsbasierter `wochentag`, Mindestbesetzungs-Semantik,
+Feldnamen) — sonst liest die andere Oberfläche die Daten still falsch.
+
+---
+
+## 2026-08-11 — `stripe_subscription_id` beantwortet nicht „hat bezahlt?"
+
+Zur Zeit des Checkouts fragte Stufe 1 die Subscription-ID (nicht `status`), weil eine ID
+ohne Karte gar nicht entstand. Mit dem Überspringen-Weg entsteht die ID auch ohne Karte;
+gefragt wird künftig `status`, die ID ist nur noch Existenzfrage. (Superseded durch die
+Stripe-Gegenfrage vom 2026-09-14.)
+
+---
+
+## 2026-08-06 — Bestätigung über Codes, nicht über Links
+
+Für Registrierung und Passwort-Reset. Der Link-Weg lief über PKCE; der `code_verifier`
+liegt im registrierenden Browser, `exchangeCodeForSession` braucht ihn beim Klick —
+Mail auf dem Handy, registriert am Laptop scheitert. Für Gastro-Betriebe der Normalfall.
+`verifyOtp` braucht nur Adresse und Ziffern. Aktueller Stand (Code-Länge, Typwerte) in
+`CLAUDE.md`.
+
+---
+
+## 2026-08-05 / 2026-08-10 — Datenbank und Wizard-Tabellen gegen die Live-DB verifiziert
+
+Die in `CLAUDE.md` unter „Datenbank" und „Onboarding-Wizard" dokumentierten Signaturen,
+Constraints, Enum-Werte und Fallen wurden an diesen Tagen gegen die Live-Instanz geprüft.
+Sie stehen dort als aktueller Stand.

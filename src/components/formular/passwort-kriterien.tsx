@@ -2,7 +2,10 @@
 
 import { Check, Minus } from "lucide-react";
 
+import type { Dictionary } from "@/i18n/de";
 import { PASSWORT_MAX, PASSWORT_MIN } from "@/lib/validierung";
+
+export type KriterienTexte = Dictionary["registrierung"]["passwortKriterien"];
 
 /**
  * Die Passwortregeln, während getippt wird.
@@ -60,11 +63,14 @@ type Kriterium = {
  * sich diese Liste von `validierung.ts` entfernen könnte — so steht sie
  * an einem Stück da und lässt sich danebenlegen.
  */
-function kriterien({ passwort, wiederholung }: PasswortStand): Kriterium[] {
+function kriterien(
+  { passwort, wiederholung }: PasswortStand,
+  texte: KriterienTexte,
+): Kriterium[] {
   const liste: Kriterium[] = [
     {
       schluessel: "min",
-      text: `Mindestens ${PASSWORT_MIN} Zeichen`,
+      text: texte.min.replace("{n}", String(PASSWORT_MIN)),
       erfuellt: passwort.length >= PASSWORT_MIN,
     },
   ];
@@ -72,7 +78,7 @@ function kriterien({ passwort, wiederholung }: PasswortStand): Kriterium[] {
   if (passwort.length > PASSWORT_MAX) {
     liste.push({
       schluessel: "max",
-      text: `Höchstens ${PASSWORT_MAX} Zeichen`,
+      text: texte.max.replace("{n}", String(PASSWORT_MAX)),
       erfuellt: false,
     });
   }
@@ -85,7 +91,7 @@ function kriterien({ passwort, wiederholung }: PasswortStand): Kriterium[] {
   if (wiederholung.length > 0) {
     liste.push({
       schluessel: "gleich",
-      text: "Beide Eingaben stimmen überein",
+      text: texte.gleich,
       erfuellt: passwort.length > 0 && passwort === wiederholung,
     });
   }
@@ -96,12 +102,15 @@ function kriterien({ passwort, wiederholung }: PasswortStand): Kriterium[] {
 export function PasswortKriterien({
   id,
   stand,
+  texte,
 }: {
   /** Wird per `aria-describedby` am Passwortfeld verankert. */
   id: string;
   stand: PasswortStand;
+  /** Vom Server-Elternteil in der Sprache der Anfrage hereingereicht. */
+  texte: KriterienTexte;
 }) {
-  const punkte = kriterien(stand);
+  const punkte = kriterien(stand, texte);
   const offen = punkte.filter((punkt) => !punkt.erfuellt).length;
 
   return (
@@ -114,8 +123,10 @@ export function PasswortKriterien({
       */}
       <p aria-live="polite" className="sr-only">
         {offen === 0
-          ? "Alle Anforderungen an das Passwort sind erfüllt."
-          : `Noch ${offen} von ${punkte.length} Anforderungen offen.`}
+          ? texte.alleErfuellt
+          : texte.nochOffen
+              .replace("{n}", String(offen))
+              .replace("{gesamt}", String(punkte.length))}
       </p>
 
       <ul className="flex flex-col gap-1.5">
@@ -143,7 +154,7 @@ export function PasswortKriterien({
               <Minus className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
             )}
             {punkt.text}
-            <span className="sr-only">{punkt.erfuellt ? " — erfüllt" : " — offen"}</span>
+            <span className="sr-only">{punkt.erfuellt ? texte.erfuellt : texte.offen}</span>
           </li>
         ))}
       </ul>

@@ -183,7 +183,7 @@ export default async function ZustimmungSeite({
         ) : null}
 
         <div className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8">
-          <ZustimmungFormular ziel={ziel} />
+          <ZustimmungFormular ziel={ziel} zustimmungTexte={t.zustimmungFeld} />
 
           <p className="mt-6 border-t border-line pt-5 text-xs leading-relaxed text-muted">
             Du bestätigst für den Betrieb, nicht für dich persönlich. An deinem Tarif,

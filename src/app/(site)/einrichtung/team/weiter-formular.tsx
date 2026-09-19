@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 
 import { FormMeldung } from "@/components/formular/felder";
 import { leererZustand } from "@/lib/formular";
+import type { Dictionary } from "@/i18n/de";
 
 import { weiterZuSchichten } from "./aktionen";
 import { EntwurfsFelder } from "./entwurfs-felder";
@@ -23,7 +24,13 @@ import { EntwurfsFelder } from "./entwurfs-felder";
  * man nach einem fehlgeschlagenen Insert auf derselben Seite, ohne dass
  * sich etwas gerührt hätte.
  */
-function WeiterButton({ kannWeiter }: { kannWeiter: boolean }) {
+function WeiterButton({
+  kannWeiter,
+  texte,
+}: {
+  kannWeiter: boolean;
+  texte: Dictionary["stepper"]["team"];
+}) {
   const { pending } = useFormStatus();
   const gesperrt = pending || !kannWeiter;
 
@@ -34,7 +41,7 @@ function WeiterButton({ kannWeiter }: { kannWeiter: boolean }) {
       aria-disabled={gesperrt}
       className="w-full rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
     >
-      {pending ? "Wird gespeichert …" : "Weiter zu den Schichten"}
+      {pending ? texte.weiterLaufend : texte.weiter}
     </button>
   );
 }
@@ -42,9 +49,11 @@ function WeiterButton({ kannWeiter }: { kannWeiter: boolean }) {
 export function WeiterFormular({
   entwuerfe,
   kannWeiter,
+  texte,
 }: {
   entwuerfe: readonly string[];
   kannWeiter: boolean;
+  texte: Dictionary["stepper"]["team"];
 }) {
   const [zustand, aktion] = useActionState(weiterZuSchichten, leererZustand);
 
@@ -58,10 +67,10 @@ export function WeiterFormular({
         </div>
       ) : null}
 
-      <WeiterButton kannWeiter={kannWeiter} />
+      <WeiterButton kannWeiter={kannWeiter} texte={texte} />
 
       {!kannWeiter ? (
-        <p className="mt-3 text-sm text-muted">Leg zuerst mindestens eine Rolle an.</p>
+        <p className="mt-3 text-sm text-muted">{texte.ersteRolle}</p>
       ) : null}
     </form>
   );

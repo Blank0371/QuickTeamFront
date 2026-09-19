@@ -18,15 +18,8 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
  * ein `div` mit Rahmenfarbe, der Punkt ein zweites, die Bewegung
  * kommt aus dem ohnehin geladenen GSAP.
  *
- * Position: auf grossen Schirmen seitlich rechts mit deutlichem
- * Abstand zum Fensterrand, auf kleinen unten mittig — seitlich waere
- * es dort entweder im Daumenbereich oder unter dem Text.
- *
- * Auf schmalen Schirmen ist der Hinweis kompakter (kuerzere Schiene,
- * engerer Abstand, naeher an der Unterkante). Grund: seit der Hero
- * niedriger ist, ruecken Knoepfe und Hinweis zusammen — mit der
- * Desktop-Groesse lag das Wort „Scrollen" gemessene 15 px ueber dem
- * „Anmelden"-Knopf. Kompakt bleiben 17 px Abstand.
+ * Nur ab 1024px sichtbar und animiert. Auf Mobilgeräten bleibt der
+ * Inhalt im normalen Fluss, ohne überlagernden Scrollhinweis.
  *
  * Der Hinweis gehoert zum Hero und verschwindet mit ihm: ein
  * gescrubbter Ausblender an der Hero-Unterkante, damit er nicht ueber
@@ -41,60 +34,45 @@ export function ScrollHinweis() {
 
   useGSAP(
     () => {
-      const wurzel = wurzelRef.current;
-      const punkt = wurzel?.querySelector<HTMLElement>("[data-scroll-punkt]");
-      const hero = wurzel?.closest<HTMLElement>("[data-hero]");
-      if (!wurzel || !punkt) return;
-
-      // Der Weg des Punktes ist die Schiene, nicht eine feste Zahl:
-      // die Schiene ist auf schmalen Schirmen kuerzer (siehe unten),
-      // ein fester Wert liefe dort unten heraus.
-      const weg = Math.max(16, (punkt.parentElement?.clientHeight ?? 48) - 8);
-
-      const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      if (reduziert) {
-        gsap.set(punkt, { y: 0, autoAlpha: 1 });
-      } else {
-        // Zwei Durchlaeufe, dann Ruhe — bewusst keine Endlosschleife.
-        //
-        // WCAG 2.2.2 verlangt fuer Bewegung, die von selbst startet,
-        // laenger als fuenf Sekunden dauert und neben anderem Inhalt
-        // steht, eine Moeglichkeit zum Anhalten. Fuer einen 5px grossen
-        // Punkt einen Pausenknopf zu bauen waere absurd; die
-        // Bewegung von vornherein unter der Grenze zu halten ist die
-        // ehrlichere Loesung. Zwei Durchlaeufe zu je 1,95 s samt Pause
-        // ergeben rund 4,4 s. Danach bleibt der Punkt oben stehen: der
-        // Hinweis „hier geht es weiter" bleibt sichtbar, er bewegt
-        // sich nur nicht mehr.
-        gsap
-          .timeline({ repeat: 1, repeatDelay: 0.5, onComplete: () => gsap.set(punkt, { y: 0, autoAlpha: 1 }) })
-          .fromTo(punkt, { y: 0, autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, ease: "none" })
-          .to(punkt, { y: weg, duration: 1.6, ease: "power1.inOut" }, 0)
-          .to(punkt, { autoAlpha: 0, duration: 0.4, ease: "none" }, 1.2);
-      }
-
-      if (!hero || reduziert) return;
-
-      /*
-       * Der gescrubbte Ausblender gilt nur ab 1024px.
-       *
-       * Er hat dort eine Aufgabe: der Hero ist niedriger als ein
-       * Bildschirm, die Kalender-Sequenz schiebt sich von unten darunter,
-       * und ohne diesen Ausblender stuende der Hinweis noch ueber der
-       * beginnenden Sequenz. Mobil gibt es die Sequenz nicht — der
-       * Hinweis scrollt dort einfach mit dem Hero aus dem Bild, so wie
-       * jedes andere Element auch. Ein an die Scrollposition gehaengter
-       * Deckkraftwert waere dafuer Aufwand ohne Wirkung.
-       *
-       * `gsap.matchMedia()` nimmt den Tween beim Unterschreiten der
-       * Breite samt gesetzter Inline-Deckkraft zurueck; ein halb
-       * ausgeblendeter Hinweis, den nichts mehr zuruecksetzt, kann
-       * dadurch nicht stehenbleiben.
-       */
       const mm = gsap.matchMedia();
-
       mm.add("(min-width: 1024px)", () => {
+        const wurzel = wurzelRef.current;
+        const punkt = wurzel?.querySelector<HTMLElement>("[data-scroll-punkt]");
+        const hero = wurzel?.closest<HTMLElement>("[data-hero]");
+        if (!wurzel || !punkt) return;
+
+        // Der Weg des Punktes ist die Schiene, nicht eine feste Zahl:
+        // die Schiene ist auf schmalen Schirmen kuerzer (siehe unten),
+        // ein fester Wert liefe dort unten heraus.
+        const weg = Math.max(16, (punkt.parentElement?.clientHeight ?? 48) - 8);
+
+        const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        if (reduziert) {
+          gsap.set(punkt, { y: 0, autoAlpha: 1 });
+        } else {
+          // Zwei Durchlaeufe, dann Ruhe — bewusst keine Endlosschleife.
+          //
+          // WCAG 2.2.2 verlangt fuer Bewegung, die von selbst startet,
+          // laenger als fuenf Sekunden dauert und neben anderem Inhalt
+          // steht, eine Moeglichkeit zum Anhalten. Fuer einen 5px grossen
+          // Punkt einen Pausenknopf zu bauen waere absurd; die
+          // Bewegung von vornherein unter der Grenze zu halten ist die
+          // ehrlichere Loesung. Zwei Durchlaeufe zu je 1,95 s samt Pause
+          // ergeben rund 4,4 s. Danach bleibt der Punkt oben stehen: der
+          // Hinweis „hier geht es weiter" bleibt sichtbar, er bewegt
+          // sich nur nicht mehr.
+          gsap
+            .timeline({ repeat: 1, repeatDelay: 0.5, onComplete: () => gsap.set(punkt, { y: 0, autoAlpha: 1 }) })
+            .fromTo(punkt, { y: 0, autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, ease: "none" })
+            .to(punkt, { y: weg, duration: 1.6, ease: "power1.inOut" }, 0)
+            .to(punkt, { autoAlpha: 0, duration: 0.4, ease: "none" }, 1.2);
+        }
+
+        if (!hero || reduziert) return;
+
+        // Der äußere Media-Kontext räumt beide Animationen beim
+        // Wechsel auf Mobilbreite auf, einschließlich Inline-Stilen.
         gsap.to(wurzel, {
           autoAlpha: 0,
           ease: "none",
@@ -106,7 +84,6 @@ export function ScrollHinweis() {
           },
         });
       });
-
       return () => mm.revert();
     },
     { scope: wurzelRef },
@@ -116,7 +93,7 @@ export function ScrollHinweis() {
     <div
       ref={wurzelRef}
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 lg:bottom-12 lg:left-auto lg:right-10 lg:translate-x-0 lg:gap-3 xl:right-16"
+      className="pointer-events-none absolute bottom-5 left-1/2 hidden lg:flex -translate-x-1/2 flex-col items-center gap-2 lg:bottom-12 lg:left-auto lg:right-10 lg:translate-x-0 lg:gap-3 xl:right-16"
       // Auf Geraeten mit Gestenleiste sitzt der Hinweis sonst genau
       // darunter. Bei Geraeten ohne Einzug ist der Wert 0.
       style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}

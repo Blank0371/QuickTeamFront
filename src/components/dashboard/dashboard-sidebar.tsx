@@ -114,9 +114,27 @@ export function DashboardSidebar({
   const pathname = usePathname();
 
   return (
+    /*
+      Ab `lg` ist der `<nav>` selbst die klebende, seitenhohe Spalte —
+      `sticky top-0`, `h-dvh`, `self-start`. Damit bleibt die
+      Personenkarte am Fuss (der Weg zum Positionswechsel) auf jeder
+      Seite sichtbar, statt an das untere Ende eines mitwachsenden
+      `<nav>` zu rutschen und auf langen Seiten unter den Faltrand zu
+      geraten.
+
+      Die explizite `h-dvh` ist der Grund, warum `self-start` hier
+      erlaubt ist: ohne feste Höhe schrumpfte ein `self-start`-Element
+      auf die Höhe seiner Einträge, und die Trennlinie rechts
+      (`border-r`) endete mitten auf der Seite — genau die Falle, wegen
+      der früher nur die innere Liste klebte. Mit voller Fensterhöhe
+      läuft die Linie durch und klebt mit. Läuft der Inhalt einmal höher
+      als das Fenster (kleiner Laptop, viele Bereiche), scrollt der
+      `<nav>` in sich selbst (`overflow-y-auto`), statt die Karte
+      wegzudrücken.
+    */
     <nav
       aria-label={beschriftung}
-      className="border-b border-line bg-surface lg:flex lg:w-60 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r"
+      className="border-b border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r"
     >
       {/*
         Logo und Betriebskarte gibt es nur in der Spaltenfassung. Auf
@@ -146,12 +164,13 @@ export function DashboardSidebar({
       </div>
 
       {/*
-        Sticky liegt am Inneren, nicht am `<nav>`. Klebte das Element
-        selbst, müsste es `self-start` sein und schrumpfte auf die Höhe
-        seiner Einträge — die Trennlinie rechts endete dann mitten auf
-        der Seite.
+        Die mittlere Liste wächst (`lg:grow`) und schiebt die
+        Personenkarte an den Fuss. Das Kleben übernimmt der `<nav>`
+        selbst (Begründung dort) — vorher klebte diese Liste allein, was
+        die Bereichslinks beim Scrollen stehen liess, die Karte am Fuss
+        aber ungeschützt am Ende des seitenhohen `<nav>` zurückliess.
       */}
-      <div className="flex items-stretch gap-1 overflow-x-auto px-5 sm:px-8 lg:sticky lg:top-0 lg:grow lg:flex-col lg:gap-0 lg:overflow-visible lg:px-3 lg:py-4">
+      <div className="flex items-stretch gap-1 overflow-x-auto px-5 sm:px-8 lg:grow lg:flex-col lg:gap-0 lg:overflow-visible lg:px-3 lg:py-4">
         {gruppen.map((gruppe, i) => (
           <div
             key={gruppe.titel ?? "start"}

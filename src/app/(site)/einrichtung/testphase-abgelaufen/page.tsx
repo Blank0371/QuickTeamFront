@@ -14,8 +14,10 @@ import { plaene, TESTPHASE_TAGE } from "@/lib/site";
 import { pruefePreisGleichstand, zusammenfassungFortsetzen } from "@/lib/abo-konditionen";
 import { aboKonditionen, erstelleSetupIntent, holeAboFuerBetrieb } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { planOderBasic } from "@/lib/validierung";
+import { LAENDER, planOderBasic } from "@/lib/validierung";
 import { zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
+import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
 
 export const metadata: Metadata = {
   title: "Testphase abgelaufen",
@@ -99,24 +101,31 @@ export default async function TestphaseAbgelaufenSeite({
   const konditionen = aboKonditionen(stripeAbo);
   pruefePreisGleichstand(planOderBasic(abo?.plan), konditionen);
 
+  const t = await holeTexte();
+  const sp = t.stepper.sperre;
+  const laender = LAENDER.map((land) => ({
+    code: land.code,
+    name: land.code === "AT" ? t.auswahl.landAT : t.auswahl.landDE,
+  }));
+  const textTeile = sp.text
+    .replace("{tage}", String(TESTPHASE_TAGE))
+    .split("{plan}");
+
   return (
     <Container className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">
-          Testphase
+          {sp.eyebrow}
         </p>
 
         <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">
-          Deine Testphase ist abgelaufen
+          {sp.titel}
         </h1>
 
         <p className="mt-4 text-base leading-relaxed text-muted">
-          Die {TESTPHASE_TAGE} Tage sind vorbei, und es ist kein Zahlungsmittel
-          hinterlegt. Dein Betrieb, dein Team und deine Schichtvorlagen bleiben bis
-          90 Tage nach Ende der Testphase gespeichert, danach werden sie gelöscht (AGB
-          § 5 Abs. 3). Sobald du eine Zahlungsmethode hinterlegst, läuft dein Plan{" "}
-          <strong className="font-semibold text-text">{planName}</strong> weiter, wo er
-          aufgehört hat.
+          {textTeile[0]}
+          <strong className="font-semibold text-text">{planName}</strong>
+          {textTeile[1]}
         </p>
 
         <div className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8">
@@ -129,8 +138,12 @@ export default async function TestphaseAbgelaufenSeite({
           <ZahlungsFormular
             clientSecret={intent.clientSecret}
             zusammenfassung={zusammenfassungFortsetzen(konditionen)}
-            knopfText="Kostenpflichtig fortsetzen"
+            knopfText={sp.knopfFortsetzen}
             rueckkehrPfad="/einrichtung/testphase-abgelaufen"
+            texte={t.stepper.zahlungsFormular}
+            rechnungTexte={t.stepper.rechnung}
+            laender={laender}
+            locale={await leseSprache()}
             rechnung={await holeVorbelegung(
               rechnung?.name ?? null,
               rechnung?.land ?? null,
@@ -140,7 +153,7 @@ export default async function TestphaseAbgelaufenSeite({
         </div>
 
         <p className="mt-6 text-sm leading-relaxed text-muted">
-          Es entsteht kein neues Abonnement — dein bestehendes wird fortgesetzt.
+          {sp.keinNeues}
         </p>
 
         {/*
@@ -165,7 +178,7 @@ export default async function TestphaseAbgelaufenSeite({
               type="submit"
               className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
             >
-              Abo verwalten oder kündigen
+              {sp.aboVerwalten}
             </button>
           </form>
           <a
@@ -173,7 +186,7 @@ export default async function TestphaseAbgelaufenSeite({
             download
             className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
           >
-            Daten exportieren
+            {sp.datenExport}
           </a>
         </div>
       </div>

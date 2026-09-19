@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { genehmigteTageOhne, tageDiff } from "@/lib/dashboard/urlaub";
+import { genehmigteTageOhne, tageImJahr } from "@/lib/dashboard/urlaub";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { urlaubAntragSchema, urlaubEntscheidungSchema } from "@/lib/validierung";
@@ -105,7 +105,7 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
       return fehler("Diesen Antrag gibt es nicht mehr.");
     }
 
-    const [{ data: mitarbeiterZeile }, { data: genehmigt }] = await Promise.all([
+    const [{ data: mitarbeiterZeile, error: mitarbeiterFehler }, { data: genehmigt, error: urlaubFehler }] = await Promise.all([
       supabase.from("mitarbeiter").select("urlaubsanspruch_tage").eq("id", antrag.mitarbeiter_id).single(),
       supabase
         .from("urlaub")
@@ -114,32 +114,40 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
         .eq("status", "approved"),
     ]);
 
-    const anspruch = mitarbeiterZeile?.urlaubsanspruch_tage ?? 0;
-    const bereits = genehmigteTageOhne(
-      (genehmigt ?? []).map((g) => ({ id: g.id, mitarbeiterId: g.mitarbeiter_id, von: g.von, bis: g.bis, status: "approved" as const })),
-      antrag.mitarbeiter_id,
-      antrag.id,
-    );
-    const beantragt = tageDiff(antrag.von, antrag.bis);
-
-    if (bereits + beantragt > anspruch) {
-      const rest = Math.max(0, anspruch - bereits);
-      return fehler(
-        `Das übersteigt den Urlaubsanspruch: noch ${rest} von ${anspruch} Tagen übrig, dieser Antrag braucht ${beantragt}.`,
+    if (mitarbeiterFehler || urlaubFehler || !mitarbeiterZeile || !genehmigt) {
+      return fehler("Der Urlaubsanspruch liess sich nicht prüfen. Versuch es noch einmal.");
+    }
+    const anspruch = mitarbeiterZeile.urlaubsanspruch_tage ?? 0;
+    for (let jahr = Number(antrag.von.slice(0, 4)); jahr <= Number(antrag.bis.slice(0, 4)); jahr++) {
+      const bereits = genehmigteTageOhne(
+        genehmigt.map((g) => ({ id: g.id, mitarbeiterId: g.mitarbeiter_id, von: g.von, bis: g.bis, status: "approved" as const })),
+        antrag.mitarbeiter_id,
+        antrag.id,
+        jahr,
       );
+      const beantragt = tageImJahr(antrag.von, antrag.bis, jahr);
+      if (bereits + beantragt > anspruch) {
+        const rest = Math.max(0, anspruch - bereits);
+        return fehler(
+          `Das übersteigt den Urlaubsanspruch für ${jahr}: noch ${rest} von ${anspruch} Tagen übrig, dieser Antrag braucht ${beantragt}.`,
+        );
+      }
     }
   }
 
-  const { error } = await supabase
+  const { data: aktualisiert, error } = await supabase
     .from("urlaub")
     .update({ status: daten.status, begruendung: daten.begruendung })
     .eq("id", daten.urlaubId)
-    .eq("betrieb_id", position.betriebId);
+    .eq("betrieb_id", position.betriebId)
+    .select("id");
 
   if (error) {
     console.error(`[dashboard/urlaub] entscheiden: ${error.message}`);
     return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
   }
+
+  if (!aktualisiert?.length) return fehler("Diesen Antrag gibt es nicht mehr. Lad die Seite neu.");
 
   revalidatePath(PFAD);
   return { status: "erfolg", nachricht: null, felder: {} };

@@ -5,6 +5,7 @@ import { SchrittRahmen } from "@/components/einrichtung/schritt-rahmen";
 import { betreteSchritt } from "@/lib/einrichtung";
 import { holeEingeladene, holeRollen } from "@/lib/team";
 import { createClient } from "@/lib/supabase/server";
+import { holeTexte } from "@/i18n/server";
 
 import { TeamSchritt } from "./team-schritt";
 
@@ -41,12 +42,14 @@ export default async function TeamSeite() {
     holeEingeladene(supabase, stand.betriebId),
   ]);
 
+  const st = (await holeTexte()).stepper.team;
+
   return (
     <SchrittRahmen
       schritt="team"
       stand={stand}
-      titel="Wer arbeitet bei dir"
-      lead="Erst die Rollen — Küche, Service, Bar oder was bei dir passt. Danach lädst du deine Leute ein und hakst an, welche Rolle sie haben."
+      titel={st.titel}
+      lead={st.lead}
     >
       {/*
         Rollen, Mitarbeiter und der Weiter-Knopf hängen seit dem
@@ -55,7 +58,7 @@ export default async function TeamSeite() {
         dieselbe Liste. Die Begründung steht an `TeamSchritt` und an
         `schreibeRollen()` in `src/lib/team.ts`.
       */}
-      <TeamSchritt bestehendeRollen={rollen} leute={leute} />
+      <TeamSchritt bestehendeRollen={rollen} leute={leute} texte={st} />
     </SchrittRahmen>
   );
 }

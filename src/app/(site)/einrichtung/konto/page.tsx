@@ -7,9 +7,10 @@ import { einzelwert, meldungFuer } from "@/lib/auth-meldungen";
 import { betreteSchritt } from "@/lib/einrichtung";
 import { leseBetriebsdaten } from "@/lib/registrierung-merker";
 import { FormMeldung } from "@/components/formular/felder";
+import { holeTexte } from "@/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { TESTPHASE_TAGE } from "@/lib/site";
-import { feldSchemata } from "@/lib/validierung";
+import { feldSchemata, LAENDER } from "@/lib/validierung";
 
 import { CodeAbschnitt } from "./code-abschnitt";
 import { DatenAbschnitt } from "./daten-abschnitt";
@@ -53,11 +54,23 @@ export default async function KontoSeite({
   const stand = await betreteSchritt("konto");
   const params = await searchParams;
 
-  const meldung = meldungFuer(einzelwert(params["fehler"]));
-
   // Der Parameter ist frei wählbar — nur eine echte Adresse wird übernommen.
   const geprueft = feldSchemata.email.safeParse(einzelwert(params["email"]) ?? "");
   const email = geprueft.success ? geprueft.data : null;
+
+  /*
+   * Einmal das ganze Wörterbuch holen — die Seite braucht Texte in jeder
+   * ihrer vier Lagen, nicht nur im Formular. Die Länderliste bekommt
+   * übersetzte Namen; der gespeicherte Code bleibt `AT`/`DE`.
+   */
+  const t = await holeTexte();
+  const rt = t.registrierung;
+
+  const meldung = meldungFuer(einzelwert(params["fehler"]), t.login.meldungen);
+  const laender = LAENDER.map((land) => ({
+    code: land.code,
+    name: land.code === "AT" ? t.auswahl.landAT : t.auswahl.landDE,
+  }));
 
   /* ---------------------------------------------------------------- */
   /* C und D: es gibt bereits eine Session                             */
@@ -69,16 +82,13 @@ export default async function KontoSeite({
         <SchrittRahmen
           schritt="konto"
           stand={stand}
-          titel="Dein Konto steht — der Betrieb fehlt noch"
-          lead="Deine E-Mail-Adresse ist bestätigt. Beim Anlegen des Betriebs ist etwas dazwischengekommen; das holen wir jetzt nach."
+          titel={rt.nachtragen.titel}
+          lead={rt.nachtragen.lead}
         >
-          <p className="text-sm leading-relaxed text-text">
-            Deine Angaben von der Registrierung sind gespeichert. Ein Klick genügt —
-            dein Konto bleibt in jedem Fall bestehen.
-          </p>
+          <p className="text-sm leading-relaxed text-text">{rt.nachtragen.hinweis}</p>
 
           <div className="mt-6">
-            <NachtragenFormular />
+            <NachtragenFormular texte={rt} />
           </div>
         </SchrittRahmen>
       );
@@ -95,26 +105,26 @@ export default async function KontoSeite({
       <SchrittRahmen
         schritt="konto"
         stand={stand}
-        titel="Dieser Schritt ist erledigt"
-        lead="Dein Konto ist bestätigt und dein Betrieb angelegt. Hier gibt es nichts mehr zu tun."
+        titel={rt.erledigt.titel}
+        lead={rt.erledigt.lead}
       >
         <dl className="flex flex-col gap-4 text-sm">
           <div>
-            <dt className="text-muted">Betrieb</dt>
-            <dd className="mt-1 font-medium text-text">{betrieb?.name ?? "angelegt"}</dd>
+            <dt className="text-muted">{rt.erledigt.betriebLabel}</dt>
+            <dd className="mt-1 font-medium text-text">
+              {betrieb?.name ?? rt.erledigt.betriebFallback}
+            </dd>
           </div>
         </dl>
 
-        <p className="mt-6 border-t border-line pt-5 text-sm text-muted">
-          Betriebsname und Land änderst du später in der App — nicht mehr hier.
-        </p>
+        <p className="mt-6 border-t border-line pt-5 text-sm text-muted">{rt.erledigt.hinweis}</p>
 
         <div className="mt-6">
           <Link
             href="/einrichtung"
             className="inline-block rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
           >
-            Weiter zur Einrichtung
+            {rt.erledigt.weiter}
           </Link>
         </div>
 
@@ -126,12 +136,12 @@ export default async function KontoSeite({
         */}
         <form action={abmelden} className="mt-6 border-t border-line pt-5">
           <p className="text-sm text-muted">
-            Nicht dein Konto oder ein weiterer Betrieb?{" "}
+            {rt.erledigt.nichtDeinKonto}{" "}
             <button
               type="submit"
               className="font-medium text-signal underline underline-offset-4 hover:text-signal-hover"
             >
-              Abmelden
+              {rt.erledigt.abmelden}
             </button>
           </p>
         </form>
@@ -156,12 +166,8 @@ export default async function KontoSeite({
     <SchrittRahmen
       schritt="konto"
       stand={null}
-      titel={wartetAufCode ? "Code aus der E-Mail eintragen" : "Leg deinen Betrieb an"}
-      lead={
-        wartetAufCode
-          ? "Wir haben dir einen Zahlencode geschickt. Trag ihn hier ein — dann legen wir deinen Betrieb an und es geht weiter mit der Zahlung."
-          : "Betriebsname, Land, dein Name und ein Passwort. Danach bestätigst du deine Adresse mit einem Code — noch auf dieser Seite."
-      }
+      titel={wartetAufCode ? rt.code.titel : rt.daten.titel}
+      lead={wartetAufCode ? rt.code.lead : rt.daten.lead}
     >
       {meldung ? (
         <div className="mb-6">
@@ -171,28 +177,16 @@ export default async function KontoSeite({
 
       {wartetAufCode ? (
         <>
-          <CodeAbschnitt email={email} />
+          <CodeAbschnitt email={email} texte={rt} versandTexte={t.codeVersand} />
 
           <div className="mt-6 rounded-blk border border-line bg-surface-sunk p-5">
-            <h2 className="font-display text-sm font-bold text-text">
-              Du kannst das Gerät wechseln
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Die E-Mail am Handy öffnen und den Code am Rechner eintippen ist
-              ausdrücklich vorgesehen. Trag dann einfach dieselbe E-Mail-Adresse mit ein.
-            </p>
+            <h2 className="font-display text-sm font-bold text-text">{rt.boxen.geraetTitel}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{rt.boxen.geraetText}</p>
           </div>
 
           <div className="mt-4 rounded-blk border border-line bg-surface-sunk p-5">
-            <h2 className="font-display text-sm font-bold text-text">
-              Bestätige innerhalb von 24 Stunden
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Danach wird die Registrierung automatisch gelöscht. Dann legst du den
-              Betrieb einfach neu an — es geht nichts verloren, weil er bis zur
-              Bestätigung noch gar nicht existiert. Der Code selbst gilt 60 Minuten;
-              danach lässt du dir hier einen neuen schicken.
-            </p>
+            <h2 className="font-display text-sm font-bold text-text">{rt.boxen.fristTitel}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{rt.boxen.fristText}</p>
           </div>
 
           {/*
@@ -205,12 +199,9 @@ export default async function KontoSeite({
           */}
           <details className="mt-4 rounded-blk border border-line bg-surface-sunk p-5">
             <summary className="cursor-pointer text-sm font-semibold text-text">
-              Angaben zum Betrieb ändern
+              {rt.boxen.aendernSummary}
             </summary>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              Beim erneuten Absenden schicken wir einen neuen Code an die dann
-              eingetragene Adresse.
-            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted">{rt.boxen.aendernText}</p>
             <div className="mt-5">
               {/*
                 Vorbelegt aus dem Merker-Cookie plus der Adresse aus der
@@ -221,6 +212,9 @@ export default async function KontoSeite({
               */}
               <DatenAbschnitt
                 idPraefix="aendern-"
+                texte={rt}
+                zustimmungTexte={t.zustimmungFeld}
+                laender={laender}
                 vorbelegung={{ ...(gemerkt ?? {}), email }}
               />
             </div>
@@ -228,15 +222,20 @@ export default async function KontoSeite({
         </>
       ) : (
         <>
-          <DatenAbschnitt />
+          <DatenAbschnitt
+            texte={rt}
+            zustimmungTexte={t.zustimmungFeld}
+            laender={laender}
+          />
 
           <p className="mt-6 border-t border-line pt-5 text-xs leading-relaxed text-muted">
-            Der Betrieb wird erst angelegt, wenn du den Code aus der Bestätigungsmail
-            einträgst. Passiert das nicht innerhalb von{" "}
-            <strong className="font-semibold text-text">24 Stunden</strong>, wird die
-            Registrierung wieder gelöscht und du fängst von vorn an. Danach folgen{" "}
-            <strong className="font-semibold text-text">{TESTPHASE_TAGE} Tage</strong>{" "}
-            Testphase — Zahlungsdaten kannst du dabei überspringen.
+            {rt.fussnoteA}
+            <strong className="font-semibold text-text">{rt.fussnote24}</strong>
+            {rt.fussnoteB}
+            <strong className="font-semibold text-text">
+              {rt.fussnoteTage.replace("{tage}", String(TESTPHASE_TAGE))}
+            </strong>
+            {rt.fussnoteC}
           </p>
 
           {/*
@@ -245,10 +244,7 @@ export default async function KontoSeite({
             Vertrag — dass das Angebot Verbrauchern nicht offensteht,
             gehört deshalb neben den Knopf und nicht hinter einen Link.
           */}
-          <p className="mt-4 text-xs leading-relaxed text-muted">
-            Angebot ausschließlich für Unternehmer im Sinne des § 14 BGB sowie für
-            juristische Personen des öffentlichen Rechts — nicht für Verbraucher.
-          </p>
+          <p className="mt-4 text-xs leading-relaxed text-muted">{rt.b2b}</p>
         </>
       )}
     </SchrittRahmen>

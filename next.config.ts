@@ -22,6 +22,16 @@ const nextConfig: NextConfig = {
   // falsche Wurzel und packt zu viel in die serverseitige Funktion.
   outputFileTracingRoot: path.join(import.meta.dirname, "."),
   /*
+   * Der Werbepartner-Vertrag liegt als Markdown unter `docs/` und wird
+   * von `/promocode/antrag` zur Laufzeit gelesen und als PDF gerendert.
+   * Nexts Datei-Tracer sieht den `fs`-Zugriff über `process.cwd()` nicht
+   * als statischen Pfad und würde die Datei sonst nicht mitpacken — im
+   * Deployment fehlte sie dann. Hier ausdrücklich einschliessen.
+   */
+  outputFileTracingIncludes: {
+    "/promocode/antrag": ["./docs/rechtliches/legals/Werbepartner-Vertrag-QuickTeam-de-en.md"],
+  },
+  /*
    * Ausgaben von Testwerkzeugen lösen keinen Neubau mehr aus.
    *
    * `playwright-cli` schreibt Snapshots, Konsolenprotokolle und

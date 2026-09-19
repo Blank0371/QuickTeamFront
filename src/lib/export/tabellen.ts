@@ -338,6 +338,14 @@ export const EXPORT_TABELLEN: readonly TabellenSpec[] = [
     anmerkung:
       "Ohne die Kennungen des Zahlungsdienstleisters (`stripe_customer_id`, `stripe_subscription_id`) — sie sind Zugangsmerkmale zu einem fremden System, keine Betriebsdaten.",
   },
+  {
+    name: "betrieb_promo_codes",
+    beschreibung: "Der bei der Registrierung angegebene Promo-Code, falls einer eingetragen wurde.",
+    schluessel: "betrieb_id",
+    ordnung: ["betrieb_id"],
+    eindeutig: true,
+    sicht: "voll",
+  },
 ];
 
 /**

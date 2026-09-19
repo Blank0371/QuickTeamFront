@@ -5,11 +5,12 @@ import { useActionState } from "react";
 import { AbsendenButton } from "@/components/formular/absenden-button";
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
+import type { Dictionary } from "@/i18n/de";
 import { leererZustand } from "@/lib/formular";
 
 import { anmelden } from "./aktionen";
 
-export function LoginFormular() {
+export function LoginFormular({ texte }: { texte: Dictionary["login"] }) {
   const [zustand, aktion] = useActionState(anmelden, leererZustand);
 
   /*
@@ -27,7 +28,7 @@ export function LoginFormular() {
         id="email"
         name="email"
         type="email"
-        label="E-Mail-Adresse"
+        label={texte.emailLabel}
         autoComplete="email"
         defaultValue={zustand.werte?.["email"]}
         fehler={fehlerFuer("email", zustand.felder)}
@@ -37,12 +38,12 @@ export function LoginFormular() {
         id="passwort"
         name="passwort"
         type="password"
-        label="Passwort"
+        label={texte.passwortLabel}
         autoComplete="current-password"
         fehler={fehlerFuer("passwort", zustand.felder)}
       />
 
-      <AbsendenButton laufend="Wird geprüft …">Anmelden</AbsendenButton>
+      <AbsendenButton laufend={texte.absendenLaufend}>{texte.absenden}</AbsendenButton>
     </form>
   );
 }

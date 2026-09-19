@@ -130,7 +130,7 @@ legt sie erstmals fest — beim Übersetzen der Mitteilungen hier eintragen.
 | AGB | Terms | `W: footer.rechtlichesLinks[2]` |
 | AVV | DPA | `W: rechtliches.avvKurz` |
 | Gastronomiebetriebe | restaurants and bars | `W: footer.claim` |
-| Kostenlos testen | Start free trial | `W: nav.registrieren` |
+| Registrieren | Register | `W: nav.registrieren` |
 | Preise | Pricing | `W: nav.links[1]` |
 
 ## Namen und Codes — **nie übersetzen**

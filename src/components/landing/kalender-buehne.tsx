@@ -469,27 +469,23 @@ export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprec
           </div>
         </div>
 
-        <div className="relative mt-10 grid gap-10 sm:mt-12 sm:gap-12">
+        <div className="relative mx-auto mt-8 grid max-w-2xl gap-4 sm:mt-10">
           {versprechen.map((v, index) => (
-            <div key={v.id} data-versprechen-farbe={v.farbe}>
-              <div className="mb-3 w-16">
-                <KalenderLogo
-                  aktivFarben={versprechen.slice(0, index + 1).map((eintrag) => eintrag.farbe)}
-                  animiert
-                />
+            <div key={v.id} data-versprechen-farbe={v.farbe}
+              className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:gap-5 sm:p-6">
+              <span aria-hidden="true" className="pt-0.5 text-sm font-semibold tabular-nums"
+                style={{ color: "var(--qt-c-bronze-hi)" }}>
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h2 className="text-xl font-bold leading-tight" style={{ color: "var(--qt-c-bone)" }}>
+                  {v.titel}
+                </h2>
+                <p className="mt-2 text-base leading-relaxed"
+                  style={{ color: "color-mix(in oklab, var(--qt-c-bone) 82%, transparent)" }}>
+                  {v.text}
+                </p>
               </div>
-              <h2
-                className="text-xl font-bold leading-tight"
-                style={{ color: "var(--qt-c-bone)" }}
-              >
-                {v.titel}
-              </h2>
-              <p
-                className="mt-3 text-sm leading-relaxed"
-                style={{ color: "color-mix(in oklab, var(--qt-c-bone) 82%, transparent)" }}
-              >
-                {v.text}
-              </p>
             </div>
           ))}
         </div>

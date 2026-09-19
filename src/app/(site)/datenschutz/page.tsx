@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { leseSprache } from "@/i18n/sprache";
 
 import { RechtsDokument } from "@/components/rechtsdokument";
 
-export const metadata: Metadata = {
-  title: "Datenschutzerklärung",
-  description:
-    "Wie QuickTeam personenbezogene Daten verarbeitet: Rollenverteilung zwischen Arbeitgeber und Anbieter, Rechtsgrundlagen, Aufbewahrung und Ihre Betroffenenrechte.",
-  alternates: { canonical: "/datenschutz" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const englisch = (await leseSprache()) === "en";
+  return {
+    title: englisch ? "Privacy Policy" : "Datenschutzerklärung",
+    description: englisch ? "How QuickTeam processes personal data, your rights, recipients and retention periods." : "Wie QuickTeam personenbezogene Daten verarbeitet: Rollenverteilung zwischen Arbeitgeber und Anbieter, Rechtsgrundlagen, Aufbewahrung und Ihre Betroffenenrechte.",
+    alternates: { canonical: "/datenschutz" },
+  };
+}
 
 /**
  * Datenschutzerklärung — gerendert aus `docs/rechtliches/legals/`.

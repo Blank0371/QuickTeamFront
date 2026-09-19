@@ -10,7 +10,7 @@ import { WahlKarte } from "@/components/formular/wahl";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { leererZustand } from "@/lib/formular";
 import type { Dictionary } from "@/i18n/de";
-import { plaene, TESTPHASE_TAGE, type PlanId } from "@/lib/site";
+import { plaene, TESTPHASE_TAGE, type Abrechnung, type PlanId } from "@/lib/site";
 
 import { planWaehlen } from "./aktionen";
 
@@ -24,7 +24,7 @@ import { planWaehlen } from "./aktionen";
  * Eigene Komponente, weil `useFormStatus` den Zustand des umgebenden
  * Formulars liest und dafür innerhalb davon stehen muss.
  */
-function UeberspringenButton() {
+function UeberspringenButton({ text }: { text: string }) {
   const { pending } = useFormStatus();
 
   return (
@@ -36,7 +36,7 @@ function UeberspringenButton() {
       aria-disabled={pending}
       className="w-full rounded-blk border border-line-strong px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
     >
-      Später hinterlegen
+      {text}
     </button>
   );
 }
@@ -57,15 +57,26 @@ function UeberspringenButton() {
  */
 export function PlanAuswahl({
   aktuell,
+  intervall,
   grenzen,
   proMonat,
+  proJahr,
   ustHinweis,
   uidFeld,
   ohneTestphase,
+  texte,
 }: {
   aktuell: PlanId;
+  /**
+   * Monatlich oder jährlich — auf der Preisseite gewählt und im Cookie
+   * durchgereicht (`abrechnung-merker.ts`). Bestimmt hier nur Anzeige und
+   * die versteckte Weitergabe an die Server Action; einen Schalter gibt es
+   * in diesem Schritt bewusst nicht.
+   */
+  intervall: Abrechnung;
   grenzen: Dictionary["planGrenzen"];
   proMonat: string;
+  proJahr: string;
   ustHinweis: string;
   /**
    * Gesetzt nur für Betriebe in Österreich — dort entscheidet die UID über
@@ -77,16 +88,19 @@ export function PlanAuswahl({
    * Dann gibt es nichts zu überspringen — ohne Zahlung kein Zugang.
    */
   ohneTestphase: boolean;
+  texte: Dictionary["stepper"]["zahlung"];
 }) {
   const [zustand, aktion] = useActionState(planWaehlen, leererZustand);
   const { beiVerlassen, fehlerFuer } = useFeldPruefung(["uid"]);
+
+  const jaehrlich = intervall === "jahr";
 
   return (
     <form action={aktion} onBlur={beiVerlassen} className="flex flex-col gap-6">
       {zustand.nachricht ? <FormMeldung art="fehler">{zustand.nachricht}</FormMeldung> : null}
 
       <fieldset>
-        <legend className="mb-3 text-sm font-medium text-text">Plan wählen</legend>
+        <legend className="mb-3 text-sm font-medium text-text">{texte.planLegende}</legend>
 
         {/*
           `gap-3` und nicht enger: die gewählte Karte wächst um zwei
@@ -106,40 +120,51 @@ export function PlanAuswahl({
                 Sichtbar ist das nicht, aber es zerreisst die Zeile beim
                 Kopieren und bei jeder Suche über den Quelltext.
               */
-              text={`${plan.preis} € ${proMonat} · ${grenzen[plan.id]}`}
+              text={`${jaehrlich ? plan.preisJahr : plan.preis} € ${jaehrlich ? proJahr : proMonat} · ${grenzen[plan.id]}`}
             />
           ))}
         </RadioGroup>
 
         <p className="mt-3 text-xs text-muted">{ustHinweis}</p>
+
+        {/*
+          Kein Umschalter, nur die Anzeige: monatlich oder jährlich hat der
+          Besucher auf der Preisseite gewählt. Die Zeile macht die Wahl
+          sichtbar, statt sie still im Cookie zu lassen — geändert wird sie
+          auf `/preise`.
+        */}
+        <p className="mt-2 text-xs text-muted">
+          {texte.abrechnung}{" "}
+          <span className="font-medium text-text">
+            {jaehrlich ? texte.jaehrlich : texte.monatlich}
+          </span>
+        </p>
       </fieldset>
 
       {uidFeld ? (
         <TextFeld
           id="uid"
           name="uid"
-          label="UID-Nummer (optional)"
+          label={texte.uidLabel}
           required={false}
           autoComplete="off"
           maxLength={20}
           defaultValue={zustand.werte?.uid ?? uidFeld.vorbelegt ?? ""}
           fehler={fehlerFuer("uid", zustand.felder)}
-          hinweis="Mit gültiger UID rechnen wir ohne Umsatzsteuer ab (Reverse Charge), ohne UID mit. Später änderbar unter Einstellungen → Abo verwalten."
+          hinweis={texte.uidHinweis}
         />
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-start">
         <span className="sm:w-auto">
-          <AbsendenButton laufend="Einen Moment …">Weiter zur Zahlung</AbsendenButton>
+          <AbsendenButton laufend={texte.weiterLaufend}>{texte.weiterZahlung}</AbsendenButton>
         </span>
-        {ohneTestphase ? null : <UeberspringenButton />}
+        {ohneTestphase ? null : <UeberspringenButton text={texte.spaeter} />}
       </div>
 
       {ohneTestphase ? null : (
         <p className="text-xs leading-relaxed text-muted">
-          In beiden Fällen laufen zuerst {TESTPHASE_TAGE} Tage kostenlos. Ohne hinterlegtes
-          Zahlungsmittel pausiert dein Betrieb danach, bis du eins nachträgst — deine Daten
-          bleiben dafür 90 Tage erhalten.
+          {texte.testphasenHinweis.replace("{tage}", String(TESTPHASE_TAGE))}
         </p>
       )}
     </form>

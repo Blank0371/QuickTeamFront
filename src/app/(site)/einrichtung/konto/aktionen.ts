@@ -14,11 +14,20 @@ import { redirect } from "next/navigation";
 
 import { stelleBetriebSicher } from "@/lib/betrieb";
 import { leseSprache } from "@/i18n/sprache";
+import {
+  PROMO_METADATEN_SCHLUESSEL,
+  promoCodeAusMetadaten,
+  pruefePromoCode,
+  type PromoPruefung,
+  schreibePromoCode,
+} from "@/lib/promo-code";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import {
   aktuelleZustimmungVersionen,
   schreibeZustimmungen,
   ZUSTIMMUNG_METADATEN_SCHLUESSEL,
+  ZUSTIMMUNG_NACHWEIS_SCHLUESSEL,
+  zustimmungNachweisAusMetadaten,
   zustimmungAusMetadaten,
 } from "@/lib/zustimmung";
 import {
@@ -35,6 +44,7 @@ import { createClient } from "@/lib/supabase/server";
 import { holeAuthTexte, holeValidierung } from "@/i18n/server";
 import {
   bestaetigungSchema,
+  feldSchemata,
   passwortVergessenSchema,
   registrierungSchema,
 } from "@/lib/validierung";
@@ -172,9 +182,12 @@ export async function bestaetigen(
       ergebnis.betriebId,
       data.session.user.id,
       zustimmungVersionen,
-      { sprache: await leseSprache(), hashes: await zustimmungHashes() },
+      zustimmungNachweisAusMetadaten(data.session.user.user_metadata),
     );
   }
+
+  const promoCode = promoCodeAusMetadaten(data.session.user.user_metadata);
+  if (promoCode) await schreibePromoCode(supabase, ergebnis.betriebId, promoCode);
 
   // Ab hier trägt `user_metadata` die Daten; der Merker wäre ein zweiter Speicherort.
   await vergissBetriebsdaten();
@@ -244,6 +257,7 @@ export async function registrieren(
     passwort: text(formData, "passwort"),
     wiederholung: text(formData, "wiederholung"),
     zustimmung: text(formData, "zustimmung"),
+    promo_code: text(formData, "promo_code"),
   };
 
   // Nach einem Fehler wird das Formular wieder gefüllt — Passwörter nie.
@@ -254,6 +268,7 @@ export async function registrieren(
     nachname: roh.nachname,
     email: roh.email,
     zustimmung: roh.zustimmung,
+    promo_code: roh.promo_code,
   };
 
   const geprueft = registrierungSchema.safeParse(roh);
@@ -268,6 +283,20 @@ export async function registrieren(
 
   const daten = geprueft.data;
   const supabase = await createClient();
+
+  /*
+   * Vor dem `signUp`, nicht danach: ein Vertipper soll am Feld auffallen,
+   * solange die Person noch im Formular steht — nach dem Absenden ist
+   * die Mail schon unterwegs.
+   */
+  if (daten.promo_code && (await pruefePromoCode(supabase, daten.promo_code)) === "unbekannt") {
+    return {
+      status: "fehler",
+      nachricht: null,
+      felder: { promo_code: (await holeValidierung())["v.promo.unbekannt"] },
+      werte,
+    };
+  }
 
   /*
    * Die Betriebsdaten reisen in `options.data` mit. `registriere_betrieb`
@@ -295,6 +324,9 @@ export async function registrieren(
          * als die, der jemand tatsächlich zugestimmt hat.
          */
         [ZUSTIMMUNG_METADATEN_SCHLUESSEL]: aktuelleZustimmungVersionen(),
+        [ZUSTIMMUNG_NACHWEIS_SCHLUESSEL]: { sprache: await leseSprache(), hashes: await zustimmungHashes() },
+        // Ohne Code gar kein Schlüssel — ein leerer String wäre eine Angabe.
+        ...(daten.promo_code ? { [PROMO_METADATEN_SCHLUESSEL]: daten.promo_code } : {}),
       },
     },
   });
@@ -327,6 +359,7 @@ export async function registrieren(
     land: daten.land,
     vorname: daten.vorname,
     nachname: daten.nachname,
+    promo_code: daten.promo_code,
   });
 
   /*
@@ -336,6 +369,28 @@ export async function registrieren(
    * fuehrt auf einem zweiten Geraet an dieselbe Stelle.
    */
   redirect(`/einrichtung/konto?email=${encodeURIComponent(daten.email)}`);
+}
+
+/**
+ * Prüft einen einzelnen Promo-Code für den „Prüfen"-Knopf in Abschnitt A.
+ *
+ * Dieselbe Prüfung wie in `registrieren()`, nur einzeln und schon vor dem
+ * Absenden aufrufbar: die Client-Insel ruft sie direkt als Server-Funktion,
+ * damit ein Vertipper am Feld auffällt, solange die Person noch tippt.
+ * Der Wert läuft durch dasselbe `feldSchemata.promo_code` (Leerraum raus,
+ * Grossschreibung), damit „partner10" und „PARTNER10" gleich behandelt
+ * werden wie beim eigentlichen Anlegen.
+ *
+ * Ein leeres oder formwidriges Feld ist keine Prüfung wert — das Feld ist
+ * freiwillig, und `nicht-pruefbar` sperrt bewusst nicht (siehe
+ * `pruefePromoCode`).
+ */
+export async function promoCodePruefen(code: string): Promise<PromoPruefung> {
+  const geprueft = feldSchemata.promo_code.safeParse(code);
+  if (!geprueft.success || geprueft.data === "") return "nicht-pruefbar";
+
+  const supabase = await createClient();
+  return pruefePromoCode(supabase, geprueft.data);
 }
 
 /* ------------------------------------------------------------------ */
@@ -418,9 +473,12 @@ export async function betriebNachtragen(
       ergebnis.betriebId,
       user.id,
       zustimmungVersionen,
-      { sprache: await leseSprache(), hashes: await zustimmungHashes() },
+      zustimmungNachweisAusMetadaten(user.user_metadata),
     );
   }
+
+  const promoCode = promoCodeAusMetadaten(user.user_metadata);
+  if (promoCode) await schreibePromoCode(supabase, ergebnis.betriebId, promoCode);
 
   redirect("/einrichtung");
 }

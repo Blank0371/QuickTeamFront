@@ -61,6 +61,30 @@ export function zustimmungAusMetadaten(
   return versionen as ZustimmungVersionen;
 }
 
+/** Nachweis wird bei der Registrierung erfasst, nicht erst nach dem E-Mail-Code. */
+export const ZUSTIMMUNG_NACHWEIS_SCHLUESSEL = "zustimmung_nachweis";
+
+export function zustimmungNachweisAusMetadaten(
+  metadaten: Record<string, unknown> | null | undefined,
+): { sprache?: string; hashes?: Partial<Record<ZustimmungDokument, string>> } {
+  const roh = metadaten?.[ZUSTIMMUNG_NACHWEIS_SCHLUESSEL];
+  if (typeof roh !== "object" || roh === null) return {};
+  const nachweis = roh as Record<string, unknown>;
+  const hashes: Partial<Record<ZustimmungDokument, string>> = {};
+  if (nachweis.hashes && typeof nachweis.hashes === "object") {
+    for (const dokument of ZUSTIMMUNG_DOKUMENTE) {
+      const hash = (nachweis.hashes as Record<string, unknown>)[dokument];
+      if (typeof hash === "string" && /^[a-f0-9]{64}$/.test(hash)) hashes[dokument] = hash;
+    }
+  }
+  // Bei älteren Registrierungen bleibt der Nachweis unvollständig. Heutige
+  // Sprache/Dateiinhalte nachzutragen würde historische Angaben erfinden.
+  return {
+    ...(nachweis.sprache === "de" || nachweis.sprache === "en" ? { sprache: nachweis.sprache } : {}),
+    hashes,
+  };
+}
+
 /** Die Fassungen, die beim Abschicken des Formulars gegolten haben. */
 export function aktuelleZustimmungVersionen(): ZustimmungVersionen {
   return { ...RECHTSTEXT_VERSIONEN };

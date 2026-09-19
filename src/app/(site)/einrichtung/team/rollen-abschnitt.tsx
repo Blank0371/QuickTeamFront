@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import { leererZustand } from "@/lib/formular";
 import type { Rolle } from "@/lib/team";
+import type { Dictionary } from "@/i18n/de";
 
 import { rolleEntfernen } from "./aktionen";
 
@@ -39,6 +40,7 @@ export function RollenAbschnitt({
   fehler,
   beiHinzufuegen,
   beiEntfernen,
+  texte,
 }: {
   bestehende: readonly Rolle[];
   entwuerfe: readonly string[];
@@ -46,6 +48,7 @@ export function RollenAbschnitt({
   fehler: string | null;
   beiHinzufuegen: (name: string) => void;
   beiEntfernen: (name: string) => void;
+  texte: Dictionary["stepper"]["team"];
 }) {
   const [entfernen, entfernenAktion] = useActionState(rolleEntfernen, leererZustand);
   const [eingabe, setzeEingabe] = useState("");
@@ -65,11 +68,10 @@ export function RollenAbschnitt({
   return (
     <section aria-labelledby="rollen-titel">
       <h2 id="rollen-titel" className="font-display text-lg text-text">
-        Rollen
+        {texte.rollenTitel}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Womit wird bei dir gearbeitet? Ohne mindestens eine Rolle geht es nicht weiter —
-        Schichtvorlagen brauchen sie, um in der App überhaupt sichtbar zu werden.
+        {texte.rollenText}
       </p>
 
       {fehler ? (
@@ -96,7 +98,7 @@ export function RollenAbschnitt({
           <TextFeld
             id="rolle-name"
             name="rolle_name"
-            label="Neue Rolle"
+            label={texte.neueRolle}
             maxLength={60}
             required={false}
             wert={eingabe}
@@ -109,12 +111,12 @@ export function RollenAbschnitt({
           onClick={uebernehmen}
           className="shrink-0 rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
         >
-          Hinzufügen
+          {texte.hinzufuegen}
         </button>
       </div>
 
       {leer ? (
-        <p className="mt-5 text-sm text-muted">Noch keine Rolle angelegt.</p>
+        <p className="mt-5 text-sm text-muted">{texte.keineRolle}</p>
       ) : (
         <ul className="mt-5 flex flex-wrap gap-2">
           {bestehende.map((rolle) => (
@@ -125,7 +127,7 @@ export function RollenAbschnitt({
                   {rolle.name}
                   <button
                     type="submit"
-                    aria-label={`Rolle ${rolle.name} entfernen`}
+                    aria-label={texte.rolleEntfernen.replace("{name}", rolle.name)}
                     className="rounded-sm px-1.5 text-muted transition-colors hover:text-stop"
                   >
                     ×
@@ -142,7 +144,7 @@ export function RollenAbschnitt({
                 <button
                   type="button"
                   onClick={() => beiEntfernen(name)}
-                  aria-label={`Rolle ${name} entfernen`}
+                  aria-label={texte.rolleEntfernen.replace("{name}", name)}
                   className="rounded-sm px-1.5 text-muted transition-colors hover:text-stop"
                 >
                   ×
