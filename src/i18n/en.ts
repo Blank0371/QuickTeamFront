@@ -40,7 +40,8 @@ export const en: Dictionary = {
       { href: "/preise", label: "Pricing" },
     ],
     login: "Sign in",
-    registrieren: "Start free trial",
+    registrieren: "Register",
+    promoPartner: "Promo partner",
   },
   footer: {
     claim: "Staff scheduling for restaurants and bars in Austria and Germany.",
@@ -72,6 +73,22 @@ export const en: Dictionary = {
   },
   platzhalter: {
     hinweis: "Placeholder — content to follow.",
+  },
+  promo: {
+    augenbraue: "Promo partnership",
+    titel: "Become a QuickTeam promo partner",
+    lead: "Do you recommend QuickTeam to restaurants and bars? Then you get your own promo code that new businesses enter when they sign up — so we can see which registrations came through you.",
+    schritteTitel: "How to apply",
+    schritt1: "Download the application form.",
+    schritt2: "Fill it in completely and sign it.",
+    schritt3:
+      "Send it to blanktrading@web.de with the subject “Request Promo Partnership”.",
+    formularHerunterladen: "Download application form (PDF)",
+    perMailSenden: "Send the completed form by email",
+    mailBetreff: "Request Promo Partnership",
+    hinweisTitel: "What happens next",
+    hinweisText:
+      "We review your request and reply by email. Once approved, you receive your personal promo code. It carries no discount — the code only records which businesses found QuickTeam through you.",
   },
   /*
    * Dashboard vocabulary follows the Expo app, not this file's own taste.
@@ -197,7 +214,7 @@ export const en: Dictionary = {
   landing: {
     heroSub:
       "QuickTeam is staff scheduling for hospitality. One place for shifts, team and swaps — clear to everyone.",
-    heroTesten: "Start free trial",
+    heroTesten: "Register",
     heroAnmelden: "Sign in",
     heroFunktionen: "Explore the features",
     heroPreise: "See pricing",
@@ -210,8 +227,15 @@ export const en: Dictionary = {
     preiseBald: "Coming soon",
     preiseTitel: "One price per business. No per-head invoice.",
     preiseEmpfehlung: "Our recommendation",
-    preiseTesten: "Start free trial",
+    preiseKuendigungMonat: "Cancellation takes effect at the end of the billing month.",
+    preiseKuendigungJahr: "Cancellation takes effect at the end of the billing year.",
+    preiseTesten: "Register",
     proMonat: "/ month",
+    proJahr: "/ year",
+    preiseMonatlich: "Monthly",
+    preiseJaehrlich: "Yearly",
+    preiseJahrVorteil: "2 months free",
+    preiseStattLabel: "instead of",
     preiseUst: "plus VAT",
     preiseUstAlle: "All prices plus VAT.",
     preiseB2b:
@@ -226,8 +250,8 @@ export const en: Dictionary = {
 
   /* Headcount per plan. Keys are the plan IDs from `site.ts`. */
   planGrenzen: {
-    basic: "up to 15 employees",
-    pro: "up to 30 employees",
+    basic: "up to 15 employees, 1 location",
+    pro: "up to 30 employees, 1 location",
     business: "up to 50 employees, 1 location",
   },
 
@@ -247,7 +271,7 @@ export const en: Dictionary = {
       "Announcements, availability and replies come together visibly, before the first day begins.",
     notfallTitel: "An absence, visible at once",
     notfallText:
-      "If someone drops out, a swap steps in and closes the gap — without a single round of phone calls.",
+      "If someone drops out, QuickTeam highlights the open shift and helps your team find a suitable replacement.",
   },
 
   /* The three cards above the pricing section. */
@@ -270,6 +294,245 @@ export const en: Dictionary = {
     naechsterMonat: "Next month",
     wochenBeginn: "Weeks start on Monday",
     leeren: "Clear",
+  },
+
+  registrierung: {
+    promoCode: "Promo code (optional)",
+    promoCodeHinweis:
+      "Did someone tell you about QuickTeam and give you a code? Enter it here.",
+    promoPruefen: "Check promo code",
+    promoPruefend: "Checking …",
+    promoGueltig: "Code recognised.",
+    promoNichtPruefbar:
+      "We couldn't check the code right now. You can continue anyway.",
+    promoBittePruefen: "Please check the promo code before creating your business.",
+    felder: {
+      betriebName: "Business name",
+      land: "Country",
+      vorname: "First name",
+      nachname: "Last name",
+      email: "Email address",
+      emailHinweis: "Your confirmation code goes to this address.",
+      passwort: "Password",
+      passwortWiederholen: "Repeat password",
+    },
+    betriebAnlegen: "Create business",
+    wirdAngelegt: "Creating …",
+    daten: {
+      titel: "Create your business",
+      lead: "Business name, country, your name and a password. After that you confirm your address with a code — still on this page.",
+    },
+    code: {
+      titel: "Enter the code from the email",
+      lead: "We've sent you a numeric code. Enter it here — then we create your business and move on to payment.",
+      label: "Code from the email ({n} digits)",
+      hinweis: "The code is valid for 60 minutes.",
+      emailHinweis: "The address we sent the code to.",
+      bestaetigen: "Confirm",
+      wirdGeprueft: "Checking …",
+    },
+    boxen: {
+      geraetTitel: "You can switch devices",
+      geraetText:
+        "Opening the email on your phone and typing the code on your computer is entirely fine. Just enter the same email address as well.",
+      fristTitel: "Confirm within 24 hours",
+      fristText:
+        "After that the registration is deleted automatically. Then you simply create the business again — nothing is lost, because until confirmation it doesn't exist yet. The code itself is valid for 60 minutes; after that you can have a new one sent here.",
+      aendernSummary: "Change your business details",
+      aendernText:
+        "When you submit again, we send a new code to the address entered then.",
+    },
+    fussnoteA:
+      "The business is only created once you enter the code from the confirmation email. If that doesn't happen within ",
+    fussnote24: "24 hours",
+    fussnoteB: ", the registration is deleted and you start over. After that comes a ",
+    fussnoteTage: "{tage}-day",
+    fussnoteC: " trial — you can skip the payment details.",
+    b2b: "This offer is intended solely for entrepreneurs within the meaning of section 14 of the German Civil Code (BGB) and for legal entities under public law — not for consumers.",
+    nachtragen: {
+      titel: "Your account is ready — the business is still missing",
+      lead: "Your email address is confirmed. Something went wrong while creating the business; we'll take care of that now.",
+      hinweis:
+        "Your details from registration are saved. One click is enough — your account stays in place either way.",
+      button: "Create business now",
+    },
+    erledigt: {
+      titel: "This step is done",
+      lead: "Your account is confirmed and your business is created. There's nothing more to do here.",
+      betriebLabel: "Business",
+      betriebFallback: "created",
+      hinweis: "You change the business name and country later in the app — no longer here.",
+      weiter: "Continue to setup",
+      nichtDeinKonto: "Not your account, or another business?",
+      abmelden: "Sign out",
+    },
+    passwortKriterien: {
+      min: "At least {n} characters",
+      max: "At most {n} characters",
+      gleich: "Both entries match",
+      alleErfuellt: "All password requirements are met.",
+      nochOffen: "{n} of {gesamt} requirements still open.",
+      erfuellt: " — met",
+      offen: " — open",
+    },
+    fortschritt: {
+      aria: "Setup progress",
+      schrittVon: "Step {n} of {gesamt}",
+      schritte: {
+        konto: "Account",
+        zahlung: "Payment",
+        team: "Team",
+        schichten: "Shifts",
+      },
+    },
+  },
+
+  stepper: {
+    zahlung: {
+      titelMittel: "Add a payment method",
+      leadTestphase:
+        "{plan} plan{preis}. Nothing is charged now — your trial runs until {datum}.",
+      leadSofort:
+        "{plan} plan{preis}. Adding a payment method starts your subscription, and the first period is charged.",
+      leadNur: "{plan} plan{preis}.",
+      knopfSofort: "Subscribe (paid)",
+      zurueckLink: "Back to plan selection",
+      zurueckRest: " — you can also skip this step there.",
+      titelPlan: "Choose a plan",
+      leadOhneTestphase:
+        "The free trial is available once per business, and yours has already used it. In the next step you add a payment method, and your subscription starts right away.",
+      leadLebend:
+        "Your trial has been running since you first chose a plan; changing plans doesn't extend it. You can add a payment method now or later.",
+      leadNeu:
+        "{tage} days free, then billed {intervall}. You can add a payment method now or later — the trial runs either way.",
+      spaeter: "Add it later",
+      planLegende: "Choose a plan",
+      abrechnung: "Billing:",
+      monatlich: "monthly",
+      jaehrlich: "yearly",
+      uidLabel: "VAT ID (optional)",
+      uidHinweis:
+        "With a valid VAT ID we bill without VAT (reverse charge), without one we add VAT. You can change this later under Settings → Manage subscription.",
+      weiterLaufend: "One moment …",
+      weiterZahlung: "Continue to payment",
+      testphasenHinweis:
+        "Either way, the first {tage} days are free. Without a payment method your business is then paused until you add one — your data is kept for 90 days.",
+    },
+    zahlungsFormular: {
+      knopfStandard: "Add a payment method",
+      wirdHinterlegt: "Saving …",
+      wirdGeladen: "Loading payment form …",
+      rechnungUnvollstaendig: "Please complete the invoice details.",
+      bestaetigungFehlgeschlagen: "The payment method could not be confirmed.",
+      keinErgebnis: "Stripe returned no result. Please try again.",
+      verbindungUnterbrochen:
+        "The connection was interrupted. Please try again; if a payment was already confirmed, check the subscription status first.",
+    },
+    rechnung: {
+      legende: "Invoice details",
+      intro:
+        "These details appear on every invoice. You can change them any time under Settings → “Manage subscription”. Invoices already issued stay unchanged.",
+      firma: "Legal company name",
+      firmaHinweis:
+        "As in the commercial register — not necessarily the same name as in the schedule.",
+      strasse: "Street and number",
+      plz: "Postal code",
+      ort: "City",
+      land: "Country of the invoice address",
+      landHinweis:
+        "Applies to the invoice only. Your business location and your schedule's working-time rules don't change because of it.",
+      uidWarnung:
+        "With an invoice country outside Austria your stored VAT ID is removed — it only applies to Austrian invoice recipients. This may change the VAT on future billing. Invoices already issued are unaffected.",
+      uidLabel: "VAT ID (optional)",
+      uidHinweis:
+        "With a valid VAT ID Stripe bills under the reverse-charge procedure. Format: ATU and eight digits.",
+    },
+    team: {
+      titel: "Who works with you",
+      lead: "Roles first — kitchen, service, bar or whatever fits your business. Then you invite your people and tick which role they have.",
+      rollennameFehler: "That role name doesn't work.",
+      rolleDoppelt: "The role “{name}” already exists.",
+      rollenTitel: "Roles",
+      rollenText:
+        "What kind of work happens at your business? You can't continue without at least one role — shift templates need one to be visible in the app at all.",
+      neueRolle: "New role",
+      hinzufuegen: "Add",
+      keineRolle: "No role created yet.",
+      rolleEntfernen: "Remove role {name}",
+      einladenTitel: "Invite employees",
+      einladenText:
+        "Optional — a business where only you work for now is perfectly fine. Invitees get access as soon as they open the app and accept the invitation.",
+      vorname: "First name",
+      nachname: "Last name",
+      email: "Email address",
+      emailHinweis: "Email or phone — one of the two is required.",
+      telefon: "Phone number",
+      telefonHinweis:
+        "International, with +, e.g. +43 660 1234567 — otherwise the app won't find the invitation.",
+      rollenLegende: "Roles",
+      einladenLaufend: "Inviting …",
+      einladen: "Invite",
+      niemand: "No one invited yet.",
+      einladungOffen: " · invitation pending",
+      entfernen: "Remove",
+      weiterLaufend: "Saving …",
+      weiter: "Continue to shifts",
+      ersteRolle: "Create at least one role first.",
+    },
+    schichten: {
+      titel: "What does your week look like",
+      lead: "For each weekday, the shifts you have — and per shift, how many people of which role must be present at minimum.",
+      abschliessen: "Finish setup",
+      ersteSchicht: "Create at least one shift with a minimum staffing first.",
+      anlegenTitel: "Create a shift",
+      anlegenText:
+        "One template per shift and weekday. Night shifts across midnight are fine — just enter 22:00 to 06:00.",
+      bezeichnung: "Label",
+      bezeichnungHinweis: "For example early shift, evening shift or kitchen late.",
+      wochentag: "Weekday",
+      beginn: "Start",
+      ende: "End",
+      mindestbesetzung: "Minimum staffing",
+      mindestbesetzungText:
+        "How many people of which role must be present at minimum? Without at least one entry the shift won't appear in the app.",
+      anlegenLaufend: "Creating …",
+      schichtHinzufuegen: "Add shift",
+      wocheTitel: "Your week",
+      keineSchicht: "No shift created yet.",
+      unbekannteRolle: "unknown",
+      ohneBedarf: "No minimum staffing — invisible in the app",
+      amTag: " on {tag}",
+      bisZeit: " to {zeit}",
+      folgetag: ", ends the next day",
+      blockEntfernen: "Remove {bezeichnung} on {tag}, {zeit}",
+    },
+    sperre: {
+      eyebrow: "Trial",
+      titel: "Your trial has ended",
+      text: "The {tage} days are over, and no payment method is on file. Your business, your team and your shift templates stay stored until 90 days after the trial ends, then they are deleted (Terms § 5(3)). As soon as you add a payment method, your {plan} plan continues where it left off.",
+      knopfFortsetzen: "Resume (paid)",
+      keinNeues: "No new subscription is created — your existing one continues.",
+      aboVerwalten: "Manage or cancel subscription",
+      datenExport: "Export data",
+    },
+  },
+
+  zustimmungFeld: {
+    vorAgb: "On behalf of my business, I accept the ",
+    agb: "General Terms and Conditions",
+    zwischen: " and the ",
+    avv: "Data Processing Agreement (DPA)",
+    nachAvv:
+      " and confirm that I am authorised to represent the business in doing so. I have taken note of the ",
+    datenschutz: "Privacy Policy",
+    nachDatenschutz: ".",
+  },
+
+  codeVersand: {
+    spamHinweis: "Nothing arrived? Check your spam folder.",
+    erneutSenden: "Resend code",
+    fristAktiv: "For security reasons, available again in {n} seconds.",
+    fristBereit: "You can request a new code now.",
   },
 
   auswahl: {
@@ -307,6 +570,27 @@ export const en: Dictionary = {
     unbekannt: "That did not work. Try again — if the error persists, get in touch with support.",
   },
 
+  login: {
+    kicker: "Sign in",
+    titel: "Welcome back",
+    lead: "Enter your email address and password — then you go straight to your business's planning.",
+    fussFrage: "No business yet?",
+    fussLink: "Create one now",
+    passwortVergessen: "Forgot your password?",
+    emailLabel: "Email address",
+    passwortLabel: "Password",
+    absenden: "Sign in",
+    absendenLaufend: "Checking …",
+    meldungen: {
+      "konto-geloescht": "Your account has been deleted.",
+      "abo-kuendigung-offen":
+        "At least one subscription could not be cancelled afterwards. Please contact blanktrading@web.de right away so that no further charges are made.",
+      abgemeldet: "You have been signed out.",
+      "app-url-fehlt":
+        "Your account is ready, but the redirect target is not configured (NEXT_PUBLIC_APP_URL). Get in touch with support.",
+    },
+  },
+
   validierung: {
     "bez.betriebName": "The business name",
     "bez.vorname": "The first name",
@@ -335,6 +619,8 @@ export const en: Dictionary = {
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
     "v.uid.form": "An Austrian VAT ID (UID) consists of ATU and 8 digits, e.g. ATU12345678.",
+    "v.promo.form": "A promo code consists of letters, digits, - and _, at most {max} characters.",
+    "v.promo.unbekannt": "We don't recognize this promo code. Check the spelling — or leave the field empty.",
     "v.plz.ziffern": "The postal code consists of digits only.",
     "v.plz.at": "Austrian postal codes have {anzahl} digits.",
     "v.plz.de": "German postal codes have {anzahl} digits.",

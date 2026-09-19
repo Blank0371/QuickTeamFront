@@ -188,23 +188,11 @@ export function Hero({
       className="relative w-full"
       style={{ scrollMarginTop: "3.5rem" }}
     >
-      {/*
-        Der erste Summand ist die klebende Navigationsleiste (3,5rem).
-        Der zweite ist der oben beschriebene Vorgriff auf die naechste
-        Szene. Er ist im Browser eingestellt, nicht gerechnet: gemessen
-        wurde jeweils der Abstand zwischen der Unterkante der Knoepfe
-        und dem Beginn der Kalender-Sequenz.
-
-        Die Summe je Breakpoint ist bewusst konstant gehalten, auch als
-        ueber der Leiste ein Hinweisstreifen entfiel — sonst waere der
-        Hero um dessen Hoehe gewachsen und der eingestellte Abstand mit
-        ihm. Auf schmalen Schirmen ist die Summe groesser, weil der
-        Hero-Inhalt dort mehr Zeilen braucht.
-      */}
-      <div className="relative mx-auto flex min-h-[calc(100dvh-3.5rem-14rem)] w-full max-w-6xl flex-col items-center justify-center px-5 pb-6 pt-16 text-center sm:min-h-[calc(100dvh-3.5rem-9.5rem)] sm:px-8 sm:pb-8 sm:pt-20">
-        <div data-hero-inhalt className="flex flex-col items-center">
+      {/* Mobil bestimmt der Inhalt die Höhe; nur Desktop nutzt die Bühnenhöhe. */}
+      <div className="relative mx-auto flex min-h-0 lg:min-h-[calc(100dvh-3.5rem-9.5rem)] w-full max-w-6xl flex-col items-center justify-center px-5 pb-10 pt-12 text-center sm:px-8 sm:pb-12 sm:pt-16 lg:pb-8 lg:pt-20">
+        <div data-hero-inhalt className="flex w-full min-w-0 flex-col items-center">
           <h1
-            className="qt-hero-marke text-[3.5rem] font-bold leading-[0.95] sm:text-[5.5rem] lg:text-[8.5rem] xl:text-[10rem]"
+            className="qt-hero-marke text-[clamp(2.75rem,12.5vw,4.5rem)] font-bold leading-[0.95] sm:text-[5.5rem] lg:text-[8.5rem] xl:text-[10rem]"
             style={{
               // Gabarito laeuft bei Displaygroessen leicht offen.
               // -0.025em zieht „QuickTeam" zu einem Wort zusammen, ohne
@@ -223,13 +211,13 @@ export function Hero({
           </h1>
 
           <p
-            className="qt-hero-sub mx-auto mt-7 max-w-2xl text-lg leading-relaxed sm:mt-8 sm:text-2xl"
+            className="qt-hero-sub mx-auto mt-6 max-w-md text-lg leading-relaxed lg:max-w-2xl sm:mt-8 sm:text-2xl"
             style={{ color: "var(--qt-c-bone)" }}
           >
             {texte.heroSub}
           </p>
 
-          <div className="qt-hero-cta mt-9 flex w-full max-w-sm flex-col gap-3 sm:mt-10 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4">
+          <div className="qt-hero-cta mt-7 flex w-full max-w-sm flex-col gap-3 sm:mt-10 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4">
             {authOffen ? (
               <>
                 <Link

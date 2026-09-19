@@ -88,6 +88,35 @@ export function authFehlerText(error: AuthError, texte: Dictionary["auth"]): str
     return texte.server;
   }
 
+  /*
+   * ─────────────────────────────────────────────────────────────────
+   *  „Invalid API key" ist ein Konfigurationsfehler, kein Anmeldefehler
+   * ─────────────────────────────────────────────────────────────────
+   *
+   * Passt `NEXT_PUBLIC_SUPABASE_ANON_KEY` nicht zum Projekt, antwortet
+   * GoTrue mit **401 und ohne `code`**. Beides zusammen führte bis zum
+   * 2026-09-17 am 500er-Zweig vorbei und durch den `switch` hindurch in
+   * `default` — also in „Das hat nicht geklappt. Versuch es noch
+   * einmal." Das ist die teuerste Antwort, die hier möglich ist: der
+   * Versuch **kann** nicht gelingen, egal wie oft, und die Meldung
+   * schickt den Benutzer zum Support, während der Fehler in unserer
+   * Umgebung steht. Dieselbe Falle wie bei `signup_disabled` unten.
+   *
+   * Aufgefallen ist es an `/kontoloeschung`: die Seite prüft als einzige
+   * während des Soft-Launches ein Passwort, war also die erste, an der
+   * ein falscher Key überhaupt sichtbar werden konnte. Die übrigen
+   * Auth-Routen sind gesperrt — der Key war schon vorher falsch, nur hat
+   * es niemand gemerkt.
+   *
+   * Gemeldet wird es als Serverfehler, weil es einer ist. Ein eigener
+   * Satz im Wörterbuch wäre falsch: dem Benutzer hilft die
+   * Unterscheidung nicht, und `protokolliereAuthFehler()` nennt die
+   * Ursache im Protokoll beim Namen.
+   */
+  if (error.status === 401 && /invalid api key/i.test(error.message)) {
+    return texte.server;
+  }
+
   switch (error.code) {
     case "invalid_credentials":
       return texte.zugangsdaten;
@@ -146,4 +175,19 @@ export function protokolliereAuthFehler(wo: string, error: AuthError): void {
   console.error(
     `[auth] ${wo}: code=${error.code ?? "—"} status=${error.status ?? "—"} — ${error.message}`,
   );
+
+  /*
+   * Eine Zeile mehr, die den Unterschied macht. Die Zeile oben nennt bei
+   * einem falschen Key nur „status=401 — Invalid API key" — richtig, aber
+   * leicht als Anmeldefehler misszulesen. Hier steht, wo zu suchen ist:
+   * nicht am Konto, sondern in der Umgebung. Der **Name** der Variablen
+   * gehört ins Protokoll, ihr Wert nie (`.claude/rules/security.md`).
+   */
+  if (error.status === 401 && /invalid api key/i.test(error.message)) {
+    console.error(
+      "[auth] Ursache ist die Umgebung, nicht das Konto: NEXT_PUBLIC_SUPABASE_ANON_KEY " +
+        "gehört nicht zu NEXT_PUBLIC_SUPABASE_URL. Richtigen Wert im Supabase-Dashboard " +
+        "unter Project Settings → API Keys holen. Kein Anmeldeversuch kann gelingen, bis das stimmt.",
+    );
+  }
 }

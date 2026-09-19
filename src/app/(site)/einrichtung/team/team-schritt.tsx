@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import type { Eingeladener, Rolle } from "@/lib/team";
+import type { Dictionary } from "@/i18n/de";
 import { rollenNameSchema } from "@/lib/validierung";
 
 import { MitarbeiterAbschnitt } from "./mitarbeiter-abschnitt";
@@ -44,10 +45,12 @@ import { WeiterFormular } from "./weiter-formular";
 export function TeamSchritt({
   bestehendeRollen,
   leute,
+  texte,
 }: {
   /** Was schon in der Datenbank steht — aus einem früheren Durchgang. */
   bestehendeRollen: readonly Rolle[];
   leute: readonly Eingeladener[];
+  texte: Dictionary["stepper"]["team"];
 }) {
   const [gesammelt, setzeGesammelt] = useState<string[]>([]);
   const [rollenFehler, setzeRollenFehler] = useState<string | null>(null);
@@ -74,7 +77,7 @@ export function TeamSchritt({
   function hinzufuegen(roh: string): void {
     const geprueft = rollenNameSchema.safeParse(roh);
     if (!geprueft.success) {
-      setzeRollenFehler(geprueft.error.issues[0]?.message ?? "Der Rollenname passt nicht.");
+      setzeRollenFehler(geprueft.error.issues[0]?.message ?? texte.rollennameFehler);
       return;
     }
 
@@ -88,7 +91,7 @@ export function TeamSchritt({
      * beim Weitergehen.
      */
     if (alleNamen.some((vorhanden) => vorhanden.toLowerCase() === name.toLowerCase())) {
-      setzeRollenFehler(`Die Rolle „${name}" gibt es schon.`);
+      setzeRollenFehler(texte.rolleDoppelt.replace("{name}", name));
       return;
     }
 
@@ -109,6 +112,7 @@ export function TeamSchritt({
         fehler={rollenFehler}
         beiHinzufuegen={hinzufuegen}
         beiEntfernen={entfernen}
+        texte={texte}
       />
 
       <MitarbeiterAbschnitt
@@ -116,9 +120,14 @@ export function TeamSchritt({
         bestehendeRollen={bestehendeRollen}
         entwuerfe={entwuerfe}
         leute={leute}
+        texte={texte}
       />
 
-      <WeiterFormular entwuerfe={entwuerfe} kannWeiter={alleNamen.length > 0} />
+      <WeiterFormular
+        entwuerfe={entwuerfe}
+        kannWeiter={alleNamen.length > 0}
+        texte={texte}
+      />
     </>
   );
 }

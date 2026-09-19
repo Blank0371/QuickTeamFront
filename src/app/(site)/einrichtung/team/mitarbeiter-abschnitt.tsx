@@ -8,6 +8,7 @@ import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
 import { WahlChip, WahlKnopf } from "@/components/formular/wahl";
 import { leererZustand } from "@/lib/formular";
 import type { Eingeladener, Rolle } from "@/lib/team";
+import type { Dictionary } from "@/i18n/de";
 
 import { mitarbeiterEinladen, mitarbeiterEntfernen, rolleUmschalten } from "./aktionen";
 import { EntwurfsFelder } from "./entwurfs-felder";
@@ -47,11 +48,13 @@ export function MitarbeiterAbschnitt({
   bestehendeRollen,
   entwuerfe,
   leute,
+  texte,
 }: {
   rollenNamen: readonly string[];
   bestehendeRollen: readonly Rolle[];
   entwuerfe: readonly string[];
   leute: readonly Eingeladener[];
+  texte: Dictionary["stepper"]["team"];
 }) {
   const [einladen, einladenAktion] = useActionState(mitarbeiterEinladen, leererZustand);
   const [entfernen, entfernenAktion] = useActionState(mitarbeiterEntfernen, leererZustand);
@@ -63,11 +66,10 @@ export function MitarbeiterAbschnitt({
   return (
     <section aria-labelledby="team-titel" className="mt-10 border-t border-line pt-8">
       <h2 id="team-titel" className="font-display text-lg text-text">
-        Mitarbeiter einladen
+        {texte.einladenTitel}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Optional — ein Betrieb, in dem vorerst nur du arbeitest, ist völlig in Ordnung.
-        Eingeladene bekommen Zugang, sobald sie die App öffnen und die Einladung annehmen.
+        {texte.einladenText}
       </p>
 
       {einladen.nachricht ? (
@@ -98,7 +100,7 @@ export function MitarbeiterAbschnitt({
           <TextFeld
             id="einladung-vorname"
             name="vorname"
-            label="Vorname"
+            label={texte.vorname}
             autoComplete="off"
             maxLength={80}
             defaultValue={werte["vorname"]}
@@ -107,7 +109,7 @@ export function MitarbeiterAbschnitt({
           <TextFeld
             id="einladung-nachname"
             name="nachname"
-            label="Nachname"
+            label={texte.nachname}
             autoComplete="off"
             maxLength={80}
             defaultValue={werte["nachname"]}
@@ -120,29 +122,29 @@ export function MitarbeiterAbschnitt({
             id="einladung-email"
             name="email"
             type="email"
-            label="E-Mail-Adresse"
+            label={texte.email}
             autoComplete="off"
             required={false}
             defaultValue={werte["email"]}
             fehler={einladen.felder["email"]}
-            hinweis="E-Mail oder Telefon — eins von beiden muss sein."
+            hinweis={texte.emailHinweis}
           />
           <TextFeld
             id="einladung-telefon"
             name="telefon"
             type="tel"
-            label="Telefonnummer"
+            label={texte.telefon}
             autoComplete="off"
             required={false}
             defaultValue={werte["telefon"]}
             fehler={einladen.felder["telefon"]}
-            hinweis="International mit +, z. B. +43 660 1234567 — sonst findet die App die Einladung nicht."
+            hinweis={texte.telefonHinweis}
           />
         </div>
 
         {rollenNamen.length > 0 ? (
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-text">Rollen</legend>
+            <legend className="mb-2 text-sm font-medium text-text">{texte.rollenLegende}</legend>
             {/* `gap-2.5`, weil die gewählte Karte um sechs Prozent wächst. */}
             <div className="flex flex-wrap gap-2.5">
               {rollenNamen.map((name) => (
@@ -152,11 +154,11 @@ export function MitarbeiterAbschnitt({
           </fieldset>
         ) : null}
 
-        <AbsendenButton laufend="Wird eingeladen …">Einladen</AbsendenButton>
+        <AbsendenButton laufend={texte.einladenLaufend}>{texte.einladen}</AbsendenButton>
       </form>
 
       {leute.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">Noch niemand eingeladen.</p>
+        <p className="mt-6 text-sm text-muted">{texte.niemand}</p>
       ) : (
         <ul className="mt-6 flex flex-col gap-3">
           {leute.map((person) => (
@@ -171,7 +173,7 @@ export function MitarbeiterAbschnitt({
                   </p>
                   <p className="mt-0.5 text-sm text-muted">
                     {person.email ?? person.telefon}
-                    {person.status === "eingeladen" ? " · Einladung offen" : ` · ${person.status}`}
+                    {person.status === "eingeladen" ? texte.einladungOffen : ` · ${person.status}`}
                   </p>
                 </div>
 
@@ -181,7 +183,7 @@ export function MitarbeiterAbschnitt({
                     type="submit"
                     className="text-sm text-muted underline underline-offset-4 transition-colors hover:text-stop"
                   >
-                    Entfernen
+                    {texte.entfernen}
                   </button>
                 </form>
               </div>

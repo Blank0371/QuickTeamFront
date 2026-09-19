@@ -6,6 +6,9 @@ import { betreteSchritt } from "@/lib/einrichtung";
 import { holeVorlagen, sichtbareVorlagen } from "@/lib/schichten";
 import { holeRollen } from "@/lib/team";
 import { createClient } from "@/lib/supabase/server";
+import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
+import { wochentageKurz, wochentageLang } from "@/lib/dashboard/kalender";
 
 import { zumAbschluss } from "./aktionen";
 import { VorlagenAbschnitt } from "./vorlagen-abschnitt";
@@ -50,14 +53,25 @@ export default async function SchichtenSeite() {
 
   const kannWeiter = sichtbareVorlagen(vorlagen).length > 0;
 
+  const locale = await leseSprache();
+  const st = (await holeTexte()).stepper.schichten;
+  const tagKurz = wochentageKurz(locale);
+  const tagLang = wochentageLang(locale);
+
   return (
     <SchrittRahmen
       schritt="schichten"
       stand={stand}
-      titel="Wie sieht eure Woche aus"
-      lead="Für jeden Wochentag die Schichten, die es bei dir gibt — und je Schicht, wie viele Leute welcher Rolle mindestens da sein müssen."
+      titel={st.titel}
+      lead={st.lead}
     >
-      <VorlagenAbschnitt rollen={rollen} vorlagen={vorlagen} />
+      <VorlagenAbschnitt
+        rollen={rollen}
+        vorlagen={vorlagen}
+        texte={st}
+        tagKurz={tagKurz}
+        tagLang={tagLang}
+      />
 
       <form action={zumAbschluss} className="mt-10 border-t border-line pt-6">
         <button
@@ -66,11 +80,11 @@ export default async function SchichtenSeite() {
           aria-disabled={!kannWeiter}
           className="w-full rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          Einrichtung abschliessen
+          {st.abschliessen}
         </button>
         {!kannWeiter ? (
           <p className="mt-3 text-sm text-muted">
-            Leg zuerst mindestens eine Schicht mit Mindestbesetzung an.
+            {st.ersteSchicht}
           </p>
         ) : null}
       </form>

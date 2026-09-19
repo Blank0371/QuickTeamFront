@@ -1,12 +1,13 @@
-# QuickTeam — Marketing-Website & Auth
+# QuickTeam — SaaS-Website und Web-Dashboard
 
 Öffentliche Website und Anmeldebereich für QuickTeam, eine Anwendung zur
 Schicht- und Dienstplanung für Gastronomiebetriebe in Österreich und
 Deutschland.
 
-Die Planungsanwendung selbst liegt **nicht** in diesem Repo. Nach erfolgreicher
-Anmeldung oder bestätigter Registrierung leitet die Website auf
-`NEXT_PUBLIC_APP_URL` weiter.
+Dieses Repo enthält auch das Web-Dashboard: Einrichtung, Abrechnung, Team,
+Dienstplanung, Verfügbarkeiten, Urlaub, Tausch und Nachrichten. Nach der
+Anmeldung wird abhängig von den vorhandenen Positionen und dem
+Einrichtungsstand die passende Seite geöffnet.
 
 ## Lokales Setup
 
@@ -53,6 +54,7 @@ Supabase gibt es nicht, das Projekt ist geteilt.
 | `npm run build`     | Produktionsbuild                   |
 | `npm run start`     | Produktionsbuild lokal ausliefern  |
 | `npm run typecheck` | TypeScript ohne Emit               |
+| `npm test`          | Lokale Regressionstests (Node 23+)  |
 
 ## Aufbau
 
@@ -60,7 +62,7 @@ Supabase gibt es nicht, das Projekt ist geteilt.
 src/
   app/          Routen, Metadata-Dateien, Fehlerseiten
   components/   Geteilte UI. "use client" nur hier, nie in page.tsx
-  i18n/         Sprachgerüst. Ausgeliefert wird nur de
+  i18n/         Deutsch und Englisch; Dashboard/Auth noch teilweise deutsch
   lib/site.ts   Konstanten für Metadata, Sitemap, JSON-LD
   lib/supabase/ Clients für Browser, Server und Middleware
   middleware.ts Frischt die Auth-Session auf
@@ -85,3 +87,9 @@ und `node scripts/gen-icons.mjs src/app` laufen lassen.
 Scope, Datenbankschema, Registrierungs-Flow und die harten Vorgaben zu
 Server Components, Metadata, Semantik und Barrierefreiheit stehen in
 [`CLAUDE.md`](./CLAUDE.md).
+
+## Letzter Audit
+
+Befunde, umgesetzte Korrekturen und offene Backend-/Betriebsfragen:
+[Audit vom 16.09.2026](docs/AUDIT-2026-09-16.md).
+Supabase wurde bei dieser Prüfung ausschließlich lesend untersucht.

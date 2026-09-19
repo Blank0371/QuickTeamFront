@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { betriebsZeitpunkt, istKalendertag } from "@/lib/datum";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -187,7 +188,7 @@ export function fristNochOffen(
   if (bisherigeZyklen === 0) return null;
 
   const stichtag = deadline || start;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(stichtag)) return null;
+  if (!istKalendertag(stichtag)) return null;
 
   /*
    * Dieselbe Zonenangabe wie beim Schreiben von `p_deadline`: ohne sie
@@ -198,7 +199,7 @@ export function fristNochOffen(
    * ersatzweise herangezogene Beginn des Zeitraums dagegen dessen
    * Anfang: ab da wird gearbeitet, Wünsche kommen dann zu spät.
    */
-  const ablauf = new Date(`${stichtag}T${deadline ? "23:59:59" : "00:00:00"}+02:00`);
+  const ablauf = new Date(betriebsZeitpunkt(stichtag, Boolean(deadline)));
   return ablauf.getTime() > jetzt.getTime() ? { stichtag } : null;
 }
 

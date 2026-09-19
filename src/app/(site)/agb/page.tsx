@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { leseSprache } from "@/i18n/sprache";
 
 import { RechtsDokument } from "@/components/rechtsdokument";
 
-export const metadata: Metadata = {
-  title: "Allgemeine Geschäftsbedingungen",
-  description:
-    "Vertragsbedingungen für die Nutzung von QuickTeam: Vertragsschluss, Leistungsumfang, Testphase, Entgelte, Laufzeit und Kündigung.",
-  alternates: { canonical: "/agb" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const englisch = (await leseSprache()) === "en";
+  return {
+    title: englisch ? "General Terms and Conditions" : "Allgemeine Geschäftsbedingungen",
+    description: englisch ? "Terms for using QuickTeam: registration, services, trial, prices, term and cancellation." : "Vertragsbedingungen für die Nutzung von QuickTeam: Vertragsschluss, Leistungsumfang, Testphase, Entgelte, Laufzeit und Kündigung.",
+    alternates: { canonical: "/agb" },
+  };
+}
 
 /**
  * AGB — gerendert aus `docs/rechtliches/legals/`.

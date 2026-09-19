@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AuthRahmen } from "@/components/auth/auth-rahmen";
+import { holeTexte } from "@/i18n/server";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { feldSchemata } from "@/lib/validierung";
 
@@ -30,6 +31,8 @@ export default async function PasswortNeuSeite({
   const geprueft = feldSchemata.email.safeParse(einzelwert(params["email"]) ?? "");
   const email = geprueft.success ? geprueft.data : null;
 
+  const t = await holeTexte();
+
   return (
     <AuthRahmen
       kicker="Passwort zurücksetzen"
@@ -46,7 +49,7 @@ export default async function PasswortNeuSeite({
         </p>
       }
     >
-      <PasswortNeuFormular email={email} />
+      <PasswortNeuFormular email={email} versandTexte={t.codeVersand} />
 
       <div className="mt-6 rounded-blk border border-line bg-surface-sunk p-5">
         <h2 className="font-display text-sm font-bold text-text">

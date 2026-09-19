@@ -1,10 +1,56 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { mitSprachKopfzeile } from "@/i18n/sprach-parameter";
+import { promoSeiteGesperrt } from "@/lib/promo-code-seite";
+import {
+  ABRECHNUNG_COOKIE,
+  ABRECHNUNG_COOKIE_MAX_AGE,
+  alsAbrechnung,
+} from "@/lib/site";
 import { istGesperrt, softLaunchAktiv } from "@/lib/soft-launch";
 import { updateSession } from "@/lib/supabase/middleware";
 
+/**
+ * Hält die Abrechnungs-Wahl aus `?abrechnung=…` fest, sobald der Besucher
+ * von der Preisseite kommt (Jahresabo seit dem 2026-09-17). Gesetzt wird
+ * hier und nicht in der `/registrieren`-Seite, weil Next Cookie-Schreiben
+ * nur in Middleware, Server Actions und Route Handlern erlaubt, nicht beim
+ * Rendern einer Seite. `abrechnung-merker.ts` liest den Wert später in
+ * Schritt 2 wieder aus — die Konstanten teilen sich beide über `site.ts`,
+ * das anders als der Merker kein `next/headers` in die Edge-Laufzeit zöge.
+ *
+ * Nur der ausdrückliche Parameter setzt etwas; ohne ihn bleibt ein etwaiges
+ * Cookie unberührt, und fehlt es ganz, gilt der monatliche Standard.
+ */
+function merkeAbrechnung(request: NextRequest, antwort: NextResponse): NextResponse {
+  const roh = request.nextUrl.searchParams.get("abrechnung");
+  if (roh === "monat" || roh === "jahr") {
+    antwort.cookies.set(ABRECHNUNG_COOKIE, alsAbrechnung(roh), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: ABRECHNUNG_COOKIE_MAX_AGE,
+    });
+  }
+  return antwort;
+}
+
 export async function middleware(request: NextRequest) {
+  /*
+   * Die Promo-Code-Anfrageseite steht **vor** der Soft-Launch-Sperre und
+   * unabhängig von ihr: sie legt kein Konto und keinen Vertrag an, sondern
+   * bietet ein Formular zum Herunterladen. Steht `PROMO_CODE` auf etwas
+   * anderes als „an", ist `/promocode` (und der Formular-Download darunter)
+   * auf keinem Weg erreichbar — dieselbe Umleitung auf `/` wie beim
+   * Soft-Launch, aus demselben Grund: die Startseite ist die Antwort auf
+   * eine gesperrte Route, eine zweite Seite wäre eine zweite Pflegestelle.
+   */
+  if (promoSeiteGesperrt(request.nextUrl.pathname)) {
+    const ziel = new URL("/", request.url);
+    return NextResponse.redirect(ziel, request.method === "GET" ? 307 : 303);
+  }
+
   /*
    * Die Soft-Launch-Sperre steht **vor** dem Auffrischen der Sitzung.
    *
@@ -53,10 +99,13 @@ export async function middleware(request: NextRequest) {
    * Ohne Sitzungsauffrischung gibt es diesen Weg nicht mehr.
    */
   if (softLaunchAktiv()) {
-    return NextResponse.next({ request: { headers: mitSprachKopfzeile(request) } });
+    return merkeAbrechnung(
+      request,
+      NextResponse.next({ request: { headers: mitSprachKopfzeile(request) } }),
+    );
   }
 
-  return updateSession(request);
+  return merkeAbrechnung(request, await updateSession(request));
 }
 
 export const config = {

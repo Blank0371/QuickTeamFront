@@ -1,6 +1,6 @@
 # PRIVACY POLICY
 
-**Last updated: 15 September 2026**
+**Last updated: 16 September 2026**
 
 This Privacy Policy informs you, in accordance with Articles 13 and 14 of the General Data Protection Regulation (GDPR), how BlankTrading UG (haftungsbeschränkt) ("we" or "us") processes personal data when you
 
@@ -74,7 +74,7 @@ The website uses the following cookies for sign-in, chosen settings, registratio
 | **qt_sprache** | stores your chosen language (German or English) | 1 year | only when you switch language |
 | **sb-…-auth-token** (possibly split into several parts) | keeps you signed in after login; contains your session and access identifiers | until you sign out, at most 400 days | at login |
 | **qt_position** | remembers which of your positions you are working with in the dashboard if your account belongs to several businesses or positions | 1 year; deleted when you sign out | when you select a position |
-| **qt_registrierung** | holds the business name, country and your first and last name during registration until the confirmation code has been entered; readable only on the registration page | 24 hours; deleted after confirmation | during registration |
+| **qt_registrierung** | holds the business name, country, your first and last name and an optional promo code during registration until the confirmation code has been entered; readable only on the registration page | 24 hours; deleted after confirmation | during registration |
 | **__stripe_mid**, **__stripe_sid** | fraud prevention during payment (Stripe) | 1 year and 30 minutes respectively | only on pages with the payment form (Section 6) |
 
 **Legal basis:** Storage access required for sign-in, registration and the expressly selected language or position is based on Section 25(2) no. 2 TDDDG or, in Austria, Section 165(3) TKG 2021. Personal-data processing relies on Article 6(1)(b) GDPR for our own contractual relationships or (f) for secure access and administration for company representatives. Stripe uses cookies and device signals for fraud prevention in the payment form. An exemption from consent applies there only to storage access strictly necessary for the expressly requested payment service; a general reference to security or legitimate interests does not replace that requirement.
@@ -88,6 +88,8 @@ The website currently displays no cookie banner. No analytics or advertising coo
 ### 5.1 What data we collect
 
 To register a business we collect: the name of the business, its country (Germany or Austria), your first and last name, your email address and a password. The password is transmitted in encrypted form (TLS) to our server, which passes it straight on to our authentication service; the same applies at every sign-in and when resetting the password. We do not log or store the password. Only a cryptographic hash, from which the password cannot be recovered, is stored permanently.
+
+If you voluntarily enter a **promo code**, we initially store it with your login account and associate it with your business after confirmation. We use it to validate and attribute the specified promotion. The legal basis is Art. 6(1)(f) GDPR; our legitimate interest is administering this attribution. The code remains stored with the account or business until its deletion. A code does not automatically apply a discount in the current application.
 
 To confirm your email address, we send you an eight-digit code (Section 12.1). Only after you enter the code is the business created and your account linked to it as manager ("Chef"). Until then, the business details are held with your not-yet-confirmed account.
 

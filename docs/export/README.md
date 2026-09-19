@@ -47,7 +47,8 @@ und nicht über `betreteDashboard()`.
 
 ## Inhalt
 
-21 Tabellen, dazu fünf abgeleitete Abschnitte. Die maßgebliche Liste
+30 Tabellen (Stand 2026-09-15, zuletzt dazugekommen: `betrieb_promo_codes`),
+dazu fünf abgeleitete Abschnitte. Die maßgebliche Liste
 steht in `src/lib/export/tabellen.ts` und wird nicht aus dem Schema
 erraten — eine neue Tabelle fehlt im Export, bis jemand sie einträgt,
 und das ist der harmlosere Fehler.

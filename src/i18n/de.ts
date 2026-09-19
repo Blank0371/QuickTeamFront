@@ -33,7 +33,10 @@ export const de = {
       { href: "/preise", label: "Preise" },
     ],
     login: "Anmelden",
-    registrieren: "Kostenlos testen",
+    registrieren: "Registrieren",
+    /* Registerkarte zur Promo-Code-Anfrageseite. Erscheint nur, wenn
+       `PROMO_CODE=an` — der Header hängt sie dann an `links` an. */
+    promoPartner: "Promo-Partner",
   },
   footer: {
     claim: "Dienstpläne für Gastronomiebetriebe in Österreich und Deutschland.",
@@ -65,6 +68,22 @@ export const de = {
   },
   platzhalter: {
     hinweis: "Platzhalter — Inhalt folgt.",
+  },
+  promo: {
+    augenbraue: "Promo-Partnerschaft",
+    titel: "Werde Promo-Partner von QuickTeam",
+    lead: "Du empfiehlst QuickTeam an Gastronomiebetriebe weiter? Dann bekommst du einen eigenen Promo-Code, den neue Betriebe bei der Registrierung eintragen — so sehen wir, welche Anmeldungen von dir kommen.",
+    schritteTitel: "So läuft die Anfrage",
+    schritt1: "Lade das Antragsformular herunter.",
+    schritt2: "Fülle es vollständig aus und unterschreibe es.",
+    schritt3:
+      "Sende es an blanktrading@web.de mit dem Betreff „Request Promo Partnership“.",
+    formularHerunterladen: "Antragsformular herunterladen (PDF)",
+    perMailSenden: "Ausgefülltes Formular per E-Mail senden",
+    mailBetreff: "Request Promo Partnership",
+    hinweisTitel: "Was danach passiert",
+    hinweisText:
+      "Wir prüfen deine Anfrage und melden uns per E-Mail. Nach der Freigabe erhältst du deinen persönlichen Promo-Code. Ein Rabatt ist damit nicht verbunden — der Code hält nur fest, welche Betriebe über dich zu QuickTeam gefunden haben.",
   },
   dashboard: {
     navigation: "Dashboard-Navigation",
@@ -171,7 +190,7 @@ export const de = {
   landing: {
     heroSub:
       "QuickTeam ist die Dienstplanung für Gastrobetriebe. Ein Ort für Schichten, Team und Tausch, klar für alle.",
-    heroTesten: "Kostenlos testen",
+    heroTesten: "Registrieren",
     heroAnmelden: "Anmelden",
     heroFunktionen: "Funktionen entdecken",
     heroPreise: "Preise ansehen",
@@ -184,8 +203,23 @@ export const de = {
     preiseBald: "Bald verfügbar",
     preiseTitel: "Ein Preis pro Betrieb. Keine Rechnung pro Kopf.",
     preiseEmpfehlung: "Unsere Empfehlung",
-    preiseTesten: "Kostenlos testen",
+    preiseKuendigungMonat: "Kündbar zum Ende des Abrechnungsmonats.",
+    preiseKuendigungJahr: "Kündbar zum Ende des Abrechnungsjahres.",
+    preiseTesten: "Registrieren",
     proMonat: "/ Monat",
+    proJahr: "/ Jahr",
+    preiseMonatlich: "Monatlich",
+    preiseJaehrlich: "Jährlich",
+    /** Gilt für alle drei Pläne: Jahrespreis = 10 × Monatspreis, also zwei Monate geschenkt. */
+    preiseJahrVorteil: "2 Monate geschenkt",
+    /*
+     * Präfix des durchgestrichenen Vergleichs am Jahrespreis: „statt 468 €".
+     * Bewusst nur ein Wort und **keine** Funktion: `landing` wird als Ganzes
+     * an die Client-Component `Hero` gereicht (src/app/(landing)/page.tsx)
+     * und muss serialisierbar bleiben. Den Betrag setzt `bauePreisKarten`
+     * serverseitig davor.
+     */
+    preiseStattLabel: "statt",
     preiseUst: "zzgl. USt.",
     preiseUstAlle: "Alle Preise zzgl. USt.",
     preiseB2b:
@@ -200,8 +234,8 @@ export const de = {
 
   /** Teilnehmerzahl je Plan. Schlüssel sind die Plan-IDs aus `site.ts`. */
   planGrenzen: {
-    basic: "bis 15 Mitarbeiter",
-    pro: "bis 30 Mitarbeiter",
+    basic: "bis 15 Mitarbeiter, 1 Standort",
+    pro: "bis 30 Mitarbeiter, 1 Standort",
     business: "bis 50 Mitarbeiter, 1 Standort",
   },
 
@@ -221,7 +255,7 @@ export const de = {
       "Ankündigungen, Verfügbarkeiten und Rückmeldungen laufen sichtbar zusammen, bevor der erste Tag beginnt.",
     notfallTitel: "Ein Ausfall, sofort sichtbar",
     notfallText:
-      "Fällt jemand aus, springt der Tausch ein und schließt die Lücke, ohne eine einzige Telefonkette.",
+      "Fällt jemand aus, macht QuickTeam die offene Schicht sichtbar und hilft deinem Team, eine passende Vertretung zu finden.",
   },
 
   /** Die drei Karten vor dem Preisabschnitt. */
@@ -244,6 +278,265 @@ export const de = {
     naechsterMonat: "Nächster Monat",
     wochenBeginn: "Wochen beginnen am Montag",
     leeren: "Leeren",
+  },
+
+  /**
+   * Beschriftungen von Schritt 1 (Konto anlegen) — Formularfelder,
+   * Überschriften, Hinweisboxen, Fussnoten. Als Prop an die
+   * Client-Inseln gereicht, nicht über den Kontext: der trägt nur
+   * `formular` und `validierung` (CLAUDE.md, „Zweisprachigkeit").
+   */
+  registrierung: {
+    promoCode: "Promo-Code (optional)",
+    promoCodeHinweis:
+      "Hat dich jemand auf QuickTeam aufmerksam gemacht und dir einen Code gegeben? Dann trag ihn hier ein.",
+    promoPruefen: "Promo-Code prüfen",
+    promoPruefend: "Wird geprüft …",
+    promoGueltig: "Code erkannt — passt.",
+    promoNichtPruefbar:
+      "Wir konnten den Code gerade nicht prüfen. Du kannst trotzdem fortfahren.",
+    promoBittePruefen: "Bitte prüf den Promo-Code, bevor du den Betrieb anlegst.",
+    felder: {
+      betriebName: "Betriebsname",
+      land: "Land",
+      vorname: "Vorname",
+      nachname: "Nachname",
+      email: "E-Mail-Adresse",
+      emailHinweis: "An diese Adresse geht dein Bestätigungscode.",
+      passwort: "Passwort",
+      passwortWiederholen: "Passwort wiederholen",
+    },
+    betriebAnlegen: "Betrieb anlegen",
+    wirdAngelegt: "Wird angelegt …",
+    daten: {
+      titel: "Leg deinen Betrieb an",
+      lead: "Betriebsname, Land, dein Name und ein Passwort. Danach bestätigst du deine Adresse mit einem Code — noch auf dieser Seite.",
+    },
+    code: {
+      titel: "Code aus der E-Mail eintragen",
+      lead: "Wir haben dir einen Zahlencode geschickt. Trag ihn hier ein — dann legen wir deinen Betrieb an und es geht weiter mit der Zahlung.",
+      label: "Code aus der E-Mail ({n} Ziffern)",
+      hinweis: "Der Code gilt 60 Minuten.",
+      emailHinweis: "Die Adresse, an die wir den Code geschickt haben.",
+      bestaetigen: "Bestätigen",
+      wirdGeprueft: "Wird geprüft …",
+    },
+    boxen: {
+      geraetTitel: "Du kannst das Gerät wechseln",
+      geraetText:
+        "Die E-Mail am Handy öffnen und den Code am Rechner eintippen ist ausdrücklich vorgesehen. Trag dann einfach dieselbe E-Mail-Adresse mit ein.",
+      fristTitel: "Bestätige innerhalb von 24 Stunden",
+      fristText:
+        "Danach wird die Registrierung automatisch gelöscht. Dann legst du den Betrieb einfach neu an — es geht nichts verloren, weil er bis zur Bestätigung noch gar nicht existiert. Der Code selbst gilt 60 Minuten; danach lässt du dir hier einen neuen schicken.",
+      aendernSummary: "Angaben zum Betrieb ändern",
+      aendernText:
+        "Beim erneuten Absenden schicken wir einen neuen Code an die dann eingetragene Adresse.",
+    },
+    fussnoteA:
+      "Der Betrieb wird erst angelegt, wenn du den Code aus der Bestätigungsmail einträgst. Passiert das nicht innerhalb von ",
+    fussnote24: "24 Stunden",
+    fussnoteB: ", wird die Registrierung wieder gelöscht und du fängst von vorn an. Danach folgen ",
+    fussnoteTage: "{tage} Tage",
+    fussnoteC: " Testphase — Zahlungsdaten kannst du dabei überspringen.",
+    b2b: "Angebot ausschließlich für Unternehmer im Sinne des § 14 BGB sowie für juristische Personen des öffentlichen Rechts — nicht für Verbraucher.",
+    nachtragen: {
+      titel: "Dein Konto steht — der Betrieb fehlt noch",
+      lead: "Deine E-Mail-Adresse ist bestätigt. Beim Anlegen des Betriebs ist etwas dazwischengekommen; das holen wir jetzt nach.",
+      hinweis:
+        "Deine Angaben von der Registrierung sind gespeichert. Ein Klick genügt — dein Konto bleibt in jedem Fall bestehen.",
+      button: "Betrieb jetzt anlegen",
+    },
+    erledigt: {
+      titel: "Dieser Schritt ist erledigt",
+      lead: "Dein Konto ist bestätigt und dein Betrieb angelegt. Hier gibt es nichts mehr zu tun.",
+      betriebLabel: "Betrieb",
+      betriebFallback: "angelegt",
+      hinweis: "Betriebsname und Land änderst du später in der App — nicht mehr hier.",
+      weiter: "Weiter zur Einrichtung",
+      nichtDeinKonto: "Nicht dein Konto oder ein weiterer Betrieb?",
+      abmelden: "Abmelden",
+    },
+    passwortKriterien: {
+      min: "Mindestens {n} Zeichen",
+      max: "Höchstens {n} Zeichen",
+      gleich: "Beide Eingaben stimmen überein",
+      alleErfuellt: "Alle Anforderungen an das Passwort sind erfüllt.",
+      nochOffen: "Noch {n} von {gesamt} Anforderungen offen.",
+      erfuellt: " — erfüllt",
+      offen: " — offen",
+    },
+    fortschritt: {
+      aria: "Fortschritt der Einrichtung",
+      schrittVon: "Schritt {n} von {gesamt}",
+      schritte: {
+        konto: "Konto",
+        zahlung: "Zahlung",
+        team: "Team",
+        schichten: "Schichten",
+      },
+    },
+  },
+
+  /**
+   * Die Stepper-Schritte 2 bis 4 (Zahlung, Team, Schichten). Schritt 1
+   * (Konto) liegt oben in `registrierung`.
+   */
+  stepper: {
+    zahlung: {
+      titelMittel: "Zahlungsmittel hinterlegen",
+      leadTestphase:
+        "Plan {plan}{preis}. Jetzt wird nichts abgebucht — die Testphase läuft bis {datum}.",
+      leadSofort:
+        "Plan {plan}{preis}. Mit dem Hinterlegen beginnt dein Abo, und der erste Zeitraum wird abgebucht.",
+      leadNur: "Plan {plan}{preis}.",
+      knopfSofort: "Kostenpflichtig abonnieren",
+      zurueckLink: "Zurück zur Plan-Auswahl",
+      zurueckRest: " — dort kannst du den Schritt auch überspringen.",
+      titelPlan: "Plan wählen",
+      leadOhneTestphase:
+        "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits. Im nächsten Schritt hinterlegst du ein Zahlungsmittel, und dein Abo beginnt sofort.",
+      leadLebend:
+        "Deine Testphase läuft bereits seit der ersten Planwahl; ein Planwechsel verlängert sie nicht. Das Zahlungsmittel kannst du jetzt hinterlegen oder später nachtragen.",
+      leadNeu:
+        "{tage} Tage kostenlos, danach {intervall}. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.",
+      spaeter: "Später hinterlegen",
+      planLegende: "Plan wählen",
+      abrechnung: "Abrechnung:",
+      monatlich: "monatlich",
+      jaehrlich: "jährlich",
+      uidLabel: "UID-Nummer (optional)",
+      uidHinweis:
+        "Mit gültiger UID rechnen wir ohne Umsatzsteuer ab (Reverse Charge), ohne UID mit. Später änderbar unter Einstellungen → Abo verwalten.",
+      weiterLaufend: "Einen Moment …",
+      weiterZahlung: "Weiter zur Zahlung",
+      testphasenHinweis:
+        "In beiden Fällen laufen zuerst {tage} Tage kostenlos. Ohne hinterlegtes Zahlungsmittel pausiert dein Betrieb danach, bis du eins nachträgst — deine Daten bleiben dafür 90 Tage erhalten.",
+    },
+    zahlungsFormular: {
+      knopfStandard: "Zahlungsmittel hinterlegen",
+      wirdHinterlegt: "Wird hinterlegt …",
+      wirdGeladen: "Zahlungsformular wird geladen …",
+      rechnungUnvollstaendig: "Bitte vervollständige die Rechnungsangaben.",
+      bestaetigungFehlgeschlagen: "Die Zahlungsmethode liess sich nicht bestätigen.",
+      keinErgebnis: "Stripe hat kein Ergebnis zurückgemeldet. Versuch es noch einmal.",
+      verbindungUnterbrochen:
+        "Die Verbindung wurde unterbrochen. Bitte versuch es erneut; prüfe bei einer bereits bestätigten Zahlung zunächst den Abostatus.",
+    },
+    rechnung: {
+      legende: "Rechnungsangaben",
+      intro:
+        "Diese Angaben stehen auf jeder Rechnung. Ändern kannst du sie später jederzeit unter Einstellungen → „Abo verwalten\". Bereits gestellte Rechnungen bleiben unverändert.",
+      firma: "Rechtlicher Unternehmensname",
+      firmaHinweis:
+        "Wie im Firmenbuch bzw. Handelsregister — nicht unbedingt derselbe Name wie im Dienstplan.",
+      strasse: "Straße und Hausnummer",
+      plz: "Postleitzahl",
+      ort: "Ort",
+      land: "Land der Rechnungsanschrift",
+      landHinweis:
+        "Gilt nur für die Rechnung. Der Standort deines Betriebs und die Arbeitszeitregeln deines Dienstplans ändern sich dadurch nicht.",
+      uidWarnung:
+        "Mit einem Rechnungsland ausserhalb Österreichs wird deine hinterlegte UID-Nummer entfernt — sie gilt nur für österreichische Rechnungsempfänger. Das kann die Umsatzsteuer künftiger Abrechnungen ändern. Bereits gestellte Rechnungen bleiben davon unberührt.",
+      uidLabel: "UID-Nummer (freiwillig)",
+      uidHinweis:
+        "Mit gültiger UID rechnet Stripe im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern.",
+    },
+    team: {
+      titel: "Wer arbeitet bei dir",
+      lead: "Erst die Rollen — Küche, Service, Bar oder was bei dir passt. Danach lädst du deine Leute ein und hakst an, welche Rolle sie haben.",
+      rollennameFehler: "Der Rollenname passt nicht.",
+      rolleDoppelt: "Die Rolle „{name}\" gibt es schon.",
+      rollenTitel: "Rollen",
+      rollenText:
+        "Womit wird bei dir gearbeitet? Ohne mindestens eine Rolle geht es nicht weiter — Schichtvorlagen brauchen sie, um in der App überhaupt sichtbar zu werden.",
+      neueRolle: "Neue Rolle",
+      hinzufuegen: "Hinzufügen",
+      keineRolle: "Noch keine Rolle angelegt.",
+      rolleEntfernen: "Rolle {name} entfernen",
+      einladenTitel: "Mitarbeiter einladen",
+      einladenText:
+        "Optional — ein Betrieb, in dem vorerst nur du arbeitest, ist völlig in Ordnung. Eingeladene bekommen Zugang, sobald sie die App öffnen und die Einladung annehmen.",
+      vorname: "Vorname",
+      nachname: "Nachname",
+      email: "E-Mail-Adresse",
+      emailHinweis: "E-Mail oder Telefon — eins von beiden muss sein.",
+      telefon: "Telefonnummer",
+      telefonHinweis:
+        "International mit +, z. B. +43 660 1234567 — sonst findet die App die Einladung nicht.",
+      rollenLegende: "Rollen",
+      einladenLaufend: "Wird eingeladen …",
+      einladen: "Einladen",
+      niemand: "Noch niemand eingeladen.",
+      einladungOffen: " · Einladung offen",
+      entfernen: "Entfernen",
+      weiterLaufend: "Wird gespeichert …",
+      weiter: "Weiter zu den Schichten",
+      ersteRolle: "Leg zuerst mindestens eine Rolle an.",
+    },
+    schichten: {
+      titel: "Wie sieht eure Woche aus",
+      lead: "Für jeden Wochentag die Schichten, die es bei dir gibt — und je Schicht, wie viele Leute welcher Rolle mindestens da sein müssen.",
+      abschliessen: "Einrichtung abschliessen",
+      ersteSchicht: "Leg zuerst mindestens eine Schicht mit Mindestbesetzung an.",
+      anlegenTitel: "Schicht anlegen",
+      anlegenText:
+        "Eine Vorlage je Schicht und Wochentag. Nachtschichten über Mitternacht sind in Ordnung — trag einfach 22:00 bis 06:00 ein.",
+      bezeichnung: "Bezeichnung",
+      bezeichnungHinweis: "Zum Beispiel Frühdienst, Abenddienst oder Küche spät.",
+      wochentag: "Wochentag",
+      beginn: "Beginn",
+      ende: "Ende",
+      mindestbesetzung: "Mindestbesetzung",
+      mindestbesetzungText:
+        "Wie viele Leute welcher Rolle müssen mindestens da sein? Ohne mindestens eine Angabe taucht die Schicht in der App nicht auf.",
+      anlegenLaufend: "Wird angelegt …",
+      schichtHinzufuegen: "Schicht hinzufügen",
+      wocheTitel: "Eure Woche",
+      keineSchicht: "Noch keine Schicht angelegt.",
+      unbekannteRolle: "unbekannt",
+      ohneBedarf: "Ohne Mindestbesetzung — in der App unsichtbar",
+      amTag: " am {tag}",
+      bisZeit: " bis {zeit}",
+      folgetag: ", endet am Folgetag",
+      blockEntfernen: "{bezeichnung} am {tag}, {zeit}, entfernen",
+    },
+    sperre: {
+      eyebrow: "Testphase",
+      titel: "Deine Testphase ist abgelaufen",
+      text: "Die {tage} Tage sind vorbei, und es ist kein Zahlungsmittel hinterlegt. Dein Betrieb, dein Team und deine Schichtvorlagen bleiben bis 90 Tage nach Ende der Testphase gespeichert, danach werden sie gelöscht (AGB § 5 Abs. 3). Sobald du eine Zahlungsmethode hinterlegst, läuft dein Plan {plan} weiter, wo er aufgehört hat.",
+      knopfFortsetzen: "Kostenpflichtig fortsetzen",
+      keinNeues: "Es entsteht kein neues Abonnement — dein bestehendes wird fortgesetzt.",
+      aboVerwalten: "Abo verwalten oder kündigen",
+      datenExport: "Daten exportieren",
+    },
+  },
+
+  /**
+   * Der Zustimmungssatz mit den drei Rechts-Links. In Segmente zerlegt,
+   * weil die Links mitten im Satz stehen und die Wortstellung sich
+   * zwischen den Sprachen verschiebt — ein einziger String liesse sich
+   * nicht sauber übersetzen.
+   */
+  zustimmungFeld: {
+    vorAgb: "Ich schliesse für meinen Betrieb die ",
+    agb: "AGB",
+    zwischen: " und die ",
+    avv: "Auftragsverarbeitungsvereinbarung (AVV)",
+    nachAvv:
+      " ab und bestätige, dass ich berechtigt bin, den Betrieb dabei zu vertreten. Die ",
+    datenschutz: "Datenschutzerklärung",
+    nachDatenschutz: " habe ich zur Kenntnis genommen.",
+  },
+
+  /**
+   * „Code erneut senden" mit Countdown — geteilt von Registrierung
+   * (Schritt 1) und Passwort-Reset.
+   */
+  codeVersand: {
+    spamHinweis: "Nichts angekommen? Sieh im Spam-Ordner nach.",
+    erneutSenden: "Code erneut senden",
+    fristAktiv: "Aus Sicherheitsgründen erst in {n} Sekunden wieder möglich.",
+    fristBereit: "Du kannst dir jetzt einen neuen Code schicken lassen.",
   },
 
   auswahl: {
@@ -295,6 +588,33 @@ export const de = {
     unbekannt: "Das hat nicht geklappt. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
   },
 
+  /**
+   * Die Anmeldeseite `/login`. Seitengerüst und Formularbeschriftungen als
+   * Prop an die Client-Insel gereicht (CLAUDE.md, „Zweisprachigkeit").
+   * `meldungen` sind die per Query-Parameter übergebenen Hinweise — als
+   * Schlüssel, nie als Freitext angezeigt (`meldungFuer`).
+   */
+  login: {
+    kicker: "Anmelden",
+    titel: "Willkommen zurück",
+    lead: "E-Mail-Adresse und Passwort eingeben — danach geht es direkt in die Planung deines Betriebs.",
+    fussFrage: "Noch keinen Betrieb?",
+    fussLink: "Jetzt anlegen",
+    passwortVergessen: "Passwort vergessen?",
+    emailLabel: "E-Mail-Adresse",
+    passwortLabel: "Passwort",
+    absenden: "Anmelden",
+    absendenLaufend: "Wird geprüft …",
+    meldungen: {
+      "konto-geloescht": "Dein Konto wurde gelöscht.",
+      "abo-kuendigung-offen":
+        "Mindestens ein Abonnement konnte anschließend nicht gekündigt werden. Bitte kontaktiere umgehend blanktrading@web.de, damit keine weiteren Abbuchungen erfolgen.",
+      abgemeldet: "Du bist abgemeldet.",
+      "app-url-fehlt":
+        "Dein Konto ist bereit, aber das Ziel der Weiterleitung ist nicht konfiguriert (NEXT_PUBLIC_APP_URL). Meld dich beim Support.",
+    },
+  },
+
   validierung: {
     /* Bezeichnungen — eingesetzt in `v.pflicht.*` über `@`-Verweise. */
     "bez.betriebName": "Der Betriebsname",
@@ -324,6 +644,8 @@ export const de = {
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
     "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
+    "v.promo.form": "Ein Promo-Code besteht aus Buchstaben, Ziffern, - und _, höchstens {max} Zeichen.",
+    "v.promo.unbekannt": "Diesen Promo-Code kennen wir nicht. Prüf die Schreibweise — oder lass das Feld leer.",
     "v.plz.ziffern": "Die Postleitzahl besteht nur aus Ziffern.",
     "v.plz.at": "Österreichische Postleitzahlen haben {anzahl} Ziffern.",
     "v.plz.de": "Deutsche Postleitzahlen haben {anzahl} Ziffern.",

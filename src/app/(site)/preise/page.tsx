@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { Container } from "@/components/container";
+import { PreisListe } from "@/components/preise/preis-liste";
 import { holeTexte } from "@/i18n/server";
-import { customTarif, kontaktEmail, plaene, TESTPHASE_TAGE } from "@/lib/site";
+import { bauePreisKarten } from "@/lib/preis-karten";
+import { customTarif, kontaktEmail, TESTPHASE_TAGE } from "@/lib/site";
 import { softLaunchAktiv } from "@/lib/soft-launch";
 
 export const metadata: Metadata = {
   title: "Preise",
   description:
-    "Low für 29 €, Medium für 49 €, Business für 69 € im Monat — je nach Teamgröße. Grössere Betriebe und mehrere Standorte auf Anfrage. Immer mit 14 Tagen Testphase.",
+    "Low für 39 €, Medium für 69 €, Business für 99 € im Monat — oder jährlich mit zwei Monaten geschenkt (390 / 690 / 990 €). Grössere Betriebe und mehrere Standorte auf Anfrage. Immer mit 14 Tagen Testphase.",
   alternates: { canonical: "/preise" },
 };
 
@@ -44,58 +45,18 @@ export default async function PreiseSeite() {
           Die drei Pläne
         </h2>
 
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {plaene.map((plan) => (
-            <li
-              key={plan.id}
-              className="flex flex-col rounded-panel border border-line bg-surface p-6 shadow-card"
-            >
-              <h3 className="font-display text-xl">{plan.name}</h3>
-
-              <p className="mt-3 flex items-baseline gap-1.5">
-                <span className="font-display text-3xl text-text">{plan.preis} €</span>
-                <span className="text-sm text-muted">{t.landing.proMonat}</span>
-                <span className="text-xs text-muted">{t.landing.preiseUst}</span>
-              </p>
-
-              <p className="mt-3 text-sm font-medium text-text">{t.planGrenzen[plan.id]}</p>
-
-              <p className="mt-4 grow text-sm leading-relaxed text-muted">
-                {TESTPHASE_TAGE} Tage testen, danach monatlich. Jederzeit kündbar.
-              </p>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-6 max-w-2xl text-xs leading-relaxed text-muted">
-          {t.landing.preiseB2b}
-        </p>
-
-        {/*
-          Derselbe Schalter wie in Kopfzeile, Fussbereich und Middleware.
-          Steht die Sperre, führte ein Knopf auf `/registrieren` ins
-          Leere — dann steht dort die ehrliche Auskunft statt eines
-          Formulars.
-        */}
-        {softLaunchAktiv() ? (
-          <p className="mt-8 max-w-xl rounded-blk border border-dashed border-line px-5 py-4 text-sm leading-relaxed text-muted">
-            <span className="font-medium text-text">Bald verfügbar.</span> QuickTeam
-            startet in Kürze. Den Plan wählst du dann während der Einrichtung — wechseln
-            geht dort jederzeit.
-          </p>
-        ) : (
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/registrieren"
-              className="rounded-blk bg-signal px-6 py-3 text-center text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
-            >
-              Betrieb anlegen
-            </Link>
-            <p className="text-sm text-muted">
-              Den Plan wählst du während der Einrichtung — wechseln geht dort jederzeit.
-            </p>
-          </div>
-        )}
+        <PreisListe
+          karten={bauePreisKarten(t)}
+          proMonat={t.landing.proMonat}
+          proJahr={t.landing.proJahr}
+          monatlich={t.landing.preiseMonatlich}
+          jaehrlich={t.landing.preiseJaehrlich}
+          vorteil={t.landing.preiseJahrVorteil}
+          ustHinweis={t.landing.preiseUst}
+          testphaseTage={TESTPHASE_TAGE}
+          b2b={t.landing.preiseB2b}
+          authOffen={!softLaunchAktiv()}
+        />
       </section>
 
       {/*

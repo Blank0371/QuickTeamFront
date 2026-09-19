@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { aboGekuendigt, holeAbo, testphaseAbgelaufen } from "@/lib/abo";
 import { holeChefBetriebId } from "@/lib/betrieb";
+import { holeEinladungen } from "@/lib/dashboard/position";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
 import { aboLageBeiStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -82,6 +83,7 @@ export async function ermittleStandFuer(
   // Schritt 1: erst mit angelegtem Betrieb ist das Konto fertig.
   const betriebId = await holeChefBetriebId(supabase);
   if (betriebId === null) {
+    if ((await holeEinladungen(supabase)).length > 0) redirect("/dashboard/wechseln");
     return { offen: "konto", gesperrt: false, betriebId: null };
   }
 

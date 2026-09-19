@@ -41,7 +41,7 @@ const PUNKTE = [
  * mehr.
  */
 const AUTH_PUNKTE = [
-  { href: "/registrieren", label: "Kostenlos testen", stark: true },
+  { href: "/registrieren", label: "Registrieren", stark: true },
   { href: "/login", label: "Anmelden", stark: false },
 ] as const;
 
@@ -55,7 +55,23 @@ const AUTH_PUNKTE = [
  * Bedingung waere die zweite Gelegenheit, in die falsche Richtung zu
  * zeigen, vor der `CLAUDE.md` warnt.
  */
-export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
+/**
+ * `promoHref` / `promoLabel` sind die Registerkarte zur
+ * Promo-Code-Anfrageseite — gesetzt nur, wenn `PROMO_CODE=an`. Wie
+ * `authOffen` kommen sie als Prop aus `src/app/(landing)/layout.tsx`,
+ * weil diese Client-Insel den serverseitigen Schalter nicht selbst lesen
+ * kann. Anders als die Auth-Knöpfe hängt sie **nicht** am Soft-Launch:
+ * die Seite legt kein Konto an, sondern bietet ein Formular an.
+ */
+export function LandingNavigation({
+  authOffen,
+  promoHref,
+  promoLabel,
+}: {
+  authOffen: boolean;
+  promoHref?: string;
+  promoLabel?: string;
+}) {
   const [aktiv, setAktiv] = useState<string | null>(null);
   const [offen, setOffen] = useState(false);
   const knopfRef = useRef<HTMLButtonElement>(null);
@@ -172,7 +188,7 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
           </span>
         </a>
 
-        <ul className="hidden items-center gap-1 md:flex">
+        <ul className="hidden items-center gap-1 lg:flex">
           {PUNKTE.map((punkt) => (
             <li key={punkt.id}>
               <a
@@ -196,13 +212,27 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
 
         {/*
           Rechts neben den Abschnitten, nicht zwischen ihnen: die
-          Sprungmarken beschreiben **diese** Seite, die zwei Knoepfe
+          Sprungmarken beschreiben **diese** Seite, die uebrigen Punkte
           fuehren von ihr weg. In derselben Liste haetten sie
           ausgesehen, als gaebe es einen Abschnitt „Anmelden".
+
+          Die Promo-Registerkarte steht hier ausserhalb der
+          Soft-Launch-Bedingung: sie fuehrt nicht in einen
+          Vertragsabschluss.
         */}
-        {authOffen ? (
-          <div className="hidden shrink-0 items-center gap-2 md:flex">
-            {AUTH_PUNKTE.map((punkt) => (
+        {promoHref || authOffen ? (
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+            {promoHref ? (
+              <Link
+                href={promoHref}
+                className="touch-manipulation rounded-blk px-3 py-2 text-sm font-medium transition-colors hover:text-[var(--qt-c-bone)]"
+                style={{ color: "color-mix(in oklab, var(--qt-c-bone) 62%, transparent)" }}
+              >
+                {promoLabel}
+              </Link>
+            ) : null}
+            {authOffen
+              ? AUTH_PUNKTE.map((punkt) => (
               <Link
                 key={punkt.href}
                 href={punkt.href}
@@ -219,7 +249,8 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
               >
                 {punkt.label}
               </Link>
-            ))}
+                ))
+              : null}
           </div>
         ) : null}
 
@@ -229,7 +260,7 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
           onClick={() => setOffen((o) => !o)}
           aria-expanded={offen}
           aria-controls="landing-nav-menue"
-          className="flex h-11 touch-manipulation items-center gap-2 rounded-blk px-3 text-sm font-medium md:hidden"
+          className="flex h-11 touch-manipulation items-center gap-2 rounded-blk px-3 text-sm font-medium lg:hidden"
           style={{
             border: "1px solid var(--qt-border-control)",
             color: "var(--qt-c-bone)",
@@ -240,14 +271,14 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
           ) : (
             <Menu aria-hidden="true" className="size-4" strokeWidth={2} />
           )}
-          Abschnitte
+          {offen ? "Schließen" : "Menü"}
         </button>
       </nav>
 
       {offen ? (
         <ul
           id="landing-nav-menue"
-          className="flex flex-col gap-1 px-5 pb-4 md:hidden"
+          className="absolute inset-x-0 top-full max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain bg-[var(--qt-c-carbon)] px-5 pb-5 pt-2 shadow-xl lg:hidden"
           style={{ borderTop: "1px solid color-mix(in oklab, var(--qt-c-bone) 8%, transparent)" }}
         >
           {PUNKTE.map((punkt) => (
@@ -268,6 +299,19 @@ export function LandingNavigation({ authOffen }: { authOffen: boolean }) {
               </a>
             </li>
           ))}
+
+          {promoHref ? (
+            <li>
+              <Link
+                href={promoHref}
+                onClick={() => setOffen(false)}
+                className="flex min-h-[2.75rem] touch-manipulation items-center rounded-blk px-2 text-base font-medium"
+                style={{ color: "color-mix(in oklab, var(--qt-c-bone) 70%, transparent)" }}
+              >
+                {promoLabel}
+              </Link>
+            </li>
+          ) : null}
 
           {authOffen ? (
             <li

@@ -61,15 +61,37 @@ export const GESPERRTE_PRAEFIXE = [
   "/passwort-neu",
   "/einrichtung",
   "/dashboard",
-  /*
-   * Die Kontolöschung steht hinter einer Anmeldung und wäre während des
-   * Soft-Launches ohnehin unerreichbar. Sie steht trotzdem hier: die
-   * Liste ist die eine Stelle, an der „gehört hinter die Sperre"
-   * festgehalten wird, und eine Route, die dort fehlt, fällt erst auf,
-   * wenn sich die Bedingungen ändern.
-   */
-  "/kontoloeschung",
 ] as const;
+
+/*
+ * ─────────────────────────────────────────────────────────────────────
+ *  `/kontoloeschung` stand hier und steht seit dem 2026-09-17 **nicht**
+ *  mehr hier. Das ist eine Entscheidung, kein Versehen.
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Die Begründung von damals war, die Löschung stehe hinter einer
+ * Anmeldung und sei während des Soft-Launches ohnehin unerreichbar. Seit
+ * die Seite die Anmeldung **selbst** entgegennimmt, stimmt der zweite
+ * Teil nicht mehr — und der erste war nie ein Grund, sondern eine
+ * Beobachtung.
+ *
+ * Der Soft-Launch verhindert, dass ein Konto, eine Sitzung oder ein
+ * Vertrag **entsteht**, solange die Rechtstexte Entwürfe sind. Löschen
+ * erzeugt nichts davon. Und es ist das eine, das nicht davon abhängt, ob
+ * die Texte geprüft sind: Art. 17 DSGVO gilt unabhängig vom Stand einer
+ * Datenschutzerklärung, und Ziffer 15.2 sagt zu, dass man sein Konto
+ * „jederzeit selbst" löschen kann — mit dieser Adresse im Text. Eine
+ * Sperre, die das mitsperrt, sperrt ausgerechnet das weg, was sie
+ * schützen soll, und macht die Zusage im selben Zug unwahr.
+ *
+ * **Die Route allein freizugeben reicht nicht**, und das ist der Teil,
+ * der leicht übersehen wird: `createClient()` und `stripeKlient()`
+ * leiten unabhängig von dieser Liste um. Die Seite braucht deshalb
+ * `createClientOhneRiegel()` und `trotzSoftLaunch` — beides eng gefasst
+ * und an Ort und Stelle begründet. Wer diesen Eintrag wieder aufnimmt,
+ * nimmt die beiden anderen mit; wer nur einen der drei zurückdreht,
+ * hinterlässt eine Seite, die sich öffnet und dann nichts kann.
+ */
 
 /** Aktiv, solange nicht ausdrücklich abgeschaltet. */
 export function softLaunchAktiv(): boolean {

@@ -48,16 +48,17 @@ function zuweisungsFehlerText(message: string): string {
     return "Das überschreitet die gesetzliche Tageshöchstarbeitszeit dieser Person.";
   }
   if (
-    message.includes("Wochenhoechstarbeitszeit") ||
-    message.includes("HC-5") ||
-    message.includes("max_stunden_hart")
+    message.includes("Wochenhoechstarbeitszeit")
   ) {
     return "Das überschreitet die Wochenhöchstarbeitszeit dieser Person.";
+  }
+  if (message.includes("HC-5") || message.includes("max_stunden_hart")) {
+    return "Das überschreitet die vereinbarte monatliche Stundenobergrenze dieser Person.";
   }
   if (message.includes("HC-3") || message.includes("qualifiziert")) {
     return "Diese Person ist für diese Rolle nicht qualifiziert.";
   }
-  if (message.includes("deaktiviert")) {
+  if (message.includes("deaktiviert") || message.includes("kann nicht eingeplant werden")) {
     return "Diese Person ist deaktiviert und kann nicht eingeteilt werden.";
   }
   if (message.includes("Nur Chef")) {

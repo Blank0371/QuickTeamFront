@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { inlineTeile } from "@/lib/markdown-inline";
 
 /**
  * Ein sehr kleiner Markdown-Renderer für die Rechtstexte.
@@ -38,18 +39,17 @@ import type { ReactNode } from "react";
  * ist das kein Schönheitsfehler.
  */
 
-/** `**fett**` innerhalb einer Zeile. Alles andere bleibt Text. */
+/** Inline-Formatierung der Rechtsdokumente, ohne ausführbares HTML. */
 function inline(text: string, schluessel: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).flatMap((teil, i) => {
-    if (teil.length === 0) return [];
-    if (teil.startsWith("**") && teil.endsWith("**")) {
-      return [
-        <strong key={`${schluessel}-${i}`} className="font-semibold text-text">
-          {teil.slice(2, -2)}
-        </strong>,
-      ];
+  return inlineTeile(text).map((teil, i) => {
+    const key = `${schluessel}-${i}`;
+    switch (teil.typ) {
+      case "link": return <a key={key} href={teil.href} className="text-signal underline underline-offset-4">{teil.text}</a>;
+      case "fett": return <strong key={key} className="font-semibold text-text">{teil.text}</strong>;
+      case "kursiv": return <em key={key}>{teil.text}</em>;
+      case "code": return <code key={key} className="[overflow-wrap:anywhere]">{teil.text}</code>;
+      default: return <span key={key}>{teil.text}</span>;
     }
-    return [<span key={`${schluessel}-${i}`}>{teil}</span>];
   });
 }
 
