@@ -201,6 +201,8 @@ export const de = {
 
     preiseKennzeichen: "Preise",
     preiseBald: "Bald verfügbar",
+    preiseBaldText:
+      "QuickTeam startet in Kürze. Den Plan wählst du dann während der Einrichtung — wechseln geht dort jederzeit.",
     preiseTitel: "Ein Preis pro Betrieb. Keine Rechnung pro Kopf.",
     preiseEmpfehlung: "Unsere Empfehlung",
     preiseTesten: "Registrieren",
@@ -241,6 +243,12 @@ export const de = {
   customTarif: {
     preis: "Auf Anfrage",
     grenze: "mehrere Standorte oder über 50 Mitarbeiter",
+    kennzeichen: "Kein Tarif zum Anklicken",
+    beschreibung:
+      "Mehrere Standorte oder mehr als 50 Mitarbeiter lassen sich nicht sinnvoll klicken. Sag uns, wie dein Betrieb aussieht — Kette, Franchise oder zwei Lokale unter einer Leitung — und wir schneiden das darauf zu. Der Preis steht danach fest, nicht vorher:",
+    anfragen: "Custom anfragen",
+    betreff: "Custom-Tarif für meinen Betrieb",
+    kontaktFolgt: "Kontaktadresse folgt in Kürze.",
   },
 
   /** Die drei Versprechen der Scroll-Sequenz. */

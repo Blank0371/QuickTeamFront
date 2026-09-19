@@ -27,6 +27,8 @@ export function PreisListe({
   testphaseTage,
   b2b,
   authOffen,
+  baldLabel,
+  baldText,
 }: {
   karten: PreisKarte[];
   proMonat: string;
@@ -38,6 +40,8 @@ export function PreisListe({
   testphaseTage: number;
   b2b: string;
   authOffen: boolean;
+  baldLabel: string;
+  baldText: string;
 }) {
   const [intervall, setIntervall] = useState<Abrechnung>("monat");
   const istJahr = intervall === "jahr";
@@ -113,8 +117,7 @@ export function PreisListe({
         </div>
       ) : (
         <p className="mt-8 max-w-xl rounded-blk border border-dashed border-line px-5 py-4 text-sm leading-relaxed text-muted">
-          <span className="font-medium text-text">Bald verfügbar.</span> QuickTeam startet in
-          Kürze. Den Plan wählst du dann während der Einrichtung — wechseln geht dort jederzeit.
+          <span className="font-medium text-text">{baldLabel}.</span> {baldText}
         </p>
       )}
     </div>

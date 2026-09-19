@@ -225,6 +225,8 @@ export const en: Dictionary = {
 
     preiseKennzeichen: "Pricing",
     preiseBald: "Coming soon",
+    preiseBaldText:
+      "QuickTeam launches shortly. You'll pick your plan during setup — and can switch there anytime.",
     preiseTitel: "One price per business. No per-head invoice.",
     preiseEmpfehlung: "Our recommendation",
     preiseTesten: "Register",
@@ -257,6 +259,12 @@ export const en: Dictionary = {
   customTarif: {
     preis: "On request",
     grenze: "multiple locations or more than 50 employees",
+    kennzeichen: "Not a tariff you click",
+    beschreibung:
+      "Multiple locations or more than 50 employees can't sensibly be clicked together. Tell us what your business looks like — a chain, a franchise or two venues under one management — and we'll tailor it to that. The price is set afterwards, not before:",
+    anfragen: "Request Custom",
+    betreff: "Custom tariff for my business",
+    kontaktFolgt: "Contact address coming shortly.",
   },
 
   /* The three promises of the scroll sequence. */
