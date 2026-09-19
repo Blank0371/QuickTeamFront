@@ -514,13 +514,27 @@ testbar), Stripe-/Supabase-Teil in `rechnung.ts`.
 **Umsatzsteuer über Stripe Tax.** `erstelleAbo()`, `wechslePlan()`,
 `uebernimmZahlungsmittel()` setzen `automatic_tax: { enabled: true }`; Standort aus
 `betriebe.land` (`holeRechnungsangaben()`, `stelleSteuerstandortSicher()`).
-Österreichische Betriebe: freiwilliges UID-Feld → `eu_vat` (Reverse Charge), Zod-Regel
-`feldSchemata.uid`. **Voraussetzung im Stripe-Dashboard:** Stripe Tax aktiv, eine
+Österreichische Rechnungsempfänger: **UID-Pflicht** → `eu_vat` (Reverse Charge).
+**Voraussetzung im Stripe-Dashboard:** Stripe Tax aktiv, eine
 **Registrierung für Deutschland**, Preise `tax_behavior: exclusive`.
 `pruefePreisGleichstand()` schreibt `[preise] …` ins Protokoll, wenn ein Preis nicht
 netto ist oder ein Abo ohne `automatic_tax` läuft. Zahlungsansichten
 lesen Betrag/Testphasenende/erste Abbuchung aus dem Stripe-Abo, nicht aus
 `plaene`/`TESTPHASE_TAGE` (`src/lib/abo-konditionen.ts`).
+
+**UID-Pflicht für österreichische Rechnungen (Kursänderung 2026-09-18, auf Anweisung
+des Nutzers).** *Vorher:* das UID-Feld war für AT freiwillig — ohne UID behandelte
+Stripe Tax den Betrieb wie einen Privatkunden (österreichische USt. statt Reverse
+Charge). *Jetzt:* QuickTeam verkauft ausschliesslich an Unternehmer, deshalb ist für
+einen **österreichischen Rechnungsempfänger** eine gültige UID Pflicht. *Begründung:*
+Geschäftsregel „kein Verkauf ohne UID/B2C". Die Pflicht sitzt am **Rechnungstor**, nicht
+in Schritt 2 — dieselbe Schwelle wie bei der Anschrift: sie greift erst, wenn eine
+Rechnung entstehen kann. **Kostenloses Testen ohne Zahlungsmittel bleibt ohne UID
+möglich**; wer ein kostenpflichtiges Abo aktiviert, braucht sie. Geprüft an zwei Stellen:
+`rechnungSchema.superRefine` (`v.uid.pflicht`, client **und** server über `pruefeRechnung`)
+und `rechnungVollstaendig()` (Stripe-lesend, schliesst 3DS-Rückweg und Direktaufruf; ruft
+`holeUid()` bei `country === "AT"`). Für **Deutschland** unverändert belanglos (kein Feld,
+hereingereichter Wert wird verworfen).
 
 **Kündigung über das Stripe-Kundenportal.** „Abo verwalten" in `/dashboard/einstellungen`
 (`aboVerwalten()`) öffnet das Portal (Kündigung zum Periodenende, Zahlungsmittel,

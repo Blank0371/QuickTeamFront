@@ -56,6 +56,8 @@ export default async function PreiseSeite() {
           testphaseTage={TESTPHASE_TAGE}
           b2b={t.landing.preiseB2b}
           authOffen={!softLaunchAktiv()}
+          baldLabel={t.landing.preiseBald}
+          baldText={t.landing.preiseBaldText}
         />
       </section>
 
@@ -90,7 +92,7 @@ export default async function PreiseSeite() {
         >
           <div className="min-w-0 flex-1">
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">
-              Kein Tarif zum Anklicken
+              {t.customTarif.kennzeichen}
             </p>
 
             <h2 id="custom-titel" className="mt-2 font-display text-lg text-text">
@@ -98,20 +100,17 @@ export default async function PreiseSeite() {
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-              Mehrere Standorte oder mehr als 50 Mitarbeiter lassen sich nicht sinnvoll
-              klicken. Sag uns, wie dein Betrieb aussieht — Kette, Franchise oder zwei
-              Lokale unter einer Leitung — und wir schneiden das darauf zu. Der Preis
-              steht danach fest, nicht vorher:{" "}
+              {t.customTarif.beschreibung}{" "}
               <span className="font-medium text-text">{t.customTarif.preis}</span>.
             </p>
           </div>
 
           {kontaktEmail ? (
             <a
-              href={`mailto:${kontaktEmail}?subject=${encodeURIComponent("Custom-Tarif für meinen Betrieb")}`}
+              href={`mailto:${kontaktEmail}?subject=${encodeURIComponent(t.customTarif.betreff)}`}
               className="shrink-0 self-start rounded-blk border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk lg:self-auto"
             >
-              Custom anfragen
+              {t.customTarif.anfragen}
             </a>
           ) : (
             /*
@@ -120,7 +119,7 @@ export default async function PreiseSeite() {
              * lieber sichtbar angekündigt als tot verlinkt.
              */
             <p className="shrink-0 self-start rounded-blk border border-dashed border-line px-5 py-3 text-sm text-muted lg:self-auto">
-              Kontaktadresse folgt in Kürze.
+              {t.customTarif.kontaktFolgt}
             </p>
           )}
         </section>

@@ -201,6 +201,8 @@ export const de = {
 
     preiseKennzeichen: "Preise",
     preiseBald: "Bald verfügbar",
+    preiseBaldText:
+      "QuickTeam startet in Kürze. Den Plan wählst du dann während der Einrichtung — wechseln geht dort jederzeit.",
     preiseTitel: "Ein Preis pro Betrieb. Keine Rechnung pro Kopf.",
     preiseEmpfehlung: "Unsere Empfehlung",
     preiseKuendigungMonat: "Kündbar zum Ende des Abrechnungsmonats.",
@@ -243,6 +245,12 @@ export const de = {
   customTarif: {
     preis: "Auf Anfrage",
     grenze: "mehrere Standorte oder über 50 Mitarbeiter",
+    kennzeichen: "Kein Tarif zum Anklicken",
+    beschreibung:
+      "Mehrere Standorte oder mehr als 50 Mitarbeiter lassen sich nicht sinnvoll klicken. Sag uns, wie dein Betrieb aussieht — Kette, Franchise oder zwei Lokale unter einer Leitung — und wir schneiden das darauf zu. Der Preis steht danach fest, nicht vorher:",
+    anfragen: "Custom anfragen",
+    betreff: "Custom-Tarif für meinen Betrieb",
+    kontaktFolgt: "Kontaktadresse folgt in Kürze.",
   },
 
   /** Die drei Versprechen der Scroll-Sequenz. */
@@ -437,9 +445,9 @@ export const de = {
         "Gilt nur für die Rechnung. Der Standort deines Betriebs und die Arbeitszeitregeln deines Dienstplans ändern sich dadurch nicht.",
       uidWarnung:
         "Mit einem Rechnungsland ausserhalb Österreichs wird deine hinterlegte UID-Nummer entfernt — sie gilt nur für österreichische Rechnungsempfänger. Das kann die Umsatzsteuer künftiger Abrechnungen ändern. Bereits gestellte Rechnungen bleiben davon unberührt.",
-      uidLabel: "UID-Nummer (freiwillig)",
+      uidLabel: "UID-Nummer",
       uidHinweis:
-        "Mit gültiger UID rechnet Stripe im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern.",
+        "Für eine österreichische Rechnung erforderlich: Stripe rechnet damit im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern.",
     },
     team: {
       titel: "Wer arbeitet bei dir",
@@ -644,6 +652,8 @@ export const de = {
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
     "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
+    "v.uid.pflicht":
+      "Für ein kostenpflichtiges Abo mit österreichischer Rechnung ist eine gültige UID-Nummer erforderlich.",
     "v.promo.form": "Ein Promo-Code besteht aus Buchstaben, Ziffern, - und _, höchstens {max} Zeichen.",
     "v.promo.unbekannt": "Diesen Promo-Code kennen wir nicht. Prüf die Schreibweise — oder lass das Feld leer.",
     "v.plz.ziffern": "Die Postleitzahl besteht nur aus Ziffern.",

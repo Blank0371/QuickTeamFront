@@ -225,6 +225,8 @@ export const en: Dictionary = {
 
     preiseKennzeichen: "Pricing",
     preiseBald: "Coming soon",
+    preiseBaldText:
+      "QuickTeam launches shortly. You'll pick your plan during setup — and can switch there anytime.",
     preiseTitel: "One price per business. No per-head invoice.",
     preiseEmpfehlung: "Our recommendation",
     preiseKuendigungMonat: "Cancellation takes effect at the end of the billing month.",
@@ -259,6 +261,12 @@ export const en: Dictionary = {
   customTarif: {
     preis: "On request",
     grenze: "multiple locations or more than 50 employees",
+    kennzeichen: "Not a tariff you click",
+    beschreibung:
+      "Multiple locations or more than 50 employees can't sensibly be clicked together. Tell us what your business looks like — a chain, a franchise or two venues under one management — and we'll tailor it to that. The price is set afterwards, not before:",
+    anfragen: "Request Custom",
+    betreff: "Custom tariff for my business",
+    kontaktFolgt: "Contact address coming shortly.",
   },
 
   /* The three promises of the scroll sequence. */
@@ -443,9 +451,9 @@ export const en: Dictionary = {
         "Applies to the invoice only. Your business location and your schedule's working-time rules don't change because of it.",
       uidWarnung:
         "With an invoice country outside Austria your stored VAT ID is removed — it only applies to Austrian invoice recipients. This may change the VAT on future billing. Invoices already issued are unaffected.",
-      uidLabel: "VAT ID (optional)",
+      uidLabel: "VAT ID",
       uidHinweis:
-        "With a valid VAT ID Stripe bills under the reverse-charge procedure. Format: ATU and eight digits.",
+        "Required for an Austrian invoice: Stripe bills under the reverse-charge procedure. Format: ATU and eight digits.",
     },
     team: {
       titel: "Who works with you",
@@ -619,6 +627,8 @@ export const en: Dictionary = {
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
     "v.uid.form": "An Austrian VAT ID (UID) consists of ATU and 8 digits, e.g. ATU12345678.",
+    "v.uid.pflicht":
+      "A valid VAT ID is required for a paid subscription with an Austrian invoice.",
     "v.promo.form": "A promo code consists of letters, digits, - and _, at most {max} characters.",
     "v.promo.unbekannt": "We don't recognize this promo code. Check the spelling — or leave the field empty.",
     "v.plz.ziffern": "The postal code consists of digits only.",
