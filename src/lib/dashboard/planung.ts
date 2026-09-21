@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import type { Locale } from "@/i18n/config";
 import { betriebsZeitpunkt, istKalendertag } from "@/lib/datum";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -204,14 +205,14 @@ export function fristNochOffen(
 }
 
 /** `YYYY-MM-DD` → „1. September 2026". */
-export function langesDatum(iso: string): string {
+export function langesDatum(iso: string, locale: Locale = "de"): string {
   const [jahr, monat, tag] = iso.split("-").map(Number);
   if (!jahr || !monat || !tag) return iso;
-  const namen = [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember",
-  ];
-  return `${tag}. ${namen[monat - 1]} ${jahr}`;
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(jahr, monat - 1, tag));
 }
 
 /**

@@ -1,8 +1,8 @@
 import { CalendarOff } from "lucide-react";
 import Link from "next/link";
 
+import { getDictionary } from "@/i18n";
 import {
-  ZUSTAND_HINWEIS,
   hhmm,
   schichtName,
   schichtZustand,
@@ -16,6 +16,9 @@ import {
   type Besetzungsstand,
   type Tagesblock,
 } from "@/lib/dashboard/uebersicht";
+
+type UebersichtTexte = ReturnType<typeof getDictionary>["uebersicht"];
+type ZustandTexte = ReturnType<typeof getDictionary>["kalender"]["zustand"];
 
 /**
  * Ein Tag als Liste — wer wann welche Schicht hat.
@@ -62,6 +65,8 @@ export function TagesPlan({
   chef,
   besetzung,
   leerText,
+  texte,
+  zustandTexte,
 }: {
   tag: Tagesblock;
   /**
@@ -80,6 +85,8 @@ export function TagesPlan({
   besetzung: readonly Besetzungsstand[];
   /** Was dasteht, wenn der Tag nichts (mehr) zeigt. Hängt vom Filter ab. */
   leerText: string;
+  texte: UebersichtTexte;
+  zustandTexte: ZustandTexte;
 }) {
   const imDienst = zaehleImDienst(tag.schichten);
   const titelId = `tag-${tag.datum}`;
@@ -101,8 +108,8 @@ export function TagesPlan({
           {tag.schichten.length > 0 ? (
             <p className="text-xs text-muted">
               {tag.schichten.length}{" "}
-              {tag.schichten.length === 1 ? "Schicht" : "Schichten"}
-              {imDienst > 0 ? ` · ${imDienst} im Dienst` : ""}
+              {tag.schichten.length === 1 ? texte.schichtEz : texte.schichtMz}
+              {imDienst > 0 ? ` · ${imDienst} ${texte.imDienst}` : ""}
             </p>
           ) : null}
         </div>
@@ -111,7 +118,7 @@ export function TagesPlan({
           <ul className="mt-2.5 flex flex-wrap gap-1.5">
             {besetzung.map((rolle) => (
               <li key={rolle.name}>
-                <BesetzungsChip stand={rolle} />
+                <BesetzungsChip stand={rolle} texte={texte} />
               </li>
             ))}
           </ul>
@@ -127,7 +134,12 @@ export function TagesPlan({
         <ul className="divide-y divide-line">
           {tag.schichten.map((schicht) => (
             <li key={schicht.id}>
-              <SchichtZeile schicht={schicht} chef={chef} />
+              <SchichtZeile
+                schicht={schicht}
+                chef={chef}
+                texte={texte}
+                zustandTexte={zustandTexte}
+              />
             </li>
           ))}
         </ul>
@@ -148,17 +160,27 @@ export function TagesPlan({
  *                           jemand da → keine Bruchzahl, denn „1/0"
  *                           liest sich wie ein Rechenfehler
  */
-function BesetzungsChip({ stand }: { stand: Besetzungsstand }) {
+function BesetzungsChip({
+  stand,
+  texte,
+}: {
+  stand: Besetzungsstand;
+  texte: UebersichtTexte;
+}) {
   const ohneBedarf = stand.benoetigt === 0;
   const fehlt = !ohneBedarf && stand.besetzt < stand.benoetigt;
 
   const zahl = ohneBedarf ? `${stand.besetzt}` : `${stand.besetzt}/${stand.benoetigt}`;
 
-  const beschreibung = ohneBedarf
-    ? `${stand.name}: ${stand.besetzt} im Dienst, keine Mindestbesetzung hinterlegt`
+  const vorlage = ohneBedarf
+    ? texte.chipOhneBedarf
     : fehlt
-      ? `${stand.name}: ${stand.besetzt} von ${stand.benoetigt} besetzt, unterbesetzt`
-      : `${stand.name}: ${stand.besetzt} von ${stand.benoetigt} besetzt, vollständig`;
+      ? texte.chipFehlt
+      : texte.chipVoll;
+  const beschreibung = vorlage
+    .replace("{name}", stand.name)
+    .replace("{besetzt}", String(stand.besetzt))
+    .replace("{benoetigt}", String(stand.benoetigt));
 
   return (
     <span
@@ -176,9 +198,19 @@ function BesetzungsChip({ stand }: { stand: Besetzungsstand }) {
   );
 }
 
-function SchichtZeile({ schicht, chef }: { schicht: KalenderSchicht; chef: boolean }) {
+function SchichtZeile({
+  schicht,
+  chef,
+  texte,
+  zustandTexte,
+}: {
+  schicht: KalenderSchicht;
+  chef: boolean;
+  texte: UebersichtTexte;
+  zustandTexte: ZustandTexte;
+}) {
   const zustand = schichtZustand(schicht);
-  const hinweis = ZUSTAND_HINWEIS[zustand];
+  const hinweis = zustandTexte[zustand];
   const bezeichnung = schichtName(schicht);
   const nachts = ueberNacht(schicht);
 
@@ -197,7 +229,7 @@ function SchichtZeile({ schicht, chef }: { schicht: KalenderSchicht; chef: boole
       >
         {hhmm(schicht.start_zeit)}–{hhmm(schicht.end_zeit)}
         {nachts ? (
-          <span className="text-muted" title="über Mitternacht">
+          <span className="text-muted" title={texte.ueberMitternacht}>
             {" "}
             +1
           </span>
@@ -214,7 +246,7 @@ function SchichtZeile({ schicht, chef }: { schicht: KalenderSchicht; chef: boole
             {/* `schichtName()` nimmt `label`, sonst `kommentar` — siehe
                 dort. Bleibt beides leer, steht hier das neutrale Wort
                 statt eines erfundenen Namens. */}
-            {bezeichnung ?? "Schicht"}
+            {bezeichnung ?? texte.schichtName}
           </span>
 
           {hinweis ? (
@@ -228,15 +260,15 @@ function SchichtZeile({ schicht, chef }: { schicht: KalenderSchicht; chef: boole
               Tagesstreifen: die Summe eines Tages kann aufgehen, während
               eine einzelne Schicht klafft. */}
           {schicht.understaffed ? (
-            <span className="text-xs font-semibold text-stop">unterbesetzt</span>
+            <span className="text-xs font-semibold text-stop">{texte.unterbesetzt}</span>
           ) : null}
 
           {schicht.swap_wanted ? (
-            <span className="text-xs text-muted">Tausch gesucht</span>
+            <span className="text-xs text-muted">{texte.tauschGesucht}</span>
           ) : null}
         </p>
 
-        <Namen schicht={schicht} chef={chef} />
+        <Namen schicht={schicht} chef={chef} texte={texte} />
       </div>
     </Link>
   );
@@ -259,10 +291,18 @@ function SchichtZeile({ schicht, chef }: { schicht: KalenderSchicht; chef: boole
  * Für einen Chef ist die Liste vollständig — dort ist leer wirklich
  * leer, und das ist eine Auskunft, die er braucht.
  */
-function Namen({ schicht, chef }: { schicht: KalenderSchicht; chef: boolean }) {
+function Namen({
+  schicht,
+  chef,
+  texte,
+}: {
+  schicht: KalenderSchicht;
+  chef: boolean;
+  texte: UebersichtTexte;
+}) {
   if (schicht.participants.length === 0) {
     return chef ? (
-      <p className="mt-1 text-sm font-medium text-stop">Niemand zugeteilt</p>
+      <p className="mt-1 text-sm font-medium text-stop">{texte.niemandZugeteilt}</p>
     ) : null;
   }
 
@@ -321,13 +361,18 @@ function Namen({ schicht, chef }: { schicht: KalenderSchicht; chef: boolean }) {
 export function LeereTage({
   tage,
   text,
+  texte,
 }: {
   tage: readonly Tagesblock[];
   text: string;
+  texte: UebersichtTexte;
 }) {
   const erster = tage[0]?.untertitel ?? "";
   const letzter = tage[tage.length - 1]?.untertitel ?? "";
-  const spanne = tage.length > 1 ? `${erster} bis ${letzter}` : erster;
+  const spanne =
+    tage.length > 1
+      ? texte.leereSpanne.replace("{erster}", erster).replace("{letzter}", letzter)
+      : erster;
 
   return (
     <section
@@ -340,7 +385,9 @@ export function LeereTage({
           {text}
         </h3>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Gilt für alle {tage.length} Tage im Blick — {spanne}.
+          {texte.leereAlle
+            .replace("{n}", String(tage.length))
+            .replace("{spanne}", spanne)}
         </p>
       </div>
     </section>

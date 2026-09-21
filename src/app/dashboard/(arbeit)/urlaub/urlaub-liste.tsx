@@ -2,27 +2,35 @@
 
 import { useActionState, useEffect, useState } from "react";
 
+import type { Dictionary } from "@/i18n";
+import type { Locale } from "@/i18n/config";
 import type { ChefUrlaubsantrag, MeinUrlaub, UrlaubStatus } from "@/lib/dashboard/urlaub";
 import { leererZustand, type FormZustand } from "@/lib/formular";
 
 import { entscheiden } from "./aktionen";
 
-const STATUS_LABEL: Record<UrlaubStatus, string> = {
-  requested: "Angefragt",
-  approved: "Genehmigt",
-  denied: "Abgelehnt",
-};
+type UrlaubTexte = Dictionary["urlaub"];
 
-function formatiereDatum(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("de-DE", {
+function statusLabel(status: UrlaubStatus, texte: UrlaubTexte): string {
+  return status === "requested"
+    ? texte.statusRequested
+    : status === "approved"
+      ? texte.statusApproved
+      : texte.statusDenied;
+}
+
+function formatiereDatum(iso: string, locale: Locale): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-function formatiereZeitraum(von: string, bis: string): string {
-  return von === bis ? formatiereDatum(von) : `${formatiereDatum(von)} – ${formatiereDatum(bis)}`;
+function formatiereZeitraum(von: string, bis: string, locale: Locale): string {
+  return von === bis
+    ? formatiereDatum(von, locale)
+    : `${formatiereDatum(von, locale)} – ${formatiereDatum(bis, locale)}`;
 }
 
 const knopfBasis =
@@ -33,24 +41,34 @@ const knopfNeutral = `${knopfBasis} border border-line text-text hover:bg-surfac
 const statusPill = "rounded-full border border-line px-2 py-0.5 text-[0.6875rem] font-semibold text-muted";
 
 /** Eigene Anträge — reine Statusliste, kein Zurückziehen (spiegelt `VacationSection`: die App bietet das nicht an). */
-export function MeineUrlaubeListe({ urlaube }: { urlaube: MeinUrlaub[] }) {
+export function MeineUrlaubeListe({
+  urlaube,
+  texte,
+  locale,
+}: {
+  urlaube: MeinUrlaub[];
+  texte: UrlaubTexte;
+  locale: Locale;
+}) {
   return (
     <section className="mt-8">
-      <h2 className="font-display text-lg text-text">Deine Anträge</h2>
+      <h2 className="font-display text-lg text-text">{texte.deineAntraege}</h2>
       {urlaube.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">Noch keine Urlaubsanträge.</p>
+        <p className="mt-3 text-sm text-muted">{texte.keineEigenen}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {urlaube.map((u) => (
             <li key={u.id} className="rounded-card border border-line bg-surface px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm text-text">{formatiereZeitraum(u.von, u.bis)}</span>
-                <span className={statusPill}>{STATUS_LABEL[u.status]}</span>
+                <span className="text-sm text-text">
+                  {formatiereZeitraum(u.von, u.bis, locale)}
+                </span>
+                <span className={statusPill}>{statusLabel(u.status, texte)}</span>
               </div>
               {u.kommentar ? <p className="mt-1 text-sm text-muted">„{u.kommentar}“</p> : null}
               {u.begruendung ? (
                 <p className="mt-1 text-sm text-text">
-                  <span className="font-semibold">Begründung: </span>
+                  <span className="font-semibold">{texte.begruendung}</span>
                   {u.begruendung}
                 </p>
               ) : null}
@@ -69,7 +87,15 @@ export function MeineUrlaubeListe({ urlaube }: { urlaube: MeinUrlaub[] }) {
  * (`changeToApproved`/`changeToDenied`) — dieselbe Aktion, derselbe
  * Kontingent-Wächter beim Wechsel zu „genehmigt“.
  */
-export function ChefUrlaubsantraegeListe({ antraege }: { antraege: ChefUrlaubsantrag[] }) {
+export function ChefUrlaubsantraegeListe({
+  antraege,
+  texte,
+  locale,
+}: {
+  antraege: ChefUrlaubsantrag[];
+  texte: UrlaubTexte;
+  locale: Locale;
+}) {
   const [zustand, aktion] = useActionState(entscheiden, leererZustand);
   const [zeigeEntschieden, setZeigeEntschieden] = useState(false);
 
@@ -78,16 +104,23 @@ export function ChefUrlaubsantraegeListe({ antraege }: { antraege: ChefUrlaubsan
 
   return (
     <section className="mt-8">
-      <h2 className="font-display text-lg text-text">Urlaubsanträge</h2>
+      <h2 className="font-display text-lg text-text">{texte.antraegeTitel}</h2>
 
       <div className="mt-3 rounded-card border border-line bg-surface p-4">
-        <h3 className="text-sm font-semibold text-text">Offen</h3>
+        <h3 className="text-sm font-semibold text-text">{texte.offen}</h3>
         {offen.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">Keine offenen Anträge.</p>
+          <p className="mt-2 text-sm text-muted">{texte.keineOffenen}</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-3">
             {offen.map((a) => (
-              <AntragZeile key={a.id} antrag={a} aktion={aktion} zustand={zustand} />
+              <AntragZeile
+                key={a.id}
+                antrag={a}
+                aktion={aktion}
+                zustand={zustand}
+                texte={texte}
+                locale={locale}
+              />
             ))}
           </ul>
         )}
@@ -98,18 +131,26 @@ export function ChefUrlaubsantraegeListe({ antraege }: { antraege: ChefUrlaubsan
         onClick={() => setZeigeEntschieden((o) => !o)}
         className="mt-3 flex w-full items-center justify-between rounded-card border border-line bg-surface px-4 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
       >
-        Entschieden ({entschieden.length})
+        {texte.entschieden.replace("{n}", String(entschieden.length))}
         <span aria-hidden="true">{zeigeEntschieden ? "–" : "+"}</span>
       </button>
 
       {zeigeEntschieden ? (
         <div className="mt-2 rounded-card border border-line bg-surface p-4">
           {entschieden.length === 0 ? (
-            <p className="text-sm text-muted">Noch nichts entschieden.</p>
+            <p className="text-sm text-muted">{texte.nichtsEntschieden}</p>
           ) : (
             <ul className="flex flex-col gap-3">
               {entschieden.map((a) => (
-                <AntragZeile key={a.id} antrag={a} aktion={aktion} zustand={zustand} entschieden />
+                <AntragZeile
+                  key={a.id}
+                  antrag={a}
+                  aktion={aktion}
+                  zustand={zustand}
+                  texte={texte}
+                  locale={locale}
+                  entschieden
+                />
               ))}
             </ul>
           )}
@@ -123,11 +164,15 @@ function AntragZeile({
   antrag,
   aktion,
   zustand,
+  texte,
+  locale,
   entschieden = false,
 }: {
   antrag: ChefUrlaubsantrag;
   aktion: (formData: FormData) => void;
   zustand: FormZustand;
+  texte: UrlaubTexte;
+  locale: Locale;
   entschieden?: boolean;
 }) {
   const [ablehnenModus, setAblehnenModus] = useState(false);
@@ -146,13 +191,15 @@ function AntragZeile({
     <li className="border-t border-line pt-3 first:border-t-0 first:pt-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-semibold text-text">{antrag.mitarbeiterName}</span>
-        {entschieden ? <span className={statusPill}>{STATUS_LABEL[antrag.status]}</span> : null}
+        {entschieden ? (
+          <span className={statusPill}>{statusLabel(antrag.status, texte)}</span>
+        ) : null}
       </div>
-      <p className="text-sm text-muted">{formatiereZeitraum(antrag.von, antrag.bis)}</p>
+      <p className="text-sm text-muted">{formatiereZeitraum(antrag.von, antrag.bis, locale)}</p>
       {antrag.kommentar ? <p className="mt-1 text-sm text-muted">„{antrag.kommentar}“</p> : null}
       {antrag.begruendung ? (
         <p className="mt-1 text-sm text-text">
-          <span className="font-semibold">Begründung: </span>
+          <span className="font-semibold">{texte.begruendung}</span>
           {antrag.begruendung}
         </p>
       ) : null}
@@ -166,15 +213,15 @@ function AntragZeile({
               type="text"
               name="begruendung"
               maxLength={50}
-              placeholder="Grund (optional)"
+              placeholder={texte.grundPlatzhalter}
               className="w-full rounded-blk border border-line-strong bg-bg px-3 py-2 text-sm text-text"
             />
             <div className="flex gap-2">
               <button type="button" onClick={() => setAblehnenModus(false)} className={knopfNeutral}>
-                Abbrechen
+                {texte.abbrechen}
               </button>
               <button type="submit" className={knopfStop}>
-                Ablehnung bestätigen
+                {texte.ablehnungBestaetigen}
               </button>
             </div>
           </form>
@@ -182,7 +229,7 @@ function AntragZeile({
           <div className="flex flex-wrap gap-2">
             {antrag.status !== "denied" ? (
               <button type="button" onClick={() => setAblehnenModus(true)} className={knopfStop}>
-                {entschieden ? "Zu abgelehnt wechseln" : "Ablehnen"}
+                {entschieden ? texte.zuAbgelehnt : texte.ablehnen}
               </button>
             ) : null}
             {antrag.status !== "approved" ? (
@@ -190,7 +237,7 @@ function AntragZeile({
                 <input type="hidden" name="urlaub_id" value={antrag.id} />
                 <input type="hidden" name="status" value="approved" />
                 <button type="submit" className={knopfSignal}>
-                  {entschieden ? "Zu genehmigt wechseln" : "Genehmigen"}
+                  {entschieden ? texte.zuGenehmigt : texte.genehmigen}
                 </button>
               </form>
             ) : null}

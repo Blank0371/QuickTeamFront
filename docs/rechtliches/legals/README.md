@@ -18,7 +18,7 @@ Der folgende Verlauf dokumentiert frühere Annahmen und Prüfstände. Er ist **k
 
 # QuickTeam — Legal documents (for review)
 
-Stand-alone, readable copies of QuickTeam's contract documents, exported for legal review. **All are pre-lawyer drafts.**
+Stand-alone, readable copies of QuickTeam's contract documents, exported for legal review. **The six customer-facing documents are pre-lawyer drafts** — Terms, DPA and privacy policy; the referral partner agreement was released by the operator on 19 Sept 2026 without a lawyer review (see the last table row and "Referral partner agreement" below).
 
 | File | Document | Language | Status |
 |---|---|---|---|
@@ -28,6 +28,32 @@ Stand-alone, readable copies of QuickTeam's contract documents, exported for leg
 | `DPA-QuickTeam-en.md` | Data Processing Agreement | English — convenience translation | Ready for review, incl. 3 annexes |
 | `datenschutzerklaerung-de.md` | Datenschutzerklärung (Privacy Policy) | German — **legally binding** | Rewritten 13 Sept 2026, amended 14 Sept 2026, ready for review — see "Privacy policy 2026-09-13" and "Amendment 2026-09-14" below |
 | `privacy-policy-en.md` | Privacy Policy | English — convenience translation | Rewritten 13 Sept 2026, amended 14 Sept 2026, mirrors the German text section by section |
+| `Werbepartner-Vertrag-QuickTeam-de-en.md` | Werbepartner-Vereinbarung (referral partner agreement, Promo-Code) | German — **legally binding**, with English convenience translation in one file | **Released 19 Sept 2026 (`2026-09-19`), no lawyer review** — see below |
+
+## Referral partner agreement (`Werbepartner-Vertrag-QuickTeam-de-en.md`)
+
+Not a customer document: it governs the relationship with an **individual** who
+refers businesses and is paid a share of their net revenue. It is not part of the
+registration consent flow, carries no entry in `src/lib/rechtstexte.ts`, and is not
+rendered as a web page — `/promocode/antrag` builds it into the PDF that an
+applicant downloads, fills in, signs and emails back. Parts A and D are the form;
+Parts B and C are the contract.
+
+**Open values were fixed on 19 Sept 2026 on the operator's instruction:** 20 % of
+net revenue for the first twelve months per referred business and 10 % thereafter
+(§ 4(1)); payout monthly, cut-off on the first day of each calendar month, within
+14 days, minimum €50.00 (§ 6(2)–(3)); four weeks' notice to terminate (§ 9(2));
+changes offered at least six weeks ahead and effective only with the partner's
+consent (§ 11). The draft notice was removed at the same time, so the file no
+longer marks itself as a draft.
+
+**That decision is the operator's, and it is the one thing here a lawyer has not
+seen.** Everything the reviewer should know: the document was drafted in-house, the
+rates above are a business decision rather than a reviewed term, and § 3(3) (no
+self-referral) plus § 5 (no compensation without collected payment) are the two
+provisions doing the economic work. The agreement's own `Stand:` line is the only
+version marker; there is no archive of predecessor versions because none was ever
+issued to a partner.
 
 ## Key drafting decisions
 

@@ -1,7 +1,11 @@
 import { CalendarCheck2, CalendarPlus, Hourglass, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
+import type { Locale } from "@/i18n/config";
+import { getDictionary } from "@/i18n";
 import { langesDatum, type Zyklus } from "@/lib/dashboard/planung";
+
+type UebersichtTexte = ReturnType<typeof getDictionary>["uebersicht"];
 
 /**
  * Der Einstieg in die Schichtplanung, auf der Startseite.
@@ -32,10 +36,17 @@ import { langesDatum, type Zyklus } from "@/lib/dashboard/planung";
 export function PlanungEinstieg({
   zyklen,
   offeneStellen,
+  texte,
+  titel,
+  locale,
 }: {
   zyklen: readonly Zyklus[];
   /** `planungszyklus_id` → offene Stellen. Fehlt für alles ausser `vorschlag_bereit`. */
   offeneStellen: Record<string, number>;
+  texte: UebersichtTexte;
+  /** Überschrift des Abschnitts (= Navigationslabel „Planung"). */
+  titel: string;
+  locale: Locale;
 }) {
   const bereit = zyklen.filter((z) => z.status === "vorschlag_bereit");
   const laeuft = zyklen.filter((z) => z.status === "solver_laeuft");
@@ -59,7 +70,7 @@ export function PlanungEinstieg({
           id="planung-einstieg"
           className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
         >
-          Planung
+          {titel}
         </h2>
 
         {/*
@@ -73,15 +84,12 @@ export function PlanungEinstieg({
           className="flex items-center gap-2 rounded-blk bg-signal px-3.5 py-2 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
         >
           <CalendarPlus className="size-4" aria-hidden="true" />
-          Schichtplan erstellen
+          {texte.peErstellen}
         </Link>
       </div>
 
       {bereit.length === 0 && laeuft.length === 0 ? (
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Aus deinen Schichtvorlagen entstehen die Dienste eines Zeitraums. Du legst den
-          Zeitraum fest, das Rechenverfahren verteilt — freigegeben wird von dir.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{texte.peIntro}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {bereit.map((zyklus) => (
@@ -94,16 +102,16 @@ export function PlanungEinstieg({
                 <CalendarCheck2 className="size-5 shrink-0 text-signal" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-text">
-                    Vorschlag prüfen
+                    {texte.pePruefen}
                   </span>
                   <span className="block text-xs text-muted">
-                    {langesDatum(zyklus.start)} – {langesDatum(zyklus.ende)}
+                    {langesDatum(zyklus.start, locale)} – {langesDatum(zyklus.ende, locale)}
                   </span>
                 </span>
                 {(offeneStellen[zyklus.id] ?? 0) > 0 ? (
                   <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stop">
                     <TriangleAlert className="size-4" aria-hidden="true" />
-                    {offeneStellen[zyklus.id]} unbesetzt
+                    {texte.peUnbesetzt.replace("{n}", String(offeneStellen[zyklus.id]))}
                   </span>
                 ) : null}
               </Link>
@@ -123,10 +131,10 @@ export function PlanungEinstieg({
               <Hourglass className="size-5 shrink-0 text-muted" aria-hidden="true" />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-muted">
-                  Wird geplant
+                  {texte.peWirdGeplant}
                 </span>
                 <span className="block text-xs text-muted">
-                  {langesDatum(zyklus.start)} – {langesDatum(zyklus.ende)}
+                  {langesDatum(zyklus.start, locale)} – {langesDatum(zyklus.ende, locale)}
                 </span>
               </span>
             </li>
@@ -135,10 +143,7 @@ export function PlanungEinstieg({
       )}
 
       {unbesetzt > 0 ? (
-        <p className="mt-3 text-xs leading-relaxed text-muted">
-          Unbesetzte Stellen sind kein Fehler des Verfahrens, sondern seine Auskunft: für
-          diese Rollen war in dem Zeitraum niemand verfügbar.
-        </p>
+        <p className="mt-3 text-xs leading-relaxed text-muted">{texte.peUnbesetztHinweis}</p>
       ) : null}
     </section>
   );

@@ -1,12 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
+import type { Locale } from "@/i18n/config";
 
-import {
-  MONATSNAMEN,
-  WOCHENTAGE,
-  WOCHENTAGE_LANG,
-  alsDatum,
-  type KalenderSchicht,
-} from "@/lib/dashboard/kalender";
+import { alsDatum, type KalenderSchicht } from "@/lib/dashboard/kalender";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -79,10 +74,21 @@ export function baueFenster(heute: Date): { von: string; bis: string; tage: stri
   return { von, bis, tage };
 }
 
-/** „Sa, 29. August" aus `YYYY-MM-DD`. */
-function untertitel(datum: string): string {
+/**
+ * „Sa., 29. August" / „Sat, August 29" aus `YYYY-MM-DD`.
+ *
+ * Über `Intl` statt handgesetzter Reihenfolge: die Stellung von Tag und
+ * Monat ist sprachabhängig („29. August" vs. „August 29"), und die kennt
+ * die Plattform bereits. Dieselbe Quelle wie die Monats- und
+ * Wochentagsnamen des Kalenders (`kalender.ts`).
+ */
+function untertitel(datum: string, locale: Locale): string {
   const d = new Date(`${datum}T12:00:00`);
-  return `${WOCHENTAGE[(d.getDay() + 6) % 7]}, ${d.getDate()}. ${MONATSNAMEN[d.getMonth()]}`;
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+  }).format(d);
 }
 
 /**
@@ -91,32 +97,30 @@ function untertitel(datum: string): string {
  * Ein Tag ohne Schichten fällt **nicht** heraus. „Morgen hat niemand
  * Dienst" ist eine Auskunft; ein fehlender Kasten wäre keine, sondern
  * sähe aus wie ein Ladefehler.
+ *
+ * „Heute"/„Morgen" kommen als Beschriftung herein (sprachabhängig,
+ * `t.uebersicht`), der Wochentagsname ab dem dritten Tag aus `Intl`.
  */
 export function baueTage(
   tage: readonly string[],
   proTag: Map<string, KalenderSchicht[]>,
+  locale: Locale,
+  heute: string,
+  morgen: string,
 ): Tagesblock[] {
   return tage.map((datum, i) => ({
     datum,
-    titel: i === 0 ? "Heute" : i === 1 ? "Morgen" : wochentagName(datum),
-    untertitel: untertitel(datum),
+    titel: i === 0 ? heute : i === 1 ? morgen : wochentagName(datum, locale),
+    untertitel: untertitel(datum, locale),
     istHeute: i === 0,
     schichten: proTag.get(datum) ?? [],
   }));
 }
 
-/**
- * Ausgeschriebener Wochentag, montagsbasiert wie überall sonst.
- *
- * Der Rückfallwert kann nicht eintreten — `% 7` landet immer in 0..6,
- * und `WOCHENTAGE_LANG` hat sieben Einträge. Er steht da, weil
- * `noUncheckedIndexedAccess` das nicht wissen kann, und er ist ein
- * leerer String und keine Ausweichbeschriftung: eine Überschrift, die
- * fehlt, fällt auf: eine, die „Unbekannt" sagt, wird geglaubt.
- */
-function wochentagName(datum: string): string {
-  const i = (new Date(`${datum}T12:00:00`).getDay() + 6) % 7;
-  return WOCHENTAGE_LANG[i] ?? "";
+/** Ausgeschriebener Wochentag in der aktiven Sprache. */
+function wochentagName(datum: string, locale: Locale): string {
+  const d = new Date(`${datum}T12:00:00`);
+  return new Intl.DateTimeFormat(locale, { weekday: "long" }).format(d);
 }
 
 /* ------------------------------------------------------------------ */

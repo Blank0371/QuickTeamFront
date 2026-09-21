@@ -1,8 +1,8 @@
-import Link from "next/link";
-
 import { SprachWahl } from "@/components/sprach-wahl";
+import { ThemaWahl } from "@/components/dashboard/thema-wahl";
 import type { Locale } from "@/i18n";
 import { abmelden } from "@/lib/auth-aktionen";
+import type { Thema } from "@/lib/thema";
 
 /**
  * Die Leiste über dem Inhalt.
@@ -29,26 +29,39 @@ import { abmelden } from "@/lib/auth-aktionen";
  * doppelter Inhalt, sondern derselbe an genau einer sichtbaren Stelle
  * je Breite.
  *
- * Server Component: hier gibt es keinen Zustand, nur ein Formular und
- * einen Link. `abmelden` ist eine Server Action und wird direkt als
- * `action` übergeben — das funktioniert ohne JavaScript.
+ * **Die Handgriffe rechts sind ab dem 2026-09-21 nur noch ab `lg` da.**
+ * Sprache, Darstellung und Abmelden stehen auf schmalen Geräten in der
+ * „Konto"-Kachel der unteren Tab-Leiste (`DashboardKontoInhalt`) — dort,
+ * wo der Daumen sie erreicht. Die Topbar trägt sie deshalb nur noch in der
+ * Spaltenfassung, in der es keine Tab-Leiste gibt. Der frühere
+ * Positionswechsel-Link (nur `lg:hidden`) ist damit überflüssig: ab `lg`
+ * führt der Weg über die Personenkarte im Sidebar-Fuss, darunter über die
+ * „Konto"-Kachel.
+ *
+ * Server Component: hier gibt es keinen Zustand, nur Formulare. `abmelden`
+ * ist eine Server Action und wird direkt als `action` übergeben — das
+ * funktioniert ohne JavaScript, ebenso Sprach- und Darstellungswahl.
  */
 export function DashboardTopbar({
   betriebName,
   personName,
   rolleText,
-  wechselHref,
   abmeldenLabel,
-  wechselnLabel,
   sprache,
+  thema,
+  themaSystem,
+  themaHell,
+  themaDunkel,
 }: {
   betriebName: string;
   personName: string;
   rolleText: string;
-  wechselHref: string | null;
   abmeldenLabel: string;
-  wechselnLabel: string;
   sprache: Locale;
+  thema: Thema | null;
+  themaSystem: string;
+  themaHell: string;
+  themaDunkel: string;
 }) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line bg-surface px-5 py-3 sm:px-8">
@@ -68,23 +81,19 @@ export function DashboardTopbar({
 
       <div className="hidden lg:block" />
 
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {/* Oben rechts, auf jeder Dashboard-Seite. */}
+      {/*
+        Nur ab `lg`. Unterhalb tragen dieselben Handgriffe die „Konto"-
+        Kachel der Tab-Leiste — dieselbe Auskunft an genau einer sichtbaren
+        Stelle je Breite.
+      */}
+      <div className="hidden shrink-0 items-center gap-2 lg:flex">
         <SprachWahl aktiv={sprache} />
-        {/*
-          Der Wechsel steht nur da, wenn es etwas zu wechseln gibt — und
-          unterhalb von `lg`, weil ab dort die Personenkarte im
-          Sidebar-Fuss derselbe Weg ist. Zwei Türen in denselben Raum
-          sind eine zu viel.
-        */}
-        {wechselHref !== null ? (
-          <Link
-            href={wechselHref}
-            className="rounded-blk px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-sunk lg:hidden"
-          >
-            {wechselnLabel}
-          </Link>
-        ) : null}
+        <ThemaWahl
+          aktiv={thema}
+          systemLabel={themaSystem}
+          hellLabel={themaHell}
+          dunkelLabel={themaDunkel}
+        />
 
         <form action={abmelden}>
           <button

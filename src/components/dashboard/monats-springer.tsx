@@ -9,7 +9,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MONATSNAMEN } from "@/lib/dashboard/kalender";
 
 /**
  * Sprung auf einen beliebigen Monat.
@@ -44,11 +43,20 @@ export function MonatsSpringer({
   jahr,
   monat,
   ziel,
+  monate,
+  waehlenLabel,
+  vorJahrLabel,
+  nachJahrLabel,
 }: {
   jahr: number;
   monat: number;
   /** Route, auf der das Ergebnis landet — `/dashboard/kalender`. */
   ziel: string;
+  /** Monatsnamen der aktiven Sprache (`monatsnamen(locale)`). */
+  monate: string[];
+  waehlenLabel: string;
+  vorJahrLabel: string;
+  nachJahrLabel: string;
 }) {
   const [offen, setOffen] = useState(false);
   /*
@@ -68,12 +76,12 @@ export function MonatsSpringer({
         if (!o) setSichtJahr(jahr);
       }}
     >
-      <PopoverTrigger className="flex h-9 items-center gap-1.5 rounded-blk border border-line px-3 text-sm font-medium text-text transition-colors hover:border-signal hover:bg-signal-weak hover:text-signal">
+      <PopoverTrigger className="flex h-11 items-center gap-1.5 rounded-blk border border-line px-3 text-sm font-medium text-text transition-colors hover:border-signal hover:bg-signal-weak hover:text-signal sm:h-9">
         <span>
-          {MONATSNAMEN[monat - 1]} {jahr}
+          {monate[monat - 1]} {jahr}
         </span>
         <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
-        <span className="sr-only">Monat wählen</span>
+        <span className="sr-only">{waehlenLabel}</span>
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-auto border-line bg-surface p-3">
@@ -84,7 +92,7 @@ export function MonatsSpringer({
             className="flex size-8 items-center justify-center rounded-blk border border-line text-text transition-colors hover:border-signal hover:bg-signal-weak hover:text-signal"
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
-            <span className="sr-only">Vorheriges Jahr</span>
+            <span className="sr-only">{vorJahrLabel}</span>
           </button>
 
           <p aria-live="polite" className="font-display text-sm font-bold text-text">
@@ -97,12 +105,12 @@ export function MonatsSpringer({
             className="flex size-8 items-center justify-center rounded-blk border border-line text-text transition-colors hover:border-signal hover:bg-signal-weak hover:text-signal"
           >
             <ChevronRight className="size-4" aria-hidden="true" />
-            <span className="sr-only">Nächstes Jahr</span>
+            <span className="sr-only">{nachJahrLabel}</span>
           </button>
         </div>
 
         <ul className="mt-3 grid grid-cols-3 gap-1.5">
-          {MONATSNAMEN.map((name, i) => {
+          {monate.map((name, i) => {
             const wert = `${sichtJahr}-${String(i + 1).padStart(2, "0")}`;
             const aktiv = sichtJahr === jahr && i + 1 === monat;
 

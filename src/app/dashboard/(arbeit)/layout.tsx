@@ -4,11 +4,14 @@ import {
   DashboardSidebar,
   type Gruppe,
 } from "@/components/dashboard/dashboard-sidebar";
+import { DashboardKontoInhalt } from "@/components/dashboard/dashboard-konto-inhalt";
+import { DashboardTableiste } from "@/components/dashboard/dashboard-tableiste";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import { ZustimmungHinweis } from "@/components/dashboard/zustimmung-hinweis";
 import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
+import { leseThema } from "@/lib/thema";
 
 /**
  * Schale des Dashboards.
@@ -51,8 +54,10 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const { position, alle, zustimmung } = await betreteDashboard();
   const sprache = await leseSprache();
+  const thema = await leseThema();
   const t = getDictionary(sprache);
   const chef = istChef(position);
+  const mehrfachAnstellung = alle.length > 1;
 
   /*
    * Chef-Bereiche fehlen für Angestellte ganz, statt leer dazustehen.
@@ -184,12 +189,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <DashboardSidebar
           gruppen={gruppen}
           beschriftung={t.dashboard.navigation}
+          uebersichtLabel={t.dashboard.uebersicht}
           folgtLabel={t.dashboard.folgt}
           folgtHinweis={t.dashboard.folgtHinweis}
           betriebName={position.betriebName}
           personName={position.name}
           rolleText={t.dashboard.rolle[position.rolleTyp]}
-          wechselHref={alle.length > 1 ? "/dashboard/wechseln" : null}
+          wechselHref={mehrfachAnstellung ? "/dashboard/wechseln" : null}
         />
 
         {/*
@@ -198,15 +204,22 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           `main`-Elemente sind laut HTML-Spezifikation unzulässig — der
           Sprunglink hätte danach zwei mögliche Ziele.
         */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/*
+          Unten Platz für die feste Tab-Leiste (nur unterhalb `lg`): ihre
+          Höhe plus Safe-Area, sonst verdeckte sie das Seitenende. Ab `lg`
+          gibt es die Leiste nicht — dort kein Padding.
+        */}
+        <div className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0">
           <DashboardTopbar
             sprache={sprache}
+            thema={thema}
+            themaSystem={t.dashboard.themaSystem}
+            themaHell={t.dashboard.themaHell}
+            themaDunkel={t.dashboard.themaDunkel}
             betriebName={position.betriebName}
             personName={position.name}
             rolleText={t.dashboard.rolle[position.rolleTyp]}
-            wechselHref={alle.length > 1 ? "/dashboard/wechseln" : null}
             abmeldenLabel={t.dashboard.abmelden}
-            wechselnLabel={t.dashboard.wechseln}
           />
           {/*
             Der Streifen steht zwischen Kopfzeile und Inhalt, nicht
@@ -219,6 +232,43 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           {children}
         </div>
       </div>
+
+      {/*
+        Die mobile Navigation. Sie bekommt dieselben `gruppen` wie die
+        Sidebar (eine Quelle, Rollenlogik oben) und blendet sich ab `lg`
+        selbst aus. Die mittlere Kachel heisst je nach Rolle „Manager" oder
+        „Planung"; der „Konto"-Slot kommt fertig gerendert aus dieser Server
+        Component herein (Sprache, Darstellung, Verbindungen, Abmelden,
+        Kontolöschung) — auf schmalen Geräten trägt ihn nicht mehr die
+        Topbar, sondern diese Leiste.
+      */}
+      <DashboardTableiste
+        gruppen={gruppen}
+        beschriftung={t.dashboard.navigation}
+        navLabel={chef ? t.dashboard.managerTab : t.dashboard.scheduleTab}
+        navTitel={chef ? t.dashboard.managerTab : t.dashboard.scheduleTab}
+        kontoLabel={t.dashboard.kontoTab}
+        kontoTitel={t.dashboard.kontoTitel}
+        schliessenLabel={t.dashboard.mehrSchliessen}
+        kontoSlot={
+          <DashboardKontoInhalt
+            sprache={sprache}
+            thema={thema}
+            wechselHref={mehrfachAnstellung ? "/dashboard/wechseln" : null}
+            texte={{
+              spracheLabel: t.dashboard.spracheLabel,
+              themaLabel: t.dashboard.themaLabel,
+              themaSystem: t.dashboard.themaSystem,
+              themaHell: t.dashboard.themaHell,
+              themaDunkel: t.dashboard.themaDunkel,
+              verbindungen: t.dashboard.verbindungen,
+              kontoLoeschen: t.dashboard.kontoLoeschen,
+              kontoLoeschenHalten: t.dashboard.kontoLoeschenHalten,
+              abmelden: t.dashboard.abmelden,
+            }}
+          />
+        }
+      />
     </div>
   );
 }

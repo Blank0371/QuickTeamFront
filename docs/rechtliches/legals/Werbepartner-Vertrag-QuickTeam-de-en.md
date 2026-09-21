@@ -1,24 +1,12 @@
 # Werbepartner-Vereinbarung (Promo-Code) — QuickTeam
 # Referral Partner Agreement (Promo Code) — QuickTeam
 
-**Stand / Version: 16. September 2026 — Entwurf (`2026-09-16-draft`)**
+**Stand / Version: 19. September 2026 (`2026-09-19`)**
 
-> **Entwurfsstand, noch nicht anwaltlich geprüft (pre-lawyer draft).** Dieses
-> Dokument ist ein Vorlagenentwurf und noch keine freigegebene Vertragsfassung.
-> In eckigen Klammern `[…]` stehen Angaben, die vor der Verwendung ausgefüllt
-> oder festgelegt werden müssen (insbesondere Auszahlungstermin und
-> Mindestauszahlungsbetrag). Die genannten Prozentsätze und Zeiträume in § 4
-> sind ausdrücklich **Beispielwerte**.
->
-> **Draft, not yet reviewed by a lawyer.** This is a template draft, not an
-> approved contract. Square brackets `[…]` mark values that must be completed or
-> fixed before use (in particular the payout date and the minimum payout amount).
-> The percentages and periods in § 4 are explicitly **example values**.
->
 > **Deutsch ist die verbindliche Vertragsfassung; die englische Fassung ist eine
-> unverbindliche Übersetzung zur Information (§ 13 Abs. 4).**
+> unverbindliche Übersetzung zur Information (§ 12 Abs. 5).**
 > German is the binding version of this contract; the English text is a
-> non-binding convenience translation (§ 13(4)).
+> non-binding convenience translation (§ 12(5)).
 
 ---
 
@@ -44,6 +32,8 @@
 | Kontoinhaber / Account holder | ________________________________________ |
 | IBAN | ________________________________________ |
 | BIC *(falls erforderlich / if required)* | ________________________________________ |
+
+<!-- seitenumbruch -->
 
 **Steuerlicher Status / Tax status** *(bitte ankreuzen / please tick one)*
 
@@ -122,11 +112,11 @@ Anbieters. Der Anbieter kann die zulässigen Werbewege in Textform näher regeln
 
 (1) Der Werbepartner erhält, vorbehaltlich der §§ 3 und 5, je geworbenem Betrieb:
 
-- **[20 %] (Beispielwert)** des Nettoumsatzes dieses Betriebs in den **ersten
-  zwölf (12) Monaten** ab der Aktivierung, und
-- **[10 %] (Beispielwert)** des Nettoumsatzes dieses Betriebs für die **danach
-  folgende Zeit**, solange der Betrieb ein kostenpflichtiges Abonnement führt und
-  das Entgelt zahlt.
+- **20 %** des Nettoumsatzes dieses Betriebs in den **ersten zwölf (12) Monaten**
+  ab der Aktivierung, und
+- **10 %** des Nettoumsatzes dieses Betriebs für die **danach folgende Zeit**,
+  solange der Betrieb ein kostenpflichtiges Abonnement führt und das Entgelt
+  zahlt.
 
 (2) Der Anspruch entsteht jeweils erst, wenn der Anbieter das zugrunde liegende
 Entgelt tatsächlich vereinnahmt hat (§ 2 Abs. 4). Für Zeiträume, in denen der
@@ -165,15 +155,13 @@ reicht dies nicht aus, kann der Anbieter den überzahlten Betrag zurückfordern.
 (1) Der Anbieter führt für den Werbepartner ein Vergütungskonto, auf dem die nach
 §§ 4 und 5 entstandenen Beträge fortlaufend gutgeschrieben werden.
 
-(2) Die Auszahlung der bis zum **Stichtag [Auszahlungstermin festlegen — z. B.
-jeweils zum … eines Monats / Quartals]** aufgelaufenen, fälligen Beträge erfolgt
-innerhalb von **[…]** Tagen nach diesem Stichtag auf das in **Teil A** angegebene
-Konto.
+(2) Stichtag ist **der erste Tag jedes Kalendermonats**. Die bis zum Stichtag
+aufgelaufenen, fälligen Beträge zahlt der Anbieter innerhalb von **14 Tagen** nach
+diesem Stichtag auf das in **Teil A** angegebene Konto aus.
 
 (3) Eine Auszahlung erfolgt nur, wenn das Vergütungskonto zum Stichtag einen
-Mindestbetrag von **[Mindestauszahlungsbetrag festlegen — z. B. 25,00 €]** erreicht.
-Wird der Mindestbetrag nicht erreicht, wird der Saldo auf den nächsten Stichtag
-vorgetragen.
+Mindestbetrag von **50,00 €** erreicht. Wird der Mindestbetrag nicht erreicht, wird
+der Saldo auf den nächsten Stichtag vorgetragen.
 
 (4) **Der Werbepartner muss zum Erhalt von Zahlungen eine gültige IBAN angeben.**
 Ohne gültige Bankverbindung kann keine Auszahlung erfolgen; aufgelaufene Beträge
@@ -211,7 +199,7 @@ Verpflichtungen einzugehen.
 (1) Die Vereinbarung beginnt mit der Unterzeichnung (bzw. mit der Zuteilung des
 Promo-Codes, je nachdem, was später eintritt) und läuft auf unbestimmte Zeit.
 
-(2) Beide Parteien können die Vereinbarung mit einer Frist von **[…] Wochen** in
+(2) Beide Parteien können die Vereinbarung mit einer Frist von **vier (4) Wochen** in
 Textform ordentlich kündigen. Das Recht zur außerordentlichen Kündigung aus
 wichtigem Grund bleibt unberührt. Nach Beendigung wird der Promo-Code deaktiviert;
 für bis dahin entstandene, nach §§ 4 und 5 bestehende Ansprüche bleibt es bei der
@@ -236,7 +224,7 @@ Datenschutzerklärung des Anbieters.
 ### § 11 Änderungen dieser Vereinbarung
 
 Änderungen dieser Vereinbarung, insbesondere der Vergütungssätze und Fristen des
-§ 4, kann der Anbieter dem Werbepartner mindestens **[…] Wochen** vor ihrem
+§ 4, kann der Anbieter dem Werbepartner mindestens **sechs (6) Wochen** vor ihrem
 Wirksamwerden in Textform anbieten. Die Änderung wird nur wirksam, wenn der
 Werbepartner ihr zustimmt; Schweigen gilt nicht als Zustimmung. Stimmt er nicht zu,
 gelten die bisherigen Bedingungen fort, solange die Vereinbarung fortgeführt wird;
@@ -267,7 +255,7 @@ dient nur der Information.
 ## Teil C — Agreement (English convenience translation)
 
 *Non-binding translation. In case of any discrepancy, the German version in Part B
-prevails (§ 13(4) / § 12(5)).*
+prevails (§ 12(5)).*
 
 ### § 1 Parties and subject matter
 
@@ -328,10 +316,10 @@ permitted promotional channels in text form.
 
 (1) Subject to §§ 3 and 5, the Partner receives, per referred business:
 
-- **[20%] (example value)** of that business's net revenue during the **first twelve
-  (12) months** from activation, and
-- **[10%] (example value)** of that business's net revenue **thereafter**, for as
-  long as the business maintains a paid subscription and pays the fee.
+- **20%** of that business's net revenue during the **first twelve (12) months**
+  from activation, and
+- **10%** of that business's net revenue **thereafter**, for as long as the
+  business maintains a paid subscription and pays the fee.
 
 (2) A claim arises only once the Provider has actually collected the underlying fee
 (§ 2(4)). No claim arises for periods in which the business pays nothing.
@@ -367,13 +355,13 @@ reclaim the overpaid amount.
 (1) The Provider maintains a compensation account for the Partner, to which amounts
 arising under §§ 4 and 5 are credited on an ongoing basis.
 
-(2) Payout of the due amounts accrued up to the **cut-off date [set payout date —
-e.g. on the … of each month / quarter]** is made within **[…]** days after that
-date, to the account stated in **Part A**.
+(2) The cut-off date is **the first day of each calendar month**. The due amounts
+accrued up to the cut-off date are paid out within **14 days** after that date, to
+the account stated in **Part A**.
 
 (3) A payout is made only if, at the cut-off date, the compensation account reaches a
-minimum of **[set minimum payout — e.g. €25.00]**. If not reached, the balance is
-carried over to the next cut-off date.
+minimum of **€50.00**. If not reached, the balance is carried over to the next
+cut-off date.
 
 (4) **To receive payments, the Partner must provide a valid IBAN.** Without valid
 bank details no payout can be made; accrued amounts are carried over until a valid
@@ -406,7 +394,7 @@ obligations in the name or on behalf of the Provider.
 (1) The agreement begins on signature (or on assignment of the promo code, whichever
 is later) and runs for an indefinite term.
 
-(2) Either party may terminate for convenience with **[…] weeks'** notice in text
+(2) Either party may terminate for convenience with **four (4) weeks'** notice in text
 form. The right to extraordinary termination for good cause remains unaffected. On
 termination the promo code is deactivated; claims that arose until then under §§ 4
 and 5 are still settled under § 6.
@@ -428,7 +416,7 @@ privacy policy.
 ### § 11 Changes to this agreement
 
 The Provider may offer changes to this agreement, in particular to the rates and
-periods in § 4, in text form at least **[…] weeks** before they take effect. A change
+periods in § 4, in text form at least **six (6) weeks** before they take effect. A change
 takes effect only if the Partner consents; silence is not consent. If the Partner
 does not consent, the previous terms continue while the agreement continues; either
 party may terminate under § 9. Claims already accrued are unaffected by a change.
@@ -453,6 +441,8 @@ effective.
 information only.
 
 ---
+
+<!-- seitenumbruch -->
 
 ## Teil D — Erklärungen und Unterschrift / Declarations and signature
 

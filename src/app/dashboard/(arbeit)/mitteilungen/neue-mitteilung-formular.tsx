@@ -5,13 +5,16 @@ import { useActionState, useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 
 import { FormMeldung } from "@/components/formular/felder";
-import { erlaubteKategorien, KATEGORIE_LABEL, PRIORITAET_LABEL } from "@/lib/dashboard/mitteilungen";
+import type { Dictionary } from "@/i18n";
+import { erlaubteKategorien } from "@/lib/dashboard/mitteilungen";
 import { leererZustand } from "@/lib/formular";
 import { PRIORITAETEN, type ErstellbarerTyp } from "@/lib/validierung";
 
 import { mitteilungErstellen } from "./aktionen";
 
-function SendenKnopf() {
+type MitteilungenTexte = Dictionary["mitteilungen"];
+
+function SendenKnopf({ texte }: { texte: MitteilungenTexte }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -20,7 +23,7 @@ function SendenKnopf() {
       aria-disabled={pending}
       className="self-start rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Wird gesendet…" : "Senden"}
+      {pending ? texte.wirdGesendet : texte.senden}
     </button>
   );
 }
@@ -79,11 +82,13 @@ function ZeilenFeld({
   werte,
   setWerte,
   hinzufuegenLabel,
+  entfernenLabel,
 }: {
   name: string;
   werte: string[];
   setWerte: (werte: string[]) => void;
   hinzufuegenLabel: string;
+  entfernenLabel: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -100,7 +105,7 @@ function ZeilenFeld({
             <button
               type="button"
               onClick={() => setWerte(werte.filter((_, j) => j !== i))}
-              aria-label="Zeile entfernen"
+              aria-label={entfernenLabel}
               className="shrink-0 rounded-blk p-2 text-muted transition-colors hover:text-text"
             >
               <X className="size-4" aria-hidden="true" />
@@ -165,9 +170,11 @@ const LEER_ZUSTAND = {
 function NeueMitteilungFormular({
   chef,
   onSchliessen,
+  texte,
 }: {
   chef: boolean;
   onSchliessen: () => void;
+  texte: MitteilungenTexte;
 }) {
   const [zustand, aktion] = useActionState(mitteilungErstellen, leererZustand);
   const kategorien = erlaubteKategorien(chef);
@@ -206,14 +213,14 @@ function NeueMitteilungFormular({
 
   const fehlermeldung =
     zustand.status === "fehler"
-      ? (zustand.nachricht ?? Object.values(zustand.felder)[0] ?? "Das hat nicht geklappt.")
+      ? (zustand.nachricht ?? Object.values(zustand.felder)[0] ?? texte.fehlerFallback)
       : null;
 
   return (
     <form action={aktion} className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5">
       <div className="flex items-start justify-between gap-3">
         <h2 id="verfassen-titel" className="font-display text-lg text-text">
-          Neue Mitteilung
+          {texte.neueMitteilung}
         </h2>
         <button
           type="button"
@@ -221,22 +228,24 @@ function NeueMitteilungFormular({
           className="-mr-1 -mt-1 shrink-0 rounded-blk p-1.5 text-muted transition-colors hover:bg-surface-sunk hover:text-text"
         >
           <X aria-hidden="true" className="size-4" />
-          <span className="sr-only">Verfassen abbrechen</span>
+          <span className="sr-only">{texte.verfassenAbbrechen}</span>
         </button>
       </div>
 
       {fehlermeldung ? <FormMeldung art="fehler">{fehlermeldung}</FormMeldung> : null}
-      {zustand.status === "erfolg" ? <FormMeldung art="erfolg">Gesendet.</FormMeldung> : null}
+      {zustand.status === "erfolg" ? (
+        <FormMeldung art="erfolg">{texte.gesendet}</FormMeldung>
+      ) : null}
 
       <div>
-        <p className="mb-2 text-sm font-medium text-text">Kategorie</p>
+        <p className="mb-2 text-sm font-medium text-text">{texte.katLabel}</p>
         <div className="flex flex-row flex-wrap gap-2">
           {kategorien.map((kategorie) => (
             <AuswahlChip
               key={kategorie}
               gewaehlt={typ === kategorie}
               onClick={() => setTyp(kategorie)}
-              beschriftung={KATEGORIE_LABEL[kategorie]}
+              beschriftung={texte.kategorie[kategorie]}
             />
           ))}
         </div>
@@ -245,7 +254,7 @@ function NeueMitteilungFormular({
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="mitteilung-titel" className="text-sm font-medium text-text">
-          Titel
+          {texte.titelLabel}
         </label>
         <input
           id="mitteilung-titel"
@@ -261,14 +270,14 @@ function NeueMitteilungFormular({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-text">Priorität</p>
+        <p className="mb-2 text-sm font-medium text-text">{texte.prioritaetLabel}</p>
         <div className="flex flex-row flex-wrap gap-2">
           {PRIORITAETEN.map((p) => (
             <AuswahlChip
               key={p}
               gewaehlt={prioritaet === p}
               onClick={() => setPrioritaet(p)}
-              beschriftung={PRIORITAET_LABEL[p]}
+              beschriftung={texte.prioritaet[p]}
             />
           ))}
         </div>
@@ -278,7 +287,7 @@ function NeueMitteilungFormular({
       {typ === "allgemein" ? (
         <div className="flex flex-col gap-1.5">
           <label htmlFor="mitteilung-text" className="text-sm font-medium text-text">
-            Text
+            {texte.textLabel}
           </label>
           <textarea
             id="mitteilung-text"
@@ -294,8 +303,14 @@ function NeueMitteilungFormular({
 
       {typ === "aufgabenliste" ? (
         <div>
-          <p className="mb-2 text-sm font-medium text-text">Punkte</p>
-          <ZeilenFeld name="items" werte={items} setWerte={setItems} hinzufuegenLabel="Punkt hinzufügen" />
+          <p className="mb-2 text-sm font-medium text-text">{texte.punkte}</p>
+          <ZeilenFeld
+            name="items"
+            werte={items}
+            setWerte={setItems}
+            hinzufuegenLabel={texte.punktHinzufuegen}
+            entfernenLabel={texte.zeileEntfernen}
+          />
           {zustand.felder.items ? (
             <p className="mt-1.5 text-sm font-medium text-stop">{zustand.felder.items}</p>
           ) : null}
@@ -305,12 +320,13 @@ function NeueMitteilungFormular({
       {typ === "umfrage" ? (
         <div className="flex flex-col gap-4">
           <div>
-            <p className="mb-2 text-sm font-medium text-text">Optionen</p>
+            <p className="mb-2 text-sm font-medium text-text">{texte.optionenLabel}</p>
             <ZeilenFeld
               name="optionen"
               werte={optionen}
               setWerte={setOptionen}
-              hinzufuegenLabel="Option hinzufügen"
+              hinzufuegenLabel={texte.optionHinzufuegen}
+              entfernenLabel={texte.zeileEntfernen}
             />
             {zustand.felder.optionen ? (
               <p className="mt-1.5 text-sm font-medium text-stop">{zustand.felder.optionen}</p>
@@ -326,7 +342,7 @@ function NeueMitteilungFormular({
               onChange={(e) => setMehrfachauswahl(e.target.checked)}
               className="size-4"
             />
-            Mehrfachauswahl
+            {texte.mehrfachauswahl}
           </label>
           <label className="flex items-center gap-2 text-sm text-text">
             <input
@@ -337,12 +353,12 @@ function NeueMitteilungFormular({
               onChange={(e) => setAnonym(e.target.checked)}
               className="size-4"
             />
-            Anonym
+            {texte.anonym}
           </label>
         </div>
       ) : null}
 
-      <SendenKnopf />
+      <SendenKnopf texte={texte} />
     </form>
   );
 }
@@ -378,7 +394,13 @@ function NeueMitteilungFormular({
  * `useActionState` sitzt darin, und ein neuer Anlauf soll mit leeren
  * Feldern und ohne die Meldung des letzten beginnen.
  */
-export function MitteilungVerfassen({ chef }: { chef: boolean }) {
+export function MitteilungVerfassen({
+  chef,
+  texte,
+}: {
+  chef: boolean;
+  texte: MitteilungenTexte;
+}) {
   const [offen, setOffen] = useState(false);
 
   if (!offen) {
@@ -389,10 +411,16 @@ export function MitteilungVerfassen({ chef }: { chef: boolean }) {
         className="flex items-center gap-2 self-start rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
       >
         <Plus aria-hidden="true" className="size-4" />
-        Neue Mitteilung
+        {texte.neueMitteilung}
       </button>
     );
   }
 
-  return <NeueMitteilungFormular chef={chef} onSchliessen={() => setOffen(false)} />;
+  return (
+    <NeueMitteilungFormular
+      chef={chef}
+      onSchliessen={() => setOffen(false)}
+      texte={texte}
+    />
+  );
 }

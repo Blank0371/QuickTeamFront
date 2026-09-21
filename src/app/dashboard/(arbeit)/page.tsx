@@ -7,11 +7,9 @@ import { PlanungEinstieg } from "@/components/dashboard/planung-einstieg";
 import { RollenFilter } from "@/components/dashboard/rollen-filter";
 import { LeereTage, TagesPlan } from "@/components/dashboard/tages-plan";
 import { FormMeldung } from "@/components/formular/felder";
-import {
-  MONATSNAMEN,
-  WOCHENTAGE_LANG,
-  holeSchichten,
-} from "@/lib/dashboard/kalender";
+import { getDictionary } from "@/i18n";
+import { leseSprache } from "@/i18n/sprache";
+import { holeSchichten } from "@/lib/dashboard/kalender";
 import { holeOffeneStellen, holeZyklen } from "@/lib/dashboard/planung";
 import {
   TAGE_IM_BLICK,
@@ -31,12 +29,14 @@ import { holeChefUrlaubsantraege } from "@/lib/dashboard/urlaub";
 import { holeTeam } from "@/lib/dashboard/team";
 import { StatistikLeiste, type Kennzahl } from "@/components/dashboard/statistik-leiste";
 
-export const metadata: Metadata = {
-  title: "Übersicht",
-  description:
-    "Wer heute und in den nächsten Tagen im Dienst ist — mit Uhrzeiten, Rollen und Namen.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getDictionary(await leseSprache());
+  return {
+    title: t.uebersicht.metaTitel,
+    description: t.uebersicht.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Übersicht — der Einstieg ins Dashboard.
@@ -75,6 +75,9 @@ export default async function DashboardUebersicht({
   const { supabase, position } = await betreteDashboard();
   const { rolle: rolleParam } = await searchParams;
   const chef = istChef(position);
+  const sprache = await leseSprache();
+  const t = getDictionary(sprache);
+  const tx = t.uebersicht;
 
   const heute = new Date();
   const fenster = baueFenster(heute);
@@ -93,6 +96,7 @@ export default async function DashboardUebersicht({
       position.mitarbeiterId,
       fenster.von,
       fenster.bis,
+      t.kalender.ladeFehler,
     ),
     chef ? holeZyklen(supabase, position.betriebId) : Promise.resolve([]),
     chef
@@ -138,7 +142,7 @@ export default async function DashboardUebersicht({
       filtereNachRolle(liste, rolle),
     ]),
   );
-  const tage = baueTage(fenster.tage, gefiltert);
+  const tage = baueTage(fenster.tage, gefiltert, sprache, tx.heute, tx.morgen);
 
   const rollenName = rolle === null ? null : (eimer.find((e) => e.wert === rolle)?.name ?? null);
 
@@ -183,41 +187,40 @@ export default async function DashboardUebersicht({
     ? [
         {
           schluessel: "im-dienst",
-          titel: "Heute im Einsatz",
+          titel: tx.kzImDienstTitel,
           wert: String(zaehleImDienst(heutigeSchichten)),
-          einheit: planbar > 0 ? `von ${planbar}` : undefined,
+          einheit: planbar > 0 ? tx.kzImDienstVon.replace("{n}", String(planbar)) : undefined,
           fuss:
             heutigeSchichten.length === 0
-              ? "Heute ist keine Schicht geplant."
-              : `${heutigeSchichten.length} ${heutigeSchichten.length === 1 ? "Schicht" : "Schichten"} heute.`,
+              ? tx.kzImDienstLeer
+              : tx.kzImDienstFuss
+                  .replace("{n}", String(heutigeSchichten.length))
+                  .replace(
+                    "{wort}",
+                    heutigeSchichten.length === 1 ? tx.schichtEz : tx.schichtMz,
+                  ),
           icon: "team",
         },
         {
           schluessel: "offen",
-          titel: "Offene Positionen",
+          titel: tx.kzOffenTitel,
           wert: String(offenGesamt),
-          fuss:
-            offenGesamt === 0
-              ? "Alle Vorschläge sind vollständig besetzt."
-              : "Noch unbesetzt in einem Planvorschlag.",
+          fuss: offenGesamt === 0 ? tx.kzOffenLeer : tx.kzOffenFuss,
           icon: "kalender",
         },
         {
           schluessel: "urlaub",
-          titel: "Urlaubsanträge",
+          titel: tx.kzUrlaubTitel,
           wert: String(offeneAntraege),
-          fuss:
-            offeneAntraege === 0
-              ? "Nichts wartet auf deine Freigabe."
-              : "Warten auf deine Freigabe.",
+          fuss: offeneAntraege === 0 ? tx.kzUrlaubLeer : tx.kzUrlaubFuss,
           icon: "urlaub",
         },
         {
           schluessel: "fenster",
-          titel: `Nächste ${TAGE_IM_BLICK} Tage`,
+          titel: tx.kzFensterTitel.replace("{n}", String(TAGE_IM_BLICK)),
           wert: String(schichtenImBlick),
-          einheit: schichtenImBlick === 1 ? "Schicht" : "Schichten",
-          fuss: "Im Zeitraum dieser Seite.",
+          einheit: schichtenImBlick === 1 ? tx.schichtEz : tx.schichtMz,
+          fuss: tx.kzFensterFuss,
           icon: "zeit",
         },
       ]
@@ -227,10 +230,12 @@ export default async function DashboardUebersicht({
     <Container className="py-8 sm:py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl leading-tight sm:text-3xl">{heutigesDatum(heute)}</h1>
+          <h1 className="text-2xl leading-tight sm:text-3xl">
+            {heutigesDatum(heute, sprache)}
+          </h1>
           <p className="mt-1 text-sm text-muted">
             {position.betriebName}
-            {chef ? "" : " · nur was du sehen darfst"}
+            {chef ? "" : ` · ${t.kalender.nurSichtbar}`}
           </p>
         </div>
 
@@ -239,7 +244,7 @@ export default async function DashboardUebersicht({
           prefetch
           className="flex items-center gap-1 text-sm font-medium text-signal underline underline-offset-4 transition-colors hover:text-signal-hover"
         >
-          Ganzen Monat ansehen
+          {tx.ganzenMonat}
           <ChevronRight className="size-4" aria-hidden="true" />
         </Link>
       </div>
@@ -261,6 +266,9 @@ export default async function DashboardUebersicht({
           <PlanungEinstieg
             zyklen={zyklen}
             offeneStellen={Object.fromEntries(offeneStellen)}
+            texte={tx}
+            titel={t.dashboard.planung}
+            locale={sprache}
           />
         </div>
       ) : null}
@@ -271,7 +279,7 @@ export default async function DashboardUebersicht({
             id="im-dienst"
             className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
           >
-            Im Dienst — heute und die nächsten {TAGE_IM_BLICK - 1} Tage
+            {tx.imDienstTitel.replace("{n}", String(TAGE_IM_BLICK - 1))}
           </h2>
         </div>
 
@@ -282,6 +290,8 @@ export default async function DashboardUebersicht({
               aktiv={rolle}
               gesamt={imDienst}
               basis="/dashboard"
+              alleLabel={tx.alle}
+              ariaLabel={tx.rollenFilterAria}
             />
           </div>
         ) : null}
@@ -293,7 +303,7 @@ export default async function DashboardUebersicht({
         */}
         <div className="mt-4 flex flex-col gap-4">
           {tage.every((tag) => tag.schichten.length === 0) ? (
-            <LeereTage tage={tage} text={leerText(rollenName, chef)} />
+            <LeereTage tage={tage} text={leerText(rollenName, chef, tx)} texte={tx} />
           ) : (
             tage.map((tag) => (
               <TagesPlan
@@ -301,7 +311,9 @@ export default async function DashboardUebersicht({
                 tag={tag}
                 chef={chef}
                 besetzung={besetzungProTag.get(tag.datum) ?? []}
-                leerText={leerText(rollenName, chef)}
+                leerText={leerText(rollenName, chef, tx)}
+                texte={tx}
+                zustandTexte={t.kalender.zustand}
               />
             ))
           )}
@@ -311,10 +323,13 @@ export default async function DashboardUebersicht({
   );
 }
 
-/** „Samstag, 29. August" — die Überschrift der Seite. */
-function heutigesDatum(heute: Date): string {
-  const wochentag = WOCHENTAGE_LANG[(heute.getDay() + 6) % 7];
-  return `${wochentag}, ${heute.getDate()}. ${MONATSNAMEN[heute.getMonth()]}`;
+/** „Samstag, 29. August" / „Saturday, August 29" — die Überschrift der Seite. */
+function heutigesDatum(heute: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(heute);
 }
 
 /**
@@ -327,7 +342,11 @@ function heutigesDatum(heute: Date): string {
  * `mitarbeiter_sehen_andere_schichten` alles aus, wozu sie nicht
  * eingeteilt ist. Leer heisst dort „nichts für dich", nicht „nichts".
  */
-function leerText(rollenName: string | null, chef: boolean): string {
-  if (rollenName) return `Niemand aus „${rollenName}" im Dienst.`;
-  return chef ? "Keine Schichten an diesem Tag." : "Für dich steht nichts an.";
+function leerText(
+  rollenName: string | null,
+  chef: boolean,
+  tx: ReturnType<typeof getDictionary>["uebersicht"],
+): string {
+  if (rollenName) return tx.leerRolle.replace("{rolle}", rollenName);
+  return chef ? tx.leerChef : tx.leerMitarbeiter;
 }

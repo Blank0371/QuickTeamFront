@@ -65,10 +65,10 @@ export async function GET(): Promise<Response> {
  *  Markdown → gesetzte Zeilen
  *
  *  Kein vollständiger Markdown-Parser, sondern genau das, was dieses
- *  Dokument benutzt: Überschriften, Blockzitat (Entwurfshinweis),
- *  zweispaltige Tabellen (Teil A), Aufzählungen mit Ankreuzfeldern
- *  (Teil D) und Fliesstext. Alles Weitere würde hier nur ungenutzt
- *  herumliegen.
+ *  Dokument benutzt: Überschriften, Blockzitat (Vorrang der deutschen
+ *  Fassung), zweispaltige Tabellen (Teil A), Aufzählungen mit
+ *  Ankreuzfeldern (Teil D), den Seitenumbruch-Marker und Fliesstext.
+ *  Alles Weitere würde hier nur ungenutzt herumliegen.
  * ──────────────────────────────────────────────────────────────────── */
 
 /** Eine noch nicht umbrochene Zeile mit Schrift, Grösse und Abständen (Punkte). */
@@ -80,6 +80,17 @@ type Zeile = {
   davor: number;
   /** Zusätzlicher Leerraum unterhalb. */
   danach: number;
+  /**
+   * Erzwingt vor dieser Zeile eine neue Seite. Trägt keinen Text.
+   *
+   * Nötig, weil dieses Dokument nicht nur gelesen, sondern ausgefüllt und
+   * unterschrieben wird: eine Unterschriftszeile, die von ihrer
+   * Ortsangabe durch einen Seitenumbruch getrennt ist, ist als Formular
+   * unbrauchbar. Der Umbruch steht deshalb ausdrücklich im Markdown
+   * (`<!-- seitenumbruch -->`) und nicht in einer Heuristik hier — wer
+   * den Vertragstext ändert, sieht an der Quelle, wo eine Seite endet.
+   */
+  umbruch?: true;
 };
 
 const NORMAL = 10.5;
@@ -95,6 +106,19 @@ function markdownZuZeilen(markdown: string): Zeile[] {
     // Leerzeile → kleiner Abstand, keine gesetzte Zeile.
     if (getrimmt === "") {
       zeilen.push({ text: "", font: "F1", groesse: NORMAL, davor: 0, danach: 4 });
+      continue;
+    }
+
+    // Erzwungener Seitenumbruch (HTML-Kommentar, im Markdown unsichtbar).
+    if (getrimmt === "<!-- seitenumbruch -->") {
+      zeilen.push({
+        text: "",
+        font: "F1",
+        groesse: NORMAL,
+        davor: 0,
+        danach: 0,
+        umbruch: true,
+      });
       continue;
     }
 
@@ -119,7 +143,7 @@ function markdownZuZeilen(markdown: string): Zeile[] {
       continue;
     }
 
-    // Blockzitat (der Entwurfshinweis oben).
+    // Blockzitat (der Hinweis auf die verbindliche Sprachfassung).
     if (getrimmt.startsWith(">")) {
       const inhalt = getrimmt.replace(/^>\s?/, "");
       if (inhalt === "") {
@@ -322,6 +346,12 @@ function seitenAusZeilen(zeilen: Zeile[]): Segment[][] {
   };
 
   for (const zeile of zeilen) {
+    if (zeile.umbruch) {
+      // Auf einer noch leeren Seite wäre der Umbruch eine Leerseite.
+      if (aktuell.length > 0) neueSeite();
+      continue;
+    }
+
     y -= zeile.davor;
     const teile = umbrich(zeile.text, zeile.groesse, zeile.font);
     const zeilenhoehe = zeile.groesse * 1.4;

@@ -6,6 +6,7 @@ import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
 import { SprachProvider } from "@/i18n/sprach-provider";
 import { softLaunchAktiv } from "@/lib/soft-launch";
+import { leseThema } from "@/lib/thema";
 import { plaene, siteName, siteUrl } from "@/lib/site";
 
 import "./globals.css";
@@ -139,8 +140,20 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const sprache = await leseSprache();
   const t = getDictionary(sprache);
 
+  /*
+   * Ausdrückliche Themenwahl aus dem Cookie. `null` heisst „keine Wahl" —
+   * dann bleibt `data-theme` weg und die Farben folgen dem System
+   * (`prefers-color-scheme`). Serverseitig gesetzt, damit die Seite gleich
+   * im richtigen Modus ankommt und nicht erst nachträglich umspringt.
+   */
+  const thema = await leseThema();
+
   return (
-    <html lang={sprache} className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html
+      lang={sprache}
+      data-theme={thema ?? undefined}
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+    >
       <body className="flex min-h-dvh flex-col bg-bg text-text antialiased">
         <a
           href="#inhalt"

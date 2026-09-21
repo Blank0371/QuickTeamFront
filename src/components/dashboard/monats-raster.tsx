@@ -1,26 +1,30 @@
-import {
-  Besetzung,
-  FortsetzungsChip,
-  SchichtChip,
-} from "@/components/dashboard/schicht-chip";
+import Link from "next/link";
+
+import { Besetzung, FortsetzungsChip } from "@/components/dashboard/schicht-chip";
 import {
   KompaktFortsetzung,
   KompaktZeile,
 } from "@/components/dashboard/tages-indikator";
 import { TagesDetail } from "@/components/dashboard/tages-detail";
+import { getDictionary, type Locale } from "@/i18n";
 import {
-  MONATSNAMEN,
   SICHTBARE_KACHELN,
-  WOCHENTAGE,
-  WOCHENTAGE_LANG,
   hhmm,
+  monatsnamen,
+  schichtName,
+  schichtZustand,
   tagesLage,
+  ueberNacht,
+  wochentageKurz,
+  wochentageLang,
   type Fortsetzung,
   type KalenderSchicht,
   type Monatsraster,
   type Rasterzelle,
   type TagesLage,
 } from "@/lib/dashboard/kalender";
+
+type KalenderTexte = ReturnType<typeof getDictionary>["kalender"];
 
 /**
  * Der Monat als Raster — und auf schmalen Geräten als Tagesliste.
@@ -45,15 +49,19 @@ export function MonatsRaster({
   raster,
   proTag,
   fortsetzungen,
-  rollenReihenfolge,
+  locale,
 }: {
   raster: Monatsraster;
   proTag: Map<string, KalenderSchicht[]>;
   /** Nachtschichten des Vortags, die in diesen Tag hineinragen. */
   fortsetzungen: Map<string, Fortsetzung[]>;
-  /** Sortierte Rollennamen — bestimmt die Kennfarbe der Indikatorpunkte. */
-  rollenReihenfolge: readonly string[];
+  locale: Locale;
 }) {
+  const t = getDictionary(locale).kalender;
+  const monate = monatsnamen(locale);
+  const wochenKurz = wochentageKurz(locale);
+  const wochenLang = wochentageLang(locale);
+
   return (
     <>
       <div className="hidden sm:block">
@@ -61,21 +69,34 @@ export function MonatsRaster({
           raster={raster}
           proTag={proTag}
           fortsetzungen={fortsetzungen}
-          rollenReihenfolge={rollenReihenfolge}
+          t={t}
+          monate={monate}
+          wochenKurz={wochenKurz}
+          wochenLang={wochenLang}
         />
       </div>
       <div className="sm:hidden">
-        <TagesListe raster={raster} proTag={proTag} fortsetzungen={fortsetzungen} />
+        <TagesListe
+          raster={raster}
+          proTag={proTag}
+          fortsetzungen={fortsetzungen}
+          t={t}
+          wochenLang={wochenLang}
+        />
       </div>
     </>
   );
 }
 
 /** „Samstag, 29. August" — die Überschrift über einem aufgeklappten Tag. */
-function langesDatum(zelle: Rasterzelle): string {
+function langesDatum(
+  zelle: Rasterzelle,
+  monate: string[],
+  wochenLang: string[],
+): string {
   const d = new Date(`${zelle.datum}T12:00:00`);
-  const wochentag = WOCHENTAGE_LANG[(d.getDay() + 6) % 7];
-  return `${wochentag}, ${zelle.tag}. ${MONATSNAMEN[d.getMonth()]}`;
+  const wochentag = wochenLang[(d.getDay() + 6) % 7];
+  return `${wochentag}, ${zelle.tag}. ${monate[d.getMonth()]}`;
 }
 
 /**
@@ -108,17 +129,17 @@ function istKernTag(spalte: number): boolean {
  * verloren: sie steht in `title` für die Maus und in einem
  * `sr-only`-Text für den Screenreader.
  */
-function LageMarker({ lage }: { lage: TagesLage }) {
+function LageMarker({ lage, t }: { lage: TagesLage; t: KalenderTexte }) {
   const marker: { klasse: string; text: string }[] = [];
 
   if (lage.unterbesetzt) {
-    marker.push({ klasse: "bg-stop", text: "unterbesetzt" });
+    marker.push({ klasse: "bg-stop", text: t.unterbesetzt });
   }
   if (lage.offen) {
-    marker.push({ klasse: "bg-signal", text: "frei zu übernehmen" });
+    marker.push({ klasse: "bg-signal", text: t.freiUebernehmen });
   }
   if (lage.meine && !lage.offen) {
-    marker.push({ klasse: "bg-signal/40", text: "du bist eingeteilt" });
+    marker.push({ klasse: "bg-signal/40", text: t.duEingeteilt });
   }
 
   if (marker.length === 0) return null;
@@ -189,21 +210,25 @@ function Raster({
   raster,
   proTag,
   fortsetzungen,
-  rollenReihenfolge,
+  t,
+  monate,
+  wochenKurz,
+  wochenLang,
 }: {
   raster: Monatsraster;
   proTag: Map<string, KalenderSchicht[]>;
   fortsetzungen: Map<string, Fortsetzung[]>;
-  rollenReihenfolge: readonly string[];
+  t: KalenderTexte;
+  monate: string[];
+  wochenKurz: string[];
+  wochenLang: string[];
 }) {
   return (
     <table className="w-full table-fixed border-separate border-spacing-1.5">
-      <caption className="sr-only">
-        Dienstplan als Monatsübersicht, Wochen beginnen am Montag
-      </caption>
+      <caption className="sr-only">{t.rasterCaption}</caption>
       <thead>
         <tr>
-          {WOCHENTAGE.map((kurz, i) => (
+          {wochenKurz.map((kurz, i) => (
             <th
               key={kurz}
               scope="col"
@@ -219,7 +244,7 @@ function Raster({
                   : "border-b-2 border-transparent text-muted"
               }`}
             >
-              <abbr title={WOCHENTAGE_LANG[i]} className="no-underline">
+              <abbr title={wochenLang[i]} className="no-underline">
                 {kurz}
               </abbr>
             </th>
@@ -241,6 +266,14 @@ function Raster({
               const lage = tagesLage(schichten);
               const sichtbar = schichten.slice(0, SICHTBARE_KACHELN);
               const versteckt = schichten.length - sichtbar.length;
+              const titel = langesDatum(zelle, monate, wochenLang);
+              const anzeigenLabel = t.anzeigenAria
+                .replace("{titel}", titel)
+                .replace("{n}", String(schichten.length))
+                .replace(
+                  "{wort}",
+                  schichten.length === 1 ? t.schichtEz : t.schichtMz,
+                );
 
               return (
                 <td key={zelle.datum} className="h-px p-0 align-top">
@@ -276,19 +309,30 @@ function Raster({
                        * dort, wo ihr Inhalt endet, und eine Woche mit
                        * einem vollen Freitag franst nach unten aus.
                        */
+                      /*
+                       * Ein Tag, an dem **ich** eingeteilt bin, bekommt
+                       * eine signalfarbene Kante — die eigenen Arbeitstage
+                       * springen so aus dem Monat heraus, ohne dass man
+                       * eine Zelle lesen muss. Die Kante schlägt die
+                       * Wochenend-Auszeichnung (Frage „wann arbeite ich?"
+                       * vor Frage „ist Wochenende?"); der Grund bleibt der
+                       * Wochenendton.
+                       */
                       className={`flex h-full min-h-28 flex-col gap-1 rounded-panel border p-1.5 shadow-card transition-colors hover:border-line-strong ${
-                        istKernTag(spalte)
-                          ? "border-line-strong bg-surface-weekend"
-                          : "border-line bg-surface"
-                      }`}
+                        lage.meine
+                          ? "border-signal/60"
+                          : istKernTag(spalte)
+                            ? "border-line-strong"
+                            : "border-line"
+                      } ${istKernTag(spalte) ? "bg-surface-weekend" : "bg-surface"}`}
                     >
                       <div className="flex items-center justify-between gap-1 px-0.5">
                         {schichten.length > 0 ? (
                           <TagesDetail
                             tag={zelle.tag}
                             datum={zelle.datum}
-                            titel={langesDatum(zelle)}
-                            anzahl={schichten.length}
+                            titel={titel}
+                            anzeigenLabel={anzeigenLabel}
                             istHeute={zelle.istHeute}
                             imMonat
                             versteckt={versteckt}
@@ -336,29 +380,26 @@ function Raster({
                           </p>
                         )}
 
-                        <LageMarker lage={lage} />
+                        <LageMarker lage={lage} t={t} />
                       </div>
 
                       {/*
-                        Kompaktzeilen statt voller Kacheln — Uhrzeit,
-                        Personenzahl und Rollenfarbe in einer Zeile. Die
-                        reinen Punkte davor waren zu abstrakt; die
-                        Begründung steht an `KompaktZeile`.
+                        Kompaktzeilen statt voller Kacheln — die Uhrzeit
+                        zuerst, die eigene Schicht hervorgehoben. Rolle und
+                        Personenzahl stehen bewusst nicht hier, sondern im
+                        Tagesdetail und auf der Schichtseite; die Begründung
+                        steht an `KompaktZeile`.
                       */}
                       <div className="mt-auto flex flex-col gap-0.5">
                         {sichtbar.map((schicht) => (
-                          <KompaktZeile
-                            key={schicht.id}
-                            schicht={schicht}
-                            reihenfolge={rollenReihenfolge}
-                          />
+                          <KompaktZeile key={schicht.id} schicht={schicht} t={t} />
                         ))}
                         {weiter.map((f) => (
-                          <KompaktFortsetzung key={`f-${f.id}`} fortsetzung={f} />
+                          <KompaktFortsetzung key={`f-${f.id}`} fortsetzung={f} t={t} />
                         ))}
                         {versteckt > 0 ? (
                           <p className="px-1 text-[0.625rem] leading-tight text-muted">
-                            +{versteckt} weitere
+                            +{versteckt} {t.weitere}
                           </p>
                         ) : null}
                       </div>
@@ -398,15 +439,32 @@ function Raster({
  * Hier wird **nicht** gekürzt: die Liste ist ohnehin senkrecht, ein
  * vierter Eintrag kostet nichts ausser Scrollweg, und es gibt keine
  * Nachbarspalte, die mitwachsen müsste.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Umbau 2026-09-21 — lesbarer auf dem Handy
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Vorher stand hier die enge `SchichtChip`-Kachel (10-px-Text), gebaut
+ * für die dichte Tagesliste der Übersicht. Auf einer Handybreite ist Platz
+ * für mehr: jeder Tag ist eine **klebende Kopfzeile** (bleibt beim Scrollen
+ * durch seine Schichten oben) über einer Reihe **grosser, antippbarer
+ * Karten** — Rollenfarbe als Balken links, Uhrzeit gross und einstellig,
+ * Besetzung darunter, „unterbesetzt" als rote Pille. Die ganze Karte führt
+ * auf die Schichtseite (`/dashboard/schicht/…`) — die schnelle Aktion ist
+ * ein Tipp weit weg.
  */
 function TagesListe({
   raster,
   proTag,
   fortsetzungen,
+  t,
+  wochenLang,
 }: {
   raster: Monatsraster;
   proTag: Map<string, KalenderSchicht[]>;
   fortsetzungen: Map<string, Fortsetzung[]>;
+  t: KalenderTexte;
+  wochenLang: string[];
 }) {
   /*
    * Ein Tag, der **nur** eine Fortsetzung trägt, kommt hier ebenfalls
@@ -425,7 +483,7 @@ function TagesListe({
   if (tage.length === 0) return null;
 
   return (
-    <ul className="flex flex-col gap-4">
+    <ul className="flex flex-col gap-5">
       {tage.map((zelle) => {
         const schichten = proTag.get(zelle.datum) ?? [];
         const datum = new Date(`${zelle.datum}T12:00:00`);
@@ -433,36 +491,165 @@ function TagesListe({
 
         return (
           <li key={zelle.datum}>
-            <h3
-              className={`flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.12em] ${
-                zelle.istHeute
-                  ? "text-signal"
-                  : istKernTag(wochentagIndex)
-                    ? "text-text"
-                    : "text-muted"
-              }`}
-            >
-              <time dateTime={zelle.datum}>
-                {WOCHENTAGE_LANG[wochentagIndex]}, {zelle.tag}.
+            {/*
+              Klebende Kopfzeile: bleibt beim Durchscrollen der Schichten
+              eines Tages oben stehen, damit man nicht den Bezug verliert.
+              `bg-bg` deckt die durchlaufenden Karten ab; heute bekommt eine
+              gefüllte Pille, das Wochenende bekommt Gewicht.
+            */}
+            <h3 className="sticky top-0 z-10 -mx-1 flex items-center gap-2 bg-bg/95 px-1 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-bg/80">
+              <time
+                dateTime={zelle.datum}
+                className={`font-display text-sm font-bold ${
+                  zelle.istHeute
+                    ? "inline-flex items-center rounded-full bg-signal px-2.5 py-0.5 text-signal-ink"
+                    : istKernTag(wochentagIndex)
+                      ? "text-text"
+                      : "text-muted"
+                }`}
+              >
+                {wochenLang[wochentagIndex]}, {zelle.tag}.
               </time>
-              {zelle.istHeute ? <span>· heute</span> : null}
-              <LageMarker lage={tagesLage(schichten)} />
+              <LageMarker lage={tagesLage(schichten)} t={t} />
             </h3>
 
             <div className="mt-2 flex flex-col gap-2">
               {schichten.map((schicht) => (
-                <div key={schicht.id}>
-                  <SchichtChip schicht={schicht} />
-                  <Besetzung schicht={schicht} />
-                </div>
+                <MobileSchicht key={schicht.id} schicht={schicht} t={t} />
               ))}
               {(fortsetzungen.get(zelle.datum) ?? []).map((f) => (
-                <FortsetzungsChip key={`f-${f.id}`} fortsetzung={f} />
+                <FortsetzungsChip key={`f-${f.id}`} fortsetzung={f} t={t} />
               ))}
             </div>
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * Eine Schicht als grosse, antippbare Karte für das Handy.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Umbau 2026-09-21 — „wann arbeite ich?" zuerst
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Die erste Frage an einen Dienstplantag ist **wann** — deshalb steht die
+ * Uhrzeit ganz gross. Die eigene Schicht ist unübersehbar markiert:
+ * signalfarbener Grund, signalfarbene Kante, ein signalfarbener Balken
+ * links und eine „Deine Schicht"-Pille. Wer durch den Monat scrollt,
+ * findet seine Arbeitstage, ohne eine Karte lesen zu müssen.
+ *
+ * Der linke Balken trägt **keine Rollenfarbe mehr**: er zeigt nur noch, ob
+ * es die eigene Schicht ist. Wer mit welcher Rolle arbeitet, steht auf der
+ * Schichtseite (`/dashboard/schicht/…`) — einen Tipp entfernt, denn die
+ * ganze Karte führt dorthin. „unterbesetzt", „Tausch gesucht" und Notizen
+ * bleiben als Pillen; die Rolle ist bewusst nicht dabei.
+ */
+function MobileSchicht({
+  schicht,
+  t,
+}: {
+  schicht: KalenderSchicht;
+  t: KalenderTexte;
+}) {
+  const zustand = schichtZustand(schicht);
+  const meine = zustand === "meine";
+  const zeit = `${hhmm(schicht.start_zeit)}–${hhmm(schicht.end_zeit)}`;
+  const bezeichnung = schichtName(schicht);
+  const hinweis = t.zustand[zustand];
+  const nachts = ueberNacht(schicht);
+
+  const randFarbe =
+    zustand === "abgemeldet"
+      ? "border-stop/50"
+      : meine
+        ? "border-signal/60"
+        : "border-line";
+
+  return (
+    <Link
+      href={`/dashboard/schicht/${schicht.id}`}
+      className={`flex items-stretch gap-3 rounded-card border ${randFarbe} ${
+        meine ? "bg-signal-weak" : "bg-surface"
+      } p-3 shadow-card transition-colors hover:border-line-strong`}
+    >
+      {/*
+        Ein Balken links — signalfarben für die eigene Schicht, sonst
+        gedämpft. Keine Rollenfarbe: die Rolle ist nachrangig und steht
+        auf der Schichtseite.
+      */}
+      <span
+        aria-hidden="true"
+        className={`w-1.5 shrink-0 rounded-full ${
+          meine ? "bg-signal" : "bg-line-strong"
+        }`}
+      />
+
+      <span className="min-w-0 grow">
+        <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="font-mono text-lg font-semibold leading-tight text-text">
+            {zeit}
+            {nachts ? (
+              <span className="text-sm font-normal text-muted" title={t.ueberMitternacht}>
+                {" "}
+                +1
+              </span>
+            ) : null}
+          </span>
+          {meine ? (
+            <span className="rounded-full bg-signal px-2 py-0.5 text-[0.6875rem] font-semibold text-signal-ink">
+              {t.meineSchicht}
+            </span>
+          ) : null}
+          {bezeichnung ? (
+            <span className="truncate text-sm text-muted">{bezeichnung}</span>
+          ) : null}
+        </span>
+
+        {/* Besetzung: nur Namen, wer ich bin fett, Abgemeldete durchgestrichen. */}
+        {schicht.participants.length > 0 ? (
+          <span className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs leading-tight text-muted">
+            {schicht.participants.map((person, i) => (
+              <span
+                key={`${person.name}-${i}`}
+                className={person.attendet ? "" : "line-through opacity-70"}
+              >
+                <span className={person.is_me ? "font-semibold text-text" : ""}>
+                  {person.name}
+                </span>
+              </span>
+            ))}
+          </span>
+        ) : null}
+
+        {/* Zustands- und Zusatzhinweise als Pillen — ohne Rolle. */}
+        {hinweis || schicht.understaffed || schicht.swap_wanted || schicht.notiz_anzahl > 0 ? (
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {schicht.understaffed ? (
+              <span className="rounded-full bg-stop/15 px-2 py-0.5 text-[0.6875rem] font-semibold text-stop">
+                {t.unterbesetzt}
+              </span>
+            ) : null}
+            {hinweis ? (
+              <span className="rounded-full bg-surface-sunk px-2 py-0.5 text-[0.6875rem] font-medium text-muted">
+                {hinweis}
+              </span>
+            ) : null}
+            {schicht.swap_wanted ? (
+              <span className="rounded-full bg-surface-sunk px-2 py-0.5 text-[0.6875rem] text-muted">
+                {t.tauschGesucht}
+              </span>
+            ) : null}
+            {schicht.notiz_anzahl > 0 ? (
+              <span className="rounded-full bg-surface-sunk px-2 py-0.5 text-[0.6875rem] text-muted">
+                {schicht.notiz_anzahl} {schicht.notiz_anzahl === 1 ? t.notizEz : t.notizMz}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </span>
+    </Link>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/container";
+import { getDictionary } from "@/i18n";
+import { leseSprache } from "@/i18n/sprache";
 import { holeOffeneAusschreibungen } from "@/lib/dashboard/ausschreibung";
 import { holeMitteilungen, markiereAlsGelesen } from "@/lib/dashboard/mitteilungen";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
@@ -9,11 +11,14 @@ import { AusschreibungenAbschnitt } from "./ausschreibungen-abschnitt";
 import { MitteilungenListe } from "./mitteilungen-liste";
 import { MitteilungVerfassen } from "./neue-mitteilung-formular";
 
-export const metadata: Metadata = {
-  title: "Mitteilungen",
-  description: "Ankündigungen, Checklisten und Umfragen für den Betrieb.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getDictionary(await leseSprache());
+  return {
+    title: t.mitteilungen.metaTitel,
+    description: t.mitteilungen.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Rundschreiben des Betriebs — Ankündigungen, Checklisten, Umfragen.
@@ -33,6 +38,8 @@ export const metadata: Metadata = {
  */
 export default async function MitteilungenSeite() {
   const { supabase, position } = await betreteDashboard();
+  const sprache = await leseSprache();
+  const t = getDictionary(sprache).mitteilungen;
 
   const [mitteilungen, ausschreibungen] = await Promise.all([
     holeMitteilungen(supabase, position.betriebId, position.mitarbeiterId),
@@ -43,10 +50,8 @@ export default async function MitteilungenSeite() {
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Mitteilungen</h1>
-        <p className="mt-2 text-base leading-relaxed text-muted">
-          Ankündigungen, Checklisten und Umfragen für den ganzen Betrieb.
-        </p>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t.intro}</p>
 
         {/*
           Offene Schichten stehen über dem Einstieg ins Verfassen: sie
@@ -54,13 +59,17 @@ export default async function MitteilungenSeite() {
           hereinkommt, um etwas anzukündigen, drückt einen Knopf; wer eine
           Schicht übernehmen könnte, soll das nicht übersehen.
         */}
-        <AusschreibungenAbschnitt ausschreibungen={ausschreibungen} />
+        <AusschreibungenAbschnitt
+          ausschreibungen={ausschreibungen}
+          texte={t}
+          locale={sprache}
+        />
 
         <div className="mt-8 flex flex-col">
-          <MitteilungVerfassen chef={istChef(position)} />
+          <MitteilungVerfassen chef={istChef(position)} texte={t} />
         </div>
 
-        <MitteilungenListe mitteilungen={mitteilungen} />
+        <MitteilungenListe mitteilungen={mitteilungen} texte={t} locale={sprache} />
       </div>
     </Container>
   );

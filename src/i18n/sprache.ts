@@ -1,7 +1,9 @@
 import { cookies, headers } from "next/headers";
 
-import { defaultLocale, istLocale, type Locale } from "./config";
+import { defaultLocale, istLocale, SPRACH_COOKIE, type Locale } from "./config";
 import { SPRACH_KOPFZEILE } from "./sprach-parameter";
+
+export { SPRACH_COOKIE } from "./config";
 
 /**
  * Welche Sprache gilt für diese Anfrage?
@@ -38,8 +40,6 @@ import { SPRACH_KOPFZEILE } from "./sprach-parameter";
  * `qt_position` trägt es keine Berechtigung, sondern eine
  * Anzeigevorliebe, und ein Client-Skript darf sie lesen dürfen.
  */
-
-export const SPRACH_COOKIE = "qt_sprache";
 
 /** Ein Jahr — eine Sprachwahl ist keine Sitzungssache. */
 const MAX_ALTER = 60 * 60 * 24 * 365;

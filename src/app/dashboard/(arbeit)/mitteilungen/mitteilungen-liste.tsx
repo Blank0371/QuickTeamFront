@@ -3,10 +3,10 @@
 import { Check, FileText, Pin } from "lucide-react";
 import { useActionState, useState } from "react";
 
+import type { Dictionary } from "@/i18n";
+import type { Locale } from "@/i18n/config";
 import {
-  KATEGORIE_LABEL,
   naechsteAuswahl,
-  PRIORITAET_LABEL,
   type Mitteilung,
   type MitteilungsTyp,
   type Prioritaet,
@@ -14,6 +14,8 @@ import {
 import { leererZustand } from "@/lib/formular";
 
 import { aufgabeUmschalten, stimmeAbgeben } from "./aktionen";
+
+type MitteilungenTexte = Dictionary["mitteilungen"];
 
 const PRIO_GEWICHT: Record<Prioritaet, number> = { dringend: 3, wichtig: 2, normal: 1 };
 const WOCHE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -26,7 +28,13 @@ const WOCHE_MS = 7 * 24 * 60 * 60 * 1000;
  * nur mit unterschiedlichem Gewicht — gefüllt für dringend, umrandet für
  * wichtig.
  */
-function PrioritaetsBadge({ prioritaet }: { prioritaet: Prioritaet }) {
+function PrioritaetsBadge({
+  prioritaet,
+  texte,
+}: {
+  prioritaet: Prioritaet;
+  texte: MitteilungenTexte;
+}) {
   if (prioritaet === "normal") return null;
   const dringend = prioritaet === "dringend";
   return (
@@ -35,13 +43,13 @@ function PrioritaetsBadge({ prioritaet }: { prioritaet: Prioritaet }) {
         dringend ? "bg-signal text-signal-ink" : "border border-signal text-signal"
       }`}
     >
-      {PRIORITAET_LABEL[prioritaet]}
+      {texte.prioritaet[prioritaet]}
     </span>
   );
 }
 
-function formatiereZeit(iso: string): string {
-  return new Date(iso).toLocaleDateString("de-DE", {
+function formatiereZeit(iso: string, locale: Locale): string {
+  return new Date(iso).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -49,7 +57,15 @@ function formatiereZeit(iso: string): string {
   });
 }
 
-export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[] }) {
+export function MitteilungenListe({
+  mitteilungen,
+  texte,
+  locale,
+}: {
+  mitteilungen: Mitteilung[];
+  texte: MitteilungenTexte;
+  locale: Locale;
+}) {
   const [suche, setSuche] = useState("");
   const [sortierung, setSortierung] = useState<"neueste" | "relevant">("neueste");
   const [kategorie, setKategorie] = useState<"alle" | MitteilungsTyp>("alle");
@@ -89,8 +105,8 @@ export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[]
           type="search"
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
-          placeholder="Suchen"
-          aria-label="Mitteilungen durchsuchen"
+          placeholder={texte.suchen}
+          aria-label={texte.suchenAria}
           className="w-full max-w-xs rounded-blk border border-line-strong bg-surface px-3.5 py-2 text-sm text-text placeholder:text-muted"
         />
 
@@ -107,7 +123,7 @@ export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[]
                   : "border-line text-muted hover:text-text"
               }`}
             >
-              {s === "neueste" ? "Neueste" : "Relevant"}
+              {s === "neueste" ? texte.neueste : texte.relevant}
             </button>
           ))}
 
@@ -138,7 +154,7 @@ export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[]
 
               <div
                 role="group"
-                aria-label="Nach Kategorie filtern"
+                aria-label={texte.kategorieFilterAria}
                 className="flex flex-wrap items-center gap-2"
               >
                 {(["alle", ...vorhandeneKategorien] as const).map((k) => (
@@ -153,7 +169,7 @@ export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[]
                         : "border-line text-muted hover:border-line-control hover:text-text"
                     }`}
                   >
-                    {k === "alle" ? "Alle" : KATEGORIE_LABEL[k]}
+                    {k === "alle" ? texte.alle : texte.kategorie[k]}
                   </button>
                 ))}
               </div>
@@ -164,7 +180,7 @@ export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[]
 
       {angezeigt.length === 0 ? (
         <p className="mt-8 text-sm text-muted">
-          {mitteilungen.length === 0 ? "Noch keine Mitteilungen." : "Nichts gefunden."}
+          {mitteilungen.length === 0 ? texte.keineVorhanden : texte.nichtsGefunden}
         </p>
       ) : (
         <ul className="mt-6 flex flex-col gap-3">
@@ -176,6 +192,8 @@ export function MitteilungenListe({ mitteilungen }: { mitteilungen: Mitteilung[]
                 onToggle={() => setOffenId((cur) => (cur === m.id ? null : m.id))}
                 aufgabeAktion={aufgabeAktion}
                 stimmeAktion={stimmeAktion}
+                texte={texte}
+                locale={locale}
               />
             </li>
           ))}
@@ -191,12 +209,16 @@ function MitteilungsKarte({
   onToggle,
   aufgabeAktion,
   stimmeAktion,
+  texte,
+  locale,
 }: {
   mitteilung: Mitteilung;
   offen: boolean;
   onToggle: () => void;
   aufgabeAktion: (formData: FormData) => void;
   stimmeAktion: (formData: FormData) => void;
+  texte: MitteilungenTexte;
+  locale: Locale;
 }) {
   const meineStimmen = m.optionen.filter((option) => option.meineStimme).map((option) => option.id);
   const stimmenGesamt = m.optionen.reduce((summe, option) => summe + option.anzahl, 0);
@@ -211,20 +233,22 @@ function MitteilungsKarte({
       >
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wide text-signal">
-            {KATEGORIE_LABEL[m.typ]}
+            {texte.kategorie[m.typ]}
           </span>
-          <PrioritaetsBadge prioritaet={m.prioritaet} />
+          <PrioritaetsBadge prioritaet={m.prioritaet} texte={texte} />
           {!m.gelesen ? (
             <span className="size-2 rounded-full bg-signal" aria-hidden="true" />
           ) : null}
-          {m.angeheftet ? <Pin className="size-3.5 text-muted" aria-label="Angeheftet" /> : null}
+          {m.angeheftet ? (
+            <Pin className="size-3.5 text-muted" aria-label={texte.angeheftet} />
+          ) : null}
         </div>
 
         {m.titel ? <p className="font-display text-base text-text">{m.titel}</p> : null}
 
         <p className="text-xs text-muted">
           {m.autorName ? `${m.autorName} · ` : ""}
-          {formatiereZeit(m.erstelltAm)}
+          {formatiereZeit(m.erstelltAm, locale)}
         </p>
       </button>
 
@@ -252,7 +276,7 @@ function MitteilungsKarte({
                         </span>
                         {erledigt && aufgabe.erledigtAm ? (
                           <span className="text-xs text-muted">
-                            Erledigt · {formatiereZeit(aufgabe.erledigtAm)}
+                            {texte.erledigt} · {formatiereZeit(aufgabe.erledigtAm, locale)}
                           </span>
                         ) : null}
                       </span>
@@ -305,7 +329,8 @@ function MitteilungsKarte({
             : null}
           {m.typ === "umfrage" ? (
             <p className="text-xs text-muted">
-              {stimmenGesamt} Stimmen{m.anonym ? " · Anonym" : ""}
+              {texte.stimmen.replace("{n}", String(stimmenGesamt))}
+              {m.anonym ? texte.anonymSuffix : ""}
             </p>
           ) : null}
 

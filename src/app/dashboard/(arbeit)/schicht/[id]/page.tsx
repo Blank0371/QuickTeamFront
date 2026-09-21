@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 
 import { Container } from "@/components/container";
 import { Uebernehmen } from "@/components/dashboard/uebernehmen";
+import { getDictionary } from "@/i18n";
+import { leseSprache } from "@/i18n/sprache";
 import { leseAusschreibung } from "@/lib/dashboard/ausschreibung";
 import {
   WOCHENTAGE_LANG,
@@ -40,6 +42,7 @@ export default async function SchichtSeite({
 }) {
   const { supabase, position } = await betreteDashboard();
   const { id } = await params;
+  const tm = getDictionary(await leseSprache()).mitteilungen;
 
   const ergebnis = await holeSchicht(supabase, id, position.mitarbeiterId);
 
@@ -156,6 +159,11 @@ export default async function SchichtSeite({
               benachrichtigungId={ausschreibung.benachrichtigungId}
               instanzId={id}
               rollen={ausschreibung.rollen}
+              texte={{
+                wirdUebernommen: tm.wirdUebernommen,
+                uebernehmen: tm.uebernehmen,
+                frei: tm.frei,
+              }}
             />
           </section>
         ) : null}

@@ -219,19 +219,34 @@
   --sidebar-ring: var(--qt-signal);
 }
 
-/* ── Ebene 2: semantisch, dunkel ───────────────────────────────────
+/* ── Ebene 2b: dunkle Werte, einmal gemessen ───────────────────────
    Die Zielgruppe liest das um 23 Uhr nach Schichtende auf dem Handy.
    Dark Mode ist hier kein Extra, sondern der wahrscheinlichere Fall —
-   und die Palette ist ohnehin dunkel gedacht. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --qt-bg: var(--qt-c-carbon);
-    --qt-surface: var(--qt-c-graphite);
-    --qt-surface-sunk: color-mix(in oklab, var(--qt-c-graphite) 62%, var(--qt-c-carbon));
-    --qt-band: var(--qt-c-green-deep);
-    --qt-band-text: var(--qt-c-bone);
+   und die Palette ist ohnehin dunkel gedacht.
 
-    --qt-text: var(--qt-c-bone);
+   ─────────────────────────────────────────────────────────────────
+    Warum die Werte als `--qt-dark-*` und nicht direkt im @media-Block
+   ─────────────────────────────────────────────────────────────────
+
+   Seit dem Theme-Umschalter (Cookie `qt_theme` → `data-theme` am
+   <html>) gibt es den Dunkelmodus an **zwei** Auslösern: dem
+   Systemwunsch (`prefers-color-scheme: dark`) und der ausdrücklichen
+   Wahl (`data-theme="dunkel"`). Beide brauchen dieselben Zahlen. Stünden
+   die gemessenen `color-mix`-Werte in beiden Regeln, wären es zwei
+   Fassungen, die auseinanderlaufen können — genau das, wovor die
+   Kommentare unten warnen („Die Messung gehört dann neu gemacht, nicht
+   die Zahl geschätzt"). Deshalb stehen die Werte **hier einmal** als
+   `--qt-dark-*`, und die zwei Regeln darunter reichen sie nur weiter
+   (reine `var()`-Zuordnung, keine eigenen Zahlen). Eine ausdrückliche
+   Wahl geht dem System vor (`:not([data-theme="hell"])` am @media). */
+:root {
+    --qt-dark-bg: var(--qt-c-carbon);
+    --qt-dark-surface: var(--qt-c-graphite);
+    --qt-dark-surface-sunk: color-mix(in oklab, var(--qt-c-graphite) 62%, var(--qt-c-carbon));
+    --qt-dark-band: var(--qt-c-green-deep);
+    --qt-dark-band-text: var(--qt-c-bone);
+
+    --qt-dark-text: var(--qt-c-bone);
     /*
      * ─────────────────────────────────────────────────────────────
      *  Ein Ton für alle drei dunklen Flächen. Vereinheitlicht am
@@ -277,15 +292,15 @@
      * bricht die Karten. Die Messung gehört dann neu gemacht, nicht die
      * Zahl geschätzt.
      */
-    --qt-muted: color-mix(in oklab, var(--qt-c-muted) 80%, var(--qt-c-bone));
-    --qt-border: color-mix(in oklab, var(--qt-c-bronze) 26%, transparent);
+    --qt-dark-muted: color-mix(in oklab, var(--qt-c-muted) 80%, var(--qt-c-bone));
+    --qt-dark-border: color-mix(in oklab, var(--qt-c-bronze) 26%, transparent);
     /* Gegenstück zur Wochenendfläche oben, gegen den dunklen Grund gemischt. */
-    --qt-surface-weekend: color-mix(in oklab, var(--qt-c-carbon) 45%, var(--qt-surface));
+    --qt-dark-surface-weekend: color-mix(in oklab, var(--qt-c-carbon) 45%, var(--qt-dark-surface));
     /* Rollenkennfarben, gegen den dunklen Grund gewählt — Begründung oben. */
-    --qt-rolle-1: var(--qt-c-bronze);
-    --qt-rolle-2: var(--qt-c-green-light);
-    --qt-rolle-3: var(--qt-c-bronze-hi);
-    --qt-rolle-4: var(--qt-c-muted);
+    --qt-dark-rolle-1: var(--qt-c-bronze);
+    --qt-dark-rolle-2: var(--qt-c-green-light);
+    --qt-dark-rolle-3: var(--qt-c-bronze-hi);
+    --qt-dark-rolle-4: var(--qt-c-muted);
     /*
      * ─────────────────────────────────────────────────────────────
      *  Grenze eines Bedienelements — eng gefasste Ausnahme,
@@ -315,24 +330,92 @@
      * Getrennt gehalten bleibt beides heil: Dekoration ruhig,
      * Bedienelement kontrastreich, Rangfolge intakt.
      */
-    --qt-border-strong: color-mix(in oklab, var(--qt-c-bronze) 48%, transparent);
-    --qt-border-control: color-mix(in oklab, var(--qt-c-bronze) 70%, transparent);
+    --qt-dark-border-strong: color-mix(in oklab, var(--qt-c-bronze) 48%, transparent);
+    --qt-dark-border-control: color-mix(in oklab, var(--qt-c-bronze) 70%, transparent);
 
-    --qt-signal: var(--qt-c-bronze);
-    --qt-signal-hover: var(--qt-c-bronze-hi);
-    --qt-signal-ink: var(--qt-c-carbon);
-    --qt-signal-weak: color-mix(in oklab, var(--qt-c-bronze) 18%, var(--qt-surface));
+    --qt-dark-signal: var(--qt-c-bronze);
+    --qt-dark-signal-hover: var(--qt-c-bronze-hi);
+    --qt-dark-signal-ink: var(--qt-c-carbon);
+    --qt-dark-signal-weak: color-mix(in oklab, var(--qt-c-bronze) 18%, var(--qt-dark-surface));
 
-    --qt-schicht: var(--qt-c-bronze-hi);
+    --qt-dark-schicht: var(--qt-c-bronze-hi);
     /* Green Light pur schafft auf Carbon nur 3.22:1. */
-    --qt-ok: color-mix(in oklab, var(--qt-c-green-light) 80%, var(--qt-c-bone));
+    --qt-dark-ok: color-mix(in oklab, var(--qt-c-green-light) 80%, var(--qt-c-bone));
     /* Signal Red pur schafft auf Carbon nur 3.76:1 — Red Hi trägt den Text. */
-    --qt-stop: var(--qt-c-red-hi);
-    --qt-stop-hover: var(--qt-c-red);
+    --qt-dark-stop: var(--qt-c-red-hi);
+    --qt-dark-stop-hover: var(--qt-c-red);
 
-    --qt-shadow-card: 0 1px 2px color-mix(in oklab, #000 45%, transparent),
+    --qt-dark-shadow-card: 0 1px 2px color-mix(in oklab, #000 45%, transparent),
       0 8px 24px -12px color-mix(in oklab, #000 65%, transparent);
+}
+
+/* ── Ebene 2b → Ebene 2: dunkle Werte anwenden ─────────────────────
+   Zwei Auslöser, dieselben `--qt-dark-*` (oben). Reine Weiterreichung,
+   keine gemessenen Zahlen hier — wer die Werte ändert, ändert sie oben.
+   `:not([data-theme="hell"])`: eine ausdrückliche Hellwahl schlägt den
+   Systemwunsch. `data-theme="dunkel"`: ausdrücklich dunkel, auch auf
+   einem hell eingestellten System. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="hell"]) {
+    --qt-bg: var(--qt-dark-bg);
+    --qt-surface: var(--qt-dark-surface);
+    --qt-surface-sunk: var(--qt-dark-surface-sunk);
+    --qt-surface-weekend: var(--qt-dark-surface-weekend);
+    --qt-band: var(--qt-dark-band);
+    --qt-band-text: var(--qt-dark-band-text);
+    --qt-text: var(--qt-dark-text);
+    --qt-muted: var(--qt-dark-muted);
+    --qt-border: var(--qt-dark-border);
+    --qt-border-strong: var(--qt-dark-border-strong);
+    --qt-border-control: var(--qt-dark-border-control);
+    --qt-rolle-1: var(--qt-dark-rolle-1);
+    --qt-rolle-2: var(--qt-dark-rolle-2);
+    --qt-rolle-3: var(--qt-dark-rolle-3);
+    --qt-rolle-4: var(--qt-dark-rolle-4);
+    --qt-signal: var(--qt-dark-signal);
+    --qt-signal-hover: var(--qt-dark-signal-hover);
+    --qt-signal-ink: var(--qt-dark-signal-ink);
+    --qt-signal-weak: var(--qt-dark-signal-weak);
+    --qt-schicht: var(--qt-dark-schicht);
+    --qt-ok: var(--qt-dark-ok);
+    --qt-stop: var(--qt-dark-stop);
+    --qt-stop-hover: var(--qt-dark-stop-hover);
+    --qt-shadow-card: var(--qt-dark-shadow-card);
   }
+}
+
+/* Ausdrücklich hell: die Basiswerte in `:root` gelten schon; hier bleibt
+   nur, die Browser-Chrome (Scrollbalken, Formularelemente) mitzuziehen. */
+:root[data-theme="hell"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dunkel"] {
+  color-scheme: dark;
+  --qt-bg: var(--qt-dark-bg);
+  --qt-surface: var(--qt-dark-surface);
+  --qt-surface-sunk: var(--qt-dark-surface-sunk);
+  --qt-surface-weekend: var(--qt-dark-surface-weekend);
+  --qt-band: var(--qt-dark-band);
+  --qt-band-text: var(--qt-dark-band-text);
+  --qt-text: var(--qt-dark-text);
+  --qt-muted: var(--qt-dark-muted);
+  --qt-border: var(--qt-dark-border);
+  --qt-border-strong: var(--qt-dark-border-strong);
+  --qt-border-control: var(--qt-dark-border-control);
+  --qt-rolle-1: var(--qt-dark-rolle-1);
+  --qt-rolle-2: var(--qt-dark-rolle-2);
+  --qt-rolle-3: var(--qt-dark-rolle-3);
+  --qt-rolle-4: var(--qt-dark-rolle-4);
+  --qt-signal: var(--qt-dark-signal);
+  --qt-signal-hover: var(--qt-dark-signal-hover);
+  --qt-signal-ink: var(--qt-dark-signal-ink);
+  --qt-signal-weak: var(--qt-dark-signal-weak);
+  --qt-schicht: var(--qt-dark-schicht);
+  --qt-ok: var(--qt-dark-ok);
+  --qt-stop: var(--qt-dark-stop);
+  --qt-stop-hover: var(--qt-dark-stop-hover);
+  --qt-shadow-card: var(--qt-dark-shadow-card);
 }
 
 /* ── Ebene 3: Tailwind-Anbindung ───────────────────────────────────
@@ -533,6 +616,18 @@
       animation-delay: 0ms !important;
       transition-delay: 0ms !important;
     }
+  }
+}
+
+/* Das „Mehr"-Blatt der mobilen Tab-Leiste fährt von unten ein.
+   `prefers-reduced-motion` schaltet die Bewegung über die globale Regel
+   oben ab; zusätzlich hängt die Utility an `motion-safe:`. */
+@keyframes blatt-hoch {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }
 

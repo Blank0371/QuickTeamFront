@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/container";
+import { getDictionary } from "@/i18n";
+import { leseSprache } from "@/i18n/sprache";
 import {
   holeChefUrlaubsantraege,
   holeMeineUrlaube,
@@ -12,11 +14,14 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { ChefUrlaubsantraegeListe, MeineUrlaubeListe } from "./urlaub-liste";
 import { UrlaubFormular } from "./urlaub-formular";
 
-export const metadata: Metadata = {
-  title: "Urlaub",
-  description: "Urlaub beantragen und Anträge einsehen.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getDictionary(await leseSprache());
+  return {
+    title: t.urlaub.metaTitel,
+    description: t.urlaub.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 const MONATE_VORAUS = 12;
 
@@ -36,6 +41,8 @@ function isoTag(d: Date): string {
 export default async function UrlaubSeite() {
   const { supabase, position } = await betreteDashboard();
   const chef = istChef(position);
+  const sprache = await leseSprache();
+  const t = getDictionary(sprache).urlaub;
 
   const [meineUrlaube, anspruch, chefAntraege] = await Promise.all([
     holeMeineUrlaube(supabase, position.mitarbeiterId),
@@ -50,10 +57,8 @@ export default async function UrlaubSeite() {
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Urlaub</h1>
-        <p className="mt-2 text-base leading-relaxed text-muted">
-          Urlaub beantragen und den Stand deiner Anträge einsehen.
-        </p>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t.intro}</p>
 
         <div className="mt-8">
           <UrlaubFormular
@@ -61,11 +66,14 @@ export default async function UrlaubSeite() {
             verbraucht={verbraucht}
             heute={isoTag(heute)}
             maxDatum={isoTag(maxDatum)}
+            texte={t}
           />
         </div>
 
-        <MeineUrlaubeListe urlaube={meineUrlaube} />
-        {chef ? <ChefUrlaubsantraegeListe antraege={chefAntraege} /> : null}
+        <MeineUrlaubeListe urlaube={meineUrlaube} texte={t} locale={sprache} />
+        {chef ? (
+          <ChefUrlaubsantraegeListe antraege={chefAntraege} texte={t} locale={sprache} />
+        ) : null}
       </div>
     </Container>
   );

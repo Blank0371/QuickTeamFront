@@ -6,11 +6,14 @@ import { useFormStatus } from "react-dom";
 
 import { DatumWahl } from "@/components/formular/datum-wahl";
 import { FormMeldung } from "@/components/formular/felder";
+import type { Dictionary } from "@/i18n";
 import { leererZustand } from "@/lib/formular";
 
 import { beantragen } from "./aktionen";
 
-function Absenden() {
+type UrlaubTexte = Dictionary["urlaub"];
+
+function Absenden({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -19,7 +22,7 @@ function Absenden() {
       aria-disabled={pending}
       className="rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "…" : "Urlaub beantragen"}
+      {pending ? "…" : label}
     </button>
   );
 }
@@ -37,11 +40,13 @@ export function UrlaubFormular({
   verbraucht,
   heute,
   maxDatum,
+  texte,
 }: {
   anspruch: number;
   verbraucht: number;
   heute: string;
   maxDatum: string;
+  texte: UrlaubTexte;
 }) {
   const [zustand, aktion] = useActionState(beantragen, leererZustand);
   const werte = zustand.werte ?? {};
@@ -58,12 +63,12 @@ export function UrlaubFormular({
           <p className="font-display text-xl text-text">
             {rest} / {anspruch}
           </p>
-          <p className="text-sm text-muted">Resttage in diesem Jahr</p>
+          <p className="text-sm text-muted">{texte.resttage}</p>
         </div>
       </div>
 
       <h2 id="urlaub-beantragen" className="mt-6 font-display text-base text-text">
-        Urlaub beantragen
+        {texte.beantragen}
       </h2>
 
       {zustand.status === "fehler" && zustand.nachricht ? (
@@ -73,7 +78,7 @@ export function UrlaubFormular({
       ) : null}
       {zustand.status === "erfolg" ? (
         <div className="mt-4">
-          <FormMeldung art="erfolg">Antrag gesendet — wartet auf Entscheidung.</FormMeldung>
+          <FormMeldung art="erfolg">{texte.gesendet}</FormMeldung>
         </div>
       ) : null}
 
@@ -88,7 +93,7 @@ export function UrlaubFormular({
         <div className="grid gap-4 sm:grid-cols-2">
           <DatumWahl
             name="von"
-            label="Von"
+            label={texte.von}
             min={heute}
             max={maxDatum}
             defaultValue={werte["von"]}
@@ -97,7 +102,7 @@ export function UrlaubFormular({
 
           <DatumWahl
             name="bis"
-            label="Bis"
+            label={texte.bis}
             min={heute}
             max={maxDatum}
             defaultValue={werte["bis"]}
@@ -107,7 +112,8 @@ export function UrlaubFormular({
 
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-medium text-text">
-            Kommentar <span className="font-normal text-muted">(optional)</span>
+            {texte.kommentar}{" "}
+            <span className="font-normal text-muted">{texte.optional}</span>
           </span>
           <input
             type="text"
@@ -119,7 +125,7 @@ export function UrlaubFormular({
         </label>
 
         <div>
-          <Absenden />
+          <Absenden label={texte.beantragen} />
         </div>
       </form>
     </section>

@@ -31,6 +31,8 @@ export function RollenFilter({
   aktiv,
   gesamt,
   basis,
+  alleLabel,
+  ariaLabel,
 }: {
   eimer: readonly RollenEimer[];
   /** Der gewählte Rollenwert, oder `null` für „Alle". */
@@ -39,10 +41,14 @@ export function RollenFilter({
   gesamt: number;
   /** Route, auf der das Ergebnis landet — `/dashboard`. */
   basis: string;
+  /** Beschriftung des „Alle"-Knopfs, sprachabhängig. */
+  alleLabel: string;
+  /** aria-label der Filterleiste, sprachabhängig. */
+  ariaLabel: string;
 }) {
   return (
-    <nav aria-label="Nach Rolle filtern" className="flex flex-wrap items-center gap-2">
-      <Knopf href={basis} aktiv={aktiv === null} name="Alle" anzahl={gesamt} />
+    <nav aria-label={ariaLabel} className="flex flex-wrap items-center gap-2">
+      <Knopf href={basis} aktiv={aktiv === null} name={alleLabel} anzahl={gesamt} />
 
       {eimer.map((e) => (
         <Knopf

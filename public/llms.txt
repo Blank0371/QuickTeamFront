@@ -6,10 +6,7 @@
 
 ## Stand
 
-QuickTeam befindet sich in einem eingeschränkten Start. Die Website ist
-öffentlich, aber es können zurzeit keine Konten angelegt, keine Anmeldungen
-durchgeführt und keine Verträge geschlossen werden. Registrierung, Anmeldung,
-Einrichtung, Dashboard und Zahlung sind vorübergehend abgeschaltet.
+QuickTeam ist komplett veröffentlicht. 
 
 ## Was QuickTeam ist
 
@@ -28,7 +25,7 @@ auf ihren Plan zu. Die Anwendung ist auf Deutsch und auf die Gegebenheiten in
 
 ## Pläne
 
-Drei Pläne — Low (29 €), Medium (49 €) und Business (69 €), jeweils pro Monat
+Drei Pläne — Low (39 €), Medium (69 €) und Business (99 €), jeweils pro Monat
 und pro Betrieb. Buchen ist während des eingeschränkten Starts nicht möglich.
 
 ## Seiten
@@ -40,4 +37,4 @@ und pro Betrieb. Buchen ist während des eingeschränkten Starts nicht möglich.
 ## Hinweis
 
 Diese Website ist der öffentliche Teil von QuickTeam. Die Planungsanwendung
-selbst liegt hinter einer Anmeldung, die zurzeit nicht geöffnet ist.
+selbst liegt hinter einer Anmeldung

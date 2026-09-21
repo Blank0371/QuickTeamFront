@@ -26,14 +26,24 @@ import { leererZustand } from "@/lib/formular";
  * einem einzigen wäre „noch 1 frei" nur Lärm — dass es frei ist, sagt
  * schon der Knopf.
  */
+type UebernehmenTexte = {
+  wirdUebernommen: string;
+  /** „Als {rolle} übernehmen". */
+  uebernehmen: string;
+  /** „{n} frei". */
+  frei: string;
+};
+
 export function Uebernehmen({
   benachrichtigungId,
   instanzId,
   rollen,
+  texte,
 }: {
   benachrichtigungId: string;
   instanzId: string;
   rollen: readonly UebernehmbareRolle[];
+  texte: UebernehmenTexte;
 }) {
   const [zustand, aktion] = useActionState(schichtUebernehmen, leererZustand);
 
@@ -59,7 +69,7 @@ export function Uebernehmen({
               <input type="hidden" name="benachrichtigung_id" value={benachrichtigungId} />
               <input type="hidden" name="rolle_id" value={rolle.rolleId} />
               <input type="hidden" name="instanz_id" value={instanzId} />
-              <Knopf rolle={rolle} />
+              <Knopf rolle={rolle} texte={texte} />
             </form>
           ))}
         </div>
@@ -68,7 +78,13 @@ export function Uebernehmen({
   );
 }
 
-function Knopf({ rolle }: { rolle: UebernehmbareRolle }) {
+function Knopf({
+  rolle,
+  texte,
+}: {
+  rolle: UebernehmbareRolle;
+  texte: UebernehmenTexte;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -78,9 +94,13 @@ function Knopf({ rolle }: { rolle: UebernehmbareRolle }) {
       aria-disabled={pending}
       className="flex items-center gap-2 rounded-blk bg-signal px-4 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Wird übernommen …" : `Als ${rolle.name} übernehmen`}
+      {pending
+        ? texte.wirdUebernommen
+        : texte.uebernehmen.replace("{rolle}", rolle.name)}
       {rolle.frei !== undefined && rolle.frei > 1 && !pending ? (
-        <span className="font-mono text-xs opacity-80">{rolle.frei} frei</span>
+        <span className="font-mono text-xs opacity-80">
+          {texte.frei.replace("{n}", String(rolle.frei))}
+        </span>
       ) : null}
     </button>
   );

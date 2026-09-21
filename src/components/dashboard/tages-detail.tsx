@@ -37,7 +37,7 @@ export function TagesDetail({
   tag,
   datum,
   titel,
-  anzahl,
+  anzeigenLabel,
   istHeute,
   imMonat,
   versteckt = 0,
@@ -48,7 +48,8 @@ export function TagesDetail({
   datum: string;
   /** „Samstag, 29. August" — die Überschrift im aufgeklappten Feld. */
   titel: string;
-  anzahl: number;
+  /** Fertig gebautes aria-label, sprachabhängig im Server-Elternteil. */
+  anzeigenLabel: string;
   istHeute: boolean;
   imMonat: boolean;
   /**
@@ -81,7 +82,7 @@ export function TagesDetail({
                    den Kontrast, ohne fuer die Daempfung noetig zu sein. */
                 "text-muted"
         }`}
-        aria-label={`${titel}, ${anzahl} ${anzahl === 1 ? "Schicht" : "Schichten"} anzeigen`}
+        aria-label={anzeigenLabel}
       >
         <time dateTime={datum}>{tag}</time>
         {versteckt > 0 ? (

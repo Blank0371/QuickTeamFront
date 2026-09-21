@@ -1,8 +1,12 @@
 import Link from "next/link";
 
 import { Uebernehmen } from "@/components/dashboard/uebernehmen";
+import type { Dictionary } from "@/i18n";
+import type { Locale } from "@/i18n/config";
 import type { OffeneAusschreibung } from "@/lib/dashboard/ausschreibung";
-import { MONATSNAMEN, WOCHENTAGE_LANG, hhmm } from "@/lib/dashboard/kalender";
+import { hhmm } from "@/lib/dashboard/kalender";
+
+type MitteilungenTexte = Dictionary["mitteilungen"];
 
 /**
  * Offene Ausschreibungen über dem Mitteilungs-Feed.
@@ -33,8 +37,12 @@ import { MONATSNAMEN, WOCHENTAGE_LANG, hhmm } from "@/lib/dashboard/kalender";
  */
 export function AusschreibungenAbschnitt({
   ausschreibungen,
+  texte,
+  locale,
 }: {
   ausschreibungen: readonly OffeneAusschreibung[];
+  texte: MitteilungenTexte;
+  locale: Locale;
 }) {
   if (ausschreibungen.length === 0) return null;
 
@@ -51,12 +59,9 @@ export function AusschreibungenAbschnitt({
         id="ausschreibungen-titel"
         className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
       >
-        Offene Schichten
+        {texte.offeneSchichten}
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        Ausgeschrieben für eine Rolle, die du hast. Wer zuerst übernimmt, ist
-        eingeteilt — eine Bestätigung durch die Betriebsleitung gibt es nicht.
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{texte.ausschreibungIntro}</p>
 
       <ul className="mt-4 flex flex-col gap-4">
         {sortiert.map((a) => (
@@ -67,10 +72,14 @@ export function AusschreibungenAbschnitt({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-display text-base font-bold text-text">
-                  {a.titel?.trim() ? a.titel.trim() : "Offene Schicht"}
+                  {a.titel?.trim() ? a.titel.trim() : texte.offeneSchicht}
                 </p>
                 <p className="mt-1 text-sm text-muted">
-                  {a.datum ? <Zeitangabe ausschreibung={a} /> : "Zeitpunkt unbekannt"}
+                  {a.datum ? (
+                    <Zeitangabe ausschreibung={a} locale={locale} />
+                  ) : (
+                    texte.zeitpunktUnbekannt
+                  )}
                 </p>
               </div>
 
@@ -78,7 +87,7 @@ export function AusschreibungenAbschnitt({
                 href={`/dashboard/schicht/${a.schichtInstanzId}`}
                 className="shrink-0 rounded-blk border border-line px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-line-control hover:text-text"
               >
-                Schicht ansehen
+                {texte.schichtAnsehen}
               </Link>
             </div>
 
@@ -97,14 +106,17 @@ export function AusschreibungenAbschnitt({
               unangenehmere Überraschung.
             */}
             {a.schonDrauf ? (
-              <p className="mt-3 text-sm text-muted">
-                Du bist auf dieser Schicht bereits eingeteilt.
-              </p>
+              <p className="mt-3 text-sm text-muted">{texte.schonEingeteilt}</p>
             ) : (
               <Uebernehmen
                 benachrichtigungId={a.benachrichtigungId}
                 instanzId={a.schichtInstanzId}
                 rollen={a.rollen}
+                texte={{
+                  wirdUebernommen: texte.wirdUebernommen,
+                  uebernehmen: texte.uebernehmen,
+                  frei: texte.frei,
+                }}
               />
             )}
           </li>
@@ -114,19 +126,27 @@ export function AusschreibungenAbschnitt({
   );
 }
 
-/** „Samstag, 12. September · 18:00–23:00". */
-function Zeitangabe({ ausschreibung }: { ausschreibung: OffeneAusschreibung }) {
+/** „Samstag, 12. September · 18:00–23:00" / „Saturday, September 12 · …". */
+function Zeitangabe({
+  ausschreibung,
+  locale,
+}: {
+  ausschreibung: OffeneAusschreibung;
+  locale: Locale;
+}) {
   const { datum, startZeit, endZeit } = ausschreibung;
   if (!datum) return null;
 
   const d = new Date(`${datum}T12:00:00`);
-  const wochentag = WOCHENTAGE_LANG[(d.getDay() + 6) % 7];
+  const langesDatum = new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(d);
 
   return (
     <>
-      <time dateTime={datum}>
-        {wochentag}, {d.getDate()}. {MONATSNAMEN[d.getMonth()]}
-      </time>
+      <time dateTime={datum}>{langesDatum}</time>
       {startZeit && endZeit ? (
         <>
           {" · "}

@@ -15,6 +15,81 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-21 — Mobile Dashboard-Navigation: Tab-Leiste neu, Konto-Kachel, Theme-Umschalter, Kontolöschung verlinkt
+
+**Vorher:** Die untere Tab-Leiste (`DashboardTableiste`, seit 2026-09-20) zeigte
+drei Kernkacheln plus „Mehr". Sprache und Abmelden standen oben rechts in der
+Topbar (auf jeder Breite), der Positionswechsel dort nur unterhalb `lg`. Einen
+ausdrücklichen Hell/Dunkel-Umschalter gab es nicht — die Farben folgten allein
+`prefers-color-scheme`. `/kontoloeschung` war bewusst **von nirgends** verlinkt.
+
+**Jetzt** (auf Anweisung des Nutzers, mit Rückfrage geklärt):
+
+- **Fünf Kacheln, feste Reihenfolge:** Mitteilungen · Planung/Manager · Übersicht ·
+  Kalender · Konto. Die mittlere Kachel öffnet die Bereiche ohne eigene Kachel und
+  heisst für Chefs „Manager" (Team, Planung, Betriebseinstellungen …), für
+  Angestellte „Planung" (Urlaub, Verfügbarkeit, Tausch, Notfall).
+- **„Konto"-Kachel** rechts sammelt, was vorher oben rechts stand (Sprache,
+  Abmelden) plus Darstellung, Verbindungen (Positionswechsel, umbenannt zu
+  „Verbindungen verwalten" / „Manage connections") und Kontolöschung. Sie heisst
+  bewusst „Konto", nicht „Einstellungen" — Letzteres trägt schon der Chef-Bereich
+  für Abo/Abrechnung, der jetzt in der Manager-Kachel liegt.
+- **Topbar-Handgriffe nur noch ab `lg`.** Auf schmalen Geräten trägt sie die
+  „Konto"-Kachel; auf breiten (keine Tab-Leiste) weiterhin die Topbar — jetzt
+  auch mit dem neuen Theme-Umschalter.
+- **Hell/Dunkel/System-Umschalter** (`ThemaWahl`, Cookie `qt_theme` →
+  `data-theme` am `<html>`, Server-Action wie `SprachWahl`). `globals.css`
+  refaktoriert: die gemessenen Dunkelwerte stehen einmal als `--qt-dark-*` und
+  werden an zwei Auslösern angewandt (Systemwunsch **und** ausdrückliche Wahl);
+  eine ausdrückliche Wahl geht dem System vor. Keine der gemessenen Zahlen wurde
+  geändert — nur ihre Anwendung.
+- **`/kontoloeschung` aus dem angemeldeten Dashboard verlinkt** (nur dort, als
+  destruktiver Eintrag). Öffentlich/unangemeldet bleibt sie unverlinkt und
+  `index:false`; die URL ändert sich nicht (kein Zustimmungs-Neulauf).
+
+**Begründung:** Der Nutzer wollte eine daumengerechte, rollenbewusste
+Mobilnavigation und die Konto-/Darstellungsfunktionen dort, wo der Daumen sie
+erreicht. Die Verlinkung der Kontolöschung macht die Zusage aus Datenschutz 15.2
+(„jederzeit selbst löschen") auffindbar, statt sie hinter einer abzutippenden
+URL zu verstecken — die Sperre gegen einen *öffentlichen* Weg bleibt.
+
+## 2026-09-19 — Werbepartner-Vertrag festgelegt und aus dem Entwurfsstand genommen
+
+**Vorher:** `docs/rechtliches/legals/Werbepartner-Vertrag-QuickTeam-de-en.md` war ein
+Vorlagenentwurf. Der Kopf trug einen Entwurfsvermerk („pre-lawyer draft"), die
+Vergütungssätze in § 4 waren ausdrücklich als **Beispielwerte** bezeichnet, und in
+eckigen Klammern standen ungefüllte Angaben: Auszahlungstermin, Auszahlungsfrist,
+Mindestauszahlungsbetrag, Kündigungsfrist und Vorlauf für ein Änderungsangebot. Das
+PDF unter `/promocode/antrag` gab sie so an Bewerber weiter — ein Formular, das nach
+seinem eigenen Vorwort noch nicht verwendet werden durfte.
+
+**Jetzt:** alle Klammerwerte sind festgelegt, der Entwurfsvermerk ist weg, Fassung
+`2026-09-19`. 20 % des Nettoumsatzes je geworbenem Betrieb in den ersten zwölf
+Monaten, danach 10 %; Stichtag der erste Tag jedes Kalendermonats, Auszahlung
+innerhalb von 14 Tagen, Mindestbetrag 50,00 €; Kündigungsfrist vier Wochen;
+Änderungsangebot mindestens sechs Wochen vorher. Deutsch und Englisch gemeinsam
+geändert.
+
+**Begründung:** Anweisung des Nutzers, die Werte sind seine Geschäftsentscheidung. Die
+Sätze 20/10 standen schon als Beispiel im Text und wurden verbindlich übernommen; der
+Mindestbetrag von 50,00 € hält die Zahl der SEPA-Überweisungen klein, und die
+Kündigungsfrist von vier Wochen ist kürzer als der Vorlauf von sechs Wochen für ein
+Änderungsangebot — wer eine Änderung nicht mitmachen will, kann vorher kündigen,
+statt von ihr überholt zu werden.
+
+**Ausdrücklich benannt:** dass der Entwurfsvermerk fällt, war ebenfalls die Anweisung
+des Nutzers; anwaltlich geprüft ist der Text damit **nicht**. Das unterscheidet ihn
+von AGB, AVV und Datenschutzerklärung, die den Vermerk behalten — und es ändert nichts
+an `SOFT_LAUNCH`, der an deren Stand hängt und nicht an diesem Vertrag. Der Befund
+steht im README der Rechtstexte, damit ein Prüfer ihn nicht erst suchen muss.
+
+**Nebenbei behoben:** der Kopf verwies für den Vorrang der deutschen Fassung auf einen
+nicht existierenden „§ 13 Abs. 4"; richtig ist § 12 Abs. 5 (auch in Teil C). Und der
+PDF-Setzer kennt jetzt `<!-- seitenumbruch -->`, weil Steuerstatus-Ankreuzfelder und
+Unterschriftsblock vorher über Seitengrenzen zerfielen — bei einem Formular zum
+Ausdrucken und Unterschreiben ist das kein Schönheitsfehler. Aktueller Stand in
+`CLAUDE.md`, Abschnitt „Die Werbepartner-Seite `/promocode`".
+
 ## 2026-09-15 — Promo-Code bei der Registrierung
 
 **Vorher:** Abschnitt A der Registrierung fragte nur Betriebs- und Zugangsdaten ab.

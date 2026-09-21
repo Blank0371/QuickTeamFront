@@ -19,3 +19,14 @@ export const defaultLocale: Locale = "de";
 export function istLocale(wert: string): wert is Locale {
   return (locales as readonly string[]).includes(wert);
 }
+
+/**
+ * Name des Sprach-Cookies.
+ *
+ * Steht hier und nicht in `sprache.ts`, weil diese Datei
+ * client-sicher ist (kein `next/headers`): so darf ihn auch der
+ * client-seitige `SprachWahl` schreiben, ohne den Server-Code ins
+ * Browser-Bündel zu ziehen — dieselbe Trennung wie bei `thema-basis.ts`.
+ * `sprache.ts` liest den Wert von hier.
+ */
+export const SPRACH_COOKIE = "qt_sprache";

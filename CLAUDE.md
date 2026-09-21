@@ -280,6 +280,48 @@ Freiwilliges Feld bei der Registrierung; der benutzte Code je Betrieb steht in
   Codes anlegen, bevor sie verteilt werden; abschalten statt löschen (ON DELETE RESTRICT).
   Pflege im Fuss von `docs/backend/migration-2026-09-15-promo-code-liste.sql`.
 
+### Die Werbepartner-Seite `/promocode`
+
+Die andere Seite des Promo-Codes: nicht der Betrieb, der einen Code einträgt, sondern
+die Person, die ihn verteilt. `/promocode` erklärt den Weg, `/promocode/antrag`
+liefert den Vertrag als PDF.
+
+- **Ein Schalter, `PROMO_CODE=an`** (`src/lib/promo-code-seite.ts`) — er steuert die
+  Route **und** den sichtbaren Weg dorthin (Registerkarte in `site-header.tsx` und
+  `landing-navigation.tsx`). **Standardmässig aus:** nur der exakte Wert „an" öffnet
+  — umgekehrt zu `SOFT_LAUNCH`, wo ein vertippter Wert die Sperre stehen lässt.
+  Doppelt gesichert wie dort: Umleitung in der Middleware, dazu `notFound()` in der
+  Seite und 404 im Route Handler.
+- **Der Vertrag *ist* das Formular.** Eine Quelle,
+  `docs/rechtliches/legals/Werbepartner-Vertrag-QuickTeam-de-en.md`: Teil A (Angaben,
+  Bankverbindung, Steuerstatus) und Teil D (Erklärungen, Unterschriften) sind das
+  Formular, Teil B (deutsch, verbindlich) und Teil C (englisch, unverbindlich) der
+  Vertragstext. Keine Sprachverzweigung — beide Fassungen stehen im selben PDF, so
+  wie im Dokument.
+- **Fassung `2026-09-19`, ohne Entwurfsvermerk** (Anweisung des Nutzers, Begründung in
+  der Historie): 20 % des Nettoumsatzes je geworbenem Betrieb in den ersten zwölf
+  Monaten, danach 10 % (§ 4 Abs. 1); Stichtag der erste Tag jedes Kalendermonats,
+  Auszahlung innerhalb von 14 Tagen, Mindestbetrag 50,00 € (§ 6 Abs. 2/3);
+  Kündigungsfrist vier Wochen (§ 9 Abs. 2); Änderungsangebot mindestens sechs Wochen
+  vorher und nur mit Zustimmung wirksam (§ 11). Eckige Klammern gibt es keine mehr.
+- **Das PDF entsteht ohne Bibliothek** (`route.ts`): ein kleiner Markdown-Setzer
+  berechnet die xref-Offsets zur Laufzeit. `<!-- seitenumbruch -->` im Markdown
+  erzwingt eine Seite — gesetzt vor dem Steuerstatus-Block und vor Teil D, damit
+  Ankreuzfelder und Unterschriftszeilen nicht über einen Seitenumbruch zerfallen. Ein
+  Formular, dessen Unterschriftszeile auf der Folgeseite steht, ist als Formular
+  unbrauchbar; **wer den Vertragstext ändert, sieht die Seitenlage nach** (13 A4-Seiten
+  am 2026-09-19).
+- **`next.config.ts` (`outputFileTracingIncludes`)** packt die Markdown-Datei in die
+  Funktion. Ohne den Eintrag liegt sie lokal vor und fehlt im Deployment.
+- **Kein Rabatt, und keine Abrechnung hier.** Der Code hält fest, über wen ein Betrieb
+  gekommen ist; der Betrieb zahlt denselben Preis. Das Vergütungskonto aus § 6 Abs. 1
+  führt der Betreiber von Hand — im Repo gibt es dazu nichts: keine Tabelle, keine
+  Auswertung, keine Auszahlung über Stripe. Wer das automatisieren will, trifft eine
+  neue Produktentscheidung.
+- **Die Bewerbung läuft per E-Mail** an `blanktrading@web.de`, Betreff „Request Promo
+  Partnership" (`src/i18n/de.ts`, Abschnitt `promo`). Kein Upload, kein Konto — die
+  Seite steht vor jeder Registrierung.
+
 ## Zustimmung zu AGB, AVV und Datenschutzerklärung
 
 Nachweis der Zustimmung serverseitig — die Expo-App legt das nur gerätelokal ab
@@ -853,9 +895,21 @@ Rechtstext geändert, damit sein `Stand:`-Datum und den Wert in
 Bestandsbetrieb** neu gefragt. Ein Zustimmungs-Durchlauf für alle,
 ausgelöst durch eine Umbenennung, ist der teuerste Weg zu einer URL.
 
-**Kein Weg dorthin, und das ist Absicht.** Weder Landing noch Kopf- oder
-Fussbereich verlinken die Seite; sie steht auf `robots: index:false` und
-ist in keiner Sitemap. Man tippt die Adresse ein.
+**Kein *öffentlicher* Weg dorthin, und das ist Absicht.** Weder Landing noch
+Kopf- oder Fussbereich verlinken die Seite; sie steht auf `robots:
+index:false` und ist in keiner Sitemap. Von aussen tippt man die Adresse ein.
+
+**Ausnahme seit 2026-09-21 (auf Anweisung des Nutzers):** *aus dem
+angemeldeten Dashboard* ist die Seite verlinkt — in der „Konto"-Kachel der
+unteren Tab-Leiste auf dem Handy (`DashboardKontoInhalt`), als destruktiver
+Eintrag „Konto löschen". *Vorher* war die Seite bewusst von nirgends
+verlinkt; *jetzt* nur von dieser einen, angemeldeten Stelle aus. *Begründung:*
+Datenschutz 15.2 sagt zu, man könne sein Konto „jederzeit selbst" löschen —
+ein Weg dorthin aus dem eigenen Konto macht diese Zusage auffindbar, statt sie
+hinter einer abzutippenden URL zu verstecken. Öffentlich (unangemeldet) bleibt
+sie unverlinkt und `index:false`; die URL selbst und damit der Rechtstext
+ändern sich **nicht** (kein Zustimmungs-Neulauf). Historie:
+`docs/claude-md-historie.md`.
 
 **Die Stufe steht im Query-String** (`?schritt=folgen|endgueltig`), nicht
 im Client-Zustand — sonst lieferte `curl` den sichtbaren Text nicht, und

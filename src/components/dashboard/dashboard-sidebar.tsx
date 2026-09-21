@@ -28,7 +28,7 @@ import { Logo } from "@/components/logo";
  * nachgeschlagen. Die Tabelle ist bewusst geschlossen: ein unbekannter
  * Schlüssel fällt beim Übersetzen auf, nicht erst im Browser.
  */
-const ICONS = {
+export const ICONS = {
   uebersicht: LayoutDashboard,
   kalender: CalendarDays,
   planung: SlidersHorizontal,
@@ -65,15 +65,18 @@ export type Gruppe = {
  * ─────────────────────────────────────────────────────────────────────
  *
  * Ab `lg` steht die Navigation als Spalte links und bleibt beim Scrollen
- * stehen; darunter liegt sie als waagrecht scrollende Leiste. Umgeschaltet
- * wird ausschliesslich per CSS — `flex-col` gegen `flex-row`, Gruppentitel
- * und die beiden Karten `hidden lg:block`.
+ * stehen. **Unterhalb von `lg` ist die Sidebar ganz ausgeblendet** — dort
+ * trägt die untere Tab-Leiste (`DashboardTableiste`) die Navigation, weil
+ * eine Seitenspalte auf einem Handy entweder zu breit ist oder zu einer
+ * waagrecht scrollenden Leiste gequetscht wird, in der Ziele hinter dem
+ * Rand verschwinden. Umgeschaltet wird ausschliesslich per CSS
+ * (`hidden lg:flex`).
  *
- * Der naheliegende Weg wäre gewesen, beide Fassungen zu rendern und die
- * jeweils falsche auszublenden. Hier ist es dieselbe Liste in einer
- * anderen Richtung, und zwei Fassungen hiessen: jeder Link zweimal im
- * HTML, jeder `aria-current` zweimal, und eine Tastaturbedienung, die
- * unsichtbare Ziele durchläuft.
+ * Bis zum 2026-09-20 lag hier auf schmalen Geräten dieselbe Liste als
+ * waagrechte Leiste — ein DOM, zwei Richtungen. Das hielt zwar die Links
+ * einfach, war aber keine echte Mobil-Bedienung: dieselbe Desktop-
+ * Navigation, nur gequetscht. Die Tab-Leiste ersetzt sie; die
+ * Spaltenfassung hier bleibt unverändert das, was ab `lg` erscheint.
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Umbau vom 2026-09-09 nach `docs/quickteam-dashboard-v2.html`
@@ -94,6 +97,7 @@ export type Gruppe = {
 export function DashboardSidebar({
   gruppen,
   beschriftung,
+  uebersichtLabel,
   folgtLabel,
   folgtHinweis,
   betriebName,
@@ -103,6 +107,8 @@ export function DashboardSidebar({
 }: {
   gruppen: readonly Gruppe[];
   beschriftung: string;
+  /** Barrierefreier Name des Logo-Links (führt zur Übersicht). */
+  uebersichtLabel: string;
   folgtLabel: string;
   folgtHinweis: string;
   betriebName: string;
@@ -134,7 +140,7 @@ export function DashboardSidebar({
     */
     <nav
       aria-label={beschriftung}
-      className="border-b border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r"
+      className="hidden bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:self-start lg:overflow-y-auto lg:border-r lg:border-line"
     >
       {/*
         Logo und Betriebskarte gibt es nur in der Spaltenfassung. Auf
@@ -145,7 +151,7 @@ export function DashboardSidebar({
       <div className="hidden lg:block lg:px-5 lg:pb-1 lg:pt-5">
         <Link href="/dashboard" className="inline-flex rounded-blk text-text">
           <Logo />
-          <span className="sr-only">Übersicht</span>
+          <span className="sr-only">{uebersichtLabel}</span>
         </Link>
 
         <div className="mt-5 flex items-center gap-3 rounded-card bg-surface-sunk px-3 py-2.5">

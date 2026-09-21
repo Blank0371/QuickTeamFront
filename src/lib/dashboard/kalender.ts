@@ -290,6 +290,12 @@ export async function holeSchichten(
   mitarbeiterId: string,
   von: string,
   bis: string,
+  /*
+   * Die Ladefehler-Meldung reicht der Aufrufer sprachabhängig herein
+   * (`t.kalender.ladeFehler`) — so bleibt diese Lib frei von i18n-Importen.
+   * Der Default deckt Aufrufer, die noch keine Übersetzung mitgeben.
+   */
+  ladeFehler = "Der Dienstplan liess sich nicht laden. Lad die Seite neu.",
 ): Promise<{ proTag: Map<string, KalenderSchicht[]>; fehler: string | null }> {
   const { data, error } = await supabase.rpc("kalender_schichten", {
     p_betrieb_id: betriebId,
@@ -300,10 +306,7 @@ export async function holeSchichten(
 
   if (error) {
     console.error(`[kalender] kalender_schichten(${betriebId}): ${error.message}`);
-    return {
-      proTag: new Map(),
-      fehler: "Der Dienstplan liess sich nicht laden. Lad die Seite neu.",
-    };
+    return { proTag: new Map(), fehler: ladeFehler };
   }
 
   const schichten = Array.isArray(data) ? (data as KalenderSchicht[]) : [];
