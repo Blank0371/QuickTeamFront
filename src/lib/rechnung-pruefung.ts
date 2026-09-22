@@ -36,7 +36,7 @@ export type RechnungsProfil = {
   plz: string;
   ort: string;
   land: "AT" | "DE";
-  /** Österreichische UID, oder `""` für „keine Angabe". */
+  /** UID (`ATU…`) bzw. USt-IdNr (`DE…`), passend zum Rechnungsland. */
   uid: string;
 };
 
@@ -53,14 +53,12 @@ export type RechnungsPruefung =
  * hier ist die Verteidigung. Wer das Formular umgeht, kommt nicht an ihr
  * vorbei.
  *
- * **Für österreichische Rechnungsempfänger ist die UID Pflicht**
- * (Produktentscheidung vom 2026-09-18): das erzwingt `rechnungSchema`,
- * eine leere UID bei `land = "AT"` fällt hier durch. **Für deutsche
- * Betriebe wird eine hereingereichte UID verworfen**, nicht abgelehnt:
- * das Feld wird dort gar nicht angezeigt, ein Wert kann also nur aus
- * einer manipulierten Anfrage stammen — und für einen Inlandsumsatz
- * ändert er ohnehin nichts. Ein Fehler wäre eine Meldung zu einem Feld,
- * das der Absender nie gesehen hat.
+ * **Die UID/USt-IdNr ist für AT und DE Pflicht** (Produktentscheidung
+ * vom 2026-09-18, erweitert am 2026-09-21): das erzwingt `rechnungSchema`,
+ * eine leere Nummer fällt hier durch, und eine Nummer muss zum
+ * Rechnungsland passen (`ATU…` für AT, `DE…` für DE). Für Deutschland
+ * ändert die Nummer die Steuerbehandlung nicht (Inlandsumsatz), wird aber
+ * als Unternehmernachweis verlangt und auf der Rechnung ausgewiesen.
  */
 export function pruefeRechnung(
   roh: Record<string, string>,
@@ -89,7 +87,7 @@ export function pruefeRechnung(
       plz: daten.rechnung_plz,
       ort: daten.rechnung_ort,
       land: daten.land,
-      uid: daten.land === "AT" ? daten.uid : "",
+      uid: daten.uid,
     },
   };
 }

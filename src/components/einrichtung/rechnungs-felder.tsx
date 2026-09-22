@@ -49,24 +49,20 @@ import type { Dictionary } from "@/i18n/de";
  * man raten muss, ist ein Auswahlfeld, das falsch bedient wird.
  *
  * ─────────────────────────────────────────────────────────────────────
- *  Die UID hängt am Rechnungsland
+ *  Die UID/USt-IdNr hängt am Rechnungsland
  * ─────────────────────────────────────────────────────────────────────
  *
- * Nur für `AT`, und dort seit dem 2026-09-18 **Pflicht** (QuickTeam
- * verkauft nur an Unternehmer — siehe `rechnungSchema`). Sie entscheidet
- * bei Stripe Tax über das Reverse-Charge-Verfahren; für einen deutschen
- * Inlandsumsatz ändert sie nichts, deshalb gibt es dort kein Feld —
- * ein trotzdem hereingereichter Wert wird verworfen. Weil das Land hier
- * **wählbar** ist, erscheint und
- * verschwindet das Feld mit der Auswahl — die Server Action verwirft
- * einen Wert, der trotzdem zu einem deutschen Rechnungsland hereinkommt,
- * und **entfernt eine bereits hinterlegte UID**, sobald das
- * Rechnungsland nicht mehr Österreich ist.
+ * Seit dem 2026-09-21 für **beide** Länder **Pflicht** (Kursänderung —
+ * QuickTeam verkauft nur an Unternehmer; siehe `rechnungSchema`). Für
+ * Österreich (`ATU…`) entscheidet sie bei Stripe Tax über das
+ * Reverse-Charge-Verfahren; für einen deutschen Inlandsumsatz (`DE…`)
+ * ändert sie die Steuer nicht, wird aber als Unternehmernachweis verlangt.
+ * Nur Beschriftung und erwartetes Format hängen am wählbaren Land.
  *
- * Genau darauf weist der Warnhinweis unten hin. Eine stehen gebliebene
- * `ATU…` an einem deutschen Rechnungsempfänger wäre keine harmlose
- * Altlast, sondern eine falsche Grundlage für die Steuerbehandlung —
- * und der Kunde erführe es erst auf der Rechnung.
+ * Der Warnhinweis unten erscheint, wenn eine bereits eingetippte Nummer
+ * nach einem Länderwechsel nicht mehr zum Format passt (`ATU…` ↔ `DE…`) —
+ * eine falsche Grundlage für die Steuerbehandlung, die der Kunde sonst
+ * erst auf der Rechnung entdeckte.
  */
 export type RechnungsWerte = {
   rechnung_firma: string;
@@ -175,16 +171,16 @@ export function RechnungsFelder({
 
       {/*
         Der Hinweis erscheint genau dann, wenn er etwas zu sagen hat:
-        eine hinterlegte UID war da, und das Rechnungsland ist nicht mehr
-        Österreich. Dann wird sie beim Speichern entfernt, und das gehört
-        vorher gesagt statt hinterher entdeckt.
+        eine hinterlegte Nummer war da, und sie passt nach einem
+        Länderwechsel nicht mehr zum Format des neuen Rechnungslands
+        (ATU… ↔ DE…). Das gehört vorher gesagt statt hinterher entdeckt.
 
         Bewusst **ohne Betragsangabe**. Welcher Steuersatz sich ergibt,
         rechnet Stripe Tax aus den Registrierungen und der OSS-Einstellung
         des Kontos — eine hier ausgerechnete Zahl wäre geraten, und eine
         geratene Steuerangabe ist schlimmer als gar keine.
       */}
-      {uidVorhanden && werte.land !== "" && werte.land !== "AT" ? (
+      {uidVorhanden && werte.land !== "" && !uidPasstZumLand(werte.uid, werte.land) ? (
         <p
           role="status"
           className="rounded-blk border border-line bg-surface px-3.5 py-3 text-sm leading-relaxed text-text"
@@ -193,19 +189,31 @@ export function RechnungsFelder({
         </p>
       ) : null}
 
-      {werte.land === "AT" ? (
+      {/*
+        Die UID/USt-IdNr ist seit dem 2026-09-21 für beide Länder Pflicht
+        (Kursänderung, siehe `CLAUDE.md`) — nur die Beschriftung und das
+        erwartete Format hängen am Rechnungsland.
+      */}
+      {werte.land === "AT" || werte.land === "DE" ? (
         <TextFeld
           id="rechnung-uid"
           name="uid"
-          label={texte.uidLabel}
+          label={werte.land === "DE" ? texte.uidLabelDe : texte.uidLabel}
           maxLength={20}
           required={true}
           wert={werte.uid}
           beiEingabe={(wert) => beiAenderung("uid", wert)}
           fehler={felder["uid"]}
-          hinweis={texte.uidHinweis}
+          hinweis={werte.land === "DE" ? texte.uidHinweisDe : texte.uidHinweis}
         />
       ) : null}
     </fieldset>
   );
+}
+
+/** Passt die eingegebene Nummer zum Format des gewählten Rechnungslands? */
+function uidPasstZumLand(uid: string, land: string): boolean {
+  const bereinigt = uid.replace(/[\s.-]/gu, "").toUpperCase();
+  if (bereinigt === "") return true;
+  return land === "AT" ? /^ATU\d{8}$/u.test(bereinigt) : /^DE\d{9}$/u.test(bereinigt);
 }

@@ -4,7 +4,7 @@ import { aboGekuendigt, holeAbo, testphaseAbgelaufen } from "@/lib/abo";
 import { holeChefBetriebId } from "@/lib/betrieb";
 import { holeEinladungen } from "@/lib/dashboard/position";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
-import { aboLageBeiStripe } from "@/lib/stripe";
+import { aboLageBeiStripe, holePendingLage } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { ermittleZustimmungBefund, sperrtZugang } from "@/lib/zustimmung";
 
@@ -23,7 +23,7 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
  * sich an dem, was er hinterlassen hat.
  */
 
-export const SCHRITTE = ["konto", "zahlung", "team", "schichten"] as const;
+export const SCHRITTE = ["betrieb", "zahlung", "team", "schichten"] as const;
 export type Schritt = (typeof SCHRITTE)[number];
 
 /** Alles, was der Stepper anzeigen oder entscheiden muss. */
@@ -37,7 +37,7 @@ export type Stand = {
 };
 
 export const SCHRITT_TITEL: Record<Schritt, string> = {
-  konto: "Konto",
+  betrieb: "Betrieb",
   zahlung: "Zahlung",
   team: "Team",
   schichten: "Schichten",
@@ -80,11 +80,23 @@ export async function ermittleStandFuer(
   supabase: SupabaseServerClient,
   email: string,
 ): Promise<Stand> {
-  // Schritt 1: erst mit angelegtem Betrieb ist das Konto fertig.
+  // Schritt 1/2: solange kein Betrieb als Chef existiert, wird er gerade
+  // eingerichtet — die `betriebe`-Zeile entsteht erst nach bestätigter
+  // Zahlung (`betriebAbschliessen`). Bis dahin sagt der Pending-Stripe-Kunde,
+  // wie weit die Person gekommen ist.
   const betriebId = await holeChefBetriebId(supabase);
   if (betriebId === null) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const lage = await holePendingLage({ userId: user?.id ?? "", email });
+
+    // Läuft schon eine Betriebsanlage (Schritt 1 abgeschickt), führt sie zu
+    // Ende — auch wenn nebenher eine Einladung offen ist.
+    if (lage.kunde) return { offen: "zahlung", gesperrt: false, betriebId: null };
+
     if ((await holeEinladungen(supabase)).length > 0) redirect("/dashboard/wechseln");
-    return { offen: "konto", gesperrt: false, betriebId: null };
+    return { offen: "betrieb", gesperrt: false, betriebId: null };
   }
 
   /*
@@ -239,18 +251,15 @@ export function darfSehen(ziel: Schritt, stand: Stand): boolean {
  * hierher und nicht in eine Middleware: sie braucht Datenbank und Stripe,
  * und die Middleware läuft bei jedem Request auf jede Route.
  *
- * `konto` ist der einzige Schritt, den man ohne Anmeldung sehen darf —
- * dort steht ja das Registrierungsformular. Ohne diese Ausnahme schickte
- * der Stepper Neukunden auf `/login`, also genau dorthin, wo sie noch
- * nichts zu suchen haben.
+ * Seit dem 2026-09-22 setzt **jeder** Schritt eine Anmeldung voraus:
+ * Registrierung und Betrieb-Anlage sind getrennt, das Konto entsteht auf
+ * `/registrieren`, nicht mehr im Stepper. Wer ohne Session hierher kommt,
+ * hat noch kein Konto — der Weg dahin ist `/registrieren`, nicht `/login`.
  */
-export async function betreteSchritt(ziel: Schritt): Promise<Stand | null> {
+export async function betreteSchritt(ziel: Schritt): Promise<Stand> {
   const stand = await ermittleStand();
 
-  if (stand === "nicht-angemeldet") {
-    if (ziel === "konto") return null;
-    redirect("/login");
-  }
+  if (stand === "nicht-angemeldet") redirect("/registrieren");
 
   if (!darfSehen(ziel, stand)) redirect(pfadFuer(stand));
 

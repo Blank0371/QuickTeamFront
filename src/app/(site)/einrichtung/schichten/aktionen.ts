@@ -34,7 +34,7 @@ async function kontext() {
   if (!user) redirect("/login");
 
   const betriebId = await holeChefBetriebId(supabase);
-  if (betriebId === null) redirect("/einrichtung/konto");
+  if (betriebId === null) redirect("/einrichtung/betrieb");
 
   return { supabase, betriebId };
 }

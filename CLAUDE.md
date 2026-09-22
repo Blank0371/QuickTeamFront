@@ -213,40 +213,67 @@ nur `signup`/`email_change`, dort geht `"email"` nicht.
 
 ## Registrierungs-Flow
 
-`registriere_betrieb` braucht eine Session, die es erst nach der Bestätigung gibt — die
-Betriebsdaten müssen die Bestätigungsmail überleben. Formular und Code-Eingabe sind
-**derselbe Schritt 1** (zwei Abschnitte einer Seite):
+**Kursänderung 2026-09-22 (auf Anweisung des Nutzers): Konto und Betrieb sind getrennt.**
+*Vorher* legte ein einziges Formular („Schritt 1") in einem Zug Konto **und** Betrieb an;
+die Betriebsdaten reisten durch `user_metadata` (und einen `registrierung-merker`-Cookie),
+weil `registriere_betrieb` eine Session braucht, die es erst nach der Code-Bestätigung
+gibt. *Jetzt* erzeugt die Registrierung nur ein **Nutzerkonto**; der Betrieb entsteht in
+einem eigenen, späteren Schritt. Historie: `docs/claude-md-historie.md`.
 
-1. Abschnitt A: Betriebsname, Land (Select AT/DE), Vorname, Nachname, E-Mail, Passwort,
-   Zustimmungshaken, freiwilliger Promo-Code
-2. `supabase.auth.signUp({ email, password, options: { data: { betrieb_name, land,
-   vorname, nachname, zustimmung_versionen, promo_code? } } })` — **ohne**
-   `emailRedirectTo`
-3. Abschnitt B klappt auf: Code-Eingabe, 24-Stunden-Hinweis, „Code erneut senden" mit
-   60-Sekunden-Countdown; Adresse bleibt sichtbar und änderbar
-4. Server Action `bestaetigen()`:
-   a. `verifyOtp({ email, token, type: 'email' })` → Session
-   b. `stelleBetriebSicher()` (`src/lib/betrieb.ts`): `rpc('meine_betriebe')`, für **jede**
-      ID `rpc('ist_chef', { p_betrieb_id })`. Irgendwo `true` → RPC überspringen
-   c. sonst `rpc('registriere_betrieb', {…})` mit Werten aus `user_metadata`
-   d. Zustimmungen + Promo-Code schreiben (siehe unten)
-   e. weiter zu Schritt 2 des Steppers
+**Schritt A — Konto (`/registrieren`).** Eine eigenständige Seite, **nicht** mehr Teil des
+Steppers. Zwei Abschnitte:
 
-**Schritt (b) ist Pflicht** (Schutz gegen Mehrfachanlage; ein reiner Leer-Test auf
-`meine_betriebe` reicht nicht). **Schlägt (b)/(c) nach der Bestätigung fehl**, bleibt die
-Person in Schritt 1 mit erklärender Meldung — zurück aufs leere Formular wäre falsch, das
-Konto existiert bereits.
+1. Abschnitt A: E-Mail, Passwort, Passwort-Wiederholung, **Datenschutz-Kenntnisnahme**
+   (nur dieses eine Dokument — AGB/AVV folgen beim Betrieb). Kein Betriebsfeld, kein
+   Promo-Code.
+2. `supabase.auth.signUp({ email, password, options: { data: { zustimmung_versionen:
+   { datenschutz }, zustimmung_nachweis } } })` — **ohne** `emailRedirectTo`. Es reist nur
+   die Datenschutz-Fassung mit, weil eine Zustimmungszeile ohne `betrieb_id` nicht
+   schreibbar ist (`rechtliche_zustimmungen.betrieb_id` ist NOT NULL).
+3. Abschnitt B (über `?email=`): Code-Eingabe, 24-Stunden-Hinweis, „Code erneut senden".
+4. Server Action `bestaetigen()`: `verifyOtp({ type: 'email' })` → Session → **Weiterleitung
+   auf `/dashboard/wechseln`** (die Übersicht). **Kein** `stelleBetriebSicher`, **keine**
+   Zustimmungszeile, **kein** Betrieb — an dieser Stelle gibt es noch keine `betrieb_id`.
 
-`user_metadata` trägt nur die vier Betriebsfelder plus `zustimmung_versionen` und
-optional `promo_code`. Der Plan reist **nicht** mit (Planwahl steht in Schritt 2).
+**Schritt B — Betrieb (`/einrichtung/betrieb`, Schritt 1 des Steppers).** Erreichbar aus
+der Übersicht (Knopf „Betrieb einrichten"), mit bestehender Session.
 
-**Ein Chef, mehrere Standorte ist nicht unterstützt.** `holeChefBetriebId()` liefert den
-ersten Betrieb, für den `ist_chef` wahr ist; `stelleBetriebSicher()` überspringt
-`registriere_betrieb`, sobald man irgendwo Chef ist. Ein zweiter Standort geht nur über
-eine zweite, unabhängige Registrierung mit anderer E-Mail. Ein echtes Ketten-/
-Franchise-Szenario braucht eine eigene Entscheidung (Betriebsauswahl im Stepper,
-`meine_betriebe()`-Verhalten, Login-Zuordnung) — jetzt nicht bauen, beim nächsten
-Anfassen dieser Ableitung prüfen.
+> **Kursänderung 2026-09-22:** Dieser Schritt **legt den Betrieb nicht mehr an** (siehe
+> „Abo & Zahlung", Kursänderung gleichen Datums). Er sammelt nur die Angaben und parkt
+> sie in der Stripe-Kunden-Metadata (`pendingInfoSpeichern()` →
+> `holeOderErstellePendingKunde()`); der Betrieb, die Zustimmungszeilen und der Promo-Code
+> werden erst nach bestätigter Zahlung geschrieben (`betriebAbschliessen()`). Der Ablauf
+> unten beschreibt den **alten** Stand und bleibt als Kontext stehen — `stelleBetriebSicher`
+> und der Doppelanlage-Schutz gelten unverändert, nur läuft der Aufruf jetzt aus
+> `betriebAbschliessen()` statt aus `betriebAnlegen()`.
+
+1. Formular: Betriebsname, Land (Select AT/DE), Vorname, Nachname, **AGB/AVV-Zustimmung**,
+   freiwilliger Promo-Code.
+2. Server Action (früher `betriebAnlegen()`, jetzt `betriebAbschliessen()` nach der Zahlung):
+   a. `stelleBetriebSicher()` (`src/lib/betrieb.ts`): `rpc('meine_betriebe')`, für **jede**
+      ID `rpc('ist_chef')` — irgendwo `true` → `registriere_betrieb` überspringen; sonst
+      `rpc('registriere_betrieb', {…})` **direkt mit den geparkten Werten**.
+   b. drei Zustimmungszeilen schreiben: AGB/AVV in geltender Fassung, Datenschutz in der
+      beim Signup zugestimmten Fassung (`zustimmungFuerBetrieb()` liest sie aus
+      `user_metadata`).
+   c. Promo-Code schreiben.
+   d. weiter über `/einrichtung` zum nächsten offenen Schritt (Team).
+
+**Der Doppelanlage-Schutz (a) bleibt Pflicht.** Ein doppelt abgeschicktes Formular erzeugt
+sonst einen zweiten Betrieb; ein reiner Leer-Test auf `meine_betriebe` reicht nicht (er
+meldet Mitgliedschaft, nicht Chef-Eigenschaft).
+
+**Ein Chef, mehrere Standorte ist weiterhin nicht unterstützt.** `holeChefBetriebId()`
+liefert den ersten Betrieb, für den `ist_chef` wahr ist; `stelleBetriebSicher()`
+überspringt `registriere_betrieb`, sobald man irgendwo Chef ist. Wer bereits Chef ist,
+sieht auf `/einrichtung/betrieb` die „erledigt"-Fassung statt eines zweiten Formulars. Ein
+echtes Ketten-/Franchise-Szenario braucht eine eigene Entscheidung — jetzt nicht bauen.
+
+**Benannte Lücke (Datenschutz-Kenntnisnahme).** Ein Konto, das nie einen Betrieb anlegt
+und nur Einladungen annimmt, bekommt von **diesem** Repo keine Datenschutz-Zeile
+geschrieben (die Zeile braucht eine `betrieb_id`; das Annehmen einer Einladung läuft
+app-seitig). Die beim Signup zugestimmte Fassung liegt in `user_metadata` und wird erst
+beim Anlegen des Betriebs eingetragen. Offen beim Betreiber, ob das früher geschehen soll.
 
 **Passwort-Reset** ist eine eigene Seite ausserhalb des Steppers:
 `resetPasswordForEmail(email)` ohne `redirectTo`, Weiterleitung auf
@@ -258,12 +285,14 @@ Anfassen dieser Ableitung prüfen.
 
 ### Promo-Code
 
-Freiwilliges Feld bei der Registrierung; der benutzte Code je Betrieb steht in
-`betrieb_promo_codes` (neue Produktentscheidung, kein Expo-Gegenstück).
+Freiwilliges Feld **beim Anlegen des Betriebs** (seit 2026-09-22 nicht mehr bei der
+Registrierung — der Code gehört zum Betrieb, und den gibt es zum Zeitpunkt des Signups noch
+nicht); der benutzte Code je Betrieb steht in `betrieb_promo_codes` (neue
+Produktentscheidung, kein Expo-Gegenstück).
 
-- **Weg:** `options.data.promo_code` beim `signUp` (Schlüssel fehlt, wenn leer),
-  geschrieben in `bestaetigen()`/`betriebNachtragen()` nach der Zustimmung
-  (`src/lib/promo-code.ts`).
+- **Weg:** Feld im Betrieb-Formular (`/einrichtung/betrieb`), geprüft und geschrieben in
+  `betriebAnlegen()` nach der Zustimmung (`src/lib/promo-code.ts`). Kein Umweg mehr über
+  `user_metadata` — die Session steht beim Anlegen bereits.
 - **Schreibweise:** Leerraum raus, gross, `[A-Z0-9_-]{1,40}` (`feldSchemata.promo_code`;
   der Tabellen-CHECK verlangt genau das, damit „partner10" nicht gegen „PARTNER10" zerfällt).
 - **Ein Code je Betrieb** (`betrieb_id` ist PK, `ignoreDuplicates`, erster gewinnt).
@@ -271,9 +300,10 @@ Freiwilliges Feld bei der Registrierung; der benutzte Code je Betrieb steht in
   Einrichtung läuft weiter.
 - **Nur zugelassene Codes.** `promo_codes` (`code`, `partner`, `email` Pflicht, `aktiv`)
   ist die Liste, gepflegt vom Betreiber im SQL-Editor; `betrieb_promo_codes.promo_code`
-  ist FK darauf. `registrieren()` fragt **vor** dem `signUp` über die SECURITY-DEFINER-RPC
-  `promo_code_gueltig(text)` (nur Ja/Nein, Liste für Clients nicht lesbar) und zeigt einen
-  unbekannten Code am Feld an. INSERT-Policy verlangt zusätzlich einen **aktiven** Code.
+  ist FK darauf. `betriebAnlegen()` fragt **vor** `registriere_betrieb` über die
+  SECURITY-DEFINER-RPC `promo_code_gueltig(text)` (nur Ja/Nein, Liste für Clients nicht
+  lesbar) und zeigt einen unbekannten Code am Feld an. INSERT-Policy verlangt zusätzlich
+  einen **aktiven** Code.
 - **Nicht erreichbare Prüfung sperrt nicht** (`nicht-pruefbar`) — Feld ist freiwillig; FK
   und Policy halten einen unbekannten Code trotzdem aus der Tabelle.
 - **Folge:** solange `promo_codes` leer ist, wird jeder Code als unbekannt abgewiesen.
@@ -351,14 +381,18 @@ Index auf `(betrieb_id, auth_id, dokument, version)` macht den Schreibweg idempo
 - **kein UPDATE, kein DELETE** — eine Zustimmung wird nie verändert (`service_role`
   umgeht RLS wie überall)
 
-**Flow.** Der Haken sitzt in Schritt 1, der Betrieb entsteht erst nach der Bestätigung —
-dazwischen liegt eine Mail. Die Zustimmung reist wie die Betriebsfelder in
-`options.data.zustimmung_versionen` beim `signUp`; **mitgeführt werden die Fassungen,
-nicht nur ein Ja** (ändert sich ein Text dazwischen, hat die Person der alten Fassung
-zugestimmt). Geschrieben wird in `bestaetigen()`/`betriebNachtragen()` unmittelbar nach
-`stelleBetriebSicher()`, ein `insert` mit drei Zeilen (nicht drei Aufrufe). Das
-Kontrollkästchen gibt es nur einmal (`src/components/formular/zustimmung-feld.tsx`),
-`schreibeZustimmungen()` schreibt für Registrierung **und** Nachfrage-Tor.
+**Flow (seit 2026-09-22 zweigeteilt).** Die **Datenschutz**-Kenntnisnahme sitzt bei der
+Kontoerstellung (`/registrieren`); ihre Fassung reist in
+`options.data.zustimmung_versionen.datenschutz` beim `signUp` mit (eine Zeile ist noch
+nicht schreibbar — es gibt keine `betrieb_id`). Die **AGB/AVV**-Vertragsannahme sitzt beim
+Anlegen des Betriebs (`/einrichtung/betrieb`). Dort schreibt `betriebAnlegen()` alle **drei**
+Zeilen auf einmal (`schreibeZustimmungen()`, ein `insert`, nicht drei Aufrufe): AGB/AVV in
+geltender Fassung, Datenschutz in der beim Signup zugestimmten (`zustimmungFuerBetrieb()`).
+**Mitgeführt werden die Fassungen, nicht nur ein Ja** (ändert sich ein Text dazwischen, hat
+die Person der alten Fassung zugestimmt). Das eine Kontrollkästchen
+(`src/components/formular/zustimmung-feld.tsx`) trägt drei Varianten (`variante`:
+`datenschutz` beim Konto, `betrieb` beim Betrieb, `alle` im Nachfrage-Tor);
+`schreibeZustimmungen()` schreibt für Betrieb-Anlage **und** Nachfrage-Tor.
 
 **Fassungen** in `src/lib/rechtstexte.ts`, Format `YYYY-MM-DD` mit optionalem Zusatz
 (übernommen aus `../QuickTeam App/src/lib/terms.ts`). Stand: AGB und Datenschutz
@@ -391,10 +425,11 @@ prüfte das Tor sich selbst — wie `dashboard/wechseln`, beide in `sicheresZiel
 existieren bereits — jemanden hier steckenzulassen hiesse, ein halbes Konto zu
 hinterlassen). Ob das der richtige Handel ist, ist eine offene Frage an den Betreiber.
 
-**Service-Role-Konten bekommen keine Zustimmungszeile** — der Schlüssel
-`zustimmung_versionen` wird allein vom Formular gesetzt. `betriebNachtragen()` prüft
-darauf und überspringt still, statt eine Zustimmung zu erfinden. Wer den Zustimmungsweg
-prüfen will, nimmt `/registrieren` (oder gibt den Schlüssel ausdrücklich mit).
+**Service-Role-Konten bekommen keine Datenschutz-Fassung mitgeführt** — der Schlüssel
+`zustimmung_versionen` wird allein vom Registrierungsformular gesetzt. `betriebAnlegen()`
+schreibt AGB/AVV in geltender Fassung und Datenschutz aus den Metadaten, sofern vorhanden;
+fehlt der Schlüssel, fällt `zustimmungFuerBetrieb()` für Datenschutz auf die geltende
+Fassung zurück. Wer den vollständigen Zustimmungsweg prüfen will, nimmt `/registrieren`.
 
 ## Das Web-Dashboard
 
@@ -435,19 +470,22 @@ die Middleware als `x-qt-pfad` herein.
 
 ## Der Einrichtungs-Stepper
 
-Vier zusammenhängende Schritte mit Fortschrittsbalken; danach direkt in `/dashboard`.
+Vier zusammenhängende Schritte mit Fortschrittsbalken; danach direkt in `/dashboard`. Der
+Stepper beginnt **erst mit einem angemeldeten Konto** — das Konto selbst entsteht auf
+`/registrieren` (siehe „Registrierungs-Flow"), getrennt vom Stepper.
 
 | Schritt | Inhalt |
 | ------- | ------ |
-| 1 | Betriebsdaten, Zugangsdaten **und** Code-Bestätigung (ein Schritt) |
+| 1 (`/einrichtung/betrieb`) | Betriebsdaten (Name, Land, Chef-Name) **und** AGB/AVV-Zustimmung |
 | 2 | Plan wählen, Zahlungsmittel eingebettet hinterlegen — **überspringbar** (nur beim ersten Abo) |
 | 3 | Rollen anlegen, Mitarbeiter einladen und ihnen Rollen zuweisen |
 | 4 | Schichtvorlagen je Wochentag samt Mindestbesetzung |
 
-Für ein per Service-Role angelegtes Konto ohne Betrieb zeigt Schritt 1 die Fassung „Dein
-Konto steht — der Betrieb fehlt noch"; Bedingung ist allein `stand.betriebId === null`
-(`src/app/(site)/einrichtung/konto/page.tsx`). Ein Klick ruft `registriere_betrieb` auf,
-ab dort läuft der Stepper wie immer.
+Der Betrieb-Schritt ist für ein angemeldetes Konto **ohne** eigenen Betrieb erreichbar —
+der Regelweg führt aus der Übersicht (`/dashboard/wechseln`, Knopf „Betrieb einrichten")
+dorthin. Ein Klick auf „Betrieb anlegen" ruft `registriere_betrieb`; wer bereits Chef ist,
+sieht statt des Formulars die „erledigt"-Fassung
+(`src/app/(site)/einrichtung/betrieb/page.tsx`).
 
 **Zahlung eingebettet, nicht per Weiterleitung** (Stripe Elements, Payment Element) — der
 Bezahlvorgang ist der zweite von vier Schritten, keine Kasse am Ende.
@@ -459,8 +497,9 @@ Kein Flag, kein neues Feld — der Stand ergibt sich aus dem Vorhandenen
 
 | Beobachtung | Ziel |
 | ----------- | ---- |
-| keine Session | `/login` |
-| Session, aber kein Betrieb als Chef | Schritt 1 |
+| keine Session | `/registrieren` |
+| Session, aber kein Betrieb als Chef | Übersicht `/dashboard/wechseln` (nicht in die Betrieb-Anlage gezwungen) |
+| offene Einladung, kein eigener Betrieb | Übersicht `/dashboard/wechseln` |
 | kein Abo bei Stripe (auch `incomplete`, `gekuendigt`) | Schritt 2 |
 | `status = 'pausiert'` (bei Stripe bestätigt) | Sperrseite „Testphase abgelaufen" |
 | keine Rolle im Betrieb | Schritt 3 |
@@ -473,21 +512,68 @@ Kriterium** (ein Ein-Chef-Betrieb ist zulässig). Es gibt **keinen Abschluss-Scr
 
 ## Abo & Zahlung (Stripe)
 
+> **Kursänderung 2026-09-22 (auf Anweisung des Nutzers) — Betrieb entsteht erst nach
+> bestätigter Zahlung, keine Testphase mehr.** *Vorher:* Schritt 1 legte den Betrieb
+> sofort an (`registriere_betrieb`), Schritt 2 gab 14 Tage Testphase ohne Karte
+> (überspringbar). *Jetzt:* der Betrieb-Schritt (`/einrichtung/betrieb`) **legt keinen
+> Betrieb mehr an**, sondern parkt Name, Land, Chef-Name und Promo-Code in der
+> **Metadata eines Stripe-Kunden** (`pending_user` = Auth-User-ID, `holeOderErstellePendingKunde`).
+> Die `betriebe`-Zeile entsteht erst, wenn Stripe die Zahlung bestätigt hat
+> (`betriebAbschliessen` in `src/lib/zahlung-aktionen.ts`): Abo anlegen und Erstrechnung
+> sofort bezahlen → `stelleBetriebSicher` → `verknuepfePendingMitBetrieb` verschiebt die
+> Metadata von `pending_user` auf `betrieb_id` und löst damit
+> `customer.subscription.updated` aus, an dem der Webhook `betrieb_abonnements` schreibt
+> (Webhook bleibt die einzige Schreibstelle). **Keine Testphase**: jedes Abo ist sofort
+> fällig, ein kostenloser erster Monat läuft über einen Stripe-Rabattcode (100 %), nicht
+> über `trial_period_days`. Zahlungsmittel und UID sind Pflicht. Schrittfolge:
+> Konto → Übersicht → [Betriebsdaten → Zahlung → *Betrieb entsteht*] → Team → Schichten.
+> Der frühere „Später hinterlegen"-Weg, `trial_period_days`, `missing_payment_method: pause`
+> und die Sperrseite `/einrichtung/testphase-abgelaufen` sind für **neue** Betriebe damit
+> ohne Funktion; die Sperrseite und `erstelleAbo` (jetzt immer `default_incomplete`)
+> bedienen nur noch den Neuabschluss eines **bestehenden**, gekündigten Betriebs. Die
+> Wiedereinstiegs-Ableitung liest die Vorbezahlungs-Phase aus dem Pending-Kunden
+> (`holePendingLage`). Historie: `docs/claude-md-historie.md`.
+
 **Der Webhook ist die einzige Stelle, die `betrieb_abonnements` schreibt**, und läuft
 asynchron. Keine Seite darf voraussetzen, dass er durch ist — wer den Stand vorher
 braucht, fragt Stripe direkt. Die eine Gegen-Schreibrichtung ist unten benannt
 (`invoice.payment_failed`), und die schreibt bei **Stripe**, nicht in der DB.
 
 **Preise & Pläne.** Plan-IDs bleiben `basic` | `pro` | `business` (Anzeige: Low, Medium,
-Business); der CHECK lässt nur diese drei zu. Price-IDs stehen je Plan in Env-Variablen
-(`STRIPE_PRICE_BASIC/PRO/BUSINESS`), **nie** als Literal — fehlt eine, ist das ein
-Konfigurationsfehler mit klarer Meldung, kein Fallback. Beträge (Anzeige in `plaene`,
-`src/lib/site.ts`): Low 29 €, Medium 49 €, Business 69 €/Monat (bis 15/30/50 Mitarbeiter,
-Business + ein Standort). Abgerechnet wird nach dem Stripe-Preis; nichts hält beide
-synchron. Ein Betrag lässt sich in Stripe nicht ändern (`prices.update` kann alles ausser
-`unit_amount`) — neuen Price anlegen, am Produkt als `default_price` setzen, alten
-archivieren, neue ID in die Umgebung. `Custom` ist kein vierter Plan, sondern der Weg
-daran vorbei (`customTarif` **neben** `plaene`, sonst am CHECK gescheitert).
+Business); der CHECK lässt nur diese drei zu. Price-IDs stehen je Plan **und Intervall**
+in Env-Variablen (`STRIPE_PRICE_BASIC/PRO/BUSINESS` monatlich, `…_JAHR` jährlich),
+**nie** als Literal — fehlt eine, ist das ein Konfigurationsfehler mit klarer Meldung,
+kein Fallback. Beträge (Anzeige in `plaene`, `src/lib/site.ts`): Low 39 €, Medium 69 €,
+Business 99 €/Monat bzw. 390/690/990 €/Jahr (bis 15/30/50 Mitarbeiter, Business + ein
+Standort). Das Jahresabo ist **kein** eigener Plan — das Intervall steht am Stripe-Price
+(`recurring.interval`), nicht in `betrieb_abonnements.plan`; ein Plan hat zwei Preise,
+aber eine ID (`planAusPriceId` führt beide auf dieselbe). Abgerechnet wird nach dem
+Stripe-Preis; nichts hält beide synchron (`pruefePreisGleichstand` meldet je Intervall
+eine Abweichung ins Log). Ein Betrag lässt sich in Stripe nicht ändern (`prices.update`
+kann alles ausser `unit_amount`) — neuen Price anlegen, am Produkt als `default_price`
+setzen, alten archivieren, neue ID in die Umgebung. `Custom` ist kein vierter Plan,
+sondern der Weg daran vorbei (`customTarif` **neben** `plaene`, sonst am CHECK
+gescheitert).
+
+**Monats/Jahres-Wechsel (Kursänderung 2026-09-21).** *Vorher:* das Intervall wurde nur
+auf `/preise` gewählt und per Cookie durchgereicht; Schritt 2 zeigte es nur an
+(„Kein Umschalter, nur die Anzeige"), einen Wechsel eines laufenden Abos gab es nicht.
+*Jetzt:* Schritt 2 trägt einen echten Umschalter (Feld `intervall` in `plan-auswahl.tsx`),
+dessen Wert `planWaehlen` dem Cookie **vorzieht**; ein bestehendes Abo stellt `wechslePlan`
+auf die andere Preis-ID um. Für ein **bestehendes** Abo im Dauerbetrieb läuft der Wechsel
+über das **Stripe-Kundenportal** („Abo verwalten") — die Portal-Konfiguration muss dafür
+beide Prices je Produkt führen; Proration übernimmt Stripe. Kein eigener In-App-Umschalter
+im Dashboard (Entscheidung 2026-09-21).
+
+**Stripe-Rabattcode (Coupon, Kursänderung 2026-09-21).** Getrennt vom internen
+Partner-Promo-Code (`promo_codes`/`betrieb_promo_codes`, der **keinen** Rabatt gibt): ein
+echter Stripe-`promotion_code`. Schritt 2 hat ein freiwilliges Feld `coupon`;
+`pruefePromotionCode()` sucht ihn unter **aktiven** Codes, ein unbekannter/inaktiver Code
+ist ein Feldfehler, ein gültiger reist als `discounts: [{ promotion_code }]` in
+`erstelleAbo` (nur beim Anlegen, nicht bei `wechslePlan`). Bestandskunden lösen Codes im
+**Kundenportal** ein (Portal-Config „allow promotion codes", kein eigener Code). Der
+Idempotenzschlüssel trägt einen Rabatt-Marker, damit ein Nachreichen des Codes nicht am
+Parametervergleich scheitert.
 
 **Testphase, eine je Betrieb.** Erstes Abo eines Betriebs: `trial_period_days` (14, aus
 `TESTPHASE_TAGE`), ohne Zahlungsmittel, überspringbar; das Abo geht direkt auf `trialing`,
@@ -564,19 +650,23 @@ netto ist oder ein Abo ohne `automatic_tax` läuft. Zahlungsansichten
 lesen Betrag/Testphasenende/erste Abbuchung aus dem Stripe-Abo, nicht aus
 `plaene`/`TESTPHASE_TAGE` (`src/lib/abo-konditionen.ts`).
 
-**UID-Pflicht für österreichische Rechnungen (Kursänderung 2026-09-18, auf Anweisung
-des Nutzers).** *Vorher:* das UID-Feld war für AT freiwillig — ohne UID behandelte
-Stripe Tax den Betrieb wie einen Privatkunden (österreichische USt. statt Reverse
-Charge). *Jetzt:* QuickTeam verkauft ausschliesslich an Unternehmer, deshalb ist für
-einen **österreichischen Rechnungsempfänger** eine gültige UID Pflicht. *Begründung:*
-Geschäftsregel „kein Verkauf ohne UID/B2C". Die Pflicht sitzt am **Rechnungstor**, nicht
-in Schritt 2 — dieselbe Schwelle wie bei der Anschrift: sie greift erst, wenn eine
-Rechnung entstehen kann. **Kostenloses Testen ohne Zahlungsmittel bleibt ohne UID
-möglich**; wer ein kostenpflichtiges Abo aktiviert, braucht sie. Geprüft an zwei Stellen:
-`rechnungSchema.superRefine` (`v.uid.pflicht`, client **und** server über `pruefeRechnung`)
-und `rechnungVollstaendig()` (Stripe-lesend, schliesst 3DS-Rückweg und Direktaufruf; ruft
-`holeUid()` bei `country === "AT"`). Für **Deutschland** unverändert belanglos (kein Feld,
-hereingereichter Wert wird verworfen).
+**UID/USt-IdNr-Pflicht für AT und DE (Kursänderung 2026-09-18, erweitert 2026-09-21,
+auf Anweisung des Nutzers).** *Anfangs:* das UID-Feld war für AT freiwillig — ohne UID
+behandelte Stripe Tax den Betrieb wie einen Privatkunden (österreichische USt. statt
+Reverse Charge). *Ab 2026-09-18:* für einen **österreichischen** Rechnungsempfänger
+Pflicht; DE hatte kein Feld, ein hereingereichter Wert wurde verworfen. *Ab 2026-09-21:*
+Pflicht für **beide** Länder — AT eine UID (`ATU` + 8 Ziffern), DE eine USt-IdNr (`DE` +
+9 Ziffern), jeweils **passend zum Rechnungsland**. *Begründung:* Geschäftsregel „kein
+Verkauf ohne UID/B2C"; QuickTeam verkauft ausschliesslich an Unternehmer. Für DE ändert
+die Nummer die Steuerbehandlung nicht (Inlandsumsatz), wird aber als Unternehmernachweis
+verlangt und auf der Rechnung ausgewiesen (als `eu_vat` am Kunden, `setzeUid`). Die
+Pflicht sitzt am **Rechnungstor**, nicht in Schritt 2 — dieselbe Schwelle wie bei der
+Anschrift: sie greift erst, wenn eine Rechnung entstehen kann. **Kostenloses Testen ohne
+Zahlungsmittel bleibt ohne UID möglich**; wer ein kostenpflichtiges Abo aktiviert, braucht
+sie. Geprüft an zwei Stellen: `rechnungSchema.superRefine` (`v.uid.pflicht`/`v.uid.form`,
+client **und** server über `pruefeRechnung`; verlangt sie für beide Länder und erzwingt
+das landrichtige Format) und `rechnungVollstaendig()` (Stripe-lesend, schliesst 3DS-Rückweg
+und Direktaufruf; ruft `holeUid()` bei `country ∈ {AT, DE}`).
 
 **Kündigung über das Stripe-Kundenportal.** „Abo verwalten" in `/dashboard/einstellungen`
 (`aboVerwalten()`) öffnet das Portal (Kündigung zum Periodenende, Zahlungsmittel,

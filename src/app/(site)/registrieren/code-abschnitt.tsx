@@ -13,7 +13,7 @@ import { CODE_LAENGE } from "@/lib/validierung";
 import { bestaetigen } from "./aktionen";
 
 /**
- * Abschnitt B von Schritt 1: Code-Eingabe.
+ * Abschnitt B der Kontoerstellung: Code-Eingabe.
  *
  * Die Adresse ist ein echtes, änderbares Feld und kein verstecktes —
  * genau das macht den Wechsel des Geräts möglich: E-Mail auf dem Handy
@@ -27,7 +27,6 @@ export function CodeAbschnitt({
   versandTexte,
 }: {
   email: string | null;
-  /** Vom Server-Elternteil in der Sprache der Anfrage hereingereicht. */
   texte: Dictionary["registrierung"];
   versandTexte: Dictionary["codeVersand"];
 }) {

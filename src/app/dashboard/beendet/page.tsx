@@ -3,7 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Container } from "@/components/container";
+import { SprachWahl } from "@/components/sprach-wahl";
 import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
 import { abmelden } from "@/lib/auth-aktionen";
 import {
   gewuenschtePositionsId,
@@ -51,13 +53,20 @@ export default async function BeendetSeite() {
   });
   if (beendet !== true) redirect("/dashboard");
 
-  const t = await holeTexte();
+  const [t, sprache] = await Promise.all([holeTexte(), leseSprache()]);
   const texte = t.dashboard.beendet;
   const weitere = alle.length > 1;
 
   return (
     <Container className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
+        {/* Liegt neben der Dashboard-Schale, bekommt deren Sprachumschalter
+            also nicht — hier mit im Inhalt, damit die Sprache auch an diesem
+            Endpunkt wechselbar bleibt. */}
+        <div className="mb-6 flex justify-end">
+          <SprachWahl aktiv={sprache} />
+        </div>
+
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted">
           {position.betriebName}
         </p>

@@ -116,31 +116,36 @@ export async function holeChefBetriebId(
 }
 
 /**
- * Legt nach bestätigter E-Mail-Adresse den Betrieb an — genau einmal.
+ * Legt den Betrieb an — genau einmal.
+ *
+ * Seit dem 2026-09-22 ist das der zweite, getrennte Schritt nach der
+ * Kontoerstellung: aufgerufen wird er aus dem Betrieb-Formular
+ * (`/einrichtung/betrieb`), mit einer bereits bestehenden Session. Die
+ * vier Betriebsfelder kommen deshalb **direkt aus dem Formular** und nicht
+ * mehr durch die Bestätigungsmail in `user_metadata` — der frühere Umweg
+ * über `signUp`-Metadaten und den Merker-Cookie ist entfallen.
  *
  * Ablauf laut CLAUDE.md:
  *   a. `meine_betriebe()` holen
  *   b. für JEDE ID `ist_chef(p_betrieb_id)` prüfen. Ist irgendwo `true`,
  *      existiert der Betrieb schon → nichts tun
- *   c. sonst `registriere_betrieb(...)` mit den Werten aus user_metadata
+ *   c. sonst `registriere_betrieb(...)` mit den übergebenen Feldern
  *
  * Schritt (b) ist kein Feinschliff, sondern der Schutz gegen
- * Mehrfachanlage: `registriere_betrieb` hat keinen eigenen. Ein zweites
- * Mal eingegebener Code — oder ein zweiter Klick auf „Bestätigen" —
- * erzeugt sonst einen zweiten Betrieb.
+ * Mehrfachanlage: `registriere_betrieb` hat keinen eigenen. Ein doppelt
+ * abgeschicktes Formular erzeugt sonst einen zweiten Betrieb.
  *
  * Ein blosser Leer-Test auf `meine_betriebe` genügt dafür nicht: die
  * Funktion meldet Mitgliedschaft, nicht Chef-Eigenschaft. Wer irgendwo als
  * Mitarbeiter aktiv ist, bekommt dort ein nicht-leeres Ergebnis, ohne
  * einen eigenen Betrieb zu haben.
  *
- * Die Metadaten stammen aus `options.data` beim `signUp` und sind damit
- * nicht vertrauenswürdiger als ein Formularfeld — sie gehen vor dem RPC
- * noch einmal durch dieselben Zod-Regeln.
+ * Die Felder sind so wenig vertrauenswürdig wie jedes Formularfeld — sie
+ * gehen vor dem RPC noch einmal durch dieselben Zod-Regeln.
  */
 export async function stelleBetriebSicher(
   supabase: SupabaseServerClient,
-  metadaten: Record<string, unknown>,
+  eingabe: Record<string, unknown>,
 ): Promise<BetriebErgebnis> {
   // (a) + (b)
   const suche = await sucheChefBetrieb(supabase);
@@ -149,10 +154,10 @@ export async function stelleBetriebSicher(
 
   // (c)
   const geprueft = betriebsMetadatenSchema.safeParse({
-    betrieb_name: metadaten["betrieb_name"],
-    land: metadaten["land"],
-    vorname: metadaten["vorname"],
-    nachname: metadaten["nachname"],
+    betrieb_name: eingabe["betrieb_name"],
+    land: eingabe["land"],
+    vorname: eingabe["vorname"],
+    nachname: eingabe["nachname"],
   });
 
   if (!geprueft.success) return { art: "daten-fehlen" };

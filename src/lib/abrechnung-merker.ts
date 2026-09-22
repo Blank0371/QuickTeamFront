@@ -16,16 +16,17 @@ import {
  *  Warum ein eigener Merker und nicht `qt_registrierung`
  * ─────────────────────────────────────────────────────────────────────
  *
- * `registrierung-merker.ts` ist auf `/einrichtung/konto` beschränkt und
- * wird nach bestätigtem Code gelöscht — also **vor** der Zahlung. Die
- * Intervall-Wahl muss den ganzen Trichter überdauern: Preisseite →
- * Registrierung → Bestätigung → Schritt 2. Setzen und Lesen liegen damit in
- * verschiedenen Routenbäumen (`/registrieren` und `/einrichtung/…`), deren
- * einziger gemeinsamer Präfix `/` ist — deshalb liegt dieses Cookie auf `/`
- * und nicht, wie der Registrierungs-Merker, eng auf einer Route. Der Preis
- * dafür ist ein winziger, mitreisender Wert („monat" | „jahr"); der
- * Registrierungs-Merker mit seinem JSON-Inhalt wäre auf `/` das teurere
- * Cookie.
+ * Die Intervall-Wahl muss den ganzen Trichter überdauern: Preisseite →
+ * Registrierung → Bestätigung → Betrieb anlegen → Schritt 2. Setzen und
+ * Lesen liegen damit in verschiedenen Routenbäumen (`/registrieren` und
+ * `/einrichtung/…`), deren einziger gemeinsamer Präfix `/` ist — deshalb
+ * liegt dieses Cookie auf `/` und nicht eng auf einer Route. Der Preis
+ * dafür ist ein winziger, mitreisender Wert („monat" | „jahr").
+ *
+ * (Bis zum 2026-09-22 gab es daneben einen `registrierung-merker`, der die
+ * Betriebsdaten über die Bestätigungsmail trug; er entfiel, als Konto- und
+ * Betrieb-Anlage getrennt wurden — der Betrieb entsteht seither mit
+ * bestehender Session direkt aus dem Formular.)
  *
  * Der Umschalter auf den Marketing-Seiten ist die einzige Stelle, die den
  * Wert setzt; er reist als `?abrechnung=jahr` an die Registrierung, wo er

@@ -12,10 +12,13 @@ import {
   holeAboFuerBetrieb,
   holeOderErstelleKunde,
   intervallVonAbo,
+  merkePendingWahl,
+  pruefePromotionCode,
   setzeUid,
+  suchePendingKunde,
   wechslePlan,
 } from "@/lib/stripe";
-import { ABRECHNUNG_STANDARD } from "@/lib/site";
+import { ABRECHNUNG_STANDARD, alsAbrechnung } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { planOderBasic, uidSchema } from "@/lib/validierung";
 
@@ -61,7 +64,7 @@ async function kontext(): Promise<Kontext> {
   if (!user) redirect("/login");
 
   const betriebId = await holeChefBetriebId(supabase);
-  if (betriebId === null) redirect("/einrichtung/konto");
+  if (betriebId === null) redirect("/einrichtung/betrieb");
 
   const abo = await holeAbo(supabase, betriebId);
 
@@ -105,30 +108,29 @@ export async function planWaehlen(
 ): Promise<FormZustand> {
   const { betriebId, email, kundeId, rechnung } = await kontext();
   const plan = planOderBasic(formData.get("plan"));
-  const ueberspringen = formData.get("absicht") === "ueberspringen";
 
   /*
-   * Monatlich oder jährlich hat der Besucher auf der Preisseite gewählt;
-   * die Wahl liegt seit dem Klick auf „Kostenlos testen" im Cookie
-   * (`abrechnung-merker.ts`). Schritt 2 zeigt dafür keinen eigenen
-   * Schalter — die gewählte Abrechnung steht als Zeile in `plan-auswahl`
-   * und, sobald das Abo existiert, in der Zahlungs-Zusammenfassung aus dem
-   * echten Stripe-Price.
-   *
-   * `null` heisst „keine Wahl im Cookie": beim neuen Abo gilt dann der
-   * monatliche Standard, bei einem bestehenden bleibt dessen Intervall
-   * (siehe unten) — ein Planwechsel soll ein Jahresabo nicht heimlich auf
-   * monatlich zurückstellen.
+   * Monatlich oder jährlich: seit dem 2026-09-21 wählt der Umschalter in
+   * Schritt 2 das Intervall unmittelbar (Feld `intervall`). Der Wert aus
+   * dem Formular geht dem Preisseiten-Cookie (`abrechnung-merker.ts`) vor;
+   * fehlt er, gilt weiterhin das Cookie und, ohne Cookie, der monatliche
+   * Standard bzw. das Intervall eines bestehenden Abos (siehe unten).
+   * `wechslePlan` unten setzt damit auch einen echten Intervall-Wechsel
+   * eines schon bestehenden Abos um.
    */
-  const gewaehlt = await leseAbrechnung();
+  const ausFormular = formData.get("intervall");
+  const gewaehlt =
+    ausFormular != null ? alsAbrechnung(ausFormular) : await leseAbrechnung();
 
   /*
-   * Die UID wird nur für österreichische Betriebe angenommen — dasselbe
-   * Kriterium, nach dem die Seite das Feld zeigt. Ein hereingereichter
-   * Wert eines deutschen Betriebs wird nicht geprüft, sondern ignoriert.
+   * Die UID/USt-IdNr wird für Betriebe **beider** Länder angenommen
+   * (Kursänderung 2026-09-21) — dasselbe Kriterium, nach dem die Seite das
+   * Feld zeigt. In Schritt 2 ist sie noch freiwillig (der Test ist
+   * kostenlos); Pflicht wird sie erst am Rechnungstor. Das Feldschema
+   * lässt beide Formate und den leeren String zu.
    */
   let uid: string | null = null;
-  if (rechnung?.land === "AT") {
+  if (rechnung && (rechnung.land === "AT" || rechnung.land === "DE")) {
     const roh = String(formData.get("uid") ?? "");
     const geprueft = uidSchema.safeParse({ uid: roh });
     if (!geprueft.success) {
@@ -136,13 +138,32 @@ export async function planWaehlen(
         status: "fehler",
         nachricht: null,
         felder: feldFehler(geprueft.error, await holeValidierung()),
-        werte: { uid: roh, plan },
+        werte: { uid: roh, plan, coupon: String(formData.get("coupon") ?? "") },
       };
     }
     uid = geprueft.data.uid || null;
   }
 
-  let sofortFaellig: boolean;
+  /*
+   * Stripe-Rabattcode (echter `promotion_code`, nicht der interne
+   * Partner-Promo-Code). Freiwillig; leer heisst „keiner". Ein nicht
+   * leerer, aber unbekannter/inaktiver Code ist ein Feldfehler — sonst
+   * dächte der Kunde, der Rabatt greife, und zahlte den vollen Preis.
+   */
+  const couponRoh = String(formData.get("coupon") ?? "").trim();
+  let promotionCodeId: string | null = null;
+  if (couponRoh.length > 0) {
+    promotionCodeId = await pruefePromotionCode(couponRoh);
+    if (promotionCodeId === null) {
+      const v = await holeValidierung();
+      return {
+        status: "fehler",
+        nachricht: null,
+        felder: { coupon: v["v.coupon.unbekannt"] },
+        werte: { uid: String(formData.get("uid") ?? ""), plan, coupon: couponRoh },
+      };
+    }
+  }
 
   try {
     const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
@@ -156,19 +177,19 @@ export async function planWaehlen(
      * (`incomplete`) geht an `erstelleAbo`, das es bei anderem Plan
      * ersetzt statt umstellt — siehe dort.
      */
-    const abo =
-      vorhanden && vorhanden.status !== "incomplete"
-        ? await wechslePlan(vorhanden, plan, gewaehlt ?? intervallVonAbo(vorhanden))
-        : await erstelleAbo({
-            betriebId,
-            plan,
-            intervall: gewaehlt ?? ABRECHNUNG_STANDARD,
-            email,
-            kundeId,
-            rechnung,
-          });
-
-    sofortFaellig = abo.status === "incomplete";
+    if (vorhanden && vorhanden.status !== "incomplete") {
+      await wechslePlan(vorhanden, plan, gewaehlt ?? intervallVonAbo(vorhanden));
+    } else {
+      await erstelleAbo({
+        betriebId,
+        plan,
+        intervall: gewaehlt ?? ABRECHNUNG_STANDARD,
+        email,
+        kundeId,
+        rechnung,
+        promotionCodeId,
+      });
+    }
 
     /*
      * Das Abo trägt das Intervall jetzt selbst (am Stripe-Price) — der
@@ -185,11 +206,69 @@ export async function planWaehlen(
   }
 
   /*
-   * „Später hinterlegen" gibt es nur mit Testphase. Ohne sie ist die erste
-   * Rechnung sofort fällig, und das Überspringen führte bloss über den
-   * Stepper zurück hierher — die Tore lassen ein unbezahltes Abo nicht
-   * durch. Die Seite zeigt den Knopf in dem Fall gar nicht; das hier
-   * fängt ab, was trotzdem ankommt.
+   * Seit dem 2026-09-22 gibt es keine Testphase und kein Überspringen mehr:
+   * jedes Abo ist sofort fällig, die erste Rechnung wird beim Hinterlegen
+   * des Zahlungsmittels bezahlt. Weiter geht es also immer zur Zahlung.
    */
-  redirect(ueberspringen && !sofortFaellig ? "/einrichtung" : "/einrichtung/zahlung?zahlen=1");
+  redirect("/einrichtung/zahlung?zahlen=1");
+}
+
+/**
+ * Parkt Plan, Intervall und Rabattcode für den **noch nicht angelegten**
+ * Betrieb (Pending-Weg). Anders als `planWaehlen` entsteht hier kein Abo —
+ * das legt erst `betriebAbschliessen` an, wenn die Karte bestätigt ist.
+ */
+export async function planMerken(
+  _vorher: FormZustand,
+  formData: FormData,
+): Promise<FormZustand> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/registrieren");
+
+  const kunde = await suchePendingKunde({ userId: user.id, email: user.email ?? "" });
+  if (!kunde) redirect("/einrichtung/betrieb");
+
+  const plan = planOderBasic(formData.get("plan"));
+  const ausFormular = formData.get("intervall");
+  const intervall = ausFormular != null ? alsAbrechnung(ausFormular) : await leseAbrechnung();
+
+  /*
+   * Stripe-Rabattcode (echter `promotion_code`). Freiwillig; ein nicht
+   * leerer, aber unbekannter Code ist ein Feldfehler. Die geprüfte ID wird
+   * geparkt und beim Abschluss aufs neue Abo gelegt.
+   */
+  const couponRoh = String(formData.get("coupon") ?? "").trim();
+  let promotionCodeId: string | null = null;
+  if (couponRoh.length > 0) {
+    promotionCodeId = await pruefePromotionCode(couponRoh);
+    if (promotionCodeId === null) {
+      const v = await holeValidierung();
+      return {
+        status: "fehler",
+        nachricht: null,
+        felder: { coupon: v["v.coupon.unbekannt"] },
+        werte: { plan, coupon: couponRoh },
+      };
+    }
+  }
+
+  try {
+    await merkePendingWahl({
+      kundeId: kunde.id,
+      plan,
+      intervall: intervall ?? ABRECHNUNG_STANDARD,
+      promotionCodeId,
+    });
+    await vergissAbrechnung();
+  } catch (ursache) {
+    protokolliere("planMerken", ursache);
+    return fehler(
+      "Der gewählte Plan liess sich gerade nicht übernehmen. Versuch es in einem Moment noch einmal.",
+    );
+  }
+
+  redirect("/einrichtung/zahlung?zahlen=1");
 }

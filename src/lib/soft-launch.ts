@@ -46,7 +46,7 @@
  * Präfixe, die während des Soft-Launches nicht ausgeliefert werden.
  *
  * Jeder Eintrag sperrt die Route selbst **und** alles darunter
- * (`/einrichtung` deckt `/einrichtung/konto` mit ab). Die Liste ist am
+ * (`/einrichtung` deckt `/einrichtung/betrieb` mit ab). Die Liste ist am
  * 2026-09-03 gegen `src/app/**` erhoben, nicht geraten — es gibt in
  * diesem Repo weder `/auth/*` noch `/api/auth/*`, keinen
  * OAuth-Callback, keinen Checkout-Redirect und kein Kundenportal als

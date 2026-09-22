@@ -57,10 +57,23 @@ describe("Kostenloses Testen bleibt ohne Rechnungsdaten möglich", () => {
     );
   });
 
-  it("kennt weiterhin den Überspringen-Weg", () => {
+  it("kennt keinen Überspringen-Weg mehr", () => {
+    /*
+     * Kursänderung 2026-09-22 (Nutzerwunsch): keine Testphase mehr, also
+     * auch kein „später hinterlegen". Jedes Abo ist sofort fällig; ein
+     * kostenloser erster Monat läuft über einen 100-%-Rabattcode.
+     */
     assert.ok(
-      planwahl.includes('formData.get("absicht") === "ueberspringen"'),
-      "der Weg 'später hinterlegen' muss bestehen bleiben",
+      !planwahl.includes('=== "ueberspringen"'),
+      "der Überspringen-Weg ist entfallen und darf nicht zurückkehren",
+    );
+  });
+
+  it("legt kein Abo mehr mit Testphase an", () => {
+    const stripe = lies("src/lib/stripe.ts");
+    assert.ok(
+      !stripe.includes("trial_period_days:"),
+      "seit dem 2026-09-22 gibt es keine Testphase — kein trial_period_days-Parameter",
     );
   });
 });
@@ -156,18 +169,29 @@ describe("3DS kehrt zu der Seite zurück, auf der das Formular stand", () => {
   });
 
   it("wird von beiden Seiten ausgewertet", () => {
-    for (const seite of [
-      "src/app/(site)/einrichtung/zahlung/page.tsx",
-      "src/app/(site)/einrichtung/testphase-abgelaufen/page.tsx",
-    ]) {
+    /*
+     * Beide Seiten werten `?setup_intent=` aus und schliessen den 3DS-Rückweg
+     * ab — nur mit verschiedenen Aktionen: die Zahlungsseite legt für einen
+     * **neuen** Betrieb erst nach der Zahlung den Betrieb an
+     * (`betriebAbschliessen`), die Sperrseite übernimmt für einen
+     * **bestehenden** Betrieb das Zahlungsmittel (`zahlungsmittelUebernehmen`).
+     */
+    const seiten: ReadonlyArray<readonly [string, readonly string[]]> = [
+      [
+        "src/app/(site)/einrichtung/zahlung/page.tsx",
+        ["betriebAbschliessen", "zahlungsmittelUebernehmen"],
+      ],
+      ["src/app/(site)/einrichtung/testphase-abgelaufen/page.tsx", ["zahlungsmittelUebernehmen"]],
+    ];
+    for (const [seite, abschluesse] of seiten) {
       const quelle = lies(seite);
       assert.ok(
         quelle.includes('params["setup_intent"]'),
         `${seite} muss den 3DS-Rückweg auswerten`,
       );
       assert.ok(
-        quelle.includes("zahlungsmittelUebernehmen"),
-        `${seite} muss die Zahlungsmethode übernehmen`,
+        abschluesse.some((name) => quelle.includes(name)),
+        `${seite} muss den 3DS-Rückweg abschliessen`,
       );
     }
   });

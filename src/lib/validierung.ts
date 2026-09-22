@@ -153,21 +153,26 @@ export const feldSchemata = {
         ),
     ),
   /*
-   * Österreichische UID-Nummer, freiwillig — abgefragt in Schritt 2, nur
-   * für Betriebe mit `land = 'AT'`. Sie entscheidet bei Stripe Tax über
-   * das Reverse-Charge-Verfahren; ohne sie behandelt Stripe den Betrieb
-   * wie einen Privatkunden. Für deutsche Betriebe ändert sie nichts
-   * (Inlandsumsatz), deshalb gibt es dort kein Feld.
+   * UID- bzw. Umsatzsteuer-Identifikationsnummer, abgefragt in Schritt 2
+   * für Betriebe **beider** Länder (Kursänderung 2026-09-21: QuickTeam
+   * verkauft ausschliesslich an Unternehmer, deshalb ist die Nummer für
+   * AT **und** DE Pflicht — siehe `CLAUDE.md`). Für Österreich entscheidet
+   * sie bei Stripe Tax über das Reverse-Charge-Verfahren; für einen
+   * deutschen Inlandsumsatz ändert sie die Steuerbehandlung nicht, wird
+   * aber trotzdem erhoben und auf der Rechnung ausgewiesen.
    *
-   * Leerzeichen, Punkte und Bindestriche aus dem Kopieren werden entfernt,
-   * statt daraus einen Fehler zu machen. Leer heisst „keine Angabe" und
-   * ist gültig. Ob die Nummer tatsächlich vergeben ist, prüft Stripe
-   * danach gegen VIES — hier geht es nur um die Form.
+   * Das Feldschema prüft nur die **Form** und lässt beide Landesformate
+   * sowie den leeren String zu: `ATU` + 8 Ziffern (AT), `DE` + 9 Ziffern
+   * (DE). Ob die Nummer zum gewählten Rechnungsland passt und ob sie
+   * überhaupt gesetzt ist, entscheidet erst `rechnungSchema` — dort ist
+   * das Land bekannt. Leerzeichen, Punkte und Bindestriche aus dem
+   * Kopieren werden entfernt, statt daraus einen Fehler zu machen. Ob die
+   * Nummer tatsächlich vergeben ist, prüft Stripe danach gegen VIES.
    */
   uid: z
     .string()
     .transform((wert) => wert.replace(/[\s.-]/gu, "").toUpperCase())
-    .refine((wert) => wert === "" || /^ATU\d{8}$/u.test(wert), {
+    .refine((wert) => wert === "" || /^ATU\d{8}$/u.test(wert) || /^DE\d{9}$/u.test(wert), {
       error: vm("v.uid.form"),
     }),
   /*
@@ -250,6 +255,16 @@ export function pruefeFeld(
 }
 
 /*
+ * Das Anlegen eines **Kontos** — seit dem 2026-09-22 getrennt vom Anlegen
+ * eines Betriebs (siehe `CLAUDE.md`, „Registrierungs-Flow", und
+ * `docs/claude-md-historie.md`). Die Registrierung erzeugt nur noch ein
+ * Nutzerkonto; Betriebsdaten (Name, Land, Chef-Name, Promo-Code) werden
+ * erst später beim Anlegen des Betriebs erhoben (`betriebSchema`).
+ *
+ * Der einzige Haken hier ist die **Datenschutzerklärung** — eine
+ * persönliche Kenntnisnahme, die zum Konto gehört; AGB und AVV
+ * (betriebliche Vertragsannahme) folgen beim Betrieb.
+ *
  * Die Wiederholung steht hier und **nicht** in `loginSchema`. Das ist
  * kein Versehen: beim Anlegen ist ein Tippfehler im Passwort erst
  * bemerkbar, wenn die Anmeldung Wochen später scheitert — bis dahin
@@ -261,17 +276,12 @@ export function pruefeFeld(
  * `refine` und derselben Meldung — dieselbe Frage soll nicht zweimal
  * verschieden beantwortet werden.
  */
-export const registrierungSchema = z
+export const kontoSchema = z
   .object({
-    betrieb_name: feldSchemata.betrieb_name,
-    land: feldSchemata.land,
-    vorname: feldSchemata.vorname,
-    nachname: feldSchemata.nachname,
     email: feldSchemata.email,
     passwort: feldSchemata.passwort,
     wiederholung: feldSchemata.wiederholung,
     zustimmung: feldSchemata.zustimmung,
-    promo_code: feldSchemata.promo_code,
   })
   .refine((werte) => werte.passwort === werte.wiederholung, {
     /*
@@ -284,7 +294,26 @@ export const registrierungSchema = z
     error: vm("v.wiederholung.ungleich"),
   });
 
-export type Registrierung = z.infer<typeof registrierungSchema>;
+export type Konto = z.infer<typeof kontoSchema>;
+
+/*
+ * Das Anlegen eines **Betriebs** — der zweite, getrennte Schritt. Die
+ * Session steht hier bereits (das Konto ist bestätigt), deshalb reisen
+ * diese Felder nicht mehr durch `user_metadata`, sondern kommen direkt
+ * aus dem Formular. Der Haken deckt die **betriebliche** Vertragsannahme
+ * ab: AGB und AVV. Die Datenschutz-Kenntnisnahme ist schon beim Konto
+ * erfolgt (`kontoSchema`).
+ */
+export const betriebSchema = z.object({
+  betrieb_name: feldSchemata.betrieb_name,
+  land: feldSchemata.land,
+  vorname: feldSchemata.vorname,
+  nachname: feldSchemata.nachname,
+  zustimmung: feldSchemata.zustimmung,
+  promo_code: feldSchemata.promo_code,
+});
+
+export type BetriebEingabe = z.infer<typeof betriebSchema>;
 
 /*
  * Die nachgeholte Zustimmung im Dashboard.
@@ -385,23 +414,25 @@ export const uidSchema = z.object({ uid: feldSchemata.uid });
  * auseinander.
  *
  * ─────────────────────────────────────────────────────────────────────
- *  Die UID ist für österreichische Rechnungsempfänger Pflicht
+ *  Die UID/USt-IdNr ist für AT und DE Pflicht
  * ─────────────────────────────────────────────────────────────────────
  *
- * Produktentscheidung vom 2026-09-18 (siehe `CLAUDE.md`, Abschnitt
- * „Abo & Zahlung"): QuickTeam verkauft ausschliesslich an Unternehmer.
- * Für einen österreichischen Rechnungsempfänger heisst das eine gültige
- * UID — ohne sie behandelte Stripe Tax den Betrieb wie einen
- * Privatkunden, und genau das soll nicht vorkommen.
+ * Produktentscheidung vom 2026-09-18, erweitert am 2026-09-21 (siehe
+ * `CLAUDE.md`, Abschnitt „Abo & Zahlung"): QuickTeam verkauft
+ * ausschliesslich an Unternehmer. Für einen österreichischen
+ * Rechnungsempfänger heisst das eine gültige UID (`ATU…`); für einen
+ * deutschen eine USt-IdNr (`DE…`). Ohne UID behandelte Stripe Tax einen
+ * österreichischen Betrieb wie einen Privatkunden — genau das soll nicht
+ * vorkommen; für Deutschland ändert die Nummer die Steuerbehandlung nicht,
+ * wird aber als Unternehmernachweis verlangt und ausgewiesen.
  *
  * Die Pflicht sitzt **hier** am Rechnungstor und nicht in Schritt 2:
  * dieselbe Schwelle wie bei der Anschrift — sie greift erst, wenn eine
  * Rechnung entstehen kann. Kostenloses Testen ohne Zahlungsmittel bleibt
  * ohne UID möglich; wer aktiviert, braucht sie. Das Feldschema
- * `feldSchemata.uid` lässt den leeren String weiterhin zu (für
- * deutsche Betriebe wird das Feld gar nicht angezeigt, ein trotzdem
- * hereingereichter Wert wird verworfen); die Pflicht für `AT` prüft
- * dieses zusammengesetzte Schema, weil erst hier das Land bekannt ist.
+ * `feldSchemata.uid` lässt den leeren String und beide Landesformate zu;
+ * die Pflicht und die Zuordnung zum Rechnungsland prüft dieses
+ * zusammengesetzte Schema, weil erst hier das Land bekannt ist.
  */
 export const rechnungSchema = z
   .object({
@@ -421,8 +452,21 @@ export const rechnungSchema = z
         message: vm(werte.land === "AT" ? "v.plz.at" : "v.plz.de", { anzahl: erwartet }),
       });
     }
-    if (werte.land === "AT" && werte.uid === "") {
+    /*
+     * UID/USt-IdNr ist seit dem 2026-09-21 für **beide** Länder Pflicht
+     * (Kursänderung, siehe `CLAUDE.md`): leer fällt hier durch, und eine
+     * Nummer muss zum Rechnungsland passen — eine deutsche `DE…` an einem
+     * österreichischen Empfänger (oder umgekehrt) ist keine gültige
+     * Grundlage für die Steuerbehandlung. Das Feldschema lässt beide
+     * Formate zu; die Zuordnung zum Land entsteht erst hier.
+     */
+    if (werte.uid === "") {
       ctx.addIssue({ code: "custom", path: ["uid"], message: vm("v.uid.pflicht") });
+    } else {
+      const passt = werte.land === "AT" ? /^ATU\d{8}$/u : /^DE\d{9}$/u;
+      if (!passt.test(werte.uid)) {
+        ctx.addIssue({ code: "custom", path: ["uid"], message: vm("v.uid.form") });
+      }
     }
   });
 

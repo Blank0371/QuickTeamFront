@@ -5,7 +5,7 @@ import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { FormMeldung } from "@/components/formular/felder";
+import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import {
   RechnungsFelder,
   type RechnungsWerte,
@@ -16,7 +16,25 @@ import type { Locale } from "@/i18n/config";
 import { rechnungSchema } from "@/lib/validierung";
 import { feldFehler } from "@/lib/formular";
 
-import { rechnungSpeichern, zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
+import {
+  rabattAnwenden,
+  rechnungSpeichern,
+  zahlungsmittelUebernehmen,
+  type UebernahmeErgebnis,
+} from "@/lib/zahlung-aktionen";
+
+/**
+ * Welche Server Actions das Formular ruft. Vorbelegt mit dem Weg des
+ * **bestehenden** Betriebs; der Weg des noch nicht angelegten Betriebs
+ * (Schritt 2 für einen neuen Betrieb) reicht eigene Aktionen herein und
+ * blendet den Rabattcode aus, weil der schon in der Plan-Auswahl gewählt
+ * und geparkt wurde.
+ */
+type Aktionen = {
+  rechnungAktion?: (eingabe: Record<string, string>) => Promise<UebernahmeErgebnis>;
+  finalisieren?: (setupIntentId: string) => Promise<UebernahmeErgebnis>;
+  mitCoupon?: boolean;
+};
 
 /**
  * Das eingebettete Zahlungsformular von Schritt 2.
@@ -135,7 +153,12 @@ function Formular({
   texte,
   rechnungTexte,
   laender,
-}: Abschluss & Rueckkehr & { rechnung: RechnungsWerte } & Omit<StepTexte, "locale">) {
+  rechnungAktion = rechnungSpeichern,
+  finalisieren = zahlungsmittelUebernehmen,
+  mitCoupon = true,
+}: Abschluss &
+  Rueckkehr &
+  Aktionen & { rechnung: RechnungsWerte } & Omit<StepTexte, "locale">) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -151,6 +174,12 @@ function Formular({
    */
   const [uidVorhanden] = useState(() => rechnung.uid.trim() !== "");
   const [felder, setFelder] = useState<Record<string, string>>({});
+  /*
+   * Der Stripe-Rabattcode lässt sich auch hier eingeben, nicht nur auf der
+   * Plan-Auswahl (Nutzerwunsch 2026-09-22). Freiwillig; wird vor
+   * `confirmSetup` auf das bestehende Abo gelegt (`rabattAnwenden`).
+   */
+  const [coupon, setCoupon] = useState("");
 
   function aendere(feld: keyof RechnungsWerte, wert: string) {
     setWerte((vorher) => ({ ...vorher, [feld]: wert }));
@@ -193,12 +222,27 @@ function Formular({
         return;
       }
 
-      const gespeichert = await rechnungSpeichern(werte);
+      const gespeichert = await rechnungAktion(werte);
       if (!gespeichert.ok) {
         setFehler(gespeichert.nachricht);
         if (gespeichert.felder) setFelder(gespeichert.felder);
         setLaeuft(false);
         return;
+      }
+
+      /*
+       * Rabattcode vor `confirmSetup`, damit der Nachlass schon am Abo
+       * hängt, wenn eine Karte über 3DS die Seite verlässt oder eine offene
+       * Erstrechnung gleich bezahlt wird. Ein leerer Code ist kein Fehler.
+       */
+      if (mitCoupon && coupon.trim().length > 0) {
+        const rabatt = await rabattAnwenden(coupon);
+        if (!rabatt.ok) {
+          setFehler(rabatt.nachricht);
+          if (rabatt.felder) setFelder((vorher) => ({ ...vorher, ...rabatt.felder }));
+          setLaeuft(false);
+          return;
+        }
       }
 
       /*
@@ -277,7 +321,7 @@ function Formular({
        * und prüft, dass er zu diesem Betrieb gehört. Was der Browser
        * behauptet, zählt dabei nicht.
        */
-      const ergebnis = await zahlungsmittelUebernehmen(setupIntent.id);
+      const ergebnis = await finalisieren(setupIntent.id);
 
       if (!ergebnis.ok) {
         setFehler(ergebnis.nachricht);
@@ -307,6 +351,24 @@ function Formular({
       />
 
       <PaymentElement />
+
+      {mitCoupon ? (
+        <TextFeld
+          id="coupon"
+          name="coupon"
+          label={texte.couponLabel}
+          required={false}
+          autoComplete="off"
+          maxLength={40}
+          wert={coupon}
+          beiEingabe={(wert) => {
+            setCoupon(wert);
+            setFelder((vorher) => (vorher.coupon ? { ...vorher, coupon: "" } : vorher));
+          }}
+          fehler={felder.coupon}
+          hinweis={texte.couponHinweis}
+        />
+      ) : null}
 
       {zusammenfassung.length > 0 ? (
         <ul
@@ -342,7 +404,13 @@ export function ZahlungsFormular({
   rechnungTexte,
   laender,
   locale,
-}: { clientSecret: string; rechnung: RechnungsWerte } & Abschluss & Rueckkehr & StepTexte) {
+  rechnungAktion,
+  finalisieren,
+  mitCoupon,
+}: { clientSecret: string; rechnung: RechnungsWerte } & Abschluss &
+  Rueckkehr &
+  Aktionen &
+  StepTexte) {
   /*
    * Das Erscheinungsbild entsteht erst im Browser — `getComputedStyle`
    * gibt es auf dem Server nicht. Bis dahin rendert `<Elements>` nichts,
@@ -372,6 +440,9 @@ export function ZahlungsFormular({
         texte={texte}
         rechnungTexte={rechnungTexte}
         laender={laender}
+        rechnungAktion={rechnungAktion}
+        finalisieren={finalisieren}
+        mitCoupon={mitCoupon}
       />
     </Elements>
   );

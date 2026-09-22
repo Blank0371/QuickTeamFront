@@ -91,6 +91,49 @@ export function aktuelleZustimmungVersionen(): ZustimmungVersionen {
 }
 
 /**
+ * Nur die Datenschutz-Fassung — beim Konto-Signup mitgeführt.
+ *
+ * Seit dem 2026-09-22 entsteht das Konto **ohne** Betrieb; AGB und AVV
+ * (betriebliche Vertragsannahme) folgen erst beim Anlegen des Betriebs.
+ * Beim Signup wird deshalb allein die Datenschutz-Kenntnisnahme abgehakt.
+ * Sie kann noch nicht geschrieben werden — `rechtliche_zustimmungen`
+ * verlangt eine `betrieb_id` —, also reist ihre Fassung in `user_metadata`
+ * mit, wie zuvor die drei Fassungen, und wird beim Anlegen des Betriebs
+ * eingetragen.
+ */
+export function datenschutzSignupVersionen(): Pick<ZustimmungVersionen, "datenschutz"> {
+  return { datenschutz: RECHTSTEXT_VERSIONEN.datenschutz };
+}
+
+/** Die beim Signup zugestimmte Datenschutz-Fassung; `null`, wenn keine mitkam. */
+export function datenschutzAusMetadaten(
+  metadaten: Record<string, unknown> | null | undefined,
+): string | null {
+  const roh = metadaten?.[ZUSTIMMUNG_METADATEN_SCHLUESSEL];
+  if (typeof roh !== "object" || roh === null) return null;
+  const wert = (roh as Record<string, unknown>)["datenschutz"];
+  return typeof wert === "string" && wert.trim() !== "" ? wert : null;
+}
+
+/**
+ * Die drei Fassungen für den Betrieb-Insert: AGB und AVV in ihrer
+ * geltenden Fassung (eben im Betriebsformular angenommen), Datenschutz in
+ * der Fassung, der beim Konto-Signup zugestimmt wurde — sonst der
+ * geltenden. So hält die Beweisspur fest, welchem Datenschutztext die
+ * Person tatsächlich zugestimmt hat, auch wenn er sich zwischen Signup und
+ * Betrieb-Anlage geändert hat.
+ */
+export function zustimmungFuerBetrieb(
+  metadaten: Record<string, unknown> | null | undefined,
+): ZustimmungVersionen {
+  return {
+    agb: RECHTSTEXT_VERSIONEN.agb,
+    avv: RECHTSTEXT_VERSIONEN.avv,
+    datenschutz: datenschutzAusMetadaten(metadaten) ?? RECHTSTEXT_VERSIONEN.datenschutz,
+  };
+}
+
+/**
  * Schreibt die drei Zustimmungszeilen.
  *
  * Ein einziges `insert` mit drei Zeilen, nicht drei Aufrufe: entweder

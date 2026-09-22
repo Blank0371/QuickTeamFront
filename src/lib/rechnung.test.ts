@@ -31,7 +31,7 @@ const VOLLSTAENDIG_DE = {
   rechnung_plz: "10115",
   rechnung_ort: "Berlin",
   land: "DE",
-  uid: "",
+  uid: "DE123456789",
 };
 
 describe("pruefeRechnung", () => {
@@ -49,11 +49,11 @@ describe("pruefeRechnung", () => {
     });
   });
 
-  it("nimmt vollständige deutsche Angaben ohne UID an", () => {
+  it("nimmt vollständige deutsche Angaben mit USt-IdNr an", () => {
     const ergebnis = pruefeRechnung(VOLLSTAENDIG_DE, TEXTE);
     assert.equal(ergebnis.ok, true);
     if (!ergebnis.ok) return;
-    assert.equal(ergebnis.profil.uid, "");
+    assert.equal(ergebnis.profil.uid, "DE123456789");
   });
 
   it("lehnt jedes fehlende Pflichtfeld einzeln ab", () => {
@@ -101,18 +101,16 @@ describe("pruefeRechnung", () => {
     if (!ergebnis.ok) assert.ok(ergebnis.felder["land"]);
   });
 
-  it("verwirft eine UID bei einem deutschen Betrieb, statt sie abzulehnen", () => {
+  it("lehnt eine österreichische UID bei einem deutschen Betrieb ab", () => {
     /*
-     * Das Feld wird deutschen Betrieben gar nicht angezeigt — ein Wert
-     * kann also nur aus einer manipulierten Anfrage stammen. Ihn
-     * abzulehnen hiesse, eine Meldung zu einem Feld zu zeigen, das der
-     * Absender nie gesehen hat; für einen Inlandsumsatz ändert er
-     * ohnehin nichts.
+     * Seit dem 2026-09-21 ist die Nummer für beide Länder Pflicht und muss
+     * zum Rechnungsland passen. Eine `ATU…` an einem deutschen Empfänger
+     * ist keine gültige Grundlage für die Steuerbehandlung.
      */
     const ergebnis = pruefeRechnung({ ...VOLLSTAENDIG_DE, uid: "ATU12345678" }, TEXTE);
-    assert.equal(ergebnis.ok, true);
-    if (!ergebnis.ok) return;
-    assert.equal(ergebnis.profil.uid, "");
+    assert.equal(ergebnis.ok, false);
+    if (ergebnis.ok) return;
+    assert.ok(ergebnis.felder["uid"]);
   });
 
   it("lehnt eine formal falsche österreichische UID ab", () => {
@@ -138,11 +136,20 @@ describe("pruefeRechnung", () => {
     assert.ok(ergebnis.felder["uid"]);
   });
 
-  it("lässt eine leere UID bei deutschen Betrieben zu", () => {
-    // Für einen Inlandsumsatz ist die UID belanglos; das Feld wird
-    // deutschen Betrieben gar nicht erst angezeigt.
+  it("lehnt eine leere USt-IdNr bei deutschen Betrieben ab", () => {
+    // Seit dem 2026-09-21 Pflicht für beide Länder: QuickTeam verkauft nur
+    // an Unternehmer, deshalb wird die Nummer auch für DE verlangt.
     const ergebnis = pruefeRechnung({ ...VOLLSTAENDIG_DE, uid: "" }, TEXTE);
+    assert.equal(ergebnis.ok, false);
+    if (ergebnis.ok) return;
+    assert.ok(ergebnis.felder["uid"]);
+  });
+
+  it("räumt eine deutsche USt-IdNr mit Trennzeichen auf", () => {
+    const ergebnis = pruefeRechnung({ ...VOLLSTAENDIG_DE, uid: "de 123.456-789" }, TEXTE);
     assert.equal(ergebnis.ok, true);
+    if (!ergebnis.ok) return;
+    assert.equal(ergebnis.profil.uid, "DE123456789");
   });
 
   it("behandelt fehlende Schlüssel wie leere Felder", () => {

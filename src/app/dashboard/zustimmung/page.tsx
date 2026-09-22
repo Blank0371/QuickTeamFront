@@ -3,9 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Container } from "@/components/container";
+import { SprachWahl } from "@/components/sprach-wahl";
 import { aboVerwalten } from "@/app/dashboard/(arbeit)/einstellungen/aktionen";
 import { abmelden } from "@/lib/auth-aktionen";
 import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
 import { sicheresZiel, zustimmungAdresse, ZIEL_PARAMETER } from "@/lib/dashboard/pfad";
 import {
   gewuenschtePositionsId,
@@ -76,7 +78,7 @@ export default async function ZustimmungSeite({
   const befund = await ermittleZustimmungBefund(supabase, position.betriebId, user.id);
   if (befund.art === "zugestimmt") redirect(ziel);
 
-  const t = await holeTexte();
+  const [t, sprache] = await Promise.all([holeTexte(), leseSprache()]);
 
   /*
    * Die Prüfung selbst ist gescheitert — wir wissen nicht, ob eine
@@ -90,6 +92,10 @@ export default async function ZustimmungSeite({
     return (
       <Container className="py-12 sm:py-16">
         <div className="mx-auto w-full max-w-2xl">
+          <div className="mb-6 flex justify-end">
+            <SprachWahl aktiv={sprache} />
+          </div>
+
           <p className="font-mono text-xs uppercase tracking-[0.16em] text-stop">
             Prüfung fehlgeschlagen
           </p>
@@ -132,6 +138,10 @@ export default async function ZustimmungSeite({
   return (
     <Container className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
+        <div className="mb-6 flex justify-end">
+          <SprachWahl aktiv={sprache} />
+        </div>
+
         <h1 className="text-3xl leading-[1.1] sm:text-4xl">
           {aenderung
             ? "Neue Fassung — bitte einmal ansehen"

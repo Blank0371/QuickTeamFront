@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
 import type { Rechnungsangaben } from "@/lib/betrieb";
-import { plaene, TESTPHASE_TAGE, type Abrechnung, type PlanId } from "@/lib/site";
+import { plaene, type Abrechnung, type PlanId } from "@/lib/site";
 import type { LandCode } from "@/lib/validierung";
 import type { RechnungsProfil } from "@/lib/rechnung-pruefung";
 import { verlangeSoftLaunchFrei } from "@/lib/soft-launch-riegel";
@@ -23,6 +23,45 @@ import { verlangeSoftLaunchFrei } from "@/lib/soft-launch-riegel";
 
 /** Schlüssel, unter dem die Betriebszuordnung an Stripe-Objekten hängt. */
 const BETRIEB_SCHLUESSEL = "betrieb_id";
+
+/**
+ * Schlüssel für einen **noch nicht angelegten** Betrieb.
+ *
+ * Seit dem 2026-09-22 entsteht die `betriebe`-Zeile erst, wenn Stripe die
+ * Zahlung bestätigt hat (Nutzerwunsch: kein halber Betrieb in der DB). Bis
+ * dahin gibt es keine `betrieb_id`, an der Kunde und Abo hängen könnten —
+ * beide werden stattdessen über die Auth-User-ID des Chefs zugeordnet, und
+ * die Betriebsdaten aus Schritt 1 reisen in der Kunden-Metadata mit. Beim
+ * Anlegen des Betriebs wandert die Zuordnung von hier auf `BETRIEB_SCHLUESSEL`
+ * (`verknuepfePendingMitBetrieb`).
+ */
+const PENDING_SCHLUESSEL = "pending_user";
+
+/** Metadata-Schlüssel der zwischengeparkten Betriebsdaten (Schritt 1/2). */
+const P = {
+  name: "p_name",
+  land: "p_land",
+  vorname: "p_vorname",
+  nachname: "p_nachname",
+  promo: "p_promo",
+  plan: "p_plan",
+  intervall: "p_intervall",
+  promotion: "p_promotion",
+} as const;
+
+/** Die in der Kunden-Metadata geparkten Betriebs- und Planangaben. */
+export type PendingBetrieb = {
+  name: string;
+  land: LandCode;
+  vorname: string;
+  nachname: string;
+  /** Interner Partner-Promo-Code (nicht der Stripe-Rabattcode). */
+  promoCode: string | null;
+  plan: PlanId | null;
+  intervall: Abrechnung | null;
+  /** ID eines geprüften Stripe-`promotion_code`, oder `null`. */
+  promotionCodeId: string | null;
+};
 
 /**
  * Eine fehlende Konfiguration ist kein Nutzerfehler und keine Ausnahme,
@@ -303,6 +342,269 @@ export async function holeOderErstelleKunde({
 }
 
 /* ------------------------------------------------------------------ */
+/* Pending-Betrieb: Kunde und Abo vor dem Anlegen des Betriebs         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Findet den Stripe-Kunden, hinter dem der noch nicht angelegte Betrieb
+ * dieser Person zwischengeparkt ist — rein lesend, ohne anzulegen.
+ *
+ * Erkennungsmerkmal: `pending_user` in der Metadata gleich der Auth-User-ID
+ * **und** noch keine `betrieb_id`. Nach dem Anlegen des Betriebs trägt der
+ * Kunde `betrieb_id` und gilt nicht mehr als pending.
+ */
+export async function suchePendingKunde({
+  userId,
+  email,
+}: {
+  userId: string;
+  email: string;
+}): Promise<Stripe.Customer | null> {
+  const stripe = stripeKlient();
+  const vorhandene = await stripe.customers.list({ email, limit: 100 });
+  return (
+    vorhandene.data.find(
+      (kunde) =>
+        !kunde.deleted &&
+        kunde.metadata?.[PENDING_SCHLUESSEL] === userId &&
+        !kunde.metadata?.[BETRIEB_SCHLUESSEL],
+    ) ?? null
+  );
+}
+
+/**
+ * Findet den Pending-Kunden oder legt ihn an und schreibt die
+ * Betriebsdaten aus Schritt 1 in seine Metadata.
+ *
+ * Der Kunde trägt Land (für Stripe Tax) und den Betriebsnamen; die vollen
+ * Rechnungsangaben kommen erst in Schritt 2. Ein erneuter Aufruf
+ * aktualisiert die geparkten Werte, statt einen zweiten Kunden anzulegen.
+ */
+export async function holeOderErstellePendingKunde({
+  userId,
+  email,
+  info,
+}: {
+  userId: string;
+  email: string;
+  info: {
+    name: string;
+    land: LandCode;
+    vorname: string;
+    nachname: string;
+    promoCode: string | null;
+  };
+}): Promise<Stripe.Customer> {
+  const stripe = stripeKlient();
+  const geparkt: Record<string, string> = {
+    [PENDING_SCHLUESSEL]: userId,
+    [P.name]: info.name,
+    [P.land]: info.land,
+    [P.vorname]: info.vorname,
+    [P.nachname]: info.nachname,
+    [P.promo]: info.promoCode ?? "",
+  };
+
+  const vorhanden = await suchePendingKunde({ userId, email });
+  if (vorhanden) {
+    return stripe.customers.update(vorhanden.id, {
+      name: info.name,
+      address: { country: info.land },
+      metadata: geparkt,
+    });
+  }
+
+  return stripe.customers.create(
+    {
+      email,
+      name: info.name,
+      address: { country: info.land },
+      preferred_locales: ["de"],
+      metadata: geparkt,
+    },
+    { idempotencyKey: `pending:${userId}:kunde` },
+  );
+}
+
+/** Parkt Plan, Intervall und geprüften Rabattcode am Pending-Kunden. */
+export async function merkePendingWahl({
+  kundeId,
+  plan,
+  intervall,
+  promotionCodeId,
+}: {
+  kundeId: string;
+  plan: PlanId;
+  intervall: Abrechnung;
+  promotionCodeId: string | null;
+}): Promise<void> {
+  await stripeKlient().customers.update(kundeId, {
+    metadata: {
+      [P.plan]: plan,
+      [P.intervall]: intervall,
+      [P.promotion]: promotionCodeId ?? "",
+    },
+  });
+}
+
+/** Liest die geparkten Betriebs- und Planangaben aus der Kunden-Metadata. */
+export function lesePendingBetrieb(kunde: Stripe.Customer): PendingBetrieb | null {
+  const m = kunde.metadata ?? {};
+  const name = m[P.name];
+  const land = m[P.land] === "AT" || m[P.land] === "DE" ? (m[P.land] as LandCode) : null;
+  if (!name || !land) return null;
+
+  const plan = plaene.find((p) => p.id === m[P.plan])?.id ?? null;
+  const intervall =
+    m[P.intervall] === "jahr" ? "jahr" : m[P.intervall] === "monat" ? "monat" : null;
+
+  return {
+    name,
+    land,
+    vorname: m[P.vorname] ?? "",
+    nachname: m[P.nachname] ?? "",
+    promoCode: m[P.promo] || null,
+    plan,
+    intervall,
+    promotionCodeId: m[P.promotion] || null,
+  };
+}
+
+/**
+ * Wo steht die Einrichtung eines noch nicht angelegten Betriebs? Nur
+ * lesend, für die Wiedereinstiegs-Ableitung.
+ *
+ *   - kein Pending-Kunde        → Schritt 1 (Betriebsdaten fehlen)
+ *   - Pending-Kunde, kein Abo    → Schritt 2 (Zahlung)
+ *   - Pending-Kunde, aktives Abo → das Anlegen des Betriebs steht aus
+ */
+export type PendingLage = {
+  kunde: Stripe.Customer | null;
+  /** Ein bezahltes/aktives Abo liegt vor — der Betrieb kann angelegt werden. */
+  aboBereit: boolean;
+  aboId: string | null;
+};
+
+export async function holePendingLage({
+  userId,
+  email,
+}: {
+  userId: string;
+  email: string;
+}): Promise<PendingLage> {
+  const kunde = await suchePendingKunde({ userId, email });
+  if (!kunde) return { kunde: null, aboBereit: false, aboId: null };
+
+  const { lebend } = await verlaufFuerKunde(kunde.id);
+  const aboBereit = lebend?.status === "active" || lebend?.status === "trialing";
+  return { kunde, aboBereit, aboId: lebend?.id ?? null };
+}
+
+/**
+ * Legt das Abo des noch nicht angelegten Betriebs an und bezahlt die erste
+ * Rechnung sofort mit der eben bestätigten Zahlungsmethode.
+ *
+ * Kein Trial: die Erstrechnung ist sofort fällig (ein 100-%-Rabattcode macht
+ * sie 0,00). Bei Erfolg ist das Abo `active`; erst dann legt der Aufrufer
+ * den Betrieb an und verknüpft ihn (`verknuepfePendingMitBetrieb`).
+ *
+ * Ein bereits lebendes Abo desselben Plans wird nicht ein zweites Mal
+ * angelegt, sondern nur (erneut) bezahlt — das fängt einen Doppelklick ab.
+ */
+export async function schliessePendingAbo({
+  userId,
+  kundeId,
+  plan,
+  intervall,
+  promotionCodeId,
+  zahlungsmittelId,
+  rechnung,
+}: {
+  userId: string;
+  kundeId: string;
+  plan: PlanId;
+  intervall: Abrechnung;
+  promotionCodeId: string | null;
+  zahlungsmittelId: string;
+  rechnung: Rechnungsangaben | null;
+}): Promise<Stripe.Subscription> {
+  const stripe = stripeKlient();
+  const preis = priceIdFuer(plan, intervall);
+  const ablehnung =
+    "Die Zahlung wurde abgelehnt, das Abo ist nicht gestartet. Versuch es mit einer anderen Zahlungsmethode.";
+
+  await stelleSteuerstandortSicher(kundeId, rechnung);
+  await stripe.customers.update(kundeId, {
+    invoice_settings: { default_payment_method: zahlungsmittelId },
+  });
+
+  const { lebend } = await verlaufFuerKunde(kundeId);
+  if (lebend) {
+    if (lebend.items.data[0]?.price.id === preis) {
+      const abo = await stripe.subscriptions.update(lebend.id, {
+        default_payment_method: zahlungsmittelId,
+      });
+      return bezahleOffeneRechnung(abo, ablehnung);
+    }
+    // Plan gewechselt, altes (noch unbezahltes) Abo verwerfen.
+    await stripe.subscriptions.cancel(lebend.id);
+  }
+
+  const abo = await stripe.subscriptions.create({
+    customer: kundeId,
+    items: [{ price: preis }],
+    default_payment_method: zahlungsmittelId,
+    payment_behavior: "default_incomplete",
+    ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
+    payment_settings: { save_default_payment_method: "on_subscription" },
+    automatic_tax: { enabled: true },
+    expand: ["latest_invoice"],
+    metadata: { [PENDING_SCHLUESSEL]: userId },
+  });
+
+  return bezahleOffeneRechnung(abo, ablehnung);
+}
+
+/**
+ * Verschiebt die Zuordnung von der Auth-User-ID auf den frisch angelegten
+ * Betrieb: `betrieb_id` an Kunde und Abo, Pending-Felder geleert.
+ *
+ * Das `subscriptions.update` mit neuer `betrieb_id` löst
+ * `customer.subscription.updated` aus — **daran** schreibt der Webhook die
+ * Zeile in `betrieb_abonnements` (die der Insert-Trigger schon angelegt hat).
+ * So bleibt der Webhook die einzige Stelle, die diese Tabelle schreibt.
+ */
+export async function verknuepfePendingMitBetrieb({
+  kundeId,
+  aboId,
+  betriebId,
+}: {
+  kundeId: string;
+  aboId: string;
+  betriebId: string;
+}): Promise<void> {
+  const stripe = stripeKlient();
+
+  const geleert = {
+    [BETRIEB_SCHLUESSEL]: betriebId,
+    [PENDING_SCHLUESSEL]: "",
+    [P.name]: "",
+    [P.land]: "",
+    [P.vorname]: "",
+    [P.nachname]: "",
+    [P.promo]: "",
+    [P.plan]: "",
+    [P.intervall]: "",
+    [P.promotion]: "",
+  };
+
+  await stripe.customers.update(kundeId, { metadata: geleert });
+  await stripe.subscriptions.update(aboId, {
+    metadata: { [BETRIEB_SCHLUESSEL]: betriebId, [PENDING_SCHLUESSEL]: "" },
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* Umsatzsteuer (Stripe Tax)                                           */
 /* ------------------------------------------------------------------ */
 
@@ -432,34 +734,21 @@ export async function speichereRechnungAmKunden(
 
   /*
    * ─────────────────────────────────────────────────────────────────
-   *  Die UID hängt am Rechnungsland, nicht am Formularfeld.
+   *  Die UID/USt-IdNr wird für beide Länder gesetzt (seit 2026-09-21).
    * ─────────────────────────────────────────────────────────────────
    *
-   * Drei Fälle, und alle drei müssen ausdrücklich behandelt sein — der
-   * mittlere ist der, der sonst durchrutscht:
+   * `setzeUid` ersetzt eine abweichende EU-Nummer und lässt bei leerer
+   * Angabe eine im Kundenportal gepflegte stehen. Der Wert kommt aus dem
+   * geprüften Profil und trägt beim Rechnungsland AT das Format `ATU…`,
+   * bei DE `DE…` — den Länderwechsel deckt das mit ab: eine `ATU…` wird
+   * durch die neue `DE…` ersetzt, weil `setzeUid` andere EU-Nummern vor
+   * dem Anlegen entfernt.
    *
-   *  1. Land AT, UID angegeben  → setzen (ersetzt eine abweichende).
-   *  2. **Land nicht mehr AT**  → vorhandene EU-Nummern **entfernen**.
-   *     Eine `ATU…` an einem deutschen Rechnungsempfänger ist keine
-   *     harmlose Altlast: Stripe Tax entscheidet daran über Reverse
-   *     Charge.
-   *  3. Land AT, Feld leer      → stehen lassen. „Keine Angabe" ist
-   *     nicht „löschen"; wer die Nummer im Kundenportal gepflegt hat,
-   *     verliert sie nicht dadurch, dass er hier eine Hausnummer
-   *     korrigiert. Wer sie wirklich loswerden will, tut das im Portal
-   *     — dort gibt es die Schaltfläche dafür, und dort ist es eine
-   *     bewusste Handlung.
+   * Da die UID seit dem 2026-09-21 am Rechnungstor für beide Länder
+   * Pflicht ist, ist `profil.uid` beim aktiven Speichern nicht leer; der
+   * Fallback `|| null` (keine Änderung) fängt nur den Speicherweg ab, der
+   * ausnahmsweise ohne Nummer läuft.
    */
-  if (profil.land !== "AT") {
-    const entfernt = await entferneUids(kundeId);
-    if (entfernt > 0) {
-      console.info(
-        `[stripe] ${entfernt} EU-Steuernummer(n) von ${kundeId} entfernt — Rechnungsland ist jetzt ${profil.land}.`,
-      );
-    }
-    return;
-  }
-
   await setzeUid(kundeId, profil.uid || null);
 }
 
@@ -477,15 +766,15 @@ export async function speichereRechnungAmKunden(
  *
  * Verlangt werden genau die Felder, die § 14 Abs. 4 UStG für eine
  * Rechnung an einen Unternehmer braucht und die wir nicht selbst
- * kennen: Firma, Straße, Postleitzahl, Ort, Land. **Für österreichische
- * Rechnungsempfänger zählt seit dem 2026-09-18 die UID dazu**
+ * kennen: Firma, Straße, Postleitzahl, Ort, Land. **Die UID/USt-IdNr
+ * zählt seit dem 2026-09-18 dazu, seit dem 2026-09-21 für AT und DE**
  * (Produktentscheidung — QuickTeam verkauft nur an Unternehmer; siehe
  * `rechnungSchema`). Dieselbe Prüfung läuft schon beim Speichern über
  * `pruefeRechnung`, aber sie wird hier wiederholt, weil dieser Riegel
  * auch auf dem 3DS-Rückweg und bei direktem Aufruf von
  * `zahlungsmittelUebernehmen()` greift, wo kein Formularinhalt mehr
  * existiert — und weil eine Anschrift auch über das Kundenportal ohne
- * UID an den Kunden geraten kann. Für Deutschland ist die UID belanglos.
+ * UID an den Kunden geraten kann.
  *
  * Ein Fehlschlag beim Abruf gilt als „nicht vollständig". Das ist die
  * sichere Richtung: lieber eine Aktivierung zu viel verweigern als eine
@@ -507,11 +796,16 @@ export async function rechnungVollstaendig(kundeId: string): Promise<boolean> {
     if (!anschriftDa) return false;
 
     /*
-     * Österreichischer Rechnungsempfänger ohne UID: unvollständig. Der
-     * Wert steht als `eu_vat`-Steuer-ID am Kunden (`setzeUid`), nicht in
-     * der Adresse — deshalb ein eigener Abruf.
+     * Rechnungsempfänger ohne UID/USt-IdNr: unvollständig. Seit dem
+     * 2026-09-21 gilt das für **beide** Länder (Kursänderung, siehe
+     * `CLAUDE.md`) — QuickTeam verkauft nur an Unternehmer. Der Wert steht
+     * als `eu_vat`-Steuer-ID am Kunden (`setzeUid`), nicht in der Adresse
+     * — deshalb ein eigener Abruf. Da `betriebe.land` per CHECK nur AT/DE
+     * kennt, verlangt die Bedingung die Nummer praktisch immer; die
+     * ausdrückliche Länderprüfung bleibt als lesbare Grenze stehen.
      */
-    if (a?.country === "AT" && !(await holeUid(kundeId))) return false;
+    if ((a?.country === "AT" || a?.country === "DE") && !(await holeUid(kundeId)))
+      return false;
 
     return true;
   } catch (ursache) {
@@ -528,11 +822,14 @@ export async function holeUid(kundeId: string): Promise<string | null> {
 }
 
 /**
- * Hinterlegt die UID-Nummer als Steuer-ID am Kunden.
+ * Hinterlegt die UID/USt-IdNr als `eu_vat`-Steuer-ID am Kunden — für
+ * österreichische (`ATU…`) wie deutsche (`DE…`) Rechnungsempfänger.
  *
  * Daran entscheidet Stripe Tax, ob ein grenzüberschreitender Umsatz an
- * einen österreichischen Betrieb nach dem Reverse-Charge-Verfahren läuft.
- * Stripe prüft die Nummer danach selbst gegen VIES.
+ * einen österreichischen Betrieb nach dem Reverse-Charge-Verfahren läuft;
+ * für einen deutschen Inlandsumsatz ändert die Nummer die Steuer nicht,
+ * wird aber als Unternehmernachweis auf der Rechnung geführt. Stripe prüft
+ * die Nummer danach selbst gegen VIES.
  *
  * `null` heisst „keine Angabe" und ändert nichts — eine im Kundenportal
  * gepflegte Nummer bleibt stehen. Eine abweichende wird ersetzt, damit
@@ -553,41 +850,14 @@ export async function setzeUid(kundeId: string, uid: string | null): Promise<voi
   await stripe.customers.createTaxId(kundeId, { type: "eu_vat", value: uid });
 }
 
-/**
- * Entfernt **alle** EU-Steuernummern des Kunden.
- *
- * ─────────────────────────────────────────────────────────────────────
- *  Warum das nicht `setzeUid(kundeId, null)` erledigt
- * ─────────────────────────────────────────────────────────────────────
- *
- * `setzeUid` steigt bei `null` sofort aus — dort heisst „keine Angabe"
- * ausdrücklich „lass stehen, was da ist". Das ist richtig für die
- * Planwahl, wo das Feld leer bleiben darf, ohne dass eine im
- * Kundenportal gepflegte Nummer verschwindet.
- *
- * Für einen **Länderwechsel** ist es falsch. Wechselt die
- * Rechnungsadresse von Österreich nach Deutschland, wäre eine stehen
- * gebliebene `ATU…` eine Steuernummer, die nicht zur Rechnungsanschrift
- * passt: Stripe Tax zöge sie weiterhin für die
- * Reverse-Charge-Entscheidung heran, und die Rechnung wiese eine
- * Umsatzsteuerbehandlung aus, für die es keine Grundlage mehr gibt.
- * „Stillschweigend falsch weiterverwenden" ist genau der Fall, den es
- * hier nicht geben darf.
- *
- * Zwei Namen für zwei Absichten, statt eines Parameters mit zwei
- * Bedeutungen: `setzeUid(null)` heisst „nichts angegeben",
- * `entferneUids()` heisst „weg damit".
+/*
+ * Hier stand `entferneUids()`, das bei einem Rechnungsland ausserhalb
+ * Österreichs alle EU-Steuernummern des Kunden löschte. Mit der
+ * Kursänderung vom 2026-09-21 (UID/USt-IdNr für AT **und** DE Pflicht,
+ * siehe CLAUDE.md) trägt auch ein deutscher Kunde eine `eu_vat`-Nummer;
+ * ein Länderwechsel ersetzt sie über `setzeUid`, statt sie zu entfernen.
+ * Ein pauschales Löschen hätte keinen Aufrufer mehr und wäre falsch.
  */
-export async function entferneUids(kundeId: string): Promise<number> {
-  const stripe = stripeKlient();
-  const ids = await stripe.customers.listTaxIds(kundeId, { limit: 10 });
-  const euIds = ids.data.filter((id) => id.type === "eu_vat");
-
-  for (const alt of euIds) {
-    await stripe.customers.deleteTaxId(kundeId, alt.id);
-  }
-  return euIds.length;
-}
 
 /* ------------------------------------------------------------------ */
 /* Abonnement                                                          */
@@ -736,6 +1006,46 @@ export async function aboLageBeiStripe({
 }
 
 /**
+ * Prüft einen vom Kunden eingegebenen **Stripe-Rabattcode** und gibt die
+ * ID des zugehörigen Promotion-Codes zurück, oder `null`.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Nicht zu verwechseln mit dem internen Partner-Promo-Code
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * `promo_codes` / `betrieb_promo_codes` (siehe `src/lib/promo-code.ts`)
+ * ist eine eigene Tabelle, mit der QuickTeam festhält, über welchen
+ * Werbepartner ein Betrieb gekommen ist — sie gewährt **keinen** Rabatt
+ * und der Betrieb zahlt denselben Preis. Dieser hier ist das Gegenteil:
+ * ein echter Stripe-Rabattcode (`promotion_code`), der auf das Abo einen
+ * Nachlass legt. Beide Wege stehen bewusst nebeneinander und teilen sich
+ * kein Feld.
+ *
+ * Gesucht wird nur unter **aktiven** Codes. Ein leerer oder unbekannter
+ * Code ist kein Fehler, sondern `null` — der Aufrufer entscheidet, ob er
+ * das dem Kunden als „Code ungültig" zeigt oder (bei leerer Eingabe)
+ * einfach ohne Rabatt fortfährt. Der Code selbst ist kundenseitig
+ * unkritisch: er wirkt nur, wenn Stripe ihn kennt und aktiv hält.
+ */
+export async function pruefePromotionCode(code: string): Promise<string | null> {
+  const bereinigt = code.trim();
+  if (bereinigt.length === 0) return null;
+
+  try {
+    const treffer = await stripeKlient().promotionCodes.list({
+      code: bereinigt,
+      active: true,
+      limit: 1,
+    });
+    return treffer.data[0]?.id ?? null;
+  } catch (ursache) {
+    const text = ursache instanceof Error ? ursache.message : String(ursache);
+    console.error(`[stripe] promotionCodes.list(${bereinigt}): ${text}`);
+    return null;
+  }
+}
+
+/**
  * Legt das Abonnement an — mit Testphase beim ersten Abo des Betriebs,
  * ohne bei jedem weiteren.
  *
@@ -792,6 +1102,7 @@ export async function erstelleAbo({
   email,
   kundeId = null,
   rechnung,
+  promotionCodeId = null,
 }: {
   betriebId: string;
   plan: PlanId;
@@ -800,6 +1111,13 @@ export async function erstelleAbo({
   email: string;
   kundeId?: string | null;
   rechnung: Rechnungsangaben | null;
+  /**
+   * ID eines geprüften Stripe-Promotion-Codes (`pruefePromotionCode`), oder
+   * `null`. Wird als `discounts` aufs neue Abo gelegt und wirkt ab der
+   * ersten echten Abbuchung; während der Testphase ist ohnehin nichts
+   * fällig. Der interne Partner-Promo-Code hat damit nichts zu tun.
+   */
+  promotionCodeId?: string | null;
 }): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
   const preis = priceIdFuer(plan, intervall);
@@ -820,18 +1138,21 @@ export async function erstelleAbo({
     await stripe.subscriptions.cancel(lebend.id);
   }
 
-  const ersteTestphase = anzahl === 0;
-
+  /*
+   * Seit dem 2026-09-22 (Nutzerwunsch): **keine Testphase mehr.** Ein
+   * kostenloser erster Monat läuft über einen Stripe-Rabattcode (100 %),
+   * nicht über `trial_period_days`. Jedes Abo entsteht `incomplete` mit
+   * offener Erstrechnung; das Zahlungsmittel bezahlt sie. Für einen
+   * **neuen** Betrieb läuft das über den Pending-Weg (`schliessePendingAbo`);
+   * `erstelleAbo` bedient nur noch den Neuabschluss eines **bestehenden**
+   * Betriebs (nach Kündigung), der ohnehin nie eine Testphase bekam.
+   */
   return stripe.subscriptions.create(
     {
       customer: kunde.id,
       items: [{ price: preis }],
-      ...(ersteTestphase
-        ? {
-            trial_period_days: TESTPHASE_TAGE,
-            trial_settings: { end_behavior: { missing_payment_method: "pause" } },
-          }
-        : { payment_behavior: "default_incomplete" }),
+      payment_behavior: "default_incomplete",
+      ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
       payment_settings: { save_default_payment_method: "on_subscription" },
       automatic_tax: { enabled: true },
       metadata: { [BETRIEB_SCHLUESSEL]: betriebId },
@@ -849,8 +1170,15 @@ export async function erstelleAbo({
      *   - ohne die Anzahl bekäme ein Betrieb, der binnen 24 Stunden
      *     kündigt und neu abschliesst, von Stripe das alte, gekündigte
      *     Abo als Antwort zurück — und es entstünde gar keins
+     *   - ohne den Rabatt-Marker würde ein zweiter Versuch mit jetzt
+     *     eingegebenem Code auf denselben Schlüssel laufen und Stripe
+     *     würfe wegen abweichender Parameter (`discounts`)
      */
-    { idempotencyKey: `betrieb:${betriebId}:abo:${plan}:${intervall}:${anzahl}` },
+    {
+      idempotencyKey: `betrieb:${betriebId}:abo:${plan}:${intervall}:${anzahl}${
+        promotionCodeId ? ":r" : ""
+      }`,
+    },
   );
 }
 

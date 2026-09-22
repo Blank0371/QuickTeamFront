@@ -1,45 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useState } from "react";
 
 import { AbsendenButton } from "@/components/formular/absenden-button";
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
 import { WahlKarte } from "@/components/formular/wahl";
 import { RadioGroup } from "@/components/ui/radio-group";
-import { leererZustand } from "@/lib/formular";
+import { leererZustand, type FormZustand } from "@/lib/formular";
 import type { Dictionary } from "@/i18n/de";
-import { plaene, TESTPHASE_TAGE, type Abrechnung, type PlanId } from "@/lib/site";
+import { plaene, type Abrechnung, type PlanId } from "@/lib/site";
 
 import { planWaehlen } from "./aktionen";
-
-/**
- * „Später hinterlegen" — der zweite Knopf desselben Formulars.
- *
- * Beide Knöpfe müssen den gewählten Plan mitschicken, deshalb ein
- * Formular und nicht zwei. Welcher gedrückt wurde, steht in `name`/`value`
- * des Submitters; dasselbe Muster wie beim erneuten Codeversand.
- *
- * Eigene Komponente, weil `useFormStatus` den Zustand des umgebenden
- * Formulars liest und dafür innerhalb davon stehen muss.
- */
-function UeberspringenButton({ text }: { text: string }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      name="absicht"
-      value="ueberspringen"
-      disabled={pending}
-      aria-disabled={pending}
-      className="w-full rounded-blk border border-line-strong px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-    >
-      {text}
-    </button>
-  );
-}
 
 /**
  * Plan-Auswahl von Schritt 2.
@@ -48,12 +20,16 @@ function UeberspringenButton({ text }: { text: string }) {
  * Sammlung anklickbarer `<div>`s sähe genauso aus und wäre mit der
  * Tastatur nicht bedienbar — Pfeiltasten innerhalb einer Radiogruppe
  * bekommt man geschenkt, sobald es wirklich Radiobuttons sind.
- */
-/**
- * `grenzen` und `proMonat` kommen als Prop vom Server-Elternteil, nicht
- * aus dem Context: sie gehören zu **dieser** Seite und nicht zu jedem
- * Formular der Anwendung. Das ist der Normalfall dieses Projekts — der
- * Context trägt nur Querschnittliches (`src/i18n/sprach-provider.tsx`).
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Der Monats/Jahres-Umschalter (seit 2026-09-21)
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Bis dahin zeigte dieser Schritt nur die auf `/preise` getroffene Wahl
+ * an; geändert wurde sie dort. Jetzt steht hier ein echter Umschalter:
+ * `intervall` ist Client-Zustand, damit die Preiszeilen sofort umspringen,
+ * und wandert über das versteckte Radiofeld `intervall` an die Server
+ * Action, die es dem Preisseiten-Cookie vorzieht.
  */
 export function PlanAuswahl({
   aktuell,
@@ -63,15 +39,14 @@ export function PlanAuswahl({
   proJahr,
   ustHinweis,
   uidFeld,
-  ohneTestphase,
   texte,
+  aktion = planWaehlen,
 }: {
   aktuell: PlanId;
   /**
-   * Monatlich oder jährlich — auf der Preisseite gewählt und im Cookie
-   * durchgereicht (`abrechnung-merker.ts`). Bestimmt hier nur Anzeige und
-   * die versteckte Weitergabe an die Server Action; einen Schalter gibt es
-   * in diesem Schritt bewusst nicht.
+   * Anfangswert des Umschalters — auf der Preisseite gewählt und im Cookie
+   * durchgereicht (`abrechnung-merker.ts`), sonst monatlich bzw. das
+   * Intervall eines bestehenden Abos.
    */
   intervall: Abrechnung;
   grenzen: Dictionary["planGrenzen"];
@@ -79,25 +54,50 @@ export function PlanAuswahl({
   proJahr: string;
   ustHinweis: string;
   /**
-   * Gesetzt nur für Betriebe in Österreich — dort entscheidet die UID über
-   * Reverse Charge. `vorbelegt` ist die bei Stripe hinterlegte Nummer.
+   * Gesetzt für Betriebe in AT und DE (Kursänderung 2026-09-21). `land`
+   * steuert Beschriftung und Formprüfung, `vorbelegt` ist die bei Stripe
+   * hinterlegte Nummer.
    */
-  uidFeld: { vorbelegt: string | null } | null;
-  /**
-   * Der Betrieb hatte schon ein Abo, das neue beginnt ohne Testphase.
-   * Dann gibt es nichts zu überspringen — ohne Zahlung kein Zugang.
-   */
-  ohneTestphase: boolean;
+  uidFeld: { vorbelegt: string | null; land: "AT" | "DE" } | null;
   texte: Dictionary["stepper"]["zahlung"];
+  /**
+   * Welche Server Action den Plan entgegennimmt: `planWaehlen` für einen
+   * bestehenden Betrieb (Neuabschluss), `planMerken` für den noch nicht
+   * angelegten Betrieb (parkt die Wahl in der Stripe-Metadata).
+   */
+  aktion?: (zustand: FormZustand, formData: FormData) => Promise<FormZustand>;
 }) {
-  const [zustand, aktion] = useActionState(planWaehlen, leererZustand);
+  const [zustand, formAktion] = useActionState(aktion, leererZustand);
   const { beiVerlassen, fehlerFuer } = useFeldPruefung(["uid"]);
 
-  const jaehrlich = intervall === "jahr";
+  const [gewaehltesIntervall, setzeIntervall] = useState<Abrechnung>(intervall);
+  const jaehrlich = gewaehltesIntervall === "jahr";
+
+  const uidLabel = uidFeld?.land === "DE" ? texte.uidLabelDe : texte.uidLabel;
+  const uidHinweis = uidFeld?.land === "DE" ? texte.uidHinweisDe : texte.uidHinweis;
 
   return (
-    <form action={aktion} onBlur={beiVerlassen} className="flex flex-col gap-6">
+    <form action={formAktion} onBlur={beiVerlassen} className="flex flex-col gap-6">
       {zustand.nachricht ? <FormMeldung art="fehler">{zustand.nachricht}</FormMeldung> : null}
+
+      {/*
+        Der Umschalter monatlich/jährlich. Eigene Radiogruppe mit `name`,
+        damit Radix das versteckte echte Feld mitschickt; `value`/
+        `onValueChange` machen ihn zum Client-Zustand, an dem die
+        Preiszeilen der Pläne hängen.
+      */}
+      <fieldset>
+        <legend className="mb-3 text-sm font-medium text-text">{texte.intervallLegende}</legend>
+        <RadioGroup
+          name="intervall"
+          value={gewaehltesIntervall}
+          onValueChange={(wert) => setzeIntervall(wert === "jahr" ? "jahr" : "monat")}
+          className="gap-3 sm:grid-cols-2"
+        >
+          <WahlKarte wert="monat" titel={texte.monatlich} text={texte.monatVorteil} />
+          <WahlKarte wert="jahr" titel={texte.jaehrlich} text={texte.jahrVorteil} />
+        </RadioGroup>
+      </fieldset>
 
       <fieldset>
         <legend className="mb-3 text-sm font-medium text-text">{texte.planLegende}</legend>
@@ -126,47 +126,44 @@ export function PlanAuswahl({
         </RadioGroup>
 
         <p className="mt-3 text-xs text-muted">{ustHinweis}</p>
-
-        {/*
-          Kein Umschalter, nur die Anzeige: monatlich oder jährlich hat der
-          Besucher auf der Preisseite gewählt. Die Zeile macht die Wahl
-          sichtbar, statt sie still im Cookie zu lassen — geändert wird sie
-          auf `/preise`.
-        */}
-        <p className="mt-2 text-xs text-muted">
-          {texte.abrechnung}{" "}
-          <span className="font-medium text-text">
-            {jaehrlich ? texte.jaehrlich : texte.monatlich}
-          </span>
-        </p>
       </fieldset>
 
       {uidFeld ? (
         <TextFeld
           id="uid"
           name="uid"
-          label={texte.uidLabel}
+          label={uidLabel}
           required={false}
           autoComplete="off"
           maxLength={20}
           defaultValue={zustand.werte?.uid ?? uidFeld.vorbelegt ?? ""}
           fehler={fehlerFuer("uid", zustand.felder)}
-          hinweis={texte.uidHinweis}
+          hinweis={uidHinweis}
         />
       ) : null}
+
+      {/*
+        Stripe-Rabattcode — freiwillig, echter `promotion_code` und nicht
+        der interne Partner-Promo-Code. Ein unbekannter Code kommt als
+        Feldfehler aus der Server Action zurück.
+      */}
+      <TextFeld
+        id="coupon"
+        name="coupon"
+        label={texte.couponLabel}
+        required={false}
+        autoComplete="off"
+        maxLength={40}
+        defaultValue={zustand.werte?.coupon ?? ""}
+        fehler={zustand.felder?.["coupon"]}
+        hinweis={texte.couponHinweis}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-start">
         <span className="sm:w-auto">
           <AbsendenButton laufend={texte.weiterLaufend}>{texte.weiterZahlung}</AbsendenButton>
         </span>
-        {ohneTestphase ? null : <UeberspringenButton text={texte.spaeter} />}
       </div>
-
-      {ohneTestphase ? null : (
-        <p className="text-xs leading-relaxed text-muted">
-          {texte.testphasenHinweis.replace("{tage}", String(TESTPHASE_TAGE))}
-        </p>
-      )}
     </form>
   );
 }

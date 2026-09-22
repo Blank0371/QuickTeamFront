@@ -3,17 +3,35 @@
 import { redirect } from "next/navigation";
 
 import { holeAbo } from "@/lib/abo";
-import { holeChefBetriebId, holeRechnungsangaben, type Rechnungsangaben } from "@/lib/betrieb";
+import {
+  holeChefBetriebId,
+  holeRechnungsangaben,
+  stelleBetriebSicher,
+  type Rechnungsangaben,
+} from "@/lib/betrieb";
 import {
   holeAboFuerBetrieb,
   holeOderErstelleKunde,
+  lesePendingBetrieb,
+  pruefePromotionCode,
   rechnungVollstaendig,
+  schliessePendingAbo,
+  suchePendingKunde,
   stripeKlient,
   uebernimmZahlungsmittel,
+  verknuepfePendingMitBetrieb,
   ZahlungAbgelehnt,
 } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { holeValidierung } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
+import { schreibePromoCode } from "@/lib/promo-code";
+import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
+import {
+  schreibeZustimmungen,
+  zustimmungFuerBetrieb,
+  zustimmungNachweisAusMetadaten,
+} from "@/lib/zustimmung";
 import { speichereRechnungsangaben } from "@/lib/rechnung";
 import { pruefeRechnung } from "@/lib/rechnung-pruefung";
 
@@ -60,7 +78,7 @@ async function kontext(): Promise<Kontext> {
   if (!user) redirect("/login");
 
   const betriebId = await holeChefBetriebId(supabase);
-  if (betriebId === null) redirect("/einrichtung/konto");
+  if (betriebId === null) redirect("/einrichtung/betrieb");
 
   const abo = await holeAbo(supabase, betriebId);
 
@@ -155,6 +173,62 @@ export async function rechnungSpeichern(
       ok: false,
       nachricht:
         "Die Rechnungsangaben liessen sich nicht speichern. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+    };
+  }
+}
+
+/**
+ * Legt einen Stripe-Rabattcode auf das bestehende Abo des Betriebs.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum hier und nicht nur in der Plan-Auswahl
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Der Code lässt sich auf beiden Ansichten von Schritt 2 eingeben
+ * (Nutzerwunsch 2026-09-22): auf der Plan-Auswahl geht er als `discounts`
+ * ins **neu entstehende** Abo (`planWaehlen` → `erstelleAbo`); hier, auf
+ * der Zahlungsansicht, existiert das Abo bereits — der Nachlass wird ihm
+ * per `subscriptions.update` nachträglich aufgelegt.
+ *
+ * Aufgerufen **vor** `confirmSetup`, damit der Rabatt schon am Abo hängt,
+ * wenn eine Karte über 3DS die Seite verlässt oder eine offene
+ * Erstrechnung sofort bezahlt wird. Ein leerer Code ist kein Fehler,
+ * sondern schlicht „kein Rabatt" (`ok: true`); ein unbekannter/inaktiver
+ * kommt als Feldfehler zurück, damit niemand glaubt, der Rabatt greife.
+ */
+export async function rabattAnwenden(code: string): Promise<UebernahmeErgebnis> {
+  const roh = code.trim();
+  if (roh.length === 0) return { ok: true };
+
+  const { betriebId, email, kundeId } = await kontext();
+
+  try {
+    const abo = await holeAboFuerBetrieb({ betriebId, email, kundeId });
+    if (!abo) {
+      return {
+        ok: false,
+        nachricht:
+          "Zu deinem Betrieb ist kein Abonnement hinterlegt. Wähl oben einen Plan aus.",
+      };
+    }
+
+    const promotionCodeId = await pruefePromotionCode(roh);
+    if (promotionCodeId === null) {
+      const v = await holeValidierung();
+      return { ok: false, nachricht: v["v.coupon.unbekannt"], felder: { coupon: v["v.coupon.unbekannt"] } };
+    }
+
+    await stripeKlient().subscriptions.update(abo.id, {
+      discounts: [{ promotion_code: promotionCodeId }],
+    });
+
+    return { ok: true };
+  } catch (ursache) {
+    protokolliere("rabattAnwenden", ursache);
+    return {
+      ok: false,
+      nachricht:
+        "Der Rabattcode liess sich nicht anwenden. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
     };
   }
 }
@@ -273,6 +347,208 @@ export async function zahlungsmittelUebernehmen(
       ok: false,
       nachricht:
         "Die Zahlungsmethode liess sich nicht übernehmen. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+    };
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Neuer Betrieb: Zahlung bestätigen, dann Betrieb anlegen            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Kontext des noch nicht angelegten Betriebs: der angemeldete Nutzer und
+ * sein Pending-Stripe-Kunde (Betriebsdaten in der Metadata). Ohne
+ * Pending-Kunde ist Schritt 1 noch offen — zurück dorthin.
+ */
+async function pendingKontext(): Promise<{
+  userId: string;
+  email: string;
+  kunde: Awaited<ReturnType<typeof suchePendingKunde>>;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/registrieren");
+
+  const kunde = await suchePendingKunde({ userId: user.id, email: user.email ?? "" });
+  if (!kunde) redirect("/einrichtung/betrieb");
+
+  return { userId: user.id, email: user.email ?? "", kunde };
+}
+
+/**
+ * Speichert die Rechnungsangaben am **Pending**-Kunden — das Gegenstück zu
+ * `rechnungSpeichern` für den noch nicht angelegten Betrieb. Gleiche
+ * Reihenfolge, gleicher Grund (siehe dort): erst die Angaben, dann die Karte.
+ */
+export async function rechnungPendingSpeichern(
+  eingabe: Record<string, string>,
+): Promise<UebernahmeErgebnis> {
+  const { kunde } = await pendingKontext();
+
+  const geprueft = pruefeRechnung(eingabe, await holeValidierung());
+  if (!geprueft.ok) {
+    return {
+      ok: false,
+      nachricht: "Bitte vervollständige die Rechnungsangaben.",
+      felder: geprueft.felder,
+    };
+  }
+
+  try {
+    await speichereRechnungsangaben(kunde!.id, geprueft.profil);
+    return { ok: true };
+  } catch (ursache) {
+    protokolliere("rechnungPendingSpeichern", ursache);
+    return {
+      ok: false,
+      nachricht:
+        "Die Rechnungsangaben liessen sich nicht speichern. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+    };
+  }
+}
+
+/**
+ * Der Abschluss des neuen Betriebs: Zahlung bestätigen → Abo anlegen und
+ * bezahlen → **erst danach** den Betrieb in der Datenbank anlegen, die
+ * Stripe-Objekte mit ihm verknüpfen, Zustimmung und Promo-Code festhalten.
+ *
+ * Die `betriebe`-Zeile entsteht also nur, wenn Stripe die Zahlung bestätigt
+ * hat — genau das war der Wunsch (kein halber Betrieb ohne Abo). Der Aufruf
+ * ist idempotent: ein zweiter Durchlauf findet das Abo lebend und den
+ * Betrieb schon als Chef und richtet keinen Schaden an.
+ */
+export async function betriebAbschliessen(
+  setupIntentId: string,
+): Promise<UebernahmeErgebnis> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/registrieren");
+
+  const kunde = await suchePendingKunde({ userId: user.id, email: user.email ?? "" });
+  if (!kunde) redirect("/einrichtung/betrieb");
+
+  const pending = lesePendingBetrieb(kunde);
+  if (!pending || !pending.plan || !pending.intervall) {
+    redirect("/einrichtung/zahlung");
+  }
+
+  try {
+    const stripe = stripeKlient();
+    const intent = await stripe.setupIntents.retrieve(setupIntentId);
+    const intentKunde =
+      typeof intent.customer === "string" ? intent.customer : (intent.customer?.id ?? null);
+
+    if (intentKunde !== kunde.id) {
+      console.error(
+        `[zahlung] SetupIntent ${setupIntentId} gehört zu ${intentKunde}, erwartet ${kunde.id}`,
+      );
+      return { ok: false, nachricht: "Diese Zahlungsmethode gehört nicht zu deinem Konto." };
+    }
+
+    if (intent.status !== "succeeded") {
+      return {
+        ok: false,
+        nachricht: "Die Zahlungsmethode ist noch nicht bestätigt. Versuch es bitte noch einmal.",
+      };
+    }
+
+    const zahlungsmittelId =
+      typeof intent.payment_method === "string"
+        ? intent.payment_method
+        : (intent.payment_method?.id ?? null);
+    if (!zahlungsmittelId) {
+      return {
+        ok: false,
+        nachricht: "Stripe hat keine Zahlungsmethode zurückgemeldet. Versuch es noch einmal.",
+      };
+    }
+
+    /*
+     * Dasselbe Rechnungstor wie beim bestehenden Betrieb: UID und
+     * Anschrift müssen vollständig bei Stripe stehen, bevor abgebucht wird.
+     * Gelesen bei Stripe, damit es auch auf dem 3DS-Rückweg greift.
+     */
+    if (!(await rechnungVollstaendig(kunde.id))) {
+      return {
+        ok: false,
+        nachricht:
+          "Für die Rechnung fehlen noch Angaben. Füll die Felder über dem Zahlungsformular aus und schick das Formular erneut ab.",
+      };
+    }
+
+    // Abo anlegen und Erstrechnung sofort bezahlen (100-%-Code ⇒ 0,00).
+    const abo = await schliessePendingAbo({
+      userId: user.id,
+      kundeId: kunde.id,
+      plan: pending.plan,
+      intervall: pending.intervall,
+      promotionCodeId: pending.promotionCodeId,
+      zahlungsmittelId,
+      rechnung: { name: pending.name, land: pending.land },
+    });
+
+    if (abo.status !== "active" && abo.status !== "trialing") {
+      return {
+        ok: false,
+        nachricht:
+          "Die Zahlung ist noch nicht bestätigt. Bitte versuch es in einem Moment erneut — bei einer Lastschrift kann das kurz dauern.",
+      };
+    }
+
+    // Jetzt erst den Betrieb anlegen.
+    const ergebnis = await stelleBetriebSicher(supabase, {
+      betrieb_name: pending.name,
+      land: pending.land,
+      vorname: pending.vorname,
+      nachname: pending.nachname,
+    });
+
+    if (ergebnis.art !== "angelegt" && ergebnis.art !== "vorhanden") {
+      console.error(`[zahlung] betriebAbschliessen: stelleBetriebSicher = ${ergebnis.art}`);
+      return {
+        ok: false,
+        nachricht:
+          "Die Zahlung ist eingegangen, aber der Betrieb liess sich nicht anlegen. Lad die Seite neu — bleibt der Fehler, meld dich beim Support.",
+      };
+    }
+
+    const betriebId = ergebnis.betriebId;
+
+    // Stripe-Objekte mit dem Betrieb verknüpfen — löst den Webhook aus, der
+    // `betrieb_abonnements` schreibt.
+    await verknuepfePendingMitBetrieb({ kundeId: kunde.id, aboId: abo.id, betriebId });
+
+    // Zustimmung festhalten (AGB/AVV geltend, Datenschutz aus dem Signup).
+    const nachweisSignup = zustimmungNachweisAusMetadaten(user.user_metadata);
+    const hashes = { ...(await zustimmungHashes()) };
+    if (nachweisSignup.hashes?.datenschutz) hashes.datenschutz = nachweisSignup.hashes.datenschutz;
+
+    await schreibeZustimmungen(
+      supabase,
+      betriebId,
+      user.id,
+      zustimmungFuerBetrieb(user.user_metadata),
+      { sprache: await leseSprache(), hashes },
+    );
+
+    if (pending.promoCode) {
+      await schreibePromoCode(supabase, betriebId, pending.promoCode);
+    }
+
+    return { ok: true };
+  } catch (ursache) {
+    if (ursache instanceof ZahlungAbgelehnt) {
+      return { ok: false, nachricht: ursache.message };
+    }
+    protokolliere("betriebAbschliessen", ursache);
+    return {
+      ok: false,
+      nachricht:
+        "Der Abschluss ist gerade fehlgeschlagen. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
     };
   }
 }

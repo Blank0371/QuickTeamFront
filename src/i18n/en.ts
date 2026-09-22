@@ -172,6 +172,26 @@ export const en: Dictionary = {
         "The business's data will be deleted once the contractual period has passed. If you need anything from it, please ask your employer.",
       mehrere: "You also belong to other businesses — switch to one of them to keep working.",
     },
+    wahl: {
+      metaTitel: "Choose position",
+      metaBeschreibung:
+        "Pick the business you're currently working in — or accept an open invitation.",
+      titel: "Where do you work?",
+      lead: "Pick the business you're currently working in.",
+      leadMehrere:
+        "You belong to several businesses. Pick the one this is about — you can switch anytime.",
+      deineBetriebe: "Your businesses",
+      einladungen: "Invitations",
+      einladungenText:
+        "A business has invited you. Once you accept, you're part of the team and can see your schedule.",
+      annehmen: "Accept",
+      leerTitel: "No connections yet",
+      leerText:
+        "Your account doesn't belong to any team, and there's no invitation waiting either. There are two ways out: either your business invites you — the invitation then shows up on this page as soon as it arrives — or you open a business of your own.",
+      leerHinweis:
+        "Were you invited but see nothing? Then the invitation is probably on a different address than {email}. It's matched by exactly the address it was sent to.",
+      betriebEroeffnen: "Open my own business",
+    },
   },
 
   kalender: {
@@ -505,34 +525,21 @@ export const en: Dictionary = {
   },
 
   registrierung: {
-    promoCode: "Promo code (optional)",
-    promoCodeHinweis:
-      "Did someone tell you about QuickTeam and give you a code? Enter it here.",
-    promoPruefen: "Check promo code",
-    promoPruefend: "Checking …",
-    promoGueltig: "Code recognised.",
-    promoNichtPruefbar:
-      "We couldn't check the code right now. You can continue anyway.",
-    promoBittePruefen: "Please check the promo code before creating your business.",
     felder: {
-      betriebName: "Business name",
-      land: "Country",
-      vorname: "First name",
-      nachname: "Last name",
       email: "Email address",
       emailHinweis: "Your confirmation code goes to this address.",
       passwort: "Password",
       passwortWiederholen: "Repeat password",
     },
-    betriebAnlegen: "Create business",
+    kontoAnlegen: "Create account",
     wirdAngelegt: "Creating …",
     daten: {
-      titel: "Create your business",
-      lead: "Business name, country, your name and a password. After that you confirm your address with a code — still on this page.",
+      titel: "Create your account",
+      lead: "An email address and a password — that's all the account needs. After that you confirm your address with a code; you set up your business in the next step.",
     },
     code: {
       titel: "Enter the code from the email",
-      lead: "We've sent you a numeric code. Enter it here — then we create your business and move on to payment.",
+      lead: "We've sent you a numeric code. Enter it here — then your account is ready and you can continue.",
       label: "Code from the email ({n} digits)",
       hinweis: "The code is valid for 60 minutes.",
       emailHinweis: "The address we sent the code to.",
@@ -545,35 +552,16 @@ export const en: Dictionary = {
         "Opening the email on your phone and typing the code on your computer is entirely fine. Just enter the same email address as well.",
       fristTitel: "Confirm within 24 hours",
       fristText:
-        "After that the registration is deleted automatically. Then you simply create the business again — nothing is lost, because until confirmation it doesn't exist yet. The code itself is valid for 60 minutes; after that you can have a new one sent here.",
-      aendernSummary: "Change your business details",
+        "After that the registration is deleted automatically. Then you simply create the account again — nothing is lost, because until confirmation it doesn't exist yet. The code itself is valid for 60 minutes; after that you can have a new one sent here.",
+      aendernSummary: "Change your email address",
       aendernText:
         "When you submit again, we send a new code to the address entered then.",
     },
     fussnoteA:
-      "The business is only created once you enter the code from the confirmation email. If that doesn't happen within ",
+      "Your account is only created once you enter the code from the confirmation email. If that doesn't happen within ",
     fussnote24: "24 hours",
-    fussnoteB: ", the registration is deleted and you start over. After that comes a ",
-    fussnoteTage: "{tage}-day",
-    fussnoteC: " trial — you can skip the payment details.",
+    fussnoteB: ", the registration is deleted and you start over.",
     b2b: "This offer is intended solely for entrepreneurs within the meaning of section 14 of the German Civil Code (BGB) and for legal entities under public law — not for consumers.",
-    nachtragen: {
-      titel: "Your account is ready — the business is still missing",
-      lead: "Your email address is confirmed. Something went wrong while creating the business; we'll take care of that now.",
-      hinweis:
-        "Your details from registration are saved. One click is enough — your account stays in place either way.",
-      button: "Create business now",
-    },
-    erledigt: {
-      titel: "This step is done",
-      lead: "Your account is confirmed and your business is created. There's nothing more to do here.",
-      betriebLabel: "Business",
-      betriebFallback: "created",
-      hinweis: "You change the business name and country later in the app — no longer here.",
-      weiter: "Continue to setup",
-      nichtDeinKonto: "Not your account, or another business?",
-      abmelden: "Sign out",
-    },
     passwortKriterien: {
       min: "At least {n} characters",
       max: "At most {n} characters",
@@ -587,11 +575,42 @@ export const en: Dictionary = {
       aria: "Setup progress",
       schrittVon: "Step {n} of {gesamt}",
       schritte: {
-        konto: "Account",
+        betrieb: "Business",
         zahlung: "Payment",
         team: "Team",
         schichten: "Shifts",
       },
+    },
+  },
+
+  betrieb: {
+    titel: "Create your business",
+    lead: "Business name, country and your name. Then you choose a plan and add a payment method — your business is created as soon as the payment is confirmed.",
+    b2b: "This offer is intended solely for entrepreneurs within the meaning of section 14 of the German Civil Code (BGB) and for legal entities under public law — not for consumers.",
+    felder: {
+      betriebName: "Business name",
+      land: "Country",
+      vorname: "First name",
+      nachname: "Last name",
+    },
+    promoCode: "Promo code (optional)",
+    promoCodeHinweis:
+      "Did someone tell you about QuickTeam and give you a code? Enter it here.",
+    promoPruefen: "Check promo code",
+    promoPruefend: "Checking …",
+    promoGueltig: "Code recognised.",
+    promoNichtPruefbar:
+      "We couldn't check the code right now. You can continue anyway.",
+    promoBittePruefen: "Please check the promo code before creating your business.",
+    betriebAnlegen: "Continue to payment",
+    wirdAngelegt: "Saving …",
+    erledigt: {
+      titel: "Your business is created",
+      lead: "This step is done. There's nothing more to do here.",
+      betriebLabel: "Business",
+      betriebFallback: "created",
+      hinweis: "You change the business name and country later in the app — no longer here.",
+      weiter: "Continue to setup",
     },
   },
 
@@ -603,9 +622,12 @@ export const en: Dictionary = {
       leadSofort:
         "{plan} plan{preis}. Adding a payment method starts your subscription, and the first period is charged.",
       leadNur: "{plan} plan{preis}.",
+      leadBezahlt:
+        "Choose your plan and billing interval. Then you add a payment method; your business is created as soon as the payment is confirmed. You can enter a discount code along the way.",
+      planLabel: "Plan",
       knopfSofort: "Subscribe (paid)",
       zurueckLink: "Back to plan selection",
-      zurueckRest: " — you can also skip this step there.",
+      zurueckRest: ".",
       titelPlan: "Choose a plan",
       leadOhneTestphase:
         "The free trial is available once per business, and yours has already used it. In the next step you add a payment method, and your subscription starts right away.",
@@ -616,11 +638,20 @@ export const en: Dictionary = {
       spaeter: "Add it later",
       planLegende: "Choose a plan",
       abrechnung: "Billing:",
+      intervallLegende: "Choose billing",
       monatlich: "monthly",
       jaehrlich: "yearly",
+      monatVorteil: "Cancel monthly",
+      jahrVorteil: "Save two months",
       uidLabel: "VAT ID (optional)",
       uidHinweis:
-        "With a valid VAT ID we bill without VAT (reverse charge), without one we add VAT. You can change this later under Settings → Manage subscription.",
+        "With a valid VAT ID we bill without VAT (reverse charge), without one we add VAT. Format: ATU and eight digits. You can change this later under Settings → Manage subscription.",
+      uidLabelDe: "VAT ID (optional)",
+      uidHinweisDe:
+        "For the invoice to your company. Format: DE and nine digits. You can change this later under Settings → Manage subscription.",
+      couponLabel: "Discount code (optional)",
+      couponHinweis:
+        "If you have a discount code, enter it here — it's applied at checkout.",
       weiterLaufend: "One moment …",
       weiterZahlung: "Continue to payment",
       testphasenHinweis:
@@ -630,6 +661,9 @@ export const en: Dictionary = {
       knopfStandard: "Add a payment method",
       wirdHinterlegt: "Saving …",
       wirdGeladen: "Loading payment form …",
+      couponLabel: "Discount code (optional)",
+      couponHinweis:
+        "Have a discount code? Enter it here — it will be applied to your subscription.",
       rechnungUnvollstaendig: "Please complete the invoice details.",
       bestaetigungFehlgeschlagen: "The payment method could not be confirmed.",
       keinErgebnis: "Stripe returned no result. Please try again.",
@@ -650,10 +684,13 @@ export const en: Dictionary = {
       landHinweis:
         "Applies to the invoice only. Your business location and your schedule's working-time rules don't change because of it.",
       uidWarnung:
-        "With an invoice country outside Austria your stored VAT ID is removed — it only applies to Austrian invoice recipients. This may change the VAT on future billing. Invoices already issued are unaffected.",
+        "Changing the country changes the format of your tax number — ATU and eight digits for Austria, DE and nine digits for Germany. Invoices already issued are unaffected.",
       uidLabel: "VAT ID",
       uidHinweis:
         "Required for an Austrian invoice: Stripe bills under the reverse-charge procedure. Format: ATU and eight digits.",
+      uidLabelDe: "VAT ID",
+      uidHinweisDe:
+        "Required for the invoice to your company. Format: DE and nine digits.",
     },
     team: {
       titel: "Who works with you",
@@ -726,6 +763,7 @@ export const en: Dictionary = {
   },
 
   zustimmungFeld: {
+    // Dashboard follow-up: all three documents in one sentence.
     vorAgb: "On behalf of my business, I accept the ",
     agb: "General Terms and Conditions",
     zwischen: " and the ",
@@ -734,6 +772,13 @@ export const en: Dictionary = {
       " and confirm that I am authorised to represent the business in doing so. I have taken note of the ",
     datenschutz: "Privacy Policy",
     nachDatenschutz: ".",
+    // Business step: the business contract acceptance only (Terms + DPA).
+    betriebVor: "On behalf of my business, I accept the ",
+    betriebZwischen: " and the ",
+    betriebNach: " and confirm that I am authorised to represent the business in doing so.",
+    // Registration (account): the personal privacy-policy acknowledgement only.
+    datenschutzVor: "I have taken note of the ",
+    datenschutzNach: ".",
   },
 
   codeVersand: {
@@ -826,9 +871,11 @@ export const en: Dictionary = {
       "To continue, you have to accept the Terms and the DPA and take note of the Privacy Policy.",
     "v.code.leer": "Enter the code from the email.",
     "v.code.ziffern": "The code is {anzahl} digits long.",
-    "v.uid.form": "An Austrian VAT ID (UID) consists of ATU and 8 digits, e.g. ATU12345678.",
+    "v.uid.form":
+      "A tax number has the form ATU and 8 digits (Austria, e.g. ATU12345678) or DE and 9 digits (Germany, e.g. DE123456789) — matching the invoice country.",
     "v.uid.pflicht":
-      "A valid VAT ID is required for a paid subscription with an Austrian invoice.",
+      "A valid VAT ID (AT) or USt-IdNr (DE) is required for a paid subscription.",
+    "v.coupon.unbekannt": "Stripe doesn't recognize this discount code, or it's no longer active.",
     "v.promo.form": "A promo code consists of letters, digits, - and _, at most {max} characters.",
     "v.promo.unbekannt": "We don't recognize this promo code. Check the spelling — or leave the field empty.",
     "v.plz.ziffern": "The postal code consists of digits only.",

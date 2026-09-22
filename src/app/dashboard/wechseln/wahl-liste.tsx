@@ -10,7 +10,7 @@ import { leererZustand } from "@/lib/formular";
 
 import { nimmEinladungAn, waehlePosition } from "./aktionen";
 
-function AnnehmenButton() {
+function AnnehmenButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -19,10 +19,17 @@ function AnnehmenButton() {
       aria-disabled={pending}
       className="shrink-0 rounded-full bg-signal px-5 py-2 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "…" : "Annehmen"}
+      {pending ? "…" : label}
     </button>
   );
 }
+
+export type WahlListeTexte = {
+  deineBetriebe: string;
+  einladungen: string;
+  einladungenText: string;
+  annehmen: string;
+};
 
 /**
  * Anstellungen und offene Einladungen zur Auswahl.
@@ -40,12 +47,14 @@ export function WahlListe({
   einladungen,
   rollenNamen,
   ziel,
+  texte,
 }: {
   positionen: readonly Position[];
   einladungen: readonly Einladung[];
   rollenNamen: Readonly<Record<string, string>>;
   /** Wohin nach der Wahl — bereits serverseitig geprüft. */
   ziel: string;
+  texte: WahlListeTexte;
 }) {
   const [wahl, wahlAktion] = useActionState(waehlePosition, leererZustand);
   const [einladung, einladungAktion] = useActionState(nimmEinladungAn, leererZustand);
@@ -69,7 +78,7 @@ export function WahlListe({
             id="positionen-titel"
             className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
           >
-            Deine Betriebe
+            {texte.deineBetriebe}
           </h2>
 
           <ul className="mt-4 flex flex-col gap-3">
@@ -119,11 +128,10 @@ export function WahlListe({
             id="einladungen-titel"
             className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
           >
-            Einladungen
+            {texte.einladungen}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Ein Betrieb hat dich eingeladen. Sobald du annimmst, gehörst du zum Team und
-            siehst deinen Dienstplan.
+            {texte.einladungenText}
           </p>
 
           <ul className="mt-4 flex flex-col gap-3">
@@ -146,7 +154,7 @@ export function WahlListe({
                     name="mitarbeiter_id"
                     value={offen.mitarbeiterId}
                   />
-                  <AnnehmenButton />
+                  <AnnehmenButton label={texte.annehmen} />
                 </form>
               </li>
             ))}

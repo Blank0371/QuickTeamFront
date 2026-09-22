@@ -1,43 +1,54 @@
 /**
- * Das Pflicht-Kontrollkästchen für AGB, AVV und Datenschutzerklärung.
+ * Das Pflicht-Kontrollkästchen für die Rechtstexte.
  *
  * ─────────────────────────────────────────────────────────────────────
- *  Eine Umsetzung, zwei Aufrufer
+ *  Eine Umsetzung, drei Varianten
  * ─────────────────────────────────────────────────────────────────────
  *
- * Es steht an zwei Stellen: bei der Registrierung (Schritt 1) und im
- * Zustimmungs-Tor des Dashboards, das Bestandsbetriebe nachholen lässt,
- * was es bei ihrer Registrierung noch nicht gab. Beide zeigen denselben
- * Satz, dieselben drei Links und dieselbe Fehlermeldung — zwei Kopien
- * wären zwei Gelegenheiten, sich zu widersprechen, und ausgerechnet bei
- * dem Text, der später den Nachweis trägt.
+ * Seit dem 2026-09-22 ist die Zustimmung auf zwei Schritte verteilt: die
+ * **Datenschutz**-Kenntnisnahme gehört zum Konto (Registrierung), die
+ * **AGB/AVV**-Vertragsannahme zum Betrieb (`/einrichtung/betrieb`). Das
+ * Dashboard-Nachhol-Tor zeigt weiterhin **alle drei** in einem Satz. Drei
+ * Sätze, ein Kontrollkästchen, eine Fehlermeldung — die `variante`
+ * entscheidet nur über den Text und die Links, nicht über die Mechanik.
  *
  * Der Wert ist `"ja"` und nicht der Browser-Standard `"on"`: geprüft
  * wird er gegen `z.literal("ja")` in `feldSchemata.zustimmung`, und ein
  * sprechender Wert erspart beim Lesen des Schemas die Rückfrage, woher
  * `"on"` kommt.
  *
- * ─────────────────────────────────────────────────────────────────────
- *  Warum die Links in einem neuen Tab öffnen
- * ─────────────────────────────────────────────────────────────────────
- *
- * An beiden Stellen ist das Formular zu diesem Zeitpunkt ausgefüllt —
- * bei der Registrierung mit Betriebsname, Land und zwei Namen. Ein
- * Wechsel im selben Tab nähme das beim Zurückkommen mit. `rel` gehört
- * zu `target="_blank"` dazu.
+ * Die Links öffnen in einem neuen Tab: an jeder Stelle ist das Formular zu
+ * diesem Zeitpunkt ausgefüllt, ein Wechsel im selben Tab nähme das beim
+ * Zurückkommen mit. `rel` gehört zu `target="_blank"` dazu.
  *
  * `required` ist dabei nur die Browser-Zusage. Die Prüfung, die zählt,
- * steht im Zod-Schema und läuft damit auch in der Server Action —
- * belegt am 2026-09-10, indem das Attribut im Browser entfernt und
- * abgeschickt wurde: der Server hat abgelehnt.
+ * steht im Zod-Schema und läuft damit auch in der Server Action.
  */
 import type { Dictionary } from "@/i18n/de";
+
+/** Welche Dokumente der Satz nennt. */
+export type ZustimmungVariante = "alle" | "betrieb" | "datenschutz";
+
+function Rechtslink({ href, children }: { href: string; children: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline underline-offset-2 hover:text-signal"
+    >
+      {children}
+    </a>
+  );
+}
 
 export function ZustimmungFeld({
   idPraefix = "",
   vorbelegt = false,
   fehler,
   texte,
+  variante = "alle",
+  beiAenderung,
 }: {
   /** Trennt die Feld-Ids, wenn zwei Formulare auf derselben Seite stehen. */
   idPraefix?: string;
@@ -45,12 +56,11 @@ export function ZustimmungFeld({
   vorbelegt?: boolean;
   /** Meldung aus der Server Action, sonst `undefined`. */
   fehler?: string;
-  /**
-   * Der Zustimmungssatz in Segmenten, in der Sprache der Anfrage. Kommt
-   * vom Server-Elternteil — sowohl bei der Registrierung als auch im
-   * Zustimmungs-Tor des Dashboards.
-   */
+  /** Der Zustimmungssatz in Segmenten, in der Sprache der Anfrage. */
   texte: Dictionary["zustimmungFeld"];
+  variante?: ZustimmungVariante;
+  /** Meldet den aktuellen Haken-Zustand nach oben (Client-Komfort). */
+  beiAenderung?: (gesetzt: boolean) => void;
 }) {
   const fehlerId = `${idPraefix}zustimmung-fehler`;
 
@@ -63,44 +73,36 @@ export function ZustimmungFeld({
           value="ja"
           required
           defaultChecked={vorbelegt}
+          onChange={beiAenderung ? (e) => beiAenderung(e.currentTarget.checked) : undefined}
           aria-describedby={fehler ? fehlerId : undefined}
           className="mt-1"
         />
-        {/*
-          Seit dem 2026-09-13 mit der Vertretungsversicherung (§ 1 Abs. 5
-          AVV) und ohne „akzeptiere die Datenschutzerklärung": AGB und AVV
-          schliesst man für den Betrieb ab, eine Datenschutzerklärung nimmt
-          man zur Kenntnis — sie ist eine Information, kein Vertrag.
-        */}
         <span>
-          {texte.vorAgb}
-          <a
-            href="/agb"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-signal"
-          >
-            {texte.agb}
-          </a>
-          {texte.zwischen}
-          <a
-            href="/avv"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-signal"
-          >
-            {texte.avv}
-          </a>
-          {texte.nachAvv}
-          <a
-            href="/datenschutz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-signal"
-          >
-            {texte.datenschutz}
-          </a>
-          {texte.nachDatenschutz}
+          {variante === "datenschutz" ? (
+            <>
+              {texte.datenschutzVor}
+              <Rechtslink href="/datenschutz">{texte.datenschutz}</Rechtslink>
+              {texte.datenschutzNach}
+            </>
+          ) : variante === "betrieb" ? (
+            <>
+              {texte.betriebVor}
+              <Rechtslink href="/agb">{texte.agb}</Rechtslink>
+              {texte.betriebZwischen}
+              <Rechtslink href="/avv">{texte.avv}</Rechtslink>
+              {texte.betriebNach}
+            </>
+          ) : (
+            <>
+              {texte.vorAgb}
+              <Rechtslink href="/agb">{texte.agb}</Rechtslink>
+              {texte.zwischen}
+              <Rechtslink href="/avv">{texte.avv}</Rechtslink>
+              {texte.nachAvv}
+              <Rechtslink href="/datenschutz">{texte.datenschutz}</Rechtslink>
+              {texte.nachDatenschutz}
+            </>
+          )}
         </span>
       </label>
 

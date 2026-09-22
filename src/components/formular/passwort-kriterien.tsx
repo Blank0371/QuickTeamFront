@@ -18,7 +18,7 @@ export type KriterienTexte = Dictionary["registrierung"]["passwortKriterien"];
  * Gross-/Kleinschreibung". Das Zweite stimmt nicht: `feldSchemata.passwort`
  * in `src/lib/validierung.ts` prüft ausschliesslich die Länge — mindestens
  * `PASSWORT_MIN`, höchstens `PASSWORT_MAX` —, dazu kommt aus
- * `registrierungSchema` der Abgleich mit der Wiederholung. Eine Vorgabe
+ * `kontoSchema` der Abgleich mit der Wiederholung. Eine Vorgabe
  * zu Gross- und Kleinbuchstaben gibt es in diesem Repo nicht.
  *
  * Angezeigt wird deshalb genau das und nichts darüber hinaus. Eine

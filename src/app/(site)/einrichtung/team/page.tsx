@@ -34,7 +34,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function TeamSeite() {
   const stand = await betreteSchritt("team");
-  if (stand === null || stand.betriebId === null) redirect("/einrichtung/konto");
+  if (stand.betriebId === null) redirect("/einrichtung/betrieb");
 
   const supabase = await createClient();
   const [rollen, leute] = await Promise.all([

@@ -141,6 +141,30 @@ export const de = {
         "Die Daten des Betriebs werden nach Ablauf der vertraglichen Frist gelöscht. Brauchst du etwas daraus, wende dich an deinen Arbeitgeber.",
       mehrere: "Du gehörst noch zu weiteren Betrieben — wechsle zu einem davon, um weiterzuarbeiten.",
     },
+    /* `/dashboard/wechseln` — die Übersicht: zwischen Anstellungen wählen,
+       Einladungen annehmen, oder als Konto ohne Verbindung einen eigenen
+       Betrieb eröffnen. */
+    wahl: {
+      metaTitel: "Position wählen",
+      metaBeschreibung:
+        "Wähl den Betrieb, in dem du gerade arbeitest — oder nimm eine offene Einladung an.",
+      titel: "Wo arbeitest du?",
+      lead: "Wähl den Betrieb, in dem du gerade arbeitest.",
+      leadMehrere:
+        "Du gehörst zu mehreren Betrieben. Wähl den, um den es gerade geht — wechseln kannst du jederzeit.",
+      deineBetriebe: "Deine Betriebe",
+      einladungen: "Einladungen",
+      einladungenText:
+        "Ein Betrieb hat dich eingeladen. Sobald du annimmst, gehörst du zum Team und siehst deinen Dienstplan.",
+      annehmen: "Annehmen",
+      leerTitel: "Noch keine Verbindungen",
+      leerText:
+        "Dein Konto gehört zu keinem Team, und es liegt auch keine Einladung vor. Zwei Wege führen hier heraus: entweder lädt dich dein Betrieb ein — dann erscheint die Einladung auf dieser Seite, sobald sie da ist —, oder du eröffnest selbst einen Betrieb.",
+      /* {email} = die eigene Adresse. */
+      leerHinweis:
+        "Wurdest du eingeladen und siehst nichts? Dann läuft die Einladung vermutlich auf eine andere Adresse als {email}. Sie wird über genau die Adresse zugeordnet, unter der sie verschickt wurde.",
+      betriebEroeffnen: "Eigenen Betrieb eröffnen",
+    },
   },
 
   /*
@@ -521,34 +545,21 @@ export const de = {
    * `formular` und `validierung` (CLAUDE.md, „Zweisprachigkeit").
    */
   registrierung: {
-    promoCode: "Promo-Code (optional)",
-    promoCodeHinweis:
-      "Hat dich jemand auf QuickTeam aufmerksam gemacht und dir einen Code gegeben? Dann trag ihn hier ein.",
-    promoPruefen: "Promo-Code prüfen",
-    promoPruefend: "Wird geprüft …",
-    promoGueltig: "Code erkannt — passt.",
-    promoNichtPruefbar:
-      "Wir konnten den Code gerade nicht prüfen. Du kannst trotzdem fortfahren.",
-    promoBittePruefen: "Bitte prüf den Promo-Code, bevor du den Betrieb anlegst.",
     felder: {
-      betriebName: "Betriebsname",
-      land: "Land",
-      vorname: "Vorname",
-      nachname: "Nachname",
       email: "E-Mail-Adresse",
       emailHinweis: "An diese Adresse geht dein Bestätigungscode.",
       passwort: "Passwort",
       passwortWiederholen: "Passwort wiederholen",
     },
-    betriebAnlegen: "Betrieb anlegen",
+    kontoAnlegen: "Konto anlegen",
     wirdAngelegt: "Wird angelegt …",
     daten: {
-      titel: "Leg deinen Betrieb an",
-      lead: "Betriebsname, Land, dein Name und ein Passwort. Danach bestätigst du deine Adresse mit einem Code — noch auf dieser Seite.",
+      titel: "Leg dein Konto an",
+      lead: "E-Mail-Adresse und ein Passwort — mehr braucht es fürs Konto nicht. Danach bestätigst du deine Adresse mit einem Code; deinen Betrieb richtest du im nächsten Schritt ein.",
     },
     code: {
       titel: "Code aus der E-Mail eintragen",
-      lead: "Wir haben dir einen Zahlencode geschickt. Trag ihn hier ein — dann legen wir deinen Betrieb an und es geht weiter mit der Zahlung.",
+      lead: "Wir haben dir einen Zahlencode geschickt. Trag ihn hier ein — dann steht dein Konto und es geht weiter.",
       label: "Code aus der E-Mail ({n} Ziffern)",
       hinweis: "Der Code gilt 60 Minuten.",
       emailHinweis: "Die Adresse, an die wir den Code geschickt haben.",
@@ -561,35 +572,16 @@ export const de = {
         "Die E-Mail am Handy öffnen und den Code am Rechner eintippen ist ausdrücklich vorgesehen. Trag dann einfach dieselbe E-Mail-Adresse mit ein.",
       fristTitel: "Bestätige innerhalb von 24 Stunden",
       fristText:
-        "Danach wird die Registrierung automatisch gelöscht. Dann legst du den Betrieb einfach neu an — es geht nichts verloren, weil er bis zur Bestätigung noch gar nicht existiert. Der Code selbst gilt 60 Minuten; danach lässt du dir hier einen neuen schicken.",
-      aendernSummary: "Angaben zum Betrieb ändern",
+        "Danach wird die Registrierung automatisch gelöscht. Dann legst du das Konto einfach neu an — es geht nichts verloren, weil es bis zur Bestätigung noch gar nicht existiert. Der Code selbst gilt 60 Minuten; danach lässt du dir hier einen neuen schicken.",
+      aendernSummary: "E-Mail-Adresse ändern",
       aendernText:
         "Beim erneuten Absenden schicken wir einen neuen Code an die dann eingetragene Adresse.",
     },
     fussnoteA:
-      "Der Betrieb wird erst angelegt, wenn du den Code aus der Bestätigungsmail einträgst. Passiert das nicht innerhalb von ",
+      "Dein Konto wird erst angelegt, wenn du den Code aus der Bestätigungsmail einträgst. Passiert das nicht innerhalb von ",
     fussnote24: "24 Stunden",
-    fussnoteB: ", wird die Registrierung wieder gelöscht und du fängst von vorn an. Danach folgen ",
-    fussnoteTage: "{tage} Tage",
-    fussnoteC: " Testphase — Zahlungsdaten kannst du dabei überspringen.",
+    fussnoteB: ", wird die Registrierung wieder gelöscht und du fängst von vorn an.",
     b2b: "Angebot ausschließlich für Unternehmer im Sinne des § 14 BGB sowie für juristische Personen des öffentlichen Rechts — nicht für Verbraucher.",
-    nachtragen: {
-      titel: "Dein Konto steht — der Betrieb fehlt noch",
-      lead: "Deine E-Mail-Adresse ist bestätigt. Beim Anlegen des Betriebs ist etwas dazwischengekommen; das holen wir jetzt nach.",
-      hinweis:
-        "Deine Angaben von der Registrierung sind gespeichert. Ein Klick genügt — dein Konto bleibt in jedem Fall bestehen.",
-      button: "Betrieb jetzt anlegen",
-    },
-    erledigt: {
-      titel: "Dieser Schritt ist erledigt",
-      lead: "Dein Konto ist bestätigt und dein Betrieb angelegt. Hier gibt es nichts mehr zu tun.",
-      betriebLabel: "Betrieb",
-      betriebFallback: "angelegt",
-      hinweis: "Betriebsname und Land änderst du später in der App — nicht mehr hier.",
-      weiter: "Weiter zur Einrichtung",
-      nichtDeinKonto: "Nicht dein Konto oder ein weiterer Betrieb?",
-      abmelden: "Abmelden",
-    },
     passwortKriterien: {
       min: "Mindestens {n} Zeichen",
       max: "Höchstens {n} Zeichen",
@@ -603,11 +595,48 @@ export const de = {
       aria: "Fortschritt der Einrichtung",
       schrittVon: "Schritt {n} von {gesamt}",
       schritte: {
-        konto: "Konto",
+        betrieb: "Betrieb",
         zahlung: "Zahlung",
         team: "Team",
         schichten: "Schichten",
       },
+    },
+  },
+
+  /**
+   * Schritt 1 des Steppers: den Betrieb anlegen. Seit dem 2026-09-22 vom
+   * Konto getrennt (`docs/claude-md-historie.md`). Betriebsdaten,
+   * Promo-Code und die AGB/AVV-Vertragsannahme stehen hier — nicht mehr
+   * bei der Registrierung.
+   */
+  betrieb: {
+    titel: "Leg deinen Betrieb an",
+    lead: "Betriebsname, Land und dein Name. Danach wählst du deinen Plan und hinterlegst ein Zahlungsmittel — dein Betrieb wird angelegt, sobald die Zahlung bestätigt ist.",
+    b2b: "Angebot ausschließlich für Unternehmer im Sinne des § 14 BGB sowie für juristische Personen des öffentlichen Rechts — nicht für Verbraucher.",
+    felder: {
+      betriebName: "Betriebsname",
+      land: "Land",
+      vorname: "Vorname",
+      nachname: "Nachname",
+    },
+    promoCode: "Promo-Code (optional)",
+    promoCodeHinweis:
+      "Hat dich jemand auf QuickTeam aufmerksam gemacht und dir einen Code gegeben? Dann trag ihn hier ein.",
+    promoPruefen: "Promo-Code prüfen",
+    promoPruefend: "Wird geprüft …",
+    promoGueltig: "Code erkannt — passt.",
+    promoNichtPruefbar:
+      "Wir konnten den Code gerade nicht prüfen. Du kannst trotzdem fortfahren.",
+    promoBittePruefen: "Bitte prüf den Promo-Code, bevor du den Betrieb anlegst.",
+    betriebAnlegen: "Weiter zur Zahlung",
+    wirdAngelegt: "Wird gespeichert …",
+    erledigt: {
+      titel: "Dein Betrieb ist angelegt",
+      lead: "Dieser Schritt ist erledigt. Hier gibt es nichts mehr zu tun.",
+      betriebLabel: "Betrieb",
+      betriebFallback: "angelegt",
+      hinweis: "Betriebsname und Land änderst du später in der App — nicht mehr hier.",
+      weiter: "Weiter zur Einrichtung",
     },
   },
 
@@ -623,9 +652,12 @@ export const de = {
       leadSofort:
         "Plan {plan}{preis}. Mit dem Hinterlegen beginnt dein Abo, und der erste Zeitraum wird abgebucht.",
       leadNur: "Plan {plan}{preis}.",
+      leadBezahlt:
+        "Wähl deinen Plan und das Abrechnungsintervall. Danach hinterlegst du ein Zahlungsmittel; dein Betrieb wird angelegt, sobald die Zahlung bestätigt ist. Einen Rabattcode kannst du dabei eingeben.",
+      planLabel: "Plan",
       knopfSofort: "Kostenpflichtig abonnieren",
       zurueckLink: "Zurück zur Plan-Auswahl",
-      zurueckRest: " — dort kannst du den Schritt auch überspringen.",
+      zurueckRest: ".",
       titelPlan: "Plan wählen",
       leadOhneTestphase:
         "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits. Im nächsten Schritt hinterlegst du ein Zahlungsmittel, und dein Abo beginnt sofort.",
@@ -636,11 +668,20 @@ export const de = {
       spaeter: "Später hinterlegen",
       planLegende: "Plan wählen",
       abrechnung: "Abrechnung:",
+      intervallLegende: "Abrechnung wählen",
       monatlich: "monatlich",
       jaehrlich: "jährlich",
+      monatVorteil: "Monatlich kündbar",
+      jahrVorteil: "Zwei Monate sparen",
       uidLabel: "UID-Nummer (optional)",
       uidHinweis:
-        "Mit gültiger UID rechnen wir ohne Umsatzsteuer ab (Reverse Charge), ohne UID mit. Später änderbar unter Einstellungen → Abo verwalten.",
+        "Mit gültiger UID rechnen wir ohne Umsatzsteuer ab (Reverse Charge), ohne UID mit. Form: ATU und acht Ziffern. Später änderbar unter Einstellungen → Abo verwalten.",
+      uidLabelDe: "USt-IdNr (optional)",
+      uidHinweisDe:
+        "Für die Rechnung an dein Unternehmen. Form: DE und neun Ziffern. Später änderbar unter Einstellungen → Abo verwalten.",
+      couponLabel: "Rabattcode (optional)",
+      couponHinweis:
+        "Falls du einen Rabattcode hast, gib ihn hier ein — er wird beim Abschluss verrechnet.",
       weiterLaufend: "Einen Moment …",
       weiterZahlung: "Weiter zur Zahlung",
       testphasenHinweis:
@@ -650,6 +691,9 @@ export const de = {
       knopfStandard: "Zahlungsmittel hinterlegen",
       wirdHinterlegt: "Wird hinterlegt …",
       wirdGeladen: "Zahlungsformular wird geladen …",
+      couponLabel: "Rabattcode (optional)",
+      couponHinweis:
+        "Hast du einen Rabattcode? Gib ihn hier ein — er wird auf dein Abo angewendet.",
       rechnungUnvollstaendig: "Bitte vervollständige die Rechnungsangaben.",
       bestaetigungFehlgeschlagen: "Die Zahlungsmethode liess sich nicht bestätigen.",
       keinErgebnis: "Stripe hat kein Ergebnis zurückgemeldet. Versuch es noch einmal.",
@@ -670,10 +714,13 @@ export const de = {
       landHinweis:
         "Gilt nur für die Rechnung. Der Standort deines Betriebs und die Arbeitszeitregeln deines Dienstplans ändern sich dadurch nicht.",
       uidWarnung:
-        "Mit einem Rechnungsland ausserhalb Österreichs wird deine hinterlegte UID-Nummer entfernt — sie gilt nur für österreichische Rechnungsempfänger. Das kann die Umsatzsteuer künftiger Abrechnungen ändern. Bereits gestellte Rechnungen bleiben davon unberührt.",
+        "Mit einem Länderwechsel ändert sich das Format deiner Steuernummer — ATU und acht Ziffern für Österreich, DE und neun Ziffern für Deutschland. Bereits gestellte Rechnungen bleiben davon unberührt.",
       uidLabel: "UID-Nummer",
       uidHinweis:
         "Für eine österreichische Rechnung erforderlich: Stripe rechnet damit im Reverse-Charge-Verfahren ab. Form: ATU und acht Ziffern.",
+      uidLabelDe: "USt-IdNr",
+      uidHinweisDe:
+        "Für die Rechnung an dein Unternehmen erforderlich. Form: DE und neun Ziffern.",
     },
     team: {
       titel: "Wer arbeitet bei dir",
@@ -752,6 +799,7 @@ export const de = {
    * nicht sauber übersetzen.
    */
   zustimmungFeld: {
+    // Dashboard-Nachholung: alle drei Dokumente in einem Satz.
     vorAgb: "Ich schliesse für meinen Betrieb die ",
     agb: "AGB",
     zwischen: " und die ",
@@ -760,6 +808,13 @@ export const de = {
       " ab und bestätige, dass ich berechtigt bin, den Betrieb dabei zu vertreten. Die ",
     datenschutz: "Datenschutzerklärung",
     nachDatenschutz: " habe ich zur Kenntnis genommen.",
+    // Betrieb-Schritt: nur die betriebliche Vertragsannahme (AGB + AVV).
+    betriebVor: "Ich schliesse für meinen Betrieb die ",
+    betriebZwischen: " und die ",
+    betriebNach: " ab und bestätige, dass ich berechtigt bin, den Betrieb dabei zu vertreten.",
+    // Registrierung (Konto): nur die persönliche Datenschutz-Kenntnisnahme.
+    datenschutzVor: "Die ",
+    datenschutzNach: " habe ich zur Kenntnis genommen.",
   },
 
   /**
@@ -877,9 +932,11 @@ export const de = {
       "Ohne Abschluss von AGB und AVV und die Kenntnisnahme der Datenschutzerklärung geht es nicht weiter.",
     "v.code.leer": "Trag den Code aus der E-Mail ein.",
     "v.code.ziffern": "Der Code besteht aus {anzahl} Ziffern.",
-    "v.uid.form": "Eine österreichische UID-Nummer hat die Form ATU und 8 Ziffern, z. B. ATU12345678.",
+    "v.uid.form":
+      "Eine Steuernummer hat die Form ATU und 8 Ziffern (Österreich, z. B. ATU12345678) oder DE und 9 Ziffern (Deutschland, z. B. DE123456789) — passend zum Rechnungsland.",
     "v.uid.pflicht":
-      "Für ein kostenpflichtiges Abo mit österreichischer Rechnung ist eine gültige UID-Nummer erforderlich.",
+      "Für ein kostenpflichtiges Abo ist eine gültige UID-Nummer (AT) bzw. USt-IdNr (DE) erforderlich.",
+    "v.coupon.unbekannt": "Diesen Rabattcode kennt Stripe nicht oder er ist nicht mehr aktiv.",
     "v.promo.form": "Ein Promo-Code besteht aus Buchstaben, Ziffern, - und _, höchstens {max} Zeichen.",
     "v.promo.unbekannt": "Diesen Promo-Code kennen wir nicht. Prüf die Schreibweise — oder lass das Feld leer.",
     "v.plz.ziffern": "Die Postleitzahl besteht nur aus Ziffern.",

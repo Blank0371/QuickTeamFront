@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function SchichtenSeite() {
   const stand = await betreteSchritt("schichten");
-  if (stand === null || stand.betriebId === null) redirect("/einrichtung/konto");
+  if (stand.betriebId === null) redirect("/einrichtung/betrieb");
 
   const supabase = await createClient();
   const [rollen, vorlagen] = await Promise.all([

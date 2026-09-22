@@ -19,17 +19,15 @@ import { aktuelleZustimmungVersionen, schreibeZustimmungen } from "@/lib/zustimm
  *  Dieselbe Schreiblogik wie bei der Registrierung
  * ─────────────────────────────────────────────────────────────────────
  *
- * `schreibeZustimmungen()` ist dieselbe Funktion, die `bestaetigen()`
- * und `betriebNachtragen()` aufrufen — ein `insert` mit drei Zeilen,
+ * `schreibeZustimmungen()` ist dieselbe Funktion, die `betriebAnlegen()`
+ * beim Anlegen des Betriebs aufruft — ein `insert` mit drei Zeilen,
  * idempotent über den eindeutigen Index. Hier steht keine zweite
  * Umsetzung, nur ein zweiter Aufrufer.
  *
- * Der Unterschied zur Registrierung ist allein die Herkunft der
- * Fassungen: dort reisen sie durch die Bestätigungsmail in
- * `user_metadata`, weil zwischen Haken und Betrieb eine Mail liegt.
- * Hier gibt es die Zeitspanne nicht — Haken und Schreibvorgang liegen in
- * derselben Anfrage —, also gelten die Fassungen, die in diesem Moment
- * aktuell sind.
+ * Der Unterschied zum Betrieb-Schritt ist allein die Herkunft der
+ * Fassungen: dort kann die Datenschutz-Fassung aus der Registrierung in
+ * `user_metadata` stammen. Hier — im Nachfrage-Tor — gelten schlicht die
+ * Fassungen, die in diesem Moment aktuell sind.
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Die Position wird neu abgeleitet, nicht aus dem Formular geglaubt

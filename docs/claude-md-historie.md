@@ -15,6 +15,151 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-22 — Betrieb entsteht erst nach bestätigter Zahlung, keine Testphase
+
+**Vorher:** Der Betrieb-Schritt (`/einrichtung/betrieb`) legte den Betrieb **sofort** an
+(`betriebAnlegen()` → `registriere_betrieb`), bevor irgendeine Zahlung stattfand. Der
+Zahlungsschritt gab jedem ersten Abo eines Betriebs 14 Tage Testphase **ohne**
+Zahlungsmittel (`trial_period_days` + `missing_payment_method: 'pause'`), und dieser
+Schritt war **überspringbar** („Später hinterlegen"). Lief die Testphase ohne Karte ab,
+pausierte Stripe das Abo, der Webhook schrieb `pausiert`, und die Sperrseite
+`/einrichtung/testphase-abgelaufen` fing das ab. Folge: ein Betrieb konnte dauerhaft in
+der Datenbank stehen, ohne dass je Geld floss — genau die „weird overlaps and conflicts",
+die der Nutzer nicht mehr wollte.
+
+**Jetzt** (auf Anweisung des Nutzers, Detailfragen per Rückfrage geklärt):
+
+- **Kein halber Betrieb mehr.** Die `betriebe`-Zeile entsteht erst, wenn Stripe die
+  Zahlung bestätigt hat. Bis dahin gibt es keine `betrieb_id`; Kunde und Abo werden über
+  die Auth-User-ID des Chefs zugeordnet (`pending_user` in der Stripe-Kunden-Metadata),
+  und die Betriebsdaten aus Schritt 1 (Name, Land, Chef-Name, Promo-Code) reisen in
+  derselben Metadata mit. `betriebAbschliessen()` legt nach bestätigter Zahlung den
+  Betrieb an (`stelleBetriebSicher`), verschiebt die Metadata von `pending_user` auf
+  `betrieb_id` (`verknuepfePendingMitBetrieb`) — das löst `customer.subscription.updated`
+  aus, an dem der Webhook `betrieb_abonnements` schreibt — und schreibt danach Zustimmung
+  und Promo-Code. Der Webhook bleibt die einzige Stelle, die `betrieb_abonnements`
+  schreibt; **kein neues `service_role`**, **keine Schemaänderung** (die Zwischendaten
+  liegen bei Stripe).
+- **Keine Testphase.** Jedes Abo ist sofort fällig (`payment_behavior:
+  'default_incomplete'`, Erstrechnung wird beim Hinterlegen der Karte bezahlt). Ein
+  kostenloser erster Monat läuft über einen Stripe-**Rabattcode (100 %)**, nicht über
+  `trial_period_days`. Zahlungsmittel **und** UID sind Pflicht (Rechnungstor
+  `rechnungVollstaendig`). „Später hinterlegen" ist entfallen.
+- **Schrittfolge:** Konto (`/registrieren`) → Übersicht (`/dashboard/wechseln`, „nicht
+  zugeordnet" + „Betrieb einrichten") → Betriebsdaten → Zahlung → *Betrieb entsteht* →
+  Team → Schichten. Die Wiedereinstiegs-Ableitung (`ermittleStandFuer`) liest die
+  Vorbezahlungs-Phase aus dem Pending-Stripe-Kunden (`holePendingLage`) statt aus einer
+  `betrieb`-Zeile, die es noch nicht gibt.
+- **Restbestand:** `erstelleAbo` (jetzt immer `default_incomplete`), die Sperrseite
+  `/einrichtung/testphase-abgelaufen` und `zahlungsmittelUebernehmen` bedienen nur noch
+  den Neuabschluss eines **bestehenden**, gekündigten Betriebs. `trial_period_days`,
+  `missing_payment_method: 'pause'` und der Überspringen-Weg kommen für neue Betriebe
+  nicht mehr vor (Invariantentest `zahlung-invarianten.test.ts`).
+
+**Begründung:** Nutzerwunsch „a business is not put into the database until the payment
+connection with Stripe is confirmed, to avoid weird overlap and conflicts"; die Testphase
+wird durch einen 100-%-Rabattcode ersetzt.
+
+---
+
+## 2026-09-22 — Kontoerstellung und Betrieb-Anlage getrennt
+
+**Vorher:** Registrierung und Betrieb-Anlage waren **ein** Vorgang. `/registrieren`
+leitete auf `/einrichtung/konto` (Schritt 1 des Steppers) um; dieses eine Formular
+sammelte Betriebsname, Land, Chef-Name, E-Mail, Passwort **und** alle drei Zustimmungen.
+Weil `registriere_betrieb` eine Session braucht, die es erst nach der Code-Bestätigung
+gibt, mussten die Betriebsdaten die Bestätigungsmail überleben: sie reisten durch
+`options.data` beim `signUp` und zusätzlich durch einen `registrierung-merker`-Cookie.
+`bestaetigen()` legte unmittelbar nach `verifyOtp` den Betrieb an (`stelleBetriebSicher`),
+schrieb die drei Zustimmungszeilen und den Promo-Code und ging in den Zahlungsschritt. Ein
+angemeldetes Konto ohne Betrieb galt als „in Schritt 1 steckengeblieben" und wurde
+dorthin geleitet; für Service-Role-Konten gab es die Sonderfassung „Dein Konto steht — der
+Betrieb fehlt noch" (`betriebNachtragen()`).
+
+**Jetzt** (auf Anweisung des Nutzers, Detailfragen per Rückfrage geklärt):
+
+- **Registrierung erzeugt nur ein Konto.** `/registrieren` ist eine eigenständige Seite
+  (kein Redirect mehr in den Stepper): E-Mail, Passwort, **Datenschutz-Kenntnisnahme**.
+  Nach `verifyOtp` landet die Person auf ihrer Übersicht `/dashboard/wechseln`. Kein
+  Betrieb, keine Zustimmungszeile an dieser Stelle.
+- **Betrieb-Anlage ist ein eigener Schritt** (`/einrichtung/betrieb`, Schritt 1 des
+  Steppers), erreichbar aus der Übersicht („Betrieb einrichten"). Mit bestehender Session
+  ruft `betriebAnlegen()` `registriere_betrieb` **direkt mit den Formularwerten** auf —
+  der Umweg über `user_metadata` und der `registrierung-merker`-Cookie entfallen. Hier
+  wird auch die **AGB/AVV**-Vertragsannahme abgehakt und der Promo-Code eingegeben.
+- **Zustimmung ist zweigeteilt.** Datenschutz (persönlich) beim Konto, AGB/AVV
+  (betrieblich) beim Betrieb. Geschrieben werden alle drei Zeilen erst beim Anlegen des
+  Betriebs (`schreibeZustimmungen`), weil `rechtliche_zustimmungen.betrieb_id` NOT NULL
+  ist — die beim Signup zugestimmte Datenschutz-Fassung reist dafür in `user_metadata`
+  mit (`zustimmungFuerBetrieb()`).
+
+**Begründung:** Wunsch des Nutzers, Konto und Betrieb als getrennte Vorgänge zu führen —
+erst ein Konto anlegen, dann auf einer Übersicht der eigenen Verbindungen entscheiden, ob
+man einen Betrieb eröffnet. Als angenehmer Nebeneffekt fällt die gesamte
+Metadaten-durch-die-Mail-Mechanik weg: die Session steht, wenn der Betrieb entsteht.
+
+**Benannte Lücke:** Ein Konto, das nie einen Betrieb anlegt (nur Einladungen annimmt),
+bekommt von diesem Repo keine Datenschutz-Zeile — die braucht eine `betrieb_id`, und das
+Annehmen einer Einladung läuft app-seitig. Offen beim Betreiber, ob das früher geschehen
+soll. **Unverändert:** ein Chef = ein Betrieb; Bestätigung über Codes; Soft-Launch-Sperre.
+
+**Berührte Stellen:** `src/lib/validierung.ts` (`kontoSchema`/`betriebSchema` statt
+`registrierungSchema`), `src/lib/zustimmung.ts` (`datenschutzSignupVersionen`,
+`datenschutzAusMetadaten`, `zustimmungFuerBetrieb`), `src/lib/einrichtung.ts`
+(`SCHRITTE`: `betrieb` statt `konto`), `src/lib/betrieb.ts`, `src/app/(site)/registrieren/`
+(neu: Seite + Abschnitte + Aktionen), `src/app/(site)/einrichtung/betrieb/` (neu),
+`einrichtung/konto/` und `src/lib/registrierung-merker.ts` (entfernt),
+`zustimmung-feld.tsx` (`variante`), i18n `de`/`en`, `dashboard/wechseln` (Link).
+
+---
+
+## 2026-09-21 — Payment-Rework: UID/USt-IdNr für AT und DE Pflicht, Stripe-Rabattcode, Monats/Jahres-Umschalter
+
+**Vorher:**
+- **UID** war ein Feld nur für Österreich (`ATU` + 8 Ziffern), dort seit dem
+  2026-09-18 am Rechnungstor Pflicht. Für Deutschland gab es kein Feld; ein
+  hereingereichter Wert wurde in `pruefeRechnung` verworfen und in
+  `speichereRechnungAmKunden` bei Land ≠ AT sogar aktiv **entfernt**
+  (`entferneUids`).
+- **Rabattcodes:** Es gab nur den internen Partner-Promo-Code
+  (`promo_codes`/`betrieb_promo_codes`), der **keinen** Nachlass gewährt, sondern
+  festhält, über wen ein Betrieb kam. Einen echten Stripe-Rabatt konnte der Kunde
+  nirgends eingeben.
+- **Intervall:** monatlich/jährlich wurde nur auf `/preise` gewählt und per Cookie
+  (`abrechnung-merker.ts`) durchgereicht. Schritt 2 zeigte die Wahl nur an
+  („Kein Umschalter, nur die Anzeige"); ein Wechsel eines bestehenden Abos war
+  nicht vorgesehen.
+
+**Jetzt** (auf Anweisung des Nutzers, Scope per Rückfrage geklärt):
+
+- **UID/USt-IdNr Pflicht für beide Länder.** `feldSchemata.uid` akzeptiert beide
+  Formate (`ATU########` / `DE#########`); `rechnungSchema.superRefine` verlangt eine
+  Nummer für AT **und** DE und erzwingt das landrichtige Format.
+  `rechnungVollstaendig()` prüft die Nummer bei Stripe für `country ∈ {AT, DE}`.
+  `setzeUid` hinterlegt sie als `eu_vat` (gilt für DE wie AT); der frühere
+  „bei Land ≠ AT entfernen"-Zweig entfällt. Feld erscheint in Schritt 2 und im
+  Rechnungsformular für beide Länder mit landabhängiger Beschriftung.
+  *Begründung:* Geschäftsregel „kein Verkauf ohne UID/B2C". Für DE ändert die
+  Nummer die Steuer nicht (Inlandsumsatz), gilt aber als Unternehmernachweis.
+
+- **Stripe-Rabattcode.** Neues freiwilliges Feld `coupon` in Schritt 2;
+  `pruefePromotionCode()` prüft gegen aktive Stripe-`promotion_codes`, ein gültiger
+  wird als `discounts` in `erstelleAbo` gelegt, ein unbekannter ist ein Feldfehler
+  (`v.coupon.unbekannt`). Getrennt vom internen Partner-Promo-Code. Bestandskunden:
+  über das Kundenportal (Dashboard-Config „allow promotion codes").
+
+- **Monats/Jahres-Umschalter in Schritt 2.** Echter Toggle (`intervall`-Radiofeld);
+  `planWaehlen` zieht den Formularwert dem Cookie vor, `wechslePlan` stellt ein
+  bestehendes Abo auf die andere Preis-ID um. Der Wechsel eines **laufenden** Abos
+  im Dauerbetrieb läuft über das **Stripe-Kundenportal** (Proration von Stripe),
+  kein eigener In-App-Umschalter — so bleibt der Zahlungs-Codepfad bei der
+  bestehenden „Abo verwalten"-Philosophie.
+
+**Gates:** `npm run typecheck`, `npm run build`, `npm test` grün; die vier
+`rechnung.test.ts`-Fälle zur alten DE-Optionalität auf die neue Pflicht umgestellt.
+
+---
+
 ## 2026-09-21 — Mobile Dashboard-Navigation: Tab-Leiste neu, Konto-Kachel, Theme-Umschalter, Kontolöschung verlinkt
 
 **Vorher:** Die untere Tab-Leiste (`DashboardTableiste`, seit 2026-09-20) zeigte
