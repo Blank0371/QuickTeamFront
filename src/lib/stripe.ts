@@ -360,16 +360,25 @@ export async function suchePendingKunde({
   userId: string;
   email: string;
 }): Promise<Stripe.Customer | null> {
-  const stripe = stripeKlient();
-  const vorhandene = await stripe.customers.list({ email, limit: 100 });
-  return (
+  return (await listePendingLage({ userId, email })).pending;
+}
+
+async function listePendingLage({
+  userId,
+  email,
+}: {
+  userId: string;
+  email: string;
+}): Promise<{ pending: Stripe.Customer | null; bisherige: number }> {
+  const vorhandene = await stripeKlient().customers.list({ email, limit: 100 });
+  const pending =
     vorhandene.data.find(
       (kunde) =>
         !kunde.deleted &&
         kunde.metadata?.[PENDING_SCHLUESSEL] === userId &&
         !kunde.metadata?.[BETRIEB_SCHLUESSEL],
-    ) ?? null
-  );
+    ) ?? null;
+  return { pending, bisherige: vorhandene.data.length };
 }
 
 /**
@@ -405,7 +414,7 @@ export async function holeOderErstellePendingKunde({
     [P.promo]: info.promoCode ?? "",
   };
 
-  const vorhanden = await suchePendingKunde({ userId, email });
+  const { pending: vorhanden, bisherige } = await listePendingLage({ userId, email });
   if (vorhanden) {
     return stripe.customers.update(vorhanden.id, {
       name: info.name,
@@ -422,7 +431,15 @@ export async function holeOderErstellePendingKunde({
       preferred_locales: ["de"],
       metadata: geparkt,
     },
-    { idempotencyKey: `pending:${userId}:kunde` },
+    /*
+     * Die Anzahl der Kunden unter dieser Adresse steht im Schlüssel (wie
+     * beim Abo). Ohne sie liefe ein zweiter Betrieb binnen 24 Stunden —
+     * der erste ist verknüpft oder gelöscht, der Kunde also nicht mehr
+     * pending — auf denselben Schlüssel: bei anderen Angaben wirft Stripe
+     * wegen abweichender Parameter, bei gleichen kommt der alte, schon an
+     * einen Betrieb gebundene Kunde zurück.
+     */
+    { idempotencyKey: `pending:${userId}:kunde:${bisherige}` },
   );
 }
 
