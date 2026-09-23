@@ -1,11 +1,11 @@
 # DATENSCHUTZERKLÄRUNG
 
-**Stand: 23. September 2026**
+**Stand: 16. September 2026**
 
 Diese Datenschutzerklärung informiert Sie nach Art. 13 und 14 der Datenschutz-Grundverordnung (DSGVO) darüber, wie die BlankTrading UG (haftungsbeschränkt) (nachfolgend „wir“ oder „uns“) personenbezogene Daten verarbeitet, wenn Sie
 
 - unsere Website quickteam.at besuchen,
-- ein Konto bei QuickTeam anlegen oder als Inhaberin oder Inhaber einen Betrieb einrichten und QuickTeam buchen oder
+- als Inhaberin oder Inhaber eines Betriebs QuickTeam registrieren und buchen oder
 - QuickTeam im Web-Dashboard oder in der QuickTeam-App für iOS und Android nutzen, sei es als Führungskraft oder als Beschäftigte oder Beschäftigter eines Betriebs.
 
 Website, Web-Dashboard und App bilden zusammen den Dienst „QuickTeam“ (der „Dienst“). Wo sich die Verarbeitung zwischen Website und App unterscheidet, ist das ausdrücklich angegeben.
@@ -36,7 +36,7 @@ QuickTeam ist ein Werkzeug zur Schicht- und Personaleinsatzplanung, das Betriebe
 | Daten | Verantwortlich | Unsere Rolle |
 |---|---|---|
 | Besuch der Website, Cookies (Ziffern 3 und 4) | wir | Verantwortlicher |
-| Kontoanlage, Einrichtung, Vertrag und Zahlung eines Betriebs, Promo-Code (Ziffern 5 und 6) | wir | Verantwortlicher |
+| Registrierung, Vertrag und Zahlung eines Betriebs (Ziffern 5 und 6) | wir | Verantwortlicher |
 | Ihr Anmeldekonto, Sitzungen, E-Mail-Kontakt, Fehlermeldungen (Ziffern 7.1, 11, 12) | wir | Verantwortlicher |
 | Betriebliche Daten: Ihr Profil im Betrieb, Schichten, Verfügbarkeiten, Vorlieben, Urlaub, Schichttausch, Notfälle, Mitteilungen, Umfragen, Änderungsprotokoll sowie Zustellung betrieblicher Push-Mitteilungen (Ziffern 7.2 bis 10) | Ihr Arbeitgeber | Auftragsverarbeiter (Art. 28 DSGVO) |
 
@@ -67,47 +67,41 @@ Wir setzen **keine** Analyse-, Tracking- oder Werbedienste ein und binden keine 
 
 ## 4. Cookies und ähnliche Technologien auf der Website
 
-Die Website verwendet die nachfolgenden Cookies für Anmeldung, gewählte Einstellungen und Zahlung:
+Die Website verwendet die nachfolgenden Cookies für Anmeldung, gewählte Einstellungen, Registrierung und Zahlung:
 
 | Cookie | Zweck | Speicherdauer | Wann gesetzt |
 |---|---|---|---|
 | **qt_sprache** | speichert die gewählte Sprache (Deutsch oder Englisch) | 1 Jahr | nur wenn Sie die Sprache umschalten |
 | **sb-…-auth-token** (ggf. in mehrere Teile aufgeteilt) | hält Sie nach der Anmeldung angemeldet; enthält Ihre Sitzungs- und Zugriffskennungen | bis zur Abmeldung, längstens 400 Tage | bei der Anmeldung |
 | **qt_position** | merkt sich, mit welcher Ihrer Anstellungen Sie im Dashboard arbeiten, wenn Ihr Konto mehreren Betrieben oder Positionen zugeordnet ist | 1 Jahr; wird beim Abmelden gelöscht | bei der Auswahl einer Position |
-| **qt_abrechnung** | merkt sich, ob Sie auf der Preisseite monatliche oder jährliche Abrechnung gewählt haben (Inhalt nur „monat“ oder „jahr“), bis Sie den Tarif wählen | 24 Stunden | nur wenn Sie von der Preisseite mit einer gewählten Abrechnung zur Kontoanlage wechseln |
+| **qt_registrierung** | hält während der Registrierung Betriebsname, Land, Vor- und Nachname sowie einen optional eingegebenen Promo-Code bereit, bis der Bestätigungscode eingegeben ist; nur auf der Registrierungsseite lesbar | 24 Stunden; wird nach der Bestätigung gelöscht | bei der Registrierung |
 | **__stripe_mid**, **__stripe_sid** | Betrugsprävention bei der Zahlung (Stripe) | 1 Jahr bzw. 30 Minuten | nur auf den Seiten mit Zahlungsformular (Ziffer 6) |
 
-**Rechtsgrundlage:** Für die zur Anmeldung und für die ausdrücklich gewählte Sprache, Position oder Abrechnung erforderlichen Speicherzugriffe gilt § 25 Abs. 2 Nr. 2 TDDDG bzw. in Österreich § 165 Abs. 3 TKG 2021. Die Verarbeitung personenbezogener Daten richtet sich nach Art. 6 Abs. 1 lit. b DSGVO für eigene Vertragsbeziehungen bzw. lit. f DSGVO für sichere Zugänge und die Abwicklung für Unternehmensvertreter. Stripe verwendet im Zahlungsformular Cookies und Gerätesignale zur Betrugsprävention. Eine Einwilligungsausnahme gilt auch dort nur für Speicherzugriffe, die für den ausdrücklich verlangten Zahlungsdienst unbedingt erforderlich sind; eine allgemeine Berufung auf Sicherheit oder berechtigte Interessen ersetzt diese Voraussetzung nicht.
+**Rechtsgrundlage:** Für die zur Anmeldung, Registrierung und ausdrücklich gewählten Sprache oder Position erforderlichen Speicherzugriffe gilt § 25 Abs. 2 Nr. 2 TDDDG bzw. in Österreich § 165 Abs. 3 TKG 2021. Die Verarbeitung personenbezogener Daten richtet sich nach Art. 6 Abs. 1 lit. b DSGVO für eigene Vertragsbeziehungen bzw. lit. f DSGVO für sichere Zugänge und die Abwicklung für Unternehmensvertreter. Stripe verwendet im Zahlungsformular Cookies und Gerätesignale zur Betrugsprävention. Eine Einwilligungsausnahme gilt auch dort nur für Speicherzugriffe, die für den ausdrücklich verlangten Zahlungsdienst unbedingt erforderlich sind; eine allgemeine Berufung auf Sicherheit oder berechtigte Interessen ersetzt diese Voraussetzung nicht.
 
 Auf der Website wird derzeit kein Cookie-Banner angezeigt. Analyse- und Werbe-Cookies werden nicht eingesetzt. Sie können Cookies in den Einstellungen Ihres Browsers löschen oder blockieren; ohne die Anmelde-Cookies ist eine Anmeldung jedoch nicht möglich.
 
 ---
 
-## 5. Konto anlegen und Betrieb einrichten
+## 5. Registrierung eines Betriebs
 
-Konto und Betrieb entstehen in zwei getrennten Schritten: Zuerst legen Sie ein persönliches Anmeldekonto an (Ziffer 5.1). Einen Betrieb richten Sie anschließend, wenn Sie möchten, aus dem Dashboard heraus ein (Ziffer 5.2); er wird erst angelegt, wenn die erste Zahlung erfolgreich war (Ziffer 6).
+### 5.1 Welche Daten wir erheben
 
-### 5.1 Anmeldekonto
+Zur Registrierung eines Betriebs erheben wir: Name des Betriebs, Land (Deutschland oder Österreich), Ihren Vor- und Nachnamen, Ihre E-Mail-Adresse und ein Passwort. Das Passwort wird verschlüsselt (TLS) an unseren Server übertragen, der es unmittelbar an unseren Authentifizierungsdienst weiterreicht; das gilt ebenso bei jeder Anmeldung und beim Zurücksetzen des Passworts. Wir protokollieren das Passwort nicht und speichern es nicht. Dauerhaft gespeichert wird ausschließlich ein kryptografischer Hashwert, aus dem sich das Passwort nicht zurückrechnen lässt.
 
-Für ein Konto erheben wir Ihre E-Mail-Adresse und ein Passwort. Das Passwort wird verschlüsselt (TLS) an unseren Server übertragen, der es unmittelbar an unseren Authentifizierungsdienst weiterreicht; das gilt ebenso bei jeder Anmeldung und beim Zurücksetzen des Passworts. Wir protokollieren das Passwort nicht und speichern es nicht. Dauerhaft gespeichert wird ausschließlich ein kryptografischer Hashwert, aus dem sich das Passwort nicht zurückrechnen lässt.
+Wenn Sie freiwillig einen **Promo-Code** angeben, speichern wir ihn zunächst beim Anmeldekonto und ordnen ihn nach der Bestätigung Ihrem Betrieb zu. Wir verwenden ihn zur Prüfung und Zuordnung der angegebenen Aktion. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt in der Verwaltung dieser Zuordnung. Der Code bleibt beim Konto beziehungsweise Betrieb bis zu dessen Löschung gespeichert. Ein Code bewirkt in der aktuellen Anwendung nicht automatisch einen Preisnachlass.
 
-Zur Bestätigung Ihrer E-Mail-Adresse senden wir Ihnen einen achtstelligen Code (Ziffer 12.1). **Unbestätigte Konten werden automatisch gelöscht.** Wird der Code nicht innerhalb von 24 Stunden eingegeben, wird das Konto beim nächsten stündlichen Bereinigungslauf gelöscht, regelmäßig spätestens nach etwa 25 Stunden.
+Zur Bestätigung Ihrer E-Mail-Adresse senden wir Ihnen einen achtstelligen Code (Ziffer 12.1). Erst nach Eingabe des Codes wird der Betrieb angelegt und Ihr Konto als Führungskraft („Chef“) mit ihm verknüpft. Bis dahin liegen die Angaben zum Betrieb bei Ihrem noch unbestätigten Konto.
 
-### 5.2 Einrichtung eines Betriebs
+**Unbestätigte Registrierungen werden automatisch gelöscht.** Wird der Code nicht innerhalb von 24 Stunden eingegeben, wird das Konto samt den dazu gespeicherten Angaben beim nächsten stündlichen Bereinigungslauf gelöscht, regelmäßig spätestens nach etwa 25 Stunden.
 
-Zur Einrichtung eines Betriebs erheben wir: Name des Betriebs, Land (Deutschland oder Österreich), Ihren Vor- und Nachnamen und, falls Sie ihn freiwillig angeben, einen Promo-Code. Anschließend wählen Sie einen Tarif und hinterlegen Rechnungsangaben und Zahlungsmittel (Ziffer 6).
+### 5.2 Nachweis der Zustimmung zu AGB, AVV und Datenschutzerklärung
 
-**Vor der ersten Zahlung liegen diese Angaben bei Stripe.** Solange Ihr Betrieb noch nicht angelegt ist, speichern wir Name und Land des Betriebs, Ihren Vor- und Nachnamen, die Kennung Ihres Anmeldekontos, einen angegebenen Promo-Code sowie später Tarif, Abrechnungsintervall und einen gegebenenfalls eingelösten Rabattcode als Zusatzangaben an einem Kundendatensatz bei Stripe (Ziffer 6), nicht in unserer Datenbank. Ist die erste Zahlung erfolgreich, legen wir daraus den Betrieb an, verknüpfen Ihr Konto mit ihm als Führungskraft („Chef“) und entfernen die Zusatzangaben bei Stripe wieder; Name und Land des Betriebs bleiben dort als Rechnungsangaben. Schließen Sie die Einrichtung nicht ab, bleiben die Angaben bei Stripe gespeichert, bis Sie die Einrichtung fortsetzen oder ihre Löschung verlangen (Ziffer 17).
-
-**Promo-Code.** Ein Promo-Code gibt an, dass eine unserer Werbepartnerinnen oder einer unserer Werbepartner Ihnen QuickTeam empfohlen hat; er bewirkt **keinen** Preisnachlass. Vor dem Speichern prüfen wir nur, ob der Code gültig ist. Mit der Anlage des Betriebs ordnen wir den Code dem Betrieb zu; die Zuordnung bleibt bis zur Löschung des Betriebs gespeichert und kann nicht nachträglich geändert werden. Wir teilen der Person, der der Code gehört, mit, dass ein Betrieb über ihren Code zu uns gekommen ist, und nennen ihr in ihren Abrechnungen die Bezeichnung des Betriebs, die von ihm vereinnahmten Nettobeträge und die daraus berechnete Vergütung. Weitere Daten, insbesondere Daten Ihrer Beschäftigten oder aus der Dienstplanung, erhält sie nicht. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt darin, Empfehlungen zuzuordnen und die vereinbarte Vergütung nachvollziehbar abzurechnen. Sie können dieser Verarbeitung nach Art. 21 DSGVO widersprechen (Ziffer 17). Abrechnungen gegenüber Werbepartnern bewahren wir als Buchungsbelege nach den gesetzlichen Fristen auf (Ziffer 15).
-
-### 5.3 Nachweis der Zustimmung zu AGB, AVV und Datenschutzerklärung
-
-Bei der Anlage Ihres Kontos nehmen Sie diese Datenschutzerklärung zur Kenntnis; die Fassung, die Sprache und eine Prüfsumme der gelesenen Fassung speichern wir zunächst bei Ihrem Anmeldekonto. Bei der Einrichtung eines Betriebs bestätigen Sie für ihn die Allgemeinen Geschäftsbedingungen und den Auftragsverarbeitungsvertrag (AVV). Mit der Anlage des Betriebs schreiben wir für alle drei Dokumente einen Nachweis. Ändert sich eines dieser Dokumente, bitten wir Führungskräfte im Dashboard erneut um Bestätigung. Als Nachweis speichern wir je Dokument: Bezeichnung, Fassung (Datum des Stands), Zeitpunkt, Kennung Ihres Kontos und des Betriebs sowie gegebenenfalls die Sprache und die Prüfsumme der bestätigten Fassung. Diese Einträge können nachträglich nicht geändert werden.
+Bei der Registrierung bestätigen Sie die Allgemeinen Geschäftsbedingungen und den Auftragsverarbeitungsvertrag (AVV) für Ihren Betrieb und nehmen diese Datenschutzerklärung zur Kenntnis. Ändert sich eines dieser Dokumente, bitten wir Führungskräfte im Dashboard erneut um Bestätigung. Als Nachweis speichern wir je Dokument: Bezeichnung, Fassung (Datum des Stands), Zeitpunkt, Kennung Ihres Kontos und des Betriebs sowie gegebenenfalls die Sprache der bestätigten Fassung. Diese Einträge können nachträglich nicht geändert werden.
 
 Für die Bestätigung von AGB und AVV legen wir im Zeitpunkt der Bestätigung zusätzlich eine Kopie an, die auch nach der Löschung des Betriebs erhalten bleibt: Name und Land des Betriebs, Vor- und Nachname sowie E-Mail-Adresse der bestätigenden Person, Dokument, Fassung, Sprache, Prüfsumme der bestätigten Fassung und Zeitpunkt. Diese Kopie bewahren wir bis zum Ende des dritten Kalenderjahres nach Vertragsende auf (regelmäßige Verjährungsfrist, §§ 195, 199 BGB) und löschen sie dann automatisch. Die Kenntnisnahme dieser Datenschutzerklärung wird nicht kopiert; ihr Nachweis wird mit dem Betrieb gelöscht.
 
-### 5.4 Zwecke und Rechtsgrundlagen
+### 5.3 Zwecke und Rechtsgrundlagen
 
 - **Anlage und Verwaltung des Kundenkontos, Vertragsschluss:** Art. 6 Abs. 1 lit. b DSGVO, soweit Sie selbst Vertragspartner sind (etwa als Einzelunternehmer). Handeln Sie für ein Unternehmen, etwa als Geschäftsführer, stützen wir die Verarbeitung Ihrer Daten auf Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt in der Durchführung des Vertrags mit dem von Ihnen vertretenen Unternehmen.
 - **Bestätigung der E-Mail-Adresse:** Art. 6 Abs. 1 lit. f DSGVO (Schutz vor Konten mit fremden oder falschen Adressen).
@@ -117,19 +111,19 @@ Für die Bestätigung von AGB und AVV legen wir im Zeitpunkt der Bestätigung zu
 
 ## 6. Zahlungsabwicklung mit Stripe
 
-Bei der Einrichtung eines Betriebs wählen Sie einen Tarif und ein Abrechnungsintervall. Eine kostenlose Testphase gibt es nicht; das Abonnement beginnt mit der ersten Zahlung, und erst danach wird der Betrieb angelegt (Ziffer 5.2). Einen Rabattcode können Sie freiwillig angeben; wir prüfen ihn bei Stripe und wenden ihn auf das Abonnement an.
+Nach der Registrierung wählen Sie einen Tarif. Das Abonnement beginnt mit einer 14-tägigen Testphase, auch wenn Sie noch kein Zahlungsmittel hinterlegen. Ein Zahlungsmittel können Sie sofort oder bis zum Ende der Testphase hinterlegen; läuft sie ohne Zahlungsmittel ab, wird das Abonnement pausiert (zu den Folgen für Ihre Daten siehe Ziffer 15.3).
 
-- **Rechnungsangaben erheben wir vor der ersten Zahlung.** Wir fragen den rechtlichen Unternehmensnamen, Straße und Hausnummer, Postleitzahl, Ort, Land und die **Umsatzsteuer-Identifikationsnummer** (UID in Österreich, USt-IdNr. in Deutschland) ab. QuickTeam wird ausschließlich an Unternehmer verkauft; die Nummer dient als Nachweis dafür und steht auf der Rechnung. Diese Angaben sind für eine ordnungsgemäße Rechnung erforderlich (§ 14 Abs. 4 UStG); Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und lit. c DSGVO.
-- **An Stripe übermitteln wir:** Ihre E-Mail-Adresse, die genannten Rechnungsangaben (Unternehmensname, Straße und Hausnummer, Postleitzahl, Ort, Land, UID bzw. USt-IdNr.), eine interne Kennung Ihres Betriebs, die bevorzugte Sprache für Rechnungen, den gewählten Tarif samt Abrechnungsintervall und einen gegebenenfalls eingelösten Rabattcode; vor der ersten Zahlung außerdem die in Ziffer 5.2 genannten Zusatzangaben. Anschrift und Land benötigt Stripe, um die Umsatzsteuer zu berechnen und die Rechnung auszustellen. Stripe prüft die Gültigkeit der Umsatzsteuer-Identifikationsnummer über das Mehrwertsteuer-Informationsaustauschsystem (MIAS/VIES). Für die zutreffende steuerliche Behandlung sind die gesetzlichen Voraussetzungen maßgeblich; wir bleiben für die richtige Rechnung verantwortlich.
+- **Rechnungsangaben erheben wir, bevor ein kostenpflichtiges Abonnement beginnt.** Wenn Sie ein Zahlungsmittel hinterlegen, fragen wir den rechtlichen Unternehmensnamen, Straße und Hausnummer, Postleitzahl, Ort und Land ab. Diese Angaben sind für eine ordnungsgemäße Rechnung erforderlich (§ 14 Abs. 4 UStG); Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und lit. c DSGVO. Solange Sie den Dienst nur kostenlos testen und kein Zahlungsmittel hinterlegen, fragen wir sie nicht ab.
+- **An Stripe übermitteln wir:** Ihre E-Mail-Adresse, die genannten Rechnungsangaben (Unternehmensname, Straße und Hausnummer, Postleitzahl, Ort, Land), eine interne Kennung Ihres Betriebs, die bevorzugte Sprache für Rechnungen und den gewählten Tarif. Anschrift und Land benötigt Stripe, um die Umsatzsteuer zu berechnen und die Rechnung auszustellen. Geben Sie als österreichischer Betrieb freiwillig Ihre **Umsatzsteuer-Identifikationsnummer (UID)** an, übermitteln wir auch diese; Stripe prüft ihre Gültigkeit über das Mehrwertsteuer-Informationsaustauschsystem (MIAS/VIES). Für die zutreffende steuerliche Behandlung sind die gesetzlichen Voraussetzungen maßgeblich; wir bleiben für die richtige Rechnung verantwortlich.
 - **Gespeichert werden die Rechnungsangaben bei Stripe**, nicht in unserer Datenbank; dort steht nur das Land Ihres Betriebs. Ändern können Sie sie jederzeit über das Kundenportal (siehe unten).
 - **Zahlungsdaten** (etwa Kartendaten oder IBAN für SEPA-Lastschrift) geben Sie direkt in das Formular von Stripe ein, das auf unserer Seite eingebettet ist und von Servern der Stripe geladen wird. Diese Daten gehen unmittelbar an Stripe; vollständige Kartennummern oder Kontoverbindungen erhalten und speichern wir nicht.
-- **Bei uns gespeichert werden:** die Stripe-Kundenkennung, die Kennung des Abonnements, der Tarif und der Status des Abonnements (etwa aktiv, pausiert, gekündigt). Stripe teilt uns Änderungen des Status automatisch mit.
+- **Bei uns gespeichert werden:** die Stripe-Kundenkennung, die Kennung des Abonnements, der Tarif und der Status des Abonnements (etwa Testphase, aktiv, pausiert). Stripe teilt uns Änderungen des Status automatisch mit.
 - **Kundenportal:** Über „Abo verwalten“ in den Einstellungen des Dashboards gelangen Führungskräfte zum Kundenportal von Stripe. Dort können Sie das Abonnement kündigen, das Zahlungsmittel ändern und Rechnungen abrufen. Das Portal wird von Stripe betrieben; wir übermitteln dafür nur Ihre Stripe-Kundenkennung und die Adresse, zu der Sie danach zurückkehren.
 - **Betrugsprävention:** Auf den Seiten mit Zahlungsformular erhebt Stripe Geräte- und Nutzungsdaten (z. B. IP-Adresse, Browser-Merkmale, Interaktionen mit dem Formular) und setzt dafür die in Ziffer 4 genannten Cookies, um betrügerische Zahlungen zu erkennen.
 
 **Verantwortlichkeit:** Eingesetzt wird Stripe Payments Europe, Limited, Irland. Nach dem [Stripe-Datenverarbeitungsvertrag](https://stripe.com/legal/dpa) handelt Stripe je nach Verarbeitung als unser Auftragsverarbeiter, etwa zur Bereitstellung seiner Zahlungs- und Abonnementdienste nach unseren Weisungen, oder als eigenständig Verantwortlicher, insbesondere für eigene Betrugsbekämpfung, regulatorische Pflichten und weitere dort beschriebene eigene Zwecke. Für die Auswahl und Übermittlung der Kunden- und Rechnungsdaten bleiben wir verantwortlich. Die betriebliche Personalplanung übermitteln wir nicht über diese Zahlungsintegration. Informationen zu Stripes eigener Verarbeitung stehen in der [Stripe-Datenschutzerklärung](https://stripe.com/privacy). Übermittlungen in die USA richten sich nach Ziffer 14.
 
-**Rechtsgrundlagen:** Art. 6 Abs. 1 lit. b DSGVO bzw. lit. f DSGVO (siehe Ziffer 5.4) für die Abwicklung des Abonnements; Art. 6 Abs. 1 lit. f DSGVO für die Betrugsprävention; Art. 6 Abs. 1 lit. c DSGVO für die Aufbewahrung von Rechnungs- und Buchungsunterlagen.
+**Rechtsgrundlagen:** Art. 6 Abs. 1 lit. b DSGVO bzw. lit. f DSGVO (siehe Ziffer 5.3) für die Abwicklung des Abonnements; Art. 6 Abs. 1 lit. f DSGVO für die Betrugsprävention; Art. 6 Abs. 1 lit. c DSGVO für die Aufbewahrung von Rechnungs- und Buchungsunterlagen.
 
 **Beschäftigte** zahlen nichts und geben keine Zahlungsdaten an.
 
@@ -226,7 +220,7 @@ Diese Daten bleiben auf Ihrem Gerät. Das Speichern ist für die von Ihnen genut
 
 ### 12.1 E-Mails, die wir versenden
 
-Wir versenden ausschließlich E-Mails, die für Ihr Konto erforderlich sind: Bestätigungscodes bei der Kontoanlage, beim Zurücksetzen des Passworts und bei der Änderung Ihrer E-Mail-Adresse. Newsletter oder Werbe-E-Mails versenden wir nicht.
+Wir versenden ausschließlich E-Mails, die für Ihr Konto erforderlich sind: Bestätigungscodes bei der Registrierung, beim Zurücksetzen des Passworts und bei der Änderung Ihrer E-Mail-Adresse. Newsletter oder Werbe-E-Mails versenden wir nicht.
 
 Der Versand läuft über **Resend, Inc., USA**, als unseren Auftragsverarbeiter. Resend verarbeitet Ihre E-Mail-Adresse, den Inhalt der Nachricht (einschließlich des Codes) und Zustellprotokolle, speichert diese Daten in den USA und löscht sie nach 30 Tagen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b bzw. f DSGVO (siehe Ziffern 5.3 und 7.1). Bestätigungscodes sind nur kurz gültig, höchstens 24 Stunden.
 
@@ -255,7 +249,6 @@ Wir geben personenbezogene Daten nur weiter, soweit dies für den jeweiligen Zwe
 | 1&1 Mail & Media GmbH (WEB.DE) | E-Mail-Postfach | Auftragsverarbeiter | Deutschland |
 | Stripe Payments Europe, Limited | Zahlungsabwicklung, Betrugsprävention | je nach Zweck Auftragsverarbeiter oder eigenständig Verantwortlicher (Ziffer 6) | EU (Irland); Übermittlungen in die USA |
 | Apple Inc. / Google LLC (App-Stores) | Bereitstellung der App | eigenständig Verantwortliche | nach eigenen Angaben |
-| Werbepartnerin oder Werbepartner, deren Promo-Code Sie angegeben haben | Zuordnung der Empfehlung und Abrechnung der Vergütung; nur die in Ziffer 5.2 genannten Angaben | eigenständig Verantwortliche | in der Regel Deutschland oder Österreich |
 
 Die Verarbeitung durch Auftragsverarbeiter bedarf einer Vereinbarung nach Art. 28 DSGVO; die Pflicht zum Abschluss und zur Prüfung dieser Vereinbarungen liegt bei uns. Die Auflistung eines Dienstleisters ersetzt diese Vereinbarung nicht. Innerhalb Ihres Betriebs erhalten Ihr Arbeitgeber und – im Rahmen von Ziffer 7.4 – Ihre Kolleginnen und Kollegen Zugriff auf betriebliche Daten.
 
@@ -287,7 +280,7 @@ Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zw
 | Protokolle von Datenbank, Anmeldung und Server-Funktionen (Supabase) | automatische Löschung nach 7 Tagen |
 | Datensicherungen der Datenbank | tägliche Sicherung, jede Sicherung wird nach 7 Tagen überschrieben |
 | Cookies | siehe Ziffer 4 |
-| Unbestätigtes Anmeldekonto | ab 24 Stunden beim nächsten stündlichen Bereinigungslauf, regelmäßig binnen etwa 25 Stunden |
+| Unbestätigte Registrierung | ab 24 Stunden beim nächsten stündlichen Bereinigungslauf, regelmäßig binnen etwa 25 Stunden |
 | Bestätigungscodes | verfallen nach kurzer Zeit, höchstens nach 24 Stunden |
 | Verknüpfungscode für die Zusammenführung von Konten | 15 Minuten gültig |
 | E-Mail-Protokolle beim Versanddienstleister (Resend) | 30 Tage |
@@ -295,14 +288,11 @@ Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zw
 | Push-Token | bis zur Kontolöschung oder bis sich ein anderes Konto auf dem Gerät anmeldet (Ziffer 10) |
 | Profil im Betrieb | bis Ihr Arbeitgeber es entfernt oder Sie Ihr Konto löschen (dann Pseudonymisierung, Ziffer 15.1), spätestens bis zur Löschung des Betriebs |
 | Planungs- und Kommunikationsdaten, Änderungsprotokoll | nach Weisung Ihres Arbeitgebers, spätestens bis zur Löschung des Betriebs (Ziffer 15.3) |
-| Angaben zu einem noch nicht angelegten Betrieb (bei Stripe, Ziffer 5.2) | bis zur Anlage des Betriebs (dann entfernt, soweit nicht Rechnungsangabe) oder bis Sie die Löschung verlangen |
-| Fassung der zur Kenntnis genommenen Datenschutzerklärung beim Anmeldekonto | bis zur Löschung des Kontos |
-| Promo-Code eines Betriebs | bis zur Löschung des Betriebs |
-| Nachweise der Zustimmung zu AGB und AVV | bis zum Ende des dritten Kalenderjahres nach Vertragsende (Ziffer 5.3) |
+| Nachweise der Zustimmung zu AGB und AVV | bis zum Ende des dritten Kalenderjahres nach Vertragsende (Ziffer 5.2) |
 | Nachweise der Kenntnisnahme der Datenschutzerklärung | bis zur Löschung des Betriebs |
 | Stripe-Kennungen, Tarif und Status des Abonnements | bis zur Löschung des Betriebs |
-| Rechnungsangaben (Unternehmensname, Anschrift, UID bzw. USt-IdNr.) | bei Stripe, solange das Kundenkonto dort besteht; in Rechnungen zusätzlich nach den gesetzlichen Aufbewahrungsfristen |
-| Rechnungen und Buchungsbelege, auch Abrechnungen gegenüber Werbepartnern | 8 Jahre (§ 147 AO, § 257 HGB) |
+| Rechnungsangaben (Unternehmensname, Anschrift, ggf. UID) | bei Stripe, solange das Kundenkonto dort besteht; in Rechnungen zusätzlich nach den gesetzlichen Aufbewahrungsfristen |
+| Rechnungen und Buchungsbelege | 8 Jahre (§ 147 AO, § 257 HGB) |
 | Handels- und Geschäftsbriefe, auch per E-Mail | 6 Jahre (§ 257 HGB, § 147 AO) |
 | Sonstige E-Mails an uns | bis zur Erledigung des Anliegens |
 | Fehlermeldungen aus der App | bis zur Bearbeitung, spätestens 12 Monate |
@@ -326,12 +316,12 @@ Sie können Ihr Konto jederzeit selbst löschen: im Web unter „Konto löschen�
 
 Führungskräfte können das Profil einer Person im Betrieb pseudonymisieren. Dabei werden Name, E-Mail-Adresse, Telefonnummer und die Verbindung zum Anmeldekonto entfernt und die an die Person gerichteten Benachrichtigungen und Einladungen gelöscht; im Übrigen gilt Ziffer 15.1 entsprechend. Noch nicht angenommene Einladungen können Führungskräfte vollständig löschen. Ihr Anmeldekonto bleibt in beiden Fällen bestehen, weil es anderen Anstellungen zugeordnet sein kann; Sie können es jederzeit selbst löschen.
 
-### 15.3 Ende des Vertrags
+### 15.3 Ende des Vertrags und abgelaufene Testphase
 
 - **Nach Vertragsende** halten wir die Betriebsdaten grundsätzlich 30 Kalendertage zum Export bereit. Bei einem rechtzeitig verlangten Export läuft die Abruffrist bis mindestens 30 Kalendertage nach vollständiger Bereitstellung. Bei einem Anbieterwechsel läuft sie mindestens 30 Kalendertage nach Ende der Übergangsphase. Während offener Bereitstellung oder laufender Übergangs- und Abruffristen werden die betroffenen Daten nicht gelöscht (§ 6 Abs. 4 bis 7 AGB, § 8 AVV). Danach werden sie beim nächsten täglichen Löschlauf entfernt; eine ausdrücklich verlangte frühere Löschung und gesetzliche Aufbewahrungspflichten bleiben unberührt.
-- **Ältere Verträge mit Testphase:** Neue Abonnements haben keine Testphase mehr. Für Verträge, die noch mit einer Testphase abgeschlossen wurden, gilt: Lief die Testphase ohne Zahlungsmittel ab, wurde das Abonnement pausiert. Ohne Fortsetzung endet der Vertrag nach 90 Tagen; daran schließen sich grundsätzlich die 30 Tage für Export und anschließende Löschung an (90 + 30 Tage, zuzüglich der beschriebenen Verlängerungen und des nächsten täglichen Laufs). Eine Kündigung während der Pause löst die Frist ab diesem Vertragsende aus, nicht rückwirkend ab Testphasenende.
+- **Testphase ohne Zahlungsmittel:** Nach Ablauf wird das Abonnement pausiert. Ohne Fortsetzung endet der Vertrag nach 90 Tagen; daran schließen sich grundsätzlich die 30 Tage für Export und anschließende Löschung an (90 + 30 Tage, zuzüglich der beschriebenen Verlängerungen und des nächsten täglichen Laufs). Eine Kündigung während der Pause löst die Frist ab diesem Vertragsende aus, nicht rückwirkend ab Testphasenende.
 - **Anmeldekonten** ohne verbleibende Anstellung in einem anderen Betrieb werden mit dem Betrieb gelöscht, einschließlich Sitzungen und Push-Token. Konten mit weiterer Anstellung bleiben erhalten.
-- **Vertragsnachweise:** Die Kopien der AGB- und AVV-Annahmen bleiben nach Ziffer 5.3 bis zum Ende des dritten Kalenderjahres nach Vertragsende erhalten. Nachweise der Datenschutz-Kenntnisnahme werden mit dem Betrieb gelöscht. Abrechnungsunterlagen unterliegen den gesonderten Fristen in Ziffer 15.
+- **Vertragsnachweise:** Die Kopien der AGB- und AVV-Annahmen bleiben nach Ziffer 5.2 bis zum Ende des dritten Kalenderjahres nach Vertragsende erhalten. Nachweise der Datenschutz-Kenntnisnahme werden mit dem Betrieb gelöscht. Abrechnungsunterlagen unterliegen den gesonderten Fristen in Ziffer 15.
 
 ### 15.4 Datensicherungen
 
@@ -341,7 +331,7 @@ Die Datenbank wird täglich gesichert; jede Sicherung wird nach 7 Tagen übersch
 
 ## 16. Pflicht zur Bereitstellung
 
-Für ein Anmeldekonto sind E-Mail-Adresse und Passwort erforderlich. Für die Einrichtung eines Betriebs sind zusätzlich Name des Betriebs, Land, Vor- und Nachname, die Rechnungsangaben einschließlich UID bzw. USt-IdNr. und ein Zahlungsmittel erforderlich; ohne sie können wir kein Konto anlegen und keinen Vertrag schließen. Promo-Code und Rabattcode sind freiwillig. Eine gesetzliche Pflicht zur Angabe besteht nicht. Freiwillig sind insbesondere Kommentare, Gründe, Notizen, Umfragestimmen, Verfügbarkeiten, Vorlieben und die Aktivierung von Push-Nachrichten. Ob Sie den Dienst im Rahmen Ihres Arbeitsverhältnisses nutzen müssen, richtet sich nach den Vereinbarungen mit Ihrem Arbeitgeber.
+Für die Registrierung eines Betriebs und für ein Anmeldekonto sind E-Mail-Adresse, Passwort und – bei der Registrierung – Name des Betriebs, Land sowie Vor- und Nachname erforderlich; ohne sie können wir keinen Vertrag schließen und kein Konto anlegen. Eine gesetzliche Pflicht zur Angabe besteht nicht. Freiwillig sind insbesondere Kommentare, Gründe, Notizen, Umfragestimmen, Verfügbarkeiten, Vorlieben und die Aktivierung von Push-Nachrichten. Ob Sie den Dienst im Rahmen Ihres Arbeitsverhältnisses nutzen müssen, richtet sich nach den Vereinbarungen mit Ihrem Arbeitgeber.
 
 ---
 

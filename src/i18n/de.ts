@@ -72,7 +72,7 @@ export const de = {
   promo: {
     augenbraue: "Promo-Partnerschaft",
     titel: "Werde Promo-Partner von QuickTeam",
-    lead: "Du empfiehlst QuickTeam an Gastronomiebetriebe weiter? Dann bekommst du einen eigenen Promo-Code, den neue Betriebe bei der Registrierung eintragen — so sehen wir, welche Anmeldungen von dir kommen.",
+    lead: "Du empfiehlst QuickTeam an Gastronomiebetriebe weiter? Dann bekommst du einen eigenen Promo-Code, den neue Betriebe bei der Einrichtung ihres Kontos eintragen — so sehen wir, welche Anmeldungen von dir kommen.",
     schritteTitel: "So läuft die Anfrage",
     schritt1: "Lade das Antragsformular herunter.",
     schritt2: "Fülle es vollständig aus und unterschreibe es.",
@@ -83,7 +83,7 @@ export const de = {
     mailBetreff: "Request Promo Partnership",
     hinweisTitel: "Was danach passiert",
     hinweisText:
-      "Wir prüfen deine Anfrage und melden uns per E-Mail. Nach der Freigabe erhältst du deinen persönlichen Promo-Code. Ein Rabatt ist damit nicht verbunden — der Code hält nur fest, welche Betriebe über dich zu QuickTeam gefunden haben.",
+      "Wir prüfen deine Anfrage und melden uns per E-Mail. Die Vereinbarung kommt erst mit unserer Annahme zustande; dabei erhältst du deinen persönlichen Promo-Code. Ein Rabatt ist damit nicht verbunden — der Code hält nur fest, welche Betriebe über dich zu QuickTeam gefunden haben.",
   },
   dashboard: {
     navigation: "Dashboard-Navigation",

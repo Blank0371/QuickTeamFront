@@ -91,7 +91,16 @@ type Zeile = {
    * den Vertragstext ändert, sieht an der Quelle, wo eine Seite endet.
    */
   umbruch?: true;
+  /**
+   * Überschrift: rutscht auf die nächste Seite, wenn darunter kein Platz
+   * mehr für ihren ersten Absatz ist — sonst stünde „§ 13" allein am
+   * Seitenende und sein Text auf der Folgeseite.
+   */
+  ueberschrift?: true;
 };
+
+/** So viele Fliesstextzeilen müssen unter einer Überschrift noch Platz haben. */
+const ZEILEN_NACH_UEBERSCHRIFT = 3;
 
 const NORMAL = 10.5;
 
@@ -139,6 +148,7 @@ function markdownZuZeilen(markdown: string): Zeile[] {
         groesse,
         davor: stufe === 1 ? 4 : 12,
         danach: 6,
+        ueberschrift: true,
       });
       continue;
     }
@@ -350,6 +360,12 @@ function seitenAusZeilen(zeilen: Zeile[]): Segment[][] {
       // Auf einer noch leeren Seite wäre der Umbruch eine Leerseite.
       if (aktuell.length > 0) neueSeite();
       continue;
+    }
+
+    if (zeile.ueberschrift && aktuell.length > 0) {
+      const bedarf =
+        zeile.davor + zeile.groesse * 1.4 + zeile.danach + ZEILEN_NACH_UEBERSCHRIFT * NORMAL * 1.4;
+      if (y - bedarf < UNTEN) neueSeite();
     }
 
     y -= zeile.davor;

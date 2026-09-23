@@ -77,7 +77,7 @@ export const en: Dictionary = {
   promo: {
     augenbraue: "Promo partnership",
     titel: "Become a QuickTeam promo partner",
-    lead: "Do you recommend QuickTeam to restaurants and bars? Then you get your own promo code that new businesses enter when they sign up — so we can see which registrations came through you.",
+    lead: "Do you recommend QuickTeam to restaurants and bars? Then you get your own promo code that new businesses enter when setting up their account — so we can see which businesses came through you.",
     schritteTitel: "How to apply",
     schritt1: "Download the application form.",
     schritt2: "Fill it in completely and sign it.",
@@ -88,7 +88,7 @@ export const en: Dictionary = {
     mailBetreff: "Request Promo Partnership",
     hinweisTitel: "What happens next",
     hinweisText:
-      "We review your request and reply by email. Once approved, you receive your personal promo code. It carries no discount — the code only records which businesses found QuickTeam through you.",
+      "We review your request and reply by email. The agreement is only concluded once we accept it; with that you receive your personal promo code. It carries no discount — the code only records which businesses found QuickTeam through you.",
   },
   /*
    * Dashboard vocabulary follows the Expo app, not this file's own taste.

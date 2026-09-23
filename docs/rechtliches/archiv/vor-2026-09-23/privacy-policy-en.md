@@ -1,11 +1,11 @@
 # PRIVACY POLICY
 
-**Last updated: 23 September 2026**
+**Last updated: 16 September 2026**
 
 This Privacy Policy informs you, in accordance with Articles 13 and 14 of the General Data Protection Regulation (GDPR), how BlankTrading UG (haftungsbeschränkt) ("we" or "us") processes personal data when you
 
 - visit our website quickteam.at,
-- create a QuickTeam account, or set up a business as its owner and book QuickTeam, or
+- register and book QuickTeam as the owner of a business, or
 - use QuickTeam in the web dashboard or in the QuickTeam app for iOS and Android, whether as a manager or as an employee of a business.
 
 The website, the web dashboard and the app together make up the "QuickTeam" service (the "Service"). Where processing differs between the website and the app, this is stated explicitly.
@@ -36,7 +36,7 @@ QuickTeam is a shift and staff-scheduling tool used by businesses (each an "Empl
 | Data | Controller | Our role |
 |---|---|---|
 | Website visits, cookies (Sections 3 and 4) | us | controller |
-| Account creation, setup, contract and payment of a business, promo code (Sections 5 and 6) | us | controller |
+| Registration, contract and payment of a business (Sections 5 and 6) | us | controller |
 | Your login account, sessions, email contact, bug reports (Sections 7.1, 11, 12) | us | controller |
 | Operational data: your profile within the business, shifts, availability, preferences, vacation, shift swaps, emergencies, messages, polls, change log and delivery of business push messages (Sections 7.2 to 10) | your Employer | processor (Art. 28 GDPR) |
 
@@ -67,47 +67,41 @@ We use **no** analytics, tracking or advertising services and do not embed socia
 
 ## 4. Cookies and similar technologies on the website
 
-The website uses the following cookies for sign-in, chosen settings and payment:
+The website uses the following cookies for sign-in, chosen settings, registration and payment:
 
 | Cookie | Purpose | Retention | When set |
 |---|---|---|---|
 | **qt_sprache** | stores your chosen language (German or English) | 1 year | only when you switch language |
 | **sb-…-auth-token** (possibly split into several parts) | keeps you signed in after login; contains your session and access identifiers | until you sign out, at most 400 days | at login |
 | **qt_position** | remembers which of your positions you are working with in the dashboard if your account belongs to several businesses or positions | 1 year; deleted when you sign out | when you select a position |
-| **qt_abrechnung** | remembers whether you chose monthly or annual billing on the pricing page (contains only “monat” or “jahr”) until you choose a plan | 24 hours | only when you go from the pricing page to account creation with a billing option selected |
+| **qt_registrierung** | holds the business name, country, your first and last name and an optional promo code during registration until the confirmation code has been entered; readable only on the registration page | 24 hours; deleted after confirmation | during registration |
 | **__stripe_mid**, **__stripe_sid** | fraud prevention during payment (Stripe) | 1 year and 30 minutes respectively | only on pages with the payment form (Section 6) |
 
-**Legal basis:** Storage access required for sign-in and for the expressly selected language, position or billing option is based on Section 25(2) no. 2 TDDDG or, in Austria, Section 165(3) TKG 2021. Personal-data processing relies on Article 6(1)(b) GDPR for our own contractual relationships or (f) for secure access and administration for company representatives. Stripe uses cookies and device signals for fraud prevention in the payment form. An exemption from consent applies there only to storage access strictly necessary for the expressly requested payment service; a general reference to security or legitimate interests does not replace that requirement.
+**Legal basis:** Storage access required for sign-in, registration and the expressly selected language or position is based on Section 25(2) no. 2 TDDDG or, in Austria, Section 165(3) TKG 2021. Personal-data processing relies on Article 6(1)(b) GDPR for our own contractual relationships or (f) for secure access and administration for company representatives. Stripe uses cookies and device signals for fraud prevention in the payment form. An exemption from consent applies there only to storage access strictly necessary for the expressly requested payment service; a general reference to security or legitimate interests does not replace that requirement.
 
 The website currently displays no cookie banner. No analytics or advertising cookies are used. You can delete or block cookies in your browser settings; without the login cookies, however, you cannot sign in.
 
 ---
 
-## 5. Creating an account and setting up a business
+## 5. Registering a business
 
-Account and business are created in two separate steps: first you create a personal login account (Section 5.1). If you wish, you then set up a business from the dashboard (Section 5.2); it is only created once the first payment has succeeded (Section 6).
+### 5.1 What data we collect
 
-### 5.1 Login account
+To register a business we collect: the name of the business, its country (Germany or Austria), your first and last name, your email address and a password. The password is transmitted in encrypted form (TLS) to our server, which passes it straight on to our authentication service; the same applies at every sign-in and when resetting the password. We do not log or store the password. Only a cryptographic hash, from which the password cannot be recovered, is stored permanently.
 
-For an account we collect your email address and a password. The password is transmitted in encrypted form (TLS) to our server, which passes it straight on to our authentication service; the same applies at every sign-in and when resetting the password. We do not log or store the password. Only a cryptographic hash, from which the password cannot be recovered, is stored permanently.
+If you voluntarily enter a **promo code**, we initially store it with your login account and associate it with your business after confirmation. We use it to validate and attribute the specified promotion. The legal basis is Art. 6(1)(f) GDPR; our legitimate interest is administering this attribution. The code remains stored with the account or business until its deletion. A code does not automatically apply a discount in the current application.
 
-To confirm your email address, we send you an eight-digit code (Section 12.1). **Unconfirmed accounts are deleted automatically.** If the code is not entered within 24 hours, the account is deleted in the next hourly cleanup run, normally after no more than approximately 25 hours.
+To confirm your email address, we send you an eight-digit code (Section 12.1). Only after you enter the code is the business created and your account linked to it as manager ("Chef"). Until then, the business details are held with your not-yet-confirmed account.
 
-### 5.2 Setting up a business
+**Unconfirmed registrations are deleted automatically.** If the code is not entered within 24 hours, the account and associated details are deleted in the next hourly cleanup run, normally after no more than approximately 25 hours.
 
-To set up a business we collect: the name of the business, its country (Germany or Austria), your first and last name and, if you voluntarily enter one, a promo code. You then choose a plan and provide billing details and a payment method (Section 6).
+### 5.2 Record of acceptance of the Terms, the DPA and this Privacy Policy
 
-**Before the first payment, these details are held at Stripe.** As long as your business has not been created, we store the business name and country, your first and last name, the identifier of your login account, any promo code entered and, later, the plan, billing interval and any discount code redeemed as additional details on a customer record at Stripe (Section 6), not in our database. Once the first payment succeeds, we create the business from them, link your account to it as manager ("Chef") and remove the additional details from Stripe; the business name and country remain there as billing details. If you do not complete the setup, the details remain stored at Stripe until you continue the setup or request their deletion (Section 17).
-
-**Promo code.** A promo code indicates that one of our referral partners recommended QuickTeam to you; it does **not** give a discount. Before storing it, we only check whether the code is valid. When the business is created, we assign the code to it; the assignment is kept until the business is deleted and cannot be changed afterwards. We inform the person who owns the code that a business came to us through their code, and in their statements we show them the name of the business, the net amounts collected from it and the resulting compensation. They receive no other data, in particular no data about your employees or your scheduling. The legal basis is Art. 6(1)(f) GDPR; our legitimate interest lies in attributing referrals and settling the agreed compensation transparently. You may object to this processing under Art. 21 GDPR (Section 17). We keep statements to referral partners as accounting records for the statutory periods (Section 15).
-
-### 5.3 Record of acceptance of the Terms, the DPA and this Privacy Policy
-
-When you create your account, you take note of this Privacy Policy; we initially store the version, the language and a checksum of the version you read with your login account. When you set up a business, you accept the General Terms and Conditions and the Data Processing Agreement (DPA) on its behalf. When the business is created, we write a record for all three documents. If any of these documents changes, we ask managers to confirm again in the dashboard. As evidence, we store for each document: its name, version (date of the edition), time, the identifiers of your account and of the business and, where applicable, the language and checksum of the accepted version. These records cannot be changed afterwards.
+When registering, you accept the General Terms and Conditions and the Data Processing Agreement (DPA) on behalf of your business and take note of this Privacy Policy. If any of these documents changes, we ask managers to confirm again in the dashboard. As evidence, we store for each document: its name, version (date of the edition), time, the identifiers of your account and of the business and, where applicable, the language of the accepted version. These records cannot be changed afterwards.
 
 When the Terms and the DPA are accepted, we additionally make a copy at the time of acceptance that is kept even after the business is deleted: the name and country of the business, the first and last name and email address of the person accepting, the document, version, language, checksum of the accepted version and time. We keep this copy until the end of the third calendar year after the contract ends (standard limitation period, Sections 195 and 199 BGB) and then delete it automatically. Taking note of this Privacy Policy is not copied; its record is deleted together with the business.
 
-### 5.4 Purposes and legal bases
+### 5.3 Purposes and legal bases
 
 - **Creating and managing the customer account, concluding the contract:** Art. 6(1)(b) GDPR where you are the contracting party yourself (for example as a sole trader). Where you act for a company, for example as its managing director, we base the processing of your data on Art. 6(1)(f) GDPR; our legitimate interest lies in performing the contract with the company you represent.
 - **Confirming your email address:** Art. 6(1)(f) GDPR (protection against accounts with third-party or incorrect addresses).
@@ -117,19 +111,19 @@ When the Terms and the DPA are accepted, we additionally make a copy at the time
 
 ## 6. Payment processing with Stripe
 
-When setting up a business, you choose a plan and a billing interval. There is no free trial; the subscription begins with the first payment, and only then is the business created (Section 5.2). You may voluntarily enter a discount code; we check it with Stripe and apply it to the subscription.
+After registering, you choose a plan. The subscription begins with a 14-day trial, even if you have not yet added a payment method. You can add a payment method immediately or at any time before the trial ends; if the trial ends without one, the subscription is paused (for the consequences for your data, see Section 15.3).
 
-- **We collect billing details before the first payment.** We ask for the legal company name, street and house number, postal code, city, country and the **VAT identification number** (UID in Austria, USt-IdNr. in Germany). QuickTeam is sold exclusively to businesses; the number serves as evidence of this and appears on the invoice. These details are required for a proper invoice (Section 14(4) of the German VAT Act); the legal basis is Art. 6(1)(b) and (c) GDPR.
-- **We transmit to Stripe:** your email address, the billing details listed above (company name, street and house number, postal code, city, country, VAT identification number), an internal identifier of your business, the preferred language for invoices, the chosen plan and billing interval and any discount code redeemed; before the first payment, also the additional details listed in Section 5.2. Stripe needs the address and country to calculate VAT and issue the invoice. Stripe checks the validity of the VAT identification number through the European Commission’s VAT Information Exchange System (VIES). The applicable statutory conditions determine tax treatment; we remain responsible for correct invoicing.
+- **We collect billing details before a paid subscription begins.** When you store a means of payment, we ask for the legal company name, street and house number, postal code, city and country. These details are required for a proper invoice (Section 14(4) of the German VAT Act); the legal basis is Art. 6(1)(b) and (c) GDPR. As long as you only use the free trial and store no means of payment, we do not ask for them.
+- **We transmit to Stripe:** your email address, the billing details listed above (company name, street and house number, postal code, city, country), an internal identifier of your business, the preferred language for invoices and the chosen plan. Stripe needs the address and country to calculate VAT and issue the invoice. If, as an Austrian business, you voluntarily provide your **VAT identification number (UID)**, we transmit that as well; Stripe checks its validity through the European Commission’s VAT Information Exchange System (VIES). The applicable statutory conditions determine tax treatment; we remain responsible for correct invoicing.
 - **The billing details are stored at Stripe**, not in our database, which holds only your business's country. You can change them at any time via the customer portal (see below).
 - **Payment details** (such as card details or an IBAN for SEPA Direct Debit) are entered directly into Stripe's form, which is embedded on our page and loaded from Stripe's servers. This data goes straight to Stripe; we do not receive or store full card numbers or bank details.
-- **We store:** the Stripe customer ID, the subscription ID, the plan and the subscription status (such as active, paused, cancelled). Stripe notifies us of status changes automatically.
+- **We store:** the Stripe customer ID, the subscription ID, the plan and the subscription status (such as trial, active, paused). Stripe notifies us of status changes automatically.
 - **Customer portal:** Via "Abo verwalten" (manage subscription) in the dashboard settings, managers reach Stripe's customer portal, where you can cancel the subscription, change the payment method and download invoices. The portal is operated by Stripe; for this we transmit only your Stripe customer ID and the address you return to afterwards.
 - **Fraud prevention:** On pages with the payment form, Stripe collects device and usage data (e.g. IP address, browser characteristics, interactions with the form) and sets the cookies listed in Section 4 in order to detect fraudulent payments.
 
 **Responsibility:** We use Stripe Payments Europe, Limited, Ireland. Under the [Stripe Data Processing Agreement](https://stripe.com/legal/dpa), Stripe acts, depending on the processing, as our processor, for example when providing its payment and subscription services on our instructions, or as an independent controller, particularly for its own fraud prevention, regulatory obligations and other independent purposes described there. We remain responsible for selecting and transmitting customer and billing data. This payment integration does not transmit business scheduling data. Details of Stripe’s own processing are available in the [Stripe Privacy Policy](https://stripe.com/privacy). Transfers to the USA are addressed in Section 14.
 
-**Legal bases:** Art. 6(1)(b) or (f) GDPR (see Section 5.4) for handling the subscription; Art. 6(1)(f) GDPR for fraud prevention; Art. 6(1)(c) GDPR for retaining invoices and accounting records.
+**Legal bases:** Art. 6(1)(b) or (f) GDPR (see Section 5.3) for handling the subscription; Art. 6(1)(f) GDPR for fraud prevention; Art. 6(1)(c) GDPR for retaining invoices and accounting records.
 
 **Employees** pay nothing and do not provide any payment details.
 
@@ -226,7 +220,7 @@ This data stays on your device. Storing it is strictly necessary for the feature
 
 ### 12.1 Emails we send
 
-We send only emails that are necessary for your account: confirmation codes for account creation, password reset and changing your email address. We do not send newsletters or marketing emails.
+We send only emails that are necessary for your account: confirmation codes for registration, password reset and changing your email address. We do not send newsletters or marketing emails.
 
 These emails are sent via **Resend, Inc., USA**, as our processor. Resend processes your email address, the content of the message (including the code) and delivery logs, stores this data in the USA and deletes it after 30 days. The legal basis is Art. 6(1)(b) or (f) GDPR (see Sections 5.3 and 7.1). Confirmation codes are valid only briefly, at most 24 hours.
 
@@ -254,7 +248,6 @@ We disclose personal data only to the extent necessary for the respective purpos
 | Google LLC (Firebase Cloud Messaging) | delivering push messages on Android | delivery service | USA |
 | 1&1 Mail & Media GmbH (WEB.DE) | email mailbox | processor | Germany |
 | Stripe Payments Europe, Limited | payment processing, fraud prevention | processor or independent controller depending on purpose (Section 6) | EU (Ireland); transfers to the USA |
-| The referral partner whose promo code you entered | attribution of the referral and settlement of compensation; only the details listed in Section 5.2 | independent controller | usually Germany or Austria |
 | Apple Inc. / Google LLC (app stores) | distributing the app | independent controllers | as stated by them |
 
 Processing by processors requires an agreement under Article 28 GDPR; we are responsible for concluding and checking those agreements. Listing a provider does not replace that agreement. Within your business, your Employer and – within the limits of Section 7.4 – your colleagues have access to operational data.
@@ -287,7 +280,7 @@ We store personal data only for as long as necessary for the respective purpose 
 | Logs of database, authentication and server functions (Supabase) | deleted automatically after 7 days |
 | Database backups | daily backup; each backup is overwritten after 7 days |
 | Cookies | see Section 4 |
-| Unconfirmed login account | from 24 hours in the next hourly cleanup run, normally within approximately 25 hours |
+| Unconfirmed registration | from 24 hours in the next hourly cleanup run, normally within approximately 25 hours |
 | Confirmation codes | expire after a short time, at most 24 hours |
 | Linking code for merging accounts | valid for 15 minutes |
 | Email logs at the sending provider (Resend) | 30 days |
@@ -295,14 +288,11 @@ We store personal data only for as long as necessary for the respective purpose 
 | Push token | until the account is deleted or another account signs in on the device (Section 10) |
 | Profile within the business | until your Employer removes it or you delete your account (then pseudonymisation, Section 15.1), at the latest until the business is deleted |
 | Scheduling and communication data, change log | as instructed by your Employer, at the latest until the business is deleted (Section 15.3) |
-| Details of a business not yet created (at Stripe, Section 5.2) | until the business is created (then removed, except billing details) or until you request deletion |
-| Version of the Privacy Policy taken note of, stored with the login account | until the account is deleted |
-| Promo code of a business | until the business is deleted |
-| Records of acceptance of the Terms and the DPA | until the end of the third calendar year after the contract ends (Section 5.3) |
+| Records of acceptance of the Terms and the DPA | until the end of the third calendar year after the contract ends (Section 5.2) |
 | Records of taking note of the Privacy Policy | until the business is deleted |
 | Stripe identifiers, plan and subscription status | until the business is deleted |
-| Billing details (company name, address, VAT identification number) | at Stripe, for as long as the customer account exists there; in invoices additionally for the statutory retention periods |
-| Invoices and accounting records, including statements to referral partners | 8 years (Sec. 147 AO, Sec. 257 HGB) |
+| Billing details (company name, address, VAT ID if provided) | at Stripe, for as long as the customer account exists there; in invoices additionally for the statutory retention periods |
+| Invoices and accounting records | 8 years (Sec. 147 AO, Sec. 257 HGB) |
 | Commercial and business letters, including by email | 6 years (Sec. 257 HGB, Sec. 147 AO) |
 | Other emails to us | until the request has been dealt with |
 | Bug reports from the app | until handled, at most 12 months |
@@ -326,12 +316,12 @@ You can delete your account yourself at any time: on the web under "Delete accou
 
 Managers can pseudonymise a person's profile within the business. This removes the name, email address, phone number and the link to the login account, and deletes the notifications and invitations addressed to that person; otherwise Section 15.1 applies accordingly. Managers can delete invitations that have not yet been accepted entirely. In both cases, your login account remains, because it may be linked to other positions; you can delete it yourself at any time.
 
-### 15.3 End of the contract
+### 15.3 End of the contract and expired trial
 
 - **After termination**, business data is normally available for export for 30 calendar days. For a timely export request, retrieval remains available for at least 30 calendar days after complete delivery. For switching, it remains available for at least 30 calendar days after the transitional period ends. Data concerned is not deleted while delivery is outstanding or transition or retrieval periods are running (Section 6(4) to (7) of the Terms, Section 8 DPA). It is then removed in the next daily deletion run; expressly requested earlier deletion and statutory retention duties remain unaffected.
-- **Older contracts with a trial:** New subscriptions no longer have a trial. For contracts still concluded with a trial: if the trial expired without a payment method, the subscription was paused. Without resumption, the contract ends after 90 days; the normal 30-day export period and subsequent deletion follow (90 + 30 days, plus the extensions described and the next daily run). Termination during suspension starts the period at that termination date, not retroactively at trial expiry.
+- **Trial without a payment method:** The subscription is paused when the trial expires. Without resumption, the contract ends after 90 days; the normal 30-day export period and subsequent deletion follow (90 + 30 days, plus the extensions described and the next daily run). Termination during suspension starts the period at that termination date, not retroactively at trial expiry.
 - **Login accounts** without remaining employment in another business are deleted with the business, including sessions and push tokens. Accounts with other employment remain.
-- **Contract evidence:** Copies of acceptance of the Terms and DPA remain until the end of the third calendar year after termination under Section 5.3. Privacy acknowledgements are deleted with the business. Billing records have the separate periods listed in Section 15.
+- **Contract evidence:** Copies of acceptance of the Terms and DPA remain until the end of the third calendar year after termination under Section 5.2. Privacy acknowledgements are deleted with the business. Billing records have the separate periods listed in Section 15.
 
 ### 15.4 Backups
 
@@ -341,7 +331,7 @@ The database is backed up daily; each backup is overwritten after 7 days. Separa
 
 ## 16. Obligation to provide data
 
-A login account requires an email address and a password. Setting up a business additionally requires the name of the business, its country, your first and last name, the billing details including the VAT identification number, and a payment method; without them we cannot create an account or conclude a contract. The promo code and discount code are voluntary. There is no statutory obligation to provide this data. In particular, comments, reasons, notes, poll votes, availability, preferences and enabling push messages are voluntary. Whether you have to use the Service as part of your employment depends on your arrangements with your Employer.
+To register a business and for a login account, an email address, a password and – at registration – the name of the business, its country and your first and last name are required; without them we cannot conclude a contract or create an account. There is no statutory obligation to provide this data. In particular, comments, reasons, notes, poll votes, availability, preferences and enabling push messages are voluntary. Whether you have to use the Service as part of your employment depends on your arrangements with your Employer.
 
 ---
 

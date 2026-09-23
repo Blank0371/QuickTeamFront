@@ -15,6 +15,57 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-23 — Datenschutzerklärung an den neuen Einrichtungsweg angepasst (`2026-09-23-draft`)
+
+**Vorher:** Fassung `2026-09-16-draft`. Sie beschrieb den Stand vor dem 2026-09-22: ein
+Registrierungsformular für Konto und Betrieb zugleich, das Cookie `qt_registrierung`
+(gibt es nicht mehr), einen Promo-Code „beim Anmeldekonto", eine 14-tägige Testphase
+und eine freiwillige UID nur für Österreich. Dass die Werbepartnerin oder der
+Werbepartner hinter einem Promo-Code von der Anmeldung und den Umsätzen des Betriebs
+erfährt, stand nirgends; ebenso wenig, dass Betriebsdaten vor der ersten Zahlung als
+Metadata eines Stripe-Kunden liegen.
+
+**Jetzt:** Ziffer 5 in 5.1 Konto, 5.2 Betrieb (samt Stripe-Parkplatz und Promo-Code mit
+Weitergabe an den Werbepartner, Art. 6 Abs. 1 lit. f, Widerspruchsrecht), 5.3
+Zustimmungsnachweis (Datenschutz beim Konto, AGB/AVV beim Betrieb), 5.4 Zwecke. Ziffer 6
+ohne Testphase, UID/USt-IdNr Pflicht, Rabattcode. Cookie `qt_abrechnung` statt
+`qt_registrierung`. Werbepartner in der Empfängerliste (Ziffer 13), neue Zeilen in der
+Speicherdauer (Ziffer 15), Testphase nur noch als Altvertrags-Fall (15.3), Ziffer 16
+neu. Vorgänger samt Prüfsummen unter `docs/rechtliches/archiv/vor-2026-09-23/`.
+
+**Begründung:** Anweisung des Nutzers, nach der Überarbeitung des Werbepartner-Vertrags.
+Folge der neuen Fassung: Führungskräfte sehen im Dashboard einen Hinweis zur
+Kenntnisnahme (kein Riegel, `ermittleZustimmungBefund`). **Offene Lücke im Code, im Text
+ehrlich benannt:** geparkte Betriebsdaten eines nie abgeschlossenen Einrichtungswegs
+bleiben am Stripe-Kunden, bis jemand ihre Löschung verlangt — weder `konto-loeschung.ts`
+noch ein Cron räumt sie ab.
+
+## 2026-09-23 — Werbepartner-Vertrag rechtlich nachgeschärft (Fassung `2026-09-23`)
+
+**Vorher:** Fassung `2026-09-19`, zwölf Paragrafen. Sie verwies für den Datenschutz auf
+die Datenschutzerklärung, die Werbepartner gar nicht behandelt; nannte die Vergütung in
+§ 4 Abs. 4 zugleich „Bruttobetrag einschließlich Umsatzsteuer" und „zuzüglich
+Umsatzsteuer"; erklärte die Berechnung des Anbieters für „maßgeblich" (Beweislast-
+verschiebung); trug eine doppelte Schriftformklausel; regelte weder Vertragsschluss,
+Haftung, Werbekennzeichnung noch Markennutzung; und sprach von „Registrierung" und
+„Ende der kostenlosen Testphase", die es seit dem 2026-09-22 so nicht mehr gibt.
+
+**Jetzt:** Fassung `2026-09-23`, vierzehn Paragrafen, Vergütungssätze, Stichtag, Frist,
+Mindestbetrag, Kündigungsfrist und Änderungsvorlauf **unverändert**. Neu: Vertragsschluss
+erst mit Annahme (§ 1 Abs. 4); Tippgeber- statt Handelsvertreterstellung (§ 9);
+Werberegeln samt Kennzeichnung, Spam- und Rabattversprechen-Verbot und widerruflichem
+Nutzungsrecht (§ 4); Haftung und Freistellung (§ 10); Netto-Vergütung mit
+Gutschriftverfahren (§ 8); Abrechnung mit achtwöchiger Einwendungsfrist (§ 7 Abs. 4);
+Art.-13-Hinweise im Vertrag (§ 12); Schlussbestimmungen ohne doppelte Schriftform.
+Kleine Zusätze, die der Betreiber bestätigen sollte: Bestandskunden der letzten zwölf
+Monate zählen nicht (§ 3 Abs. 4), Restguthaben unter 50 € wird nach Vertragsende
+ausgezahlt (§ 7 Abs. 3), Verrechnungsfenster sechs Monate (§ 6 Abs. 3). Der PDF-Setzer
+hält Überschriften mit ihrem ersten Absatz zusammen.
+
+**Begründung:** Anweisung des Nutzers, den Vertrag so zu fassen, dass ein Anwalt nichts
+zu beanstanden findet. Anwaltlich geprüft ist er damit weiterhin **nicht**; die
+Einzelheiten für den Prüfer stehen in `docs/rechtliches/legals/README.md`.
+
 ## 2026-09-22 — Betrieb entsteht erst nach bestätigter Zahlung, keine Testphase
 
 **Vorher:** Der Betrieb-Schritt (`/einrichtung/betrieb`) legte den Betrieb **sofort** an

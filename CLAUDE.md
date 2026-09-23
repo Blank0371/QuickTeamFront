@@ -328,19 +328,23 @@ liefert den Vertrag als PDF.
   Formular, Teil B (deutsch, verbindlich) und Teil C (englisch, unverbindlich) der
   Vertragstext. Keine Sprachverzweigung — beide Fassungen stehen im selben PDF, so
   wie im Dokument.
-- **Fassung `2026-09-19`, ohne Entwurfsvermerk** (Anweisung des Nutzers, Begründung in
-  der Historie): 20 % des Nettoumsatzes je geworbenem Betrieb in den ersten zwölf
-  Monaten, danach 10 % (§ 4 Abs. 1); Stichtag der erste Tag jedes Kalendermonats,
-  Auszahlung innerhalb von 14 Tagen, Mindestbetrag 50,00 € (§ 6 Abs. 2/3);
-  Kündigungsfrist vier Wochen (§ 9 Abs. 2); Änderungsangebot mindestens sechs Wochen
-  vorher und nur mit Zustimmung wirksam (§ 11). Eckige Klammern gibt es keine mehr.
+- **Fassung `2026-09-23`, ohne Entwurfsvermerk, nicht anwaltlich geprüft** (Anweisung
+  des Nutzers, Begründung in der Historie): 20 % des Nettoumsatzes je geworbenem Betrieb
+  in den ersten zwölf Monaten ab der ersten Zahlung, danach 10 % (§ 5 Abs. 1); Stichtag
+  der erste Tag jedes Kalendermonats, Auszahlung innerhalb von 14 Tagen, Mindestbetrag
+  50,00 € (§ 7 Abs. 2/3); Kündigungsfrist vier Wochen (§ 11 Abs. 2); Änderungsangebot
+  mindestens sechs Wochen vorher und nur mit Zustimmung wirksam (§ 13). Vertragsschluss
+  erst mit Annahme durch den Anbieter (§ 1 Abs. 4); Datenschutzhinweise nach Art. 13
+  DSGVO stehen **im Vertrag selbst** (§ 12) — die Datenschutzerklärung deckt
+  Werbepartner nicht ab. Eckige Klammern gibt es keine.
 - **Das PDF entsteht ohne Bibliothek** (`route.ts`): ein kleiner Markdown-Setzer
   berechnet die xref-Offsets zur Laufzeit. `<!-- seitenumbruch -->` im Markdown
   erzwingt eine Seite — gesetzt vor dem Steuerstatus-Block und vor Teil D, damit
   Ankreuzfelder und Unterschriftszeilen nicht über einen Seitenumbruch zerfallen. Ein
   Formular, dessen Unterschriftszeile auf der Folgeseite steht, ist als Formular
-  unbrauchbar; **wer den Vertragstext ändert, sieht die Seitenlage nach** (13 A4-Seiten
-  am 2026-09-19).
+  unbrauchbar; **wer den Vertragstext ändert, sieht die Seitenlage nach** (19 A4-Seiten
+  am 2026-09-23). Überschriften rutschen selbst auf die nächste Seite, wenn darunter
+  keine drei Zeilen mehr Platz haben.
 - **`next.config.ts` (`outputFileTracingIncludes`)** packt die Markdown-Datei in die
   Funktion. Ohne den Eintrag liegt sie lokal vor und fehlt im Deployment.
 - **Kein Rabatt, und keine Abrechnung hier.** Der Code hält fest, über wen ein Betrieb
@@ -395,8 +399,8 @@ die Person der alten Fassung zugestimmt). Das eine Kontrollkästchen
 `schreibeZustimmungen()` schreibt für Betrieb-Anlage **und** Nachfrage-Tor.
 
 **Fassungen** in `src/lib/rechtstexte.ts`, Format `YYYY-MM-DD` mit optionalem Zusatz
-(übernommen aus `../QuickTeam App/src/lib/terms.ts`). Stand: AGB und Datenschutz
-`2026-09-13-r2-draft`, AVV `2026-09-13-draft` (dürfen auseinanderlaufen). **Wer einen
+(übernommen aus `../QuickTeam App/src/lib/terms.ts`). Stand: AGB und AVV
+`2026-09-15-r2-draft`, Datenschutz `2026-09-23-draft` (dürfen auseinanderlaufen). **Wer einen
 Rechtstext ändert, ändert `**Stand: …**` in beiden Sprachen und den Wert in
 `rechtstexte.ts`** — sonst sind alte und neue Zustimmungen nicht unterscheidbar; der
 `inhalt_hash` fängt das Vergessen ab. Der Zusatz `-draft` entfällt, wenn die anwaltliche

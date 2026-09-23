@@ -28,7 +28,7 @@ Stand-alone, readable copies of QuickTeam's contract documents, exported for leg
 | `DPA-QuickTeam-en.md` | Data Processing Agreement | English — convenience translation | Ready for review, incl. 3 annexes |
 | `datenschutzerklaerung-de.md` | Datenschutzerklärung (Privacy Policy) | German — **legally binding** | Rewritten 13 Sept 2026, amended 14 Sept 2026, ready for review — see "Privacy policy 2026-09-13" and "Amendment 2026-09-14" below |
 | `privacy-policy-en.md` | Privacy Policy | English — convenience translation | Rewritten 13 Sept 2026, amended 14 Sept 2026, mirrors the German text section by section |
-| `Werbepartner-Vertrag-QuickTeam-de-en.md` | Werbepartner-Vereinbarung (referral partner agreement, Promo-Code) | German — **legally binding**, with English convenience translation in one file | **Released 19 Sept 2026 (`2026-09-19`), no lawyer review** — see below |
+| `Werbepartner-Vertrag-QuickTeam-de-en.md` | Werbepartner-Vereinbarung (referral partner agreement, Promo-Code) | German — **legally binding**, with English convenience translation in one file | **Released 23 Sept 2026 (`2026-09-23`), in-house legal hardening, no lawyer review** — see below |
 
 ## Referral partner agreement (`Werbepartner-Vertrag-QuickTeam-de-en.md`)
 
@@ -41,10 +41,10 @@ Parts B and C are the contract.
 
 **Open values were fixed on 19 Sept 2026 on the operator's instruction:** 20 % of
 net revenue for the first twelve months per referred business and 10 % thereafter
-(§ 4(1)); payout monthly, cut-off on the first day of each calendar month, within
-14 days, minimum €50.00 (§ 6(2)–(3)); four weeks' notice to terminate (§ 9(2));
-changes offered at least six weeks ahead and effective only with the partner's
-consent (§ 11). The draft notice was removed at the same time, so the file no
+(now § 5(1)); payout monthly, cut-off on the first day of each calendar month, within
+14 days, minimum €50.00 (now § 7(2)–(3)); four weeks' notice to terminate (now
+§ 11(2)); changes offered at least six weeks ahead and effective only with the
+partner's consent (now § 13). The draft notice was removed at the same time, so the file no
 longer marks itself as a draft.
 
 **That decision is the operator's, and it is the one thing here a lawyer has not
@@ -54,6 +54,34 @@ self-referral) plus § 5 (no compensation without collected payment) are the two
 provisions doing the economic work. The agreement's own `Stand:` line is the only
 version marker; there is no archive of predecessor versions because none was ever
 issued to a partner.
+
+**Hardening pass on 23 Sept 2026 (`2026-09-23`)** — economics unchanged, wording
+brought to what a reviewer would otherwise flag:
+
+- **Contract formation** (§ 1(4)): the signed form is an offer; the agreement exists
+  only once the Provider accepts in text form. No entitlement to acceptance.
+- **Tipster, not commercial agent** (§ 9): no duty to act, not permanently entrusted,
+  no part in negotiations, no exclusivity — to keep §§ 84 ff. HGB (and the
+  non-waivable § 89b compensation claim) out of reach.
+- **Advertising rules** (§ 4): ad disclosure (§ 5a(4) UWG), no unsolicited email/phone
+  (§ 7 UWG), no discount claims (the code grants none), no brand domains/keyword ads;
+  revocable right to use the name. Partner indemnity for culpable breaches (§ 10(3)),
+  because the Provider is liable for its agents under § 8(2) UWG.
+- **VAT contradiction removed** (§ 8): the old § 4(4) called the compensation gross
+  *and* promised VAT on top. Now net, VAT added only for VAT-registered partners unless
+  reverse charge applies; self-billing credit notes agreed under § 14(2) UStG.
+- **Statements** (§ 7(4)): the old "Provider's calculation is authoritative" clause
+  (a burden-of-proof shift, risky under § 309 No. 12 BGB) is replaced by a monthly
+  statement with an eight-week objection period in the style of Nr. 7 AGB-Banken.
+- **Privacy** (§ 12): full Art. 13 GDPR notice inside the contract. The customer
+  privacy policy never covered partners, so the old reference to it was empty.
+- **Final provisions** (§ 14): double written-form clause removed (void in standard
+  terms, BGH), § 305b/§ 306 BGB referenced, consumer carve-out for Rome I Art. 6.
+- **Product drift fixed**: "registration" → setting up the customer account; activation
+  is the first collected fee (there is no free trial any more).
+- **Small additions the operator should confirm**: existing customers of the last
+  twelve months do not count (§ 3(4)); remaining balance below €50 is paid out after
+  termination (§ 7(3)); clawback set-off window of six months (§ 6(3)).
 
 ## Key drafting decisions
 
