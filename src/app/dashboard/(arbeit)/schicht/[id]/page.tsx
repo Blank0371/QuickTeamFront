@@ -13,6 +13,7 @@ import {
   hhmm,
 } from "@/lib/dashboard/kalender";
 import { holeNotizen, holeSchicht, holeZuweisbareMitarbeiter } from "@/lib/dashboard/schicht";
+import { holeTeamTagesPraeferenzen, type TeamTagesPraeferenz } from "@/lib/dashboard/verfuegbarkeit";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 
 import { RosterEditor } from "./roster-editor";
@@ -63,6 +64,27 @@ export default async function SchichtSeite({
    */
   const bearbeitbar = schicht.can_edit && istChef(position);
   const team = bearbeitbar ? await holeZuweisbareMitarbeiter(supabase, position.betriebId) : [];
+
+  /*
+   * Tageswünsche hängen an Vorlage + Datum, nicht an der Instanz —
+   * `schicht_ansehen` liefert die Vorlage nicht mit, daher die eigene
+   * Abfrage. Eine von Hand angelegte Schicht ohne Vorlage hat keine.
+   */
+  let teamWuensche: TeamTagesPraeferenz[] = [];
+  if (istChef(position)) {
+    const { data: instanz } = await supabase
+      .from("schicht_instanzen")
+      .select("schicht_vorlage_id")
+      .eq("id", id)
+      .eq("betrieb_id", position.betriebId)
+      .maybeSingle();
+    if (instanz?.schicht_vorlage_id) {
+      teamWuensche = await holeTeamTagesPraeferenzen(supabase, position.betriebId, {
+        schichtVorlageId: instanz.schicht_vorlage_id,
+        datum: schicht.datum,
+      });
+    }
+  }
 
   /*
    * `claim` kommt aus `schicht_ansehen` und ist dort bereits gefiltert:
@@ -213,6 +235,8 @@ export default async function SchichtSeite({
         )}
 
         {schicht.bedarf !== null ? <Bedarf bedarf={schicht.bedarf} /> : null}
+
+        {teamWuensche.length > 0 ? <TeamWuensche wuensche={teamWuensche} /> : null}
 
         <Notizen notizen={notizen} />
 
@@ -404,6 +428,43 @@ function Bedarf({
           })}
         </ul>
       )}
+    </section>
+  );
+}
+
+/**
+ * Tageswünsche des Teams für genau diese Vorlage an diesem Datum, samt
+ * Notiz — nur für Chefs (`tagesvorlieben_select` zeigte sonst nur die
+ * eigene Zeile). Web-eigen, die App zeigt das dem Chef nicht.
+ */
+function TeamWuensche({ wuensche }: { wuensche: TeamTagesPraeferenz[] }) {
+  return (
+    <section aria-labelledby="wuensche-titel" className="mt-8">
+      <h2
+        id="wuensche-titel"
+        className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
+      >
+        Wünsche für diesen Tag
+      </h2>
+
+      <ul className="mt-3 flex flex-col gap-2">
+        {wuensche.map((w) => (
+          <li
+            key={w.mitarbeiterId}
+            className="rounded-blk border border-line bg-surface px-4 py-2.5"
+          >
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <span className="text-text">{w.name}</span>
+              <span className={`text-xs font-semibold ${w.praeferenz === "gerne" ? "text-text" : "text-muted"}`}>
+                {w.praeferenz === "gerne" ? "Arbeitet gerne" : "Arbeitet ungerne"}
+              </span>
+            </p>
+            {w.notiz ? (
+              <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-muted">{w.notiz}</p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

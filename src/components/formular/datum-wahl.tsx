@@ -85,6 +85,7 @@ export function DatumWahl({
   min,
   max,
   className = "",
+  onChange,
 }: {
   name: string;
   label: ReactNode;
@@ -105,6 +106,8 @@ export function DatumWahl({
   min?: string;
   max?: string;
   className?: string;
+  /** Meldet jede Wahl sofort — für Ansichten, die ohne Absenden reagieren. */
+  onChange?: (wert: string) => void;
 }) {
   const { locale, formular: ft } = useKlientTexte();
 
@@ -117,7 +120,11 @@ export function DatumWahl({
   const TAGE_KURZ = wochentageKurz(locale);
   const TAGE_LANG = wochentageLang(locale);
 
-  const [wert, setWert] = useState(defaultValue);
+  const [wert, setWertIntern] = useState(defaultValue);
+  const setWert = (neu: string) => {
+    setWertIntern(neu);
+    onChange?.(neu);
+  };
   const [offen, setOffen] = useState(false);
   const [sicht, setSicht] = useState(() => startMonat(defaultValue));
 

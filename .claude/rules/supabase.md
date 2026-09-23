@@ -5,8 +5,8 @@ raten"). Hier stehen die operativen Regeln für die Arbeit mit der Live-DB.
 
 - **Schema, Policies und Daten werden von hier aus nie geschrieben** — nur
   gelesen. Auch nicht testweise, auch nicht „nur für den Advisor-Check".
-  Die drei ausdrücklich angewiesenen Ausnahmen (2026-09-10, 2026-09-14,
-  2026-09-15) stehen
+  Die fünf ausdrücklich angewiesenen Ausnahmen (2026-09-10, 2026-09-14,
+  2026-09-15, zweimal 2026-09-23) stehen
   in `CLAUDE.md` unter „Was hier nicht passiert" — keine davon ist ein
   Präzedenzfall.
 - Nachschlagen über die Supabase-MCP-Werkzeuge (`list_tables`, `execute_sql`,

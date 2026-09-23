@@ -6,8 +6,9 @@ import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { holeValidierung } from "@/i18n/server";
 import {
+  tagesNotizSchema,
   tagesPraeferenzLoeschenSchema,
-  tagesPraeferenzSchema,
+  tageswuenscheSchema,
   wiederkehrendePraeferenzenSchema,
 } from "@/lib/validierung";
 
@@ -97,56 +98,73 @@ export async function speichereWiederkehrendePraeferenzen(
   return { status: "erfolg", nachricht: "Gespeichert.", felder: {} };
 }
 
-export async function setzeTagesPraeferenz(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
+/**
+ * Speichert die gesammelten Tageswünsche aus `TagesWunschEditor` in einem
+ * Zug — erst auswählen (Wunsch, optional Notiz), dann bestätigen, wie bei
+ * den wiederkehrenden Wünschen. Ersetzt das sofortige Schreiben pro Klick
+ * (`toggleSpecial()` in `scheduling.tsx`).
+ *
+ * `praeferenz: null` löscht weich (wie die App) und leert die Notiz mit;
+ * sonst wird upsertet — mit `notiz` und `geloescht_am: null`, damit eine
+ * weich gelöschte Zeile samt alter Notiz nicht wieder auftaucht.
+ */
+export async function speichereTageswuensche(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
 
-  const geprueft = tagesPraeferenzSchema.safeParse({
-    schichtVorlageId: String(formData.get("schicht_vorlage_id") ?? ""),
-    datum: String(formData.get("datum") ?? ""),
-    praeferenz: String(formData.get("praeferenz") ?? ""),
-  });
-  if (!geprueft.success) {
-    return { status: "fehler", nachricht: null, felder: feldFehler(geprueft.error, await holeValidierung()) };
-  }
-  const { schichtVorlageId, datum, praeferenz } = geprueft.data;
-
-  const { data: bestehend } = await supabase
-    .from("mitarbeiter_schicht_tagesvorlieben")
-    .select("praeferenz, geloescht_am")
-    .eq("mitarbeiter_id", position.mitarbeiterId)
-    .eq("schicht_vorlage_id", schichtVorlageId)
-    .eq("datum", datum)
-    .maybeSingle();
-
-  const aktiv = bestehend !== null && bestehend.geloescht_am === null;
-
-  const { error } =
-    aktiv && bestehend?.praeferenz === praeferenz
-      ? await supabase
-          .from("mitarbeiter_schicht_tagesvorlieben")
-          .update({ geloescht_am: new Date().toISOString() })
-          .eq("mitarbeiter_id", position.mitarbeiterId)
-          .eq("schicht_vorlage_id", schichtVorlageId)
-          .eq("datum", datum)
-      : await supabase.from("mitarbeiter_schicht_tagesvorlieben").upsert(
-          {
-            betrieb_id: position.betriebId,
-            mitarbeiter_id: position.mitarbeiterId,
-            schicht_vorlage_id: schichtVorlageId,
-            datum,
-            praeferenz,
-            geloescht_am: null,
-          },
-          { onConflict: "mitarbeiter_id,schicht_vorlage_id,datum" },
-        );
-
-  if (error) {
-    console.error(`[dashboard/verfuegbarkeit] tagesvorlieben: ${error.message}`);
+  let roh: unknown;
+  try {
+    roh = JSON.parse(String(formData.get("aenderungen") ?? "[]"));
+  } catch {
     return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
   }
 
+  const geprueft = tageswuenscheSchema.safeParse(roh);
+  if (!geprueft.success) {
+    const felder = feldFehler(geprueft.error, await holeValidierung());
+    return fehler(Object.values(felder)[0] ?? "Das hat nicht geklappt. Versuch es noch einmal.");
+  }
+  const aenderungen = geprueft.data;
+  if (aenderungen.length === 0) {
+    return { status: "erfolg", nachricht: null, felder: {} };
+  }
+
+  for (const a of aenderungen.filter((a) => a.praeferenz === null)) {
+    const { error } = await supabase
+      .from("mitarbeiter_schicht_tagesvorlieben")
+      .update({ geloescht_am: new Date().toISOString(), notiz: null })
+      .eq("mitarbeiter_id", position.mitarbeiterId)
+      .eq("schicht_vorlage_id", a.schichtVorlageId)
+      .eq("datum", a.datum);
+
+    if (error) {
+      console.error(`[dashboard/verfuegbarkeit] tageswunsch loeschen: ${error.message}`);
+      return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    }
+  }
+
+  const zuSetzen = aenderungen.filter((a) => a.praeferenz !== null);
+  if (zuSetzen.length > 0) {
+    const { error } = await supabase.from("mitarbeiter_schicht_tagesvorlieben").upsert(
+      zuSetzen.map((a) => ({
+        betrieb_id: position.betriebId,
+        mitarbeiter_id: position.mitarbeiterId,
+        schicht_vorlage_id: a.schichtVorlageId,
+        datum: a.datum,
+        praeferenz: a.praeferenz,
+        notiz: a.notiz,
+        geloescht_am: null,
+      })),
+      { onConflict: "mitarbeiter_id,schicht_vorlage_id,datum" },
+    );
+
+    if (error) {
+      console.error(`[dashboard/verfuegbarkeit] tageswunsch setzen: ${error.message}`);
+      return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    }
+  }
+
   revalidatePath(PFAD);
-  return { status: "erfolg", nachricht: null, felder: {} };
+  return { status: "erfolg", nachricht: "Gespeichert.", felder: {} };
 }
 
 export async function loescheTagesPraeferenz(
@@ -166,7 +184,7 @@ export async function loescheTagesPraeferenz(
 
   const { error } = await supabase
     .from("mitarbeiter_schicht_tagesvorlieben")
-    .update({ geloescht_am: new Date().toISOString() })
+    .update({ geloescht_am: new Date().toISOString(), notiz: null })
     .eq("mitarbeiter_id", position.mitarbeiterId)
     .eq("schicht_vorlage_id", schichtVorlageId)
     .eq("datum", datum);
@@ -178,4 +196,44 @@ export async function loescheTagesPraeferenz(
 
   revalidatePath(PFAD);
   return { status: "erfolg", nachricht: null, felder: {} };
+}
+
+/**
+ * Notiz zu einem bestehenden Tageswunsch setzen oder (leer) entfernen.
+ * Web-eigen, kein Gegenstück in `scheduling.tsx`. Schreibt nur auf eine
+ * aktive Zeile — ohne Wunsch keine Notiz; `.select()` zeigt, ob eine
+ * Zeile getroffen wurde (RLS filtert still, statt zu werfen).
+ */
+export async function speichereTagesNotiz(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
+  const { supabase, position } = await betreteDashboard();
+
+  const geprueft = tagesNotizSchema.safeParse({
+    schichtVorlageId: String(formData.get("schicht_vorlage_id") ?? ""),
+    datum: String(formData.get("datum") ?? ""),
+    notiz: String(formData.get("notiz") ?? ""),
+  });
+  if (!geprueft.success) {
+    return { status: "fehler", nachricht: null, felder: feldFehler(geprueft.error, await holeValidierung()) };
+  }
+  const { schichtVorlageId, datum, notiz } = geprueft.data;
+
+  const { data, error } = await supabase
+    .from("mitarbeiter_schicht_tagesvorlieben")
+    .update({ notiz })
+    .eq("mitarbeiter_id", position.mitarbeiterId)
+    .eq("schicht_vorlage_id", schichtVorlageId)
+    .eq("datum", datum)
+    .is("geloescht_am", null)
+    .select("datum");
+
+  if (error) {
+    console.error(`[dashboard/verfuegbarkeit] notiz: ${error.message}`);
+    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+  }
+  if (!data || data.length === 0) {
+    return fehler("Diesen Wunsch gibt es nicht mehr.");
+  }
+
+  revalidatePath(PFAD);
+  return { status: "erfolg", nachricht: notiz ? "Notiz gespeichert." : "Notiz entfernt.", felder: {} };
 }

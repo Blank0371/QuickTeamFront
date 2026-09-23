@@ -15,6 +15,31 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-23 — Notiz zu Tageswünschen (vierte Schema-Ausnahme)
+
+**Vorher:** ein Tageswunsch (`mitarbeiter_schicht_tagesvorlieben`) war nur „gerne"/
+„ungerne"; der Chef sah Tageswünsche nirgends (die App zeigt sie ihm nicht, der Solver
+liest sie direkt). **Jetzt:** Spalte `notiz text` (nullable, nach `trim()` nicht leer,
+≤ 500 Zeichen), vom Mitarbeiter in `/dashboard/verfuegbarkeit` gepflegt; der Chef liest
+sie im Schichtdetail („Wünsche für diesen Tag") und gesammelt auf
+`/dashboard/verfuegbarkeit`, das für einen Chef statt der Eingabe eine Übersicht aller
+Tageswünsche des Teams zeigt (nach Tag oder Person gruppiert).
+**Begründung:** Anweisung des Nutzers. Spalte statt Tabelle, weil der PK jeden
+Tageswunsch schon zu genau einer Zeile macht und die bestehende RLS (selbst schreiben,
+Chef liest) genau passt. **Neue Produktentscheidung ohne App-Gegenstück** — die App
+kennt die Spalte nicht; beim Kollegen melden. Migration
+`docs/backend/migration-2026-09-23-tagesvorliebe-notiz.sql`.
+
+Im selben Zug (fünfte Ausnahme): die Policies beider Vorlieben-Tabellen auf
+`ist_meine_position()` umgestellt. **Vorher** `mitarbeiter_id = meine_mitarbeiter_id(betrieb_id)`
+— bei mehreren aktiven Anstellungen im selben Betrieb (Testbetrieb 12, AndroidTestBusiness,
+AppleTestBusiness) eine beliebige, Schreiben scheiterte an RLS. **Jetzt** zählt jede
+aktive eigene Anstellung. Auf Anweisung des Nutzers.
+
+Nebenbei: der Pfad der Expo-App ist `../QuickTeamMobile`, nicht `../QuickTeam App`.
+
+---
+
 ## 2026-09-23 — Datenschutzerklärung an den neuen Einrichtungsweg angepasst (`2026-09-23-draft`)
 
 **Vorher:** Fassung `2026-09-16-draft`. Sie beschrieb den Stand vor dem 2026-09-22: ein

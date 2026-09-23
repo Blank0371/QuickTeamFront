@@ -1020,6 +1020,48 @@ export const tagesPraeferenzLoeschenSchema = z.object({
 
 export type TagesPraeferenzLoeschenEingabe = z.infer<typeof tagesPraeferenzLoeschenSchema>;
 
+/**
+ * Muss mit dem CHECK auf `mitarbeiter_schicht_tagesvorlieben.notiz`
+ * übereinstimmen (`docs/backend/migration-2026-09-23-tagesvorliebe-notiz.sql`).
+ */
+export const TAGES_NOTIZ_MAX = 500;
+
+/** Notiz zu einem Tageswunsch — leer heisst entfernen (`null`, der CHECK lässt `''` nicht zu). */
+export const tagesNotizSchema = z.object({
+  schichtVorlageId: z.string().min(1, vm("v.vorlage.weg")),
+  datum: z.string().refine(istKalendertag, vm("v.datum.ungueltig")),
+  notiz: z
+    .string()
+    .trim()
+    .max(TAGES_NOTIZ_MAX, vm("v.zeichen.max", { max: TAGES_NOTIZ_MAX }))
+    .transform((wert) => (wert.length > 0 ? wert : null)),
+});
+
+export type TagesNotizEingabe = z.infer<typeof tagesNotizSchema>;
+
+/**
+ * Gesammelte Tageswünsche aus `TagesWunschEditor` — erst auswählen, dann
+ * speichern, wie bei den wiederkehrenden Wünschen. `praeferenz: null`
+ * heisst „Wunsch entfernen"; die Notiz gilt nur mit Wunsch.
+ */
+export const tageswuenscheSchema = z
+  .array(
+    z.object({
+      schichtVorlageId: z.string().min(1, vm("v.vorlage.weg")),
+      datum: z.string().refine(istKalendertag, vm("v.datum.ungueltig")),
+      praeferenz: z.enum(["gerne", "ungerne"], vm("v.wunsch.ungueltig")).nullable(),
+      notiz: z
+        .string()
+        .trim()
+        .max(TAGES_NOTIZ_MAX, vm("v.zeichen.max", { max: TAGES_NOTIZ_MAX }))
+        .nullable()
+        .transform((wert) => (wert && wert.length > 0 ? wert : null)),
+    }),
+  )
+  .max(100, vm("v.aenderungen.max"));
+
+export type TageswuenscheEingabe = z.infer<typeof tageswuenscheSchema>;
+
 /* ------------------------------------------------------------------ */
 /* Manuelle Schichtzuweisung                                          */
 /* ------------------------------------------------------------------ */
