@@ -13,7 +13,12 @@ import {
   type Rolle,
 } from "@/lib/team";
 import { createClient } from "@/lib/supabase/server";
-import { einladungSchema, rollenNameSchema } from "@/lib/validierung";
+import {
+  einladungSchema,
+  einrichtungAnstellungSchema,
+  monatsstundenAusWoche,
+  rollenNameSchema,
+} from "@/lib/validierung";
 import { holeValidierung } from "@/i18n/server";
 
 /**
@@ -168,14 +173,33 @@ export async function mitarbeiterEinladen(
     nachname: String(formData.get("nachname") ?? ""),
     email: String(formData.get("email") ?? ""),
     telefon: String(formData.get("telefon") ?? ""),
+    wochenstunden: String(formData.get("wochenstunden") ?? ""),
+    toleranz_ueberstunden: String(formData.get("toleranz_ueberstunden") ?? ""),
+    urlaubsanspruch_tage: String(formData.get("urlaubsanspruch_tage") ?? ""),
   };
 
+  /*
+   * Anstellungsdaten **vor** dem Insert prüfen — sonst stünde die Person
+   * schon in der Tabelle, und der zweite Anlauf liefe in die
+   * Doppelprüfung. Beide Schemata laufen immer, damit alle Feldfehler
+   * auf einmal erscheinen. `soll_stunden` kommt als Wochenwert herein
+   * und wird wie im Dashboard auf den Monatswert gebracht (× 4,33).
+   */
   const geprueft = einladungSchema.safeParse(roh);
-  if (!geprueft.success) {
+  const anstellung = einrichtungAnstellungSchema.safeParse({
+    soll_stunden: monatsstundenAusWoche(roh.wochenstunden),
+    toleranz_ueberstunden: roh.toleranz_ueberstunden,
+    urlaubsanspruch_tage: roh.urlaubsanspruch_tage,
+  });
+  if (!geprueft.success || !anstellung.success) {
+    const texte = await holeValidierung();
     return {
       status: "fehler",
       nachricht: null,
-      felder: feldFehler(geprueft.error, await holeValidierung()),
+      felder: {
+        ...(geprueft.success ? {} : feldFehler(geprueft.error, texte)),
+        ...(anstellung.success ? {} : feldFehler(anstellung.error, texte)),
+      },
       werte: roh,
     };
   }
@@ -217,6 +241,7 @@ export async function mitarbeiterEinladen(
       telefon: daten.telefon,
       rolle_typ: "mitarbeiter",
       status: "eingeladen",
+      ...anstellung.data,
     })
     .select("id")
     .single();

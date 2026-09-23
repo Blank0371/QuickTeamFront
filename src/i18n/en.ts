@@ -716,6 +716,15 @@ export const en: Dictionary = {
         "International, with +, e.g. +43 660 1234567 — otherwise the app won't find the invitation.",
       rollenLegende: "Roles",
       einladenLaufend: "Inviting …",
+      wochenstunden: "Target hours per week",
+      wochenstundenHinweis:
+        "As in the employment contract. The monthly figure is stored (× 4.33) — 40 h/week → 173 h/month.",
+      toleranz: "Overtime tolerance (hours)",
+      toleranzHinweis:
+        "Allowance for automatic scheduling: overtime up to this point has no effect. Above it, the person is scheduled less often. It doesn't prevent anything.",
+      urlaubstage: "Vacation allowance (days per year)",
+      urlaubstageHinweis:
+        "Counted in calendar days, not working days — weekends count too.",
       einladen: "Invite",
       niemand: "No one invited yet.",
       einladungOffen: " · invitation pending",
@@ -888,6 +897,7 @@ export const en: Dictionary = {
 
     "v.vertrag.wahl": "Choose a contract type.",
     "v.sollstunden.zahl": "Target hours must be a number.",
+    "v.sollstunden.pflicht": "Enter the target hours per week.",
     "v.sollstunden.negativ": "Target hours cannot be negative.",
     "v.toleranz.zahl": "Tolerance must be a number.",
     "v.toleranz.negativ": "The tolerance cannot be negative.",

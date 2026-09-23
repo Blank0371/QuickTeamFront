@@ -708,6 +708,29 @@ export const anstellungSchema = z.object({
 
 export type AnstellungEingabe = z.infer<typeof anstellungSchema>;
 
+/**
+ * Die drei Anstellungsfelder beim Einladen im Einrichtungs-Stepper
+ * (Schritt 3) — Sollstunden, Überstunden-Toleranz, Urlaubsanspruch.
+ *
+ * Dieselben Grenzen wie `anstellungSchema`, mit einem Unterschied: die
+ * Sollstunden sind hier **Pflicht**. Im Dashboard bleibt ein leeres Feld
+ * `NULL` („kein Soll vereinbart"); im geführten Erstlauf soll der Chef
+ * die Zahl bewusst eintragen. Toleranz und Urlaub haben mit `0` bzw.
+ * `25` sinnvolle Defaults und sind vorbelegt.
+ */
+export const einrichtungAnstellungSchema = anstellungSchema
+  .pick({ toleranz_ueberstunden: true, urlaubsanspruch_tage: true })
+  .extend({
+    soll_stunden: z.preprocess(
+      (wert) => (typeof wert === "string" && wert.trim() === "" ? undefined : wert),
+      z.coerce
+        .number({ error: vm("v.sollstunden.pflicht") })
+        .int(vm("v.stunden.ganz"))
+        .min(0, vm("v.sollstunden.negativ"))
+        .max(STUNDEN_MAX, vm("v.stunden.maxMonat", { max: STUNDEN_MAX })),
+    ),
+  });
+
 /** Der Faktor, mit dem die App Wochen- in Monatsstunden umrechnet: 52/12. */
 export const WOCHEN_PRO_MONAT = 4.33;
 

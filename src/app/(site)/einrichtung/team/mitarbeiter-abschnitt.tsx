@@ -142,6 +142,48 @@ export function MitarbeiterAbschnitt({
           />
         </div>
 
+        {/*
+          Dieselben Felder wie beim Einladen im Dashboard
+          (`anstellungs-felder.tsx`, dort stehen die Belege zu Umrechnung
+          und Toleranz). Eingetragen werden Wochenstunden, gespeichert der
+          Monatswert — die Umrechnung macht die Server Action.
+        */}
+        <div className="grid gap-5 sm:grid-cols-3">
+          <TextFeld
+            id="einladung-wochenstunden"
+            name="wochenstunden"
+            type="number"
+            label={texte.wochenstunden}
+            min={0}
+            step="any"
+            defaultValue={werte["wochenstunden"]}
+            fehler={einladen.felder["soll_stunden"]}
+            hinweis={texte.wochenstundenHinweis}
+          />
+          <TextFeld
+            id="einladung-toleranz"
+            name="toleranz_ueberstunden"
+            type="number"
+            label={texte.toleranz}
+            min={0}
+            step="any"
+            defaultValue={werte["toleranz_ueberstunden"] ?? "0"}
+            fehler={einladen.felder["toleranz_ueberstunden"]}
+            hinweis={texte.toleranzHinweis}
+          />
+          <TextFeld
+            id="einladung-urlaubstage"
+            name="urlaubsanspruch_tage"
+            type="number"
+            label={texte.urlaubstage}
+            min={0}
+            step={1}
+            defaultValue={werte["urlaubsanspruch_tage"] ?? "25"}
+            fehler={einladen.felder["urlaubsanspruch_tage"]}
+            hinweis={texte.urlaubstageHinweis}
+          />
+        </div>
+
         {rollenNamen.length > 0 ? (
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-text">{texte.rollenLegende}</legend>

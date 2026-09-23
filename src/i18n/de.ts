@@ -746,6 +746,15 @@ export const de = {
         "International mit +, z. B. +43 660 1234567 — sonst findet die App die Einladung nicht.",
       rollenLegende: "Rollen",
       einladenLaufend: "Wird eingeladen …",
+      wochenstunden: "Sollstunden pro Woche",
+      wochenstundenHinweis:
+        "Laut Arbeitsvertrag. Gespeichert wird der Monatswert (× 4,33) — 40 Std./Woche → 173 Std./Monat.",
+      toleranz: "Überstunden-Toleranz (Stunden)",
+      toleranzHinweis:
+        "Freibetrag für die automatische Planung: bis hierher bleiben Überstunden folgenlos. Darüber wird die Person seltener eingeteilt. Verhindert wird dadurch nichts.",
+      urlaubstage: "Urlaubsanspruch (Tage pro Jahr)",
+      urlaubstageHinweis:
+        "Gezählt werden Kalendertage, nicht Arbeitstage — Wochenenden zählen mit.",
       einladen: "Einladen",
       niemand: "Noch niemand eingeladen.",
       einladungOffen: " · Einladung offen",
@@ -949,6 +958,7 @@ export const de = {
 
     "v.vertrag.wahl": "Wähl eine Vertragsart.",
     "v.sollstunden.zahl": "Sollstunden bitte als Zahl.",
+    "v.sollstunden.pflicht": "Trag die Sollstunden pro Woche ein.",
     "v.sollstunden.negativ": "Sollstunden können nicht negativ sein.",
     "v.toleranz.zahl": "Toleranz bitte als Zahl.",
     "v.toleranz.negativ": "Die Toleranz kann nicht negativ sein.",
