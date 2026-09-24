@@ -11,11 +11,11 @@ import { leseSprache } from "@/i18n/sprache";
 import { holeSchichten, monatsnamen, wochentageKurz } from "@/lib/dashboard/kalender";
 import {
   baueMatrix,
-  GESTAPELT_BIS,
   datumKurz,
   kalenderwoche,
   leseZeitraum,
   standText,
+  unteilbar,
   zeitraumSpanne,
   zeitraumTitel,
   tageIm,
@@ -384,28 +384,22 @@ function Wochentabelle({
                           <span className="text-muted">·</span>
                         ) : (
                           /*
-                            Bis drei Personen ein Name je Zeile: auf einem Aushang
-                            sucht man den eigenen Namen, und eine Spalte lässt
-                            sich von oben nach unten überfliegen. Darüber fliessen
-                            die Namen („Anna, Ben, Cem …") — bei zehn Leuten je
-                            Schicht wäre sonst jede Zeile der Tabelle eine halbe
-                            Seite hoch (`GESTAPELT_BIS`, dieselbe Grenze wie in
-                            der Excel-Datei). Abgemeldete sind durchgestrichen,
-                            wie in `shift/[id].tsx` der App.
+                            Ein Name je Zeile, und nie ein halber: Vor- und
+                            Nachname sind durch ein geschütztes Leerzeichen
+                            verbunden (`unteilbar()`, dieselbe Regel wie in der
+                            Excel-Datei). Abgemeldete sind durchgestrichen, wie in
+                            `shift/[id].tsx` der App — das überlebt auch den
+                            Schwarzweissdruck.
                           */
-                          <ul className={s.besetzung.length > GESTAPELT_BIS ? "qt-plan-fliessend" : ""}>
+                          <ul>
                             {s.besetzung.map((person, n) => (
                               <li
                                 key={`${person.name}-${n}`}
-                                className={
-                                  s.besetzung.length > GESTAPELT_BIS
-                                    ? "inline after:content-[',_'] last:after:content-none"
-                                    : ""
-                                }
+                                // Ein Name, breiter als die Spalte, darf als letzter
+                                // Ausweg umbrechen — sonst liefe er ins Nachbarfeld.
+                                className={`[overflow-wrap:anywhere] ${person.abgemeldet ? "text-muted line-through" : ""}`}
                               >
-                                <span className={person.abgemeldet ? "text-muted line-through" : ""}>
-                                  {person.name}
-                                </span>
+                                {unteilbar(person.name)}
                               </li>
                             ))}
                           </ul>

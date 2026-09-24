@@ -748,9 +748,15 @@ Geprüft mit 40 Personen, 6 Schichten am Tag, 4–12 je Schicht, in Excel über 
   ohne Meldung unsichtbar. Kalenderkasten und Schichtplan-Feld werden deshalb vorher
   gekürzt und enden sichtbar mit „… +N weitere – vollständig im Blatt ‚Liste'". Die Liste
   ist nie gekürzt.
-- **Namen fliessen ab vier Personen je Schicht** (`GESTAPELT_BIS`, gemeinsam für Excel
-  **und** Druckseite) — „Anna, Ben, Cem …" statt eines Namens je Zeile; das spart rund
-  zwei Drittel der Höhe.
+- **Ein Name je Zeile, und nie ein halber** (Nutzerentscheidung 2026-09-24, kehrt das
+  kurzzeitige „Namen fliessen ab vier Personen" um — dort stand ab und zu „Max
+  Mustermann, Alex" / „Mustermann"). `unteilbar()` (`plan-export.ts`, gemeinsam für Excel
+  **und** Druckseite) ersetzt Leerzeichen durch geschützte (U+00A0) und Bindestriche durch
+  geschützte (U+2011) — sonst bricht Excel „Katharina Oberhuber-" / „Pichler" am
+  Bindestrich. Ein Name, breiter als die Spalte, wird **kleiner gesetzt** statt umgebrochen
+  (Excel: bis 8 pt im Schichtplan, 7 pt im Kalender; Druckseite: Umbruch nur als letzter
+  Ausweg). Schichtplan-Tagesspalten sind dafür 22 statt 19 Zeichen breit. Preis: mehr Höhe
+  — im Schichtplan mehr Seiten, im Kalender früher „+N weitere".
 - **Höhen werden geschätzt, nicht gemessen** (Excel misst Text beim Öffnen nicht nach):
   `KALENDER_ZEICHEN`/`PLAN_ZEICHEN` sind Zeichen je Zeile, am PDF abgezählt. Lieber zu
   niedrig (Weissraum) als zu hoch (verschluckter Name).

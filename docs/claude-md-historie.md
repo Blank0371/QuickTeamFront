@@ -15,6 +15,18 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-24 — Ein Name je Zeile im Dienstplan-Export
+
+**Vorher (einige Stunden lang):** ab vier Personen je Schicht flossen die Namen
+(„Anna, Ben, Cem …"), um bei grossen Teams Höhe zu sparen. **Jetzt:** immer ein Name je
+Zeile, Vor- und Nachname sowie Doppelnamen unteilbar, überlange Namen kleiner gesetzt.
+**Begründung:** Anweisung des Nutzers — in der Tabelle stand ab und zu ein Name über zwei
+Zeilen verteilt („Max Mustermann, Alex" / „Mustermann"). Der Höhenmehrbedarf ist
+hingenommen: der Schichtplan bekommt mehr Seiten, der Kalender zeigt an vollen Tagen
+früher „+N weitere"; die Liste bleibt vollständig.
+
+---
+
 ## 2026-09-24 — Dienstplan-Export als Excel-Datei statt CSV
 
 **Vorher:** `GET /api/plan-export` lieferte eine CSV in langer Form — Semikolon, BOM,

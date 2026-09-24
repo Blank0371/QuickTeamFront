@@ -232,25 +232,31 @@ export type MatrixZeile = {
 };
 
 /**
- * Ab wie vielen Personen eine Schicht ihre Namen **fliessend** setzt statt
- * untereinander.
+ * Ein Name, der nicht umbricht: die Leerzeichen darin werden geschützt.
  *
  * ─────────────────────────────────────────────────────────────────────
- *  Warum überhaupt zwei Formen
+ *  Ein Name je Zeile, und nie ein halber (Nutzerentscheidung 2026-09-24)
  * ─────────────────────────────────────────────────────────────────────
  *
- * Ein Name je Zeile liest sich am besten — bei zwei, drei Leuten. Ein
- * Gastrobetrieb mit vierzig Beschäftigten hat aber Schichten mit acht,
- * zehn Personen, und untereinander gesetzt wird jeder Kalenderkasten dann
- * so hoch wie eine halbe Seite. Fliessend („Anna, Ben, Cem, Dora …",
- * umbrochen) braucht dieselbe Besetzung rund ein Drittel der Höhe.
+ * Bis zu diesem Tag flossen die Namen ab vier Personen je Schicht
+ * („Anna, Ben, Cem …"), um Höhe zu sparen. In der Tabelle stand dadurch ab
+ * und zu „Max Mustermann, Alex" — Umbruch — „Mustermann": ein Name über
+ * zwei Zeilen verteilt. Der Nutzer hat entschieden: **immer ein Name je
+ * Zeile**, auch in grossen Schichten. Der Preis ist Höhe; bezahlt wird er
+ * im Schichtplan mit mehr Seiten und im Kalender mit einem früheren
+ * „+N weitere" (die Liste bleibt vollständig).
  *
- * Gilt für Excel-Datei **und** Druckseite — eine Stelle, damit beide bei
- * derselben Besetzung dasselbe Bild zeigen. Die Grenze gilt je Schicht,
- * nicht je Datei: die kleine Frühschicht bleibt
- * untereinander, die grosse Abendschicht daneben fliesst.
+ * Ein Name je Zeile allein verhindert das Zerreissen aber nicht: ist die
+ * Spalte schmaler als „Katharina Pichler", bricht Excel wie der Browser am
+ * Leerzeichen um. Das geschützte Leerzeichen (U+00A0) sieht aus wie ein
+ * gewöhnliches, erlaubt dort aber keinen Umbruch. Dasselbe gilt für den
+ * Bindestrich eines Doppelnamens: „Katharina Oberhuber-" / „Pichler" stand so
+ * im ersten Test in Excel, deshalb wird er zum geschützten Bindestrich
+ * (U+2011). Excel und Druckseite setzen Namen beide durch diese Funktion.
  */
-export const GESTAPELT_BIS = 3;
+export function unteilbar(name: string): string {
+  return name.trim().replace(/\s+/g, "\u00a0").replace(/-/g, "\u2011");
+}
 
 /**
  * Wie eine Schicht ihre Zeile findet.

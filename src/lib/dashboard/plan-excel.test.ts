@@ -237,12 +237,20 @@ test("Grosser Betrieb: keine Zeile über Excels Grenze, Kalender auf Seiten vert
   assert.match(JSON.stringify(plan!.zeilen), /\(Fortsetzung\)/);
 });
 
-test("Ab vier Personen fliessen die Namen, bis drei stehen sie untereinander", () => {
-  const [kalender] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), betrieb(10, 2, 3), kontext);
-  const [kalenderGross] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), betrieb(10, 2, 6), kontext);
-  const inhalt = (b: typeof kalender) =>
-    (b!.zeilen.find((z) => Array.isArray(z.zellen[1]?.wert) && JSON.stringify(z.zellen[1]!.wert).includes("Person"))!
-      .zellen[1]!.wert as { text: string }[]).map((l) => l.text).join("");
-  assert.match(inhalt(kalender), /Person Nummer\d\d\n {6}Person/);
-  assert.match(inhalt(kalenderGross), /Person Nummer\d\d, Person Nummer\d\d, /);
+test("Immer ein Name je Zeile, und Vor- und Nachname trennt kein Umbruch", () => {
+  const [kalender, plan] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), betrieb(10, 2, 6), kontext);
+
+  const kasten = (kalender!.zeilen.find(
+    (z) => Array.isArray(z.zellen[1]?.wert) && JSON.stringify(z.zellen[1]!.wert).includes("Person"),
+  )!.zellen[1]!.wert as { text: string }[]).map((l) => l.text).join("");
+  // Zwei Schichten zu je sechs Personen: zwölf Zeilen — kein Komma, keine
+  // zwei Namen in einer Zeile.
+  const namen = kasten.split("\n").filter((z) => z.includes("Person"));
+  assert.equal(namen.length, 12);
+  assert.doesNotMatch(kasten, /,/);
+  // Zwischen Vor- und Nachname steht ein geschütztes Leerzeichen, kein gewöhnliches.
+  for (const zeile of namen) assert.match(zeile.replace(/^ +/, ""), /^Person Nummer\d\d$/);
+
+  const feld = plan!.zeilen.find((z) => Array.isArray(z.zellen[1]?.wert))!.zellen[1]!.wert as { text: string }[];
+  assert.equal(feld.map((l) => l.text).join("").split("\n").length, 6);
 });

@@ -17,9 +17,9 @@ import type { KalenderSchicht } from "./kalender";
 import { hhmm, schichtName, ueberNacht } from "./kalender";
 import {
   baueMatrix,
-  GESTAPELT_BIS,
   kalenderwoche,
   standText,
+  unteilbar,
   tageIm,
   wochenIm,
   zeitraumSpanne,
@@ -210,39 +210,48 @@ function hoeheFuer(textzeilen: number, pt = 15, rand = 6): number {
 type Person = { name: string; abgemeldet: boolean };
 
 /**
- * Die Personen einer Schicht als Textzeilen — samt Schätzung, wie viele
- * Zeilen Excel beim Umbruch daraus macht.
+ * Die Personen einer Schicht: **ein Name je Zeile**, Vor- und Nachname
+ * unteilbar (`unteilbar()`, Begründung dort) — samt Schätzung, wie viele
+ * Zeilen Excel daraus macht.
  *
- * Excel misst Text beim Öffnen nicht nach; die Zeilenhöhe muss vorher
- * stimmen. Geschätzt wird über Zeichen je Zeile (je Spalte und Schrift
- * gemessen, siehe Aufrufer) und lieber eine Zeile zu viel als zu wenig:
- * zu hoch ist Weissraum, zu niedrig ist ein verschluckter Name.
+ * **Ein Name, der breiter ist als die Spalte, wird kleiner gesetzt**, statt
+ * umzubrechen: „Katharina Oberhuber-Pichler" (27 Zeichen) passt in eine
+ * 21-Zeichen-Spalte mit 8,5 statt 11 pt. Kleiner als `minGroesse` wird nicht
+ * gesetzt — ein noch längerer Name bricht dann doch um, und das wird für die
+ * Zeilenhöhe mitgezählt, damit er nicht unter der Grenze verschwindet.
  */
 function personenZeilen(
   personen: readonly Person[],
-  opts: { einzug: string; zeichenJeZeile: number; kursiv?: boolean; blass?: boolean },
+  opts: {
+    einzug: string;
+    zeichenJeZeile: number;
+    grundGroesse: number;
+    minGroesse: number;
+    kursiv?: boolean;
+    blass?: boolean;
+  },
 ): { zeilen: Lauf[][]; hoehe: number } {
-  const lauf = (p: Person, text: string): Lauf => ({
-    text,
-    durchgestrichen: p.abgemeldet,
-    kursiv: opts.kursiv,
-    farbe: p.abgemeldet || opts.blass ? FARBE.sekundaer : undefined,
+  let hoehe = 0;
+  const zeilen = personen.map((p): Lauf[] => {
+    const zeichen = opts.einzug.length + p.name.trim().length;
+    const passend = (opts.grundGroesse * opts.zeichenJeZeile) / zeichen;
+    const groesse =
+      zeichen > opts.zeichenJeZeile
+        ? Math.max(opts.minGroesse, Math.floor(passend * 2) / 2)
+        : undefined;
+    // Wie viele Zeilen der Name in seiner Grösse belegt.
+    hoehe += Math.max(1, Math.ceil((zeichen * (groesse ?? opts.grundGroesse)) / opts.grundGroesse / opts.zeichenJeZeile));
+    return [
+      {
+        text: `${opts.einzug}${unteilbar(p.name)}`,
+        durchgestrichen: p.abgemeldet,
+        kursiv: opts.kursiv,
+        groesse,
+        farbe: p.abgemeldet || opts.blass ? FARBE.sekundaer : undefined,
+      },
+    ];
   });
-
-  if (personen.length <= GESTAPELT_BIS) {
-    return {
-      zeilen: personen.map((p) => [lauf(p, `${opts.einzug}${p.name}`)]),
-      hoehe: personen.length,
-    };
-  }
-
-  const laeufe: Lauf[] = [{ text: opts.einzug }];
-  personen.forEach((p, i) => {
-    laeufe.push(lauf(p, p.name));
-    if (i < personen.length - 1) laeufe.push({ text: ", " });
-  });
-  const zeichen = opts.einzug.length + personen.reduce((n, p) => n + p.name.length + 2, 0);
-  return { zeilen: [laeufe], hoehe: Math.ceil(zeichen / opts.zeichenJeZeile) };
+  return { zeilen, hoehe };
 }
 
 /** Der Hinweis „+N weitere" bricht in einer Tagesspalte um — er belegt zwei Zeilen. */
@@ -338,14 +347,14 @@ function tagesInhalt(
     ]);
     belegt += 1;
 
-    let block = personenZeilen(personen, { einzug: "      ", zeichenJeZeile: KALENDER_ZEICHEN, kursiv: entwurf, blass: ausserhalb });
+    let block = personenZeilen(personen, { einzug: "      ", zeichenJeZeile: KALENDER_ZEICHEN, grundGroesse: 9, minGroesse: 7, kursiv: entwurf, blass: ausserhalb });
     const frei = KALENDER_MAX_ZEILEN - HINWEIS_ZEILEN - belegt;
     if (block.hoehe > frei) {
       // Nur so viele Personen, wie noch passen — der Rest wird gezählt.
       let passend = personen.length;
       while (passend > 0 && block.hoehe > frei) {
         passend--;
-        block = personenZeilen(personen.slice(0, passend), { einzug: "      ", zeichenJeZeile: KALENDER_ZEICHEN, kursiv: entwurf, blass: ausserhalb });
+        block = personenZeilen(personen.slice(0, passend), { einzug: "      ", zeichenJeZeile: KALENDER_ZEICHEN, grundGroesse: 9, minGroesse: 7, kursiv: entwurf, blass: ausserhalb });
       }
       ausgelassen += personen.length - passend;
     }
@@ -550,8 +559,13 @@ function kalenderBlatt(
  */
 const SEITE_PT = 575;
 
-/** Zeichen einer 11-pt-Zeile in einer 19 Zeichen breiten Tagesspalte (mit Reserve). */
-const PLAN_ZEICHEN = 18;
+/**
+ * Zeichen einer 11-pt-Zeile in einer 22 Zeichen breiten Tagesspalte (mit
+ * Reserve). Die Spalte ist seit dem 2026-09-24 22 statt 19 breit, damit
+ * übliche Namen („Katharina Pichler“) in eine Zeile passen — seitdem steht
+ * jeder Name für sich.
+ */
+const PLAN_ZEICHEN = 21;
 /** So viele 15-pt-Zeilen passen unter Excels Höhengrenze in ein Feld. */
 const PLAN_MAX_ZEILEN = Math.floor((MAX_ZEILENHOEHE - 6) / 15);
 
@@ -573,10 +587,10 @@ function schichtZeile(zeile: MatrixZeile, zebra: boolean, t: Texte): Zeile {
       }
       const frei = PLAN_MAX_ZEILEN - HINWEIS_ZEILEN - belegt;
       let passend = schicht.besetzung.length;
-      let block = personenZeilen(schicht.besetzung, { einzug: "", zeichenJeZeile: PLAN_ZEICHEN, kursiv: schicht.entwurf });
+      let block = personenZeilen(schicht.besetzung, { einzug: "", zeichenJeZeile: PLAN_ZEICHEN, grundGroesse: 11, minGroesse: 8, kursiv: schicht.entwurf });
       while (block.hoehe > frei && passend > 0) {
         passend--;
-        block = personenZeilen(schicht.besetzung.slice(0, passend), { einzug: "", zeichenJeZeile: PLAN_ZEICHEN, kursiv: schicht.entwurf });
+        block = personenZeilen(schicht.besetzung.slice(0, passend), { einzug: "", zeichenJeZeile: PLAN_ZEICHEN, grundGroesse: 11, minGroesse: 8, kursiv: schicht.entwurf });
       }
       ausgelassen += schicht.besetzung.length - passend;
       if (passend === 0) continue;
@@ -757,7 +771,7 @@ function schichtplanBlatt(
 
   return {
     name: t.blattPlan,
-    spalten: [22, 19, 19, 19, 19, 19, 19, 19],
+    spalten: [22, 22, 22, 22, 22, 22, 22, 22],
     zeilen,
     verbunden,
     rasterlinien: false,
