@@ -380,7 +380,7 @@ export const en: Dictionary = {
   },
 
   /*
-   * Roster for printing and for Excel. The `csvKopf` group are **column
+   * Roster for printing and for Excel. The `tabellenKopf` group are **column
    * headings in a file**, not screen text — they live here anyway, because a
    * file outlives the session it was created in.
    */
@@ -411,12 +411,15 @@ export const en: Dictionary = {
     hinweisEntwurf:
       "Contains drafts (italic) that are not published yet — your team cannot see them.",
     wocheLeer: "No shifts this week.",
-    csvKopf: {
+    blattPlan: "Roster",
+    blattListe: "List",
+    tabellenKopf: {
       datum: "Date",
       wochentag: "Weekday",
       schicht: "Shift",
       beginn: "Start",
       ende: "End",
+      stunden: "Hours",
       ueberNacht: "Past midnight",
       status: "Status",
       person: "Employee",

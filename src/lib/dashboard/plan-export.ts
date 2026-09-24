@@ -18,14 +18,15 @@ import { alsDatum, hhmm, schichtName, ueberNacht } from "./kalender";
  *   früh?". Eine Liste mit 120 Zeilen beantwortet dieselbe Frage erst
  *   nach Suchen.
  *
- *   **In Excel** ist dieselbe Matrix wertlos: verbundene Bedeutungen in
- *   Spaltenköpfen, ein Name je Zelle, und keine Pivot-Tabelle greift
- *   darauf zu. Dort gehört der Plan in die **lange Form** — eine Zeile je
- *   Zuweisung, jede Angabe in ihrer eigenen Spalte. Danach ist Summieren,
- *   Filtern und Gruppieren Bordmittel.
+ *   **Zum Rechnen** ist dieselbe Matrix wertlos: keine Pivot-Tabelle greift
+ *   auf Namen in Tagesspalten zu. Dafür gibt es die **lange Form** — eine
+ *   Zeile je Zuweisung, jede Angabe in ihrer eigenen Spalte.
  *
- * Beide entstehen hier aus derselben `kalender_schichten`-Antwort. Das ist
- * der Punkt: es gibt keine zweite Abfrage, die anders zählen könnte.
+ * Die Excel-Datei trägt deshalb beide, als zwei Blätter (`plan-excel.ts`).
+ * Diese Datei liefert Zeitraum, Matrix und Datumsangaben, die Druckseite
+ * und Arbeitsmappe gemeinsam benutzen — beide entstehen aus derselben
+ * `kalender_schichten`-Antwort, es gibt keine zweite Abfrage, die anders
+ * zählen könnte.
  *
  * Diese Datei enthält **keine** Datenbank- und keine React-Berührung —
  * damit läuft sie in `npm test` ohne Bundler (`plan-export.test.ts`).
@@ -301,106 +302,8 @@ export function baueMatrix(
 }
 
 /* ------------------------------------------------------------------ */
-/* Lange Form — die Excel-Datei                                        */
+/* Datumsangaben                                                       */
 /* ------------------------------------------------------------------ */
-
-/** Spaltenköpfe der CSV, in der aktiven Sprache. */
-export type CsvKopf = {
-  datum: string;
-  wochentag: string;
-  schicht: string;
-  beginn: string;
-  ende: string;
-  ueberNacht: string;
-  status: string;
-  person: string;
-  rolle: string;
-  abgemeldet: string;
-  ja: string;
-  nein: string;
-  entwurf: string;
-  veroeffentlicht: string;
-  archiviert: string;
-  unbesetzt: string;
-};
-
-/**
- * Eine Zeile je **Zuweisung**, nicht je Schicht.
- *
- * Eine Schicht mit drei Personen ergibt drei Zeilen; eine unbesetzte ergibt
- * eine mit leerem Namen. Das ist die Form, in der eine Pivot-Tabelle
- * „Stunden je Person je Woche" ohne eine einzige Formel beantwortet — und
- * der Grund, warum die unbesetzte Schicht trotzdem eine Zeile bekommt: sonst
- * verschwindet die Lücke aus der Auswertung, und gerade die sucht man.
- */
-export function langeForm(
-  tage: readonly string[],
-  proTag: ReadonlyMap<string, KalenderSchicht[]>,
-  kopf: CsvKopf,
-  wochentagName: (datum: string) => string,
-): string[][] {
-  const zeilen: string[][] = [
-    [
-      kopf.datum,
-      kopf.wochentag,
-      kopf.schicht,
-      kopf.beginn,
-      kopf.ende,
-      kopf.ueberNacht,
-      kopf.status,
-      kopf.person,
-      kopf.rolle,
-      kopf.abgemeldet,
-    ],
-  ];
-
-  const statusText: Record<string, string> = {
-    geplant: kopf.entwurf,
-    veroeffentlicht: kopf.veroeffentlicht,
-    archiviert: kopf.archiviert,
-  };
-
-  for (const datum of tage) {
-    for (const schicht of proTag.get(datum) ?? []) {
-      const basis = [
-        deutschesDatum(datum),
-        wochentagName(datum),
-        schichtName(schicht) ?? "",
-        hhmm(schicht.start_zeit),
-        hhmm(schicht.end_zeit),
-        ueberNacht(schicht) ? kopf.ja : kopf.nein,
-        statusText[schicht.status] ?? schicht.status,
-      ];
-
-      const teilnehmer = schicht.participants ?? [];
-      if (teilnehmer.length === 0) {
-        zeilen.push([...basis, kopf.unbesetzt, "", ""]);
-        continue;
-      }
-      for (const p of teilnehmer) {
-        zeilen.push([...basis, p.name, p.role_name ?? "", p.attendet ? kopf.nein : kopf.ja]);
-      }
-    }
-  }
-
-  return zeilen;
-}
-
-/**
- * `YYYY-MM-DD` → `DD.MM.YYYY`, **unabhängig von der Sprachwahl**.
- *
- * Nur für die CSV. Das Format richtet sich hier nicht nach der Oberfläche,
- * sondern nach dem Programm, das die Datei aufmacht: Excel liest ein Datum
- * nach den **Ländereinstellungen des Rechners**, und der Markt dieser
- * Anwendung ist per `betriebe.land` genau AT und DE. Wer die Oberfläche auf
- * Englisch stellt, wechselt damit nicht sein Windows.
- *
- * Für Bildschirm und Papier gilt das Gegenteil — dort formatiert
- * `datumKurz()` / `datumLang()` nach der Locale.
- */
-export function deutschesDatum(datum: string): string {
-  return `${datum.slice(8, 10)}.${datum.slice(5, 7)}.${datum.slice(0, 4)}`;
-}
 
 /**
  * Datum für Bildschirm und Ausdruck, nach der aktiven Sprache.
@@ -455,6 +358,27 @@ export function zeitraumSpanne(von: string, bis: string, locale: string): string
   }).formatRange(new Date(alsUtc(von)), new Date(alsUtc(bis)));
 }
 
+/**
+ * Die Überschrift eines Zeitraums: „September 2026" oder
+ * „KW 39/2026 · 21.–27. September 2026".
+ *
+ * Steht hier, weil Druckseite, Seitentitel (= PDF-Dateiname) und
+ * Excel-Arbeitsmappe dieselbe Zeile tragen — drei Stellen, die sonst
+ * auseinanderlaufen.
+ */
+export function zeitraumTitel(
+  zeitraum: Zeitraum,
+  kw: string,
+  monate: readonly string[],
+  locale: string,
+): string {
+  if (zeitraum.art === "monat") {
+    const [jahr, monat] = zeitraum.wert.split("-").map(Number);
+    return `${monate[(monat ?? 1) - 1]} ${jahr}`;
+  }
+  return `${kw} ${kalenderwoche(zeitraum.von)}/${kalenderwochenJahr(zeitraum.von)} · ${zeitraumSpanne(zeitraum.von, zeitraum.bis, locale)}`;
+}
+
 /** Dasselbe mit Jahr — für Zeitraumangaben („21.09.2026 – 27.09.2026"). */
 export function datumLang(datum: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
@@ -466,42 +390,6 @@ export function datumLang(datum: string, locale: string): string {
 }
 
 /**
- * CSV, das Excel im deutschsprachigen Raum ohne Import-Dialog aufmacht.
- *
- * Zwei Eigenheiten, beide keine Geschmacksfrage:
- *
- * **Semikolon statt Komma.** Excel liest das Trennzeichen aus den
- * Ländereinstellungen, und in AT/DE ist das Komma das *Dezimal*zeichen —
- * eine komma-getrennte Datei landet dort vollständig in Spalte A. Der Markt
- * dieser Anwendung ist per `betriebe.land` genau AT und DE.
- *
- * **Byte Order Mark.** Ohne die drei Bytes am Anfang rät Excel die Kodierung
- * und trifft die Windows-Codepage; aus „Müller" wird „MÃ¼ller". Mit ihnen
- * erkennt es UTF-8. Jeder andere Leser überliest sie.
- */
-export function alsCsv(zeilen: readonly (readonly string[])[]): string {
-  const inhalt = zeilen.map((zeile) => zeile.map(feld).join(";")).join("\r\n");
-  return `﻿${inhalt}\r\n`;
-}
-
-/**
- * Ein Feld maskieren.
- *
- * Das führende Hochkomma bei `=`, `+`, `-` und `@` ist kein Stilmittel: Excel
- * behandelt eine so beginnende Zelle als **Formel**. Ein Mitarbeitername wie
- * „-Ali" oder eine Notiz, die mit `=` anfängt, würde sonst ausgewertet — im
- * harmlosen Fall als Fehlerwert, im unangenehmen als CSV-Injection, die beim
- * Öffnen der Datei Befehle nachlädt. Die Daten kommen aus Freitextfeldern
- * fremder Nutzer; hier ist die Grenze, an der sie zu Text werden.
- */
-function feld(wert: string): string {
-  const entschaerft = /^[=+\-@\t\r]/.test(wert) ? `'${wert}` : wert;
-  return /[";\r\n]/.test(entschaerft)
-    ? `"${entschaerft.replace(/"/g, '""')}"`
-    : entschaerft;
-}
-
-/**
  * Dateiname für den Download.
  *
  * Bewusst dieselbe Machart wie im Betriebsexport: klein, ohne Umlaute, ohne
@@ -510,9 +398,11 @@ function feld(wert: string): string {
 export function dateiname(betriebName: string, zeitraum: Zeitraum): string {
   const teil =
     zeitraum.art === "woche"
-      ? `kw${String(kalenderwoche(zeitraum.von)).padStart(2, "0")}-${zeitraum.von.slice(0, 4)}`
+      ? // Das Jahr der Kalenderwoche, nicht das des Montags: die Woche ab
+        // dem 28.12.2026 ist KW 53 von 2026, die ab dem 29.12.2025 KW 1 von 2026.
+        `kw${String(kalenderwoche(zeitraum.von)).padStart(2, "0")}-${kalenderwochenJahr(zeitraum.von)}`
       : zeitraum.wert;
-  return `quickteam-dienstplan-${dateiSicher(betriebName)}-${teil}.csv`;
+  return `quickteam-dienstplan-${dateiSicher(betriebName)}-${teil}.xlsx`;
 }
 
 /**

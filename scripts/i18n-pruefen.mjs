@@ -253,6 +253,9 @@ function menschentext(roh) {
   if (text.length < 4) return false;
   if (!/\p{L}{2}/u.test(text)) return false;
   if (/^(https?:|\/|\.\/|@|#)/.test(text)) return false;
+  // XML-/HTML-Bausteine (`<font><sz val="11"/>…`) — der Excel-Schreiber
+  // besteht fast nur daraus. Ein Satz für Menschen beginnt nie mit `<`.
+  if (/^</.test(text)) return false;
   if (/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/.test(text)) return false;
   if (/^[A-Z][A-Za-z0-9]*$/.test(text)) return false;
   if (istKlassenliste(text)) return false;

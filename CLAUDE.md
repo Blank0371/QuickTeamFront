@@ -711,7 +711,7 @@ mit ihm abgestimmt.
 
 ## Der Dienstplan-Export: Blatt und Tabelle
 
-`/dashboard/kalender/drucken` (Ansicht) und `GET /api/plan-export` (Datei), beide mit
+`/dashboard/kalender/drucken` (Ansicht) und `GET /api/plan-export` (Excel-Datei `.xlsx`), beide mit
 `?woche=YYYY-MM-DD` oder `?monat=YYYY-MM`. Logik in `src/lib/dashboard/plan-export.ts`,
 ohne DB- und React-Berührung und deshalb in `npm test` geprüft.
 
@@ -723,16 +723,20 @@ ist der Kern:
   Feldern. So hängt ein Dienstplan an der Wand. Ein Monat wird **nicht** als
   einunddreissig-spaltiges Gitter gedruckt (passt auf kein Blatt), sondern als vier bis
   sechs Wochentabellen untereinander — dieselbe Tabelle, nur mehrfach.
-- **In Excel die lange Form** — eine Zeile je **Zuweisung**, jede Angabe in eigener
+- **Zum Rechnen die lange Form** — eine Zeile je **Zuweisung**, jede Angabe in eigener
   Spalte. Eine unbesetzte Schicht bekommt trotzdem eine Zeile, sonst verschwindet gerade
   die Lücke aus der Auswertung, die man sucht.
+
+Die Excel-Datei trägt **beide** als zwei Blätter (`src/lib/dashboard/plan-excel.ts`):
+„Dienstplan" (die Matrix wie auf dem Aushang, je Woche ein Block) und „Liste" (die lange
+Form).
 
 **Die Seite liegt unter `(arbeit)`**, obwohl sie ohne Schale druckt: dort läuft das Tor.
 Dass Sidebar und Kopfzeile auf Papier nichts verloren haben, ist ein Darstellungsproblem
 und wird in `globals.css` gelöst (`@media print`, `[data-qt-schale]`, `.qt-nur-bildschirm`
 / `.qt-nur-druck`, `@page { size: A4 landscape }`). Einzige Client-Insel ist der
 Druckknopf — `window.print()` läuft nun einmal im Browser; Zeitraumwahl, Blättern und der
-CSV-Download sind gewöhnliche Links.
+Excel-Download sind gewöhnliche Links.
 
 **`[data-qt-flaeche]` wird im Druck zu `display: block`.** Die Schale ist eine Kette von
 Flex-Containern, und ein Flex-Item paginiert Chrome nicht wie einen Textfluss: der erste
@@ -768,23 +772,38 @@ er den Zeitraum (`generateMetadata` mit `searchParams`). Zeitspannen über
 `Intl.DateTimeFormat.formatRange` (`zeitraumSpanne()`): „21.–27. September 2026" /
 „September 21 – 27, 2026" statt zweier Formate in einer Zeile.
 
-**Datumsformate laufen auseinander, mit Absicht.** Bildschirm und Papier formatieren über
-`Intl` nach der Sprachwahl (`datumKurz()` / `datumLang()`); auf Englisch stand sonst
-„7.9." im Tageskopf. Die **CSV bleibt `DD.MM.YYYY`** (`deutschesDatum()`): dort richtet
-sich das Format nicht nach der Oberfläche, sondern nach den Ländereinstellungen des
-Rechners, auf dem Excel die Datei aufmacht — und der Markt ist per `betriebe.land` AT und
-DE. Wer die Oberfläche auf Englisch stellt, wechselt nicht sein Windows.
+**Excel statt CSV (Kursänderung 2026-09-24, auf Anweisung des Nutzers).** *Vorher:* eine
+CSV (Semikolon, BOM, entschärfte Formelzellen). In Excel geöffnet — am selben Tag über COM
+nachgesehen — waren alle Spalten 10,7 Zeichen breit, Überschriften abgeschnitten, nichts
+fett, kein Filter; eine CSV **kann** keine Formatierung tragen. *Jetzt:* eine echte `.xlsx`,
+geschrieben von `src/lib/export/xlsx.ts` **ohne Abhängigkeit** (ZIP „stored" plus die
+nötigen Office-Open-XML-Teile; eine Bibliothek wie `exceljs` brächte ein Vielfaches an Code
+für einen kleinen, festen Ausschnitt). Historie: `docs/claude-md-historie.md`.
 
-**Drei Eigenheiten der CSV, keine davon Geschmackssache:**
+- **Datum und Uhrzeit sind echte Excel-Werte** (`excelDatum()`, `excelZeit()`), keine
+  Texte. Das Datum trägt das eingebaute Format 14 — Excel zeigt es in der Schreibweise der
+  Ländereinstellung des Rechners, die frühere `DD.MM.YYYY`-Sonderregel entfällt.
+- **„Liste"**: fette, fixierte Kopfzeile, Autofilter, Spaltenbreiten, Kopfzeile auf jeder
+  gedruckten Seite, Spalte **Stunden** als Zahl (über Mitternacht korrekt; eine
+  **abgemeldete** Person zählt 0 — sonst wäre die Pivot-Summe „Stunden je Person" um genau
+  die Notfälle zu hoch).
+- **„Dienstplan"**: Titel, Zeitraum, Stand, Wochenblöcke mit Kopfzeile und Bronzekante,
+  Namen untereinander (abgemeldet durchgestrichen, Entwurf kursiv, Unterbesetzung als
+  rotes `!`), Wochenende abgesetzt, Legende; A4 quer, auf Blattbreite skaliert, Fusszeile
+  mit Seitenzahl. Excel kennt kein „mit dem Folgenden zusammenhalten" — vor jeden
+  Wochenblock, der nicht mehr aufs Blatt passt, setzt die Datei einen festen Umbruch
+  (`SEITE_PT`, gemessen: sonst stand eine KW-Überschrift allein unten).
+- **Farben** sind dieselben Ebene-1-Werte wie im Druck, als Zahl abgeschrieben (Excel
+  kennt keine CSS-Variablen) — wie bei den Mail-Vorlagen. Wer die Palette ändert, ändert
+  `FARBE` in `plan-excel.ts` mit.
+- **Keine Formel-Injection mehr:** Text steht als Inline-Zeichenkette in der Zelle und ist
+  nie eine Formel, auch wenn er mit `=` beginnt (Test in `xlsx.test.ts`). Das Hochkomma
+  der CSV entfällt damit.
+- **Excel verlangt Zeilenhöhen ausdrücklich** — umbrochener Text in einer Zeile ohne `ht`
+  zeigt nur die erste Zeile. `hoeheFuer()` rechnet sie aus der Namenszahl.
 
-1. **Semikolon**, nicht Komma — Excel liest das Trennzeichen aus den Ländereinstellungen,
-   und in AT/DE ist das Komma das Dezimalzeichen. Der Markt ist per `betriebe.land` genau
-   AT und DE.
-2. **Byte Order Mark** — ohne die drei Bytes rät Excel die Kodierung und trifft die
-   Windows-Codepage („MÃ¼ller").
-3. **Formelzellen entschärft** — ein Feld, das mit `=`, `+`, `-` oder `@` beginnt, bekommt
-   ein führendes Hochkomma. Namen und Notizen sind Freitext fremder Nutzer; ohne das ist
-   eine CSV-Injection ein offener Weg.
+Bildschirm und Papier formatieren über `Intl` nach der Sprachwahl (`datumKurz()`,
+`datumLang()`, `zeitraumSpanne()`); auf Englisch stand sonst „7.9." im Tageskopf.
 
 **Der Endpunkt nimmt `betreteDashboard()`, nicht `betreteOhneTore()`** — anders als der
 Betriebsexport. Dort ist der Export eine vertragliche Zusage über das Vertragsende hinaus
@@ -800,12 +819,12 @@ Expo-Quelltext (`.claude/rules/product.md`): `shift/[id].tsx` streicht den Namen
 setzt `manager.calledOut` daneben, `manager.tsx:205` überspringt die Zeile bei der
 Besetzungsrechnung. `Besetzung.abgemeldet` dreht den Wert deshalb um, damit der Feldname
 sagt, was er bedeutet. Im Blatt steht der Name durchgestrichen (überlebt den
-Schwarzweissdruck, eine Farbe täte es nicht), in der CSV heisst die Spalte „Abgemeldet".
+Schwarzweissdruck, eine Farbe täte es nicht), in der Liste heisst die Spalte „Abgemeldet".
 
 **Offene Ermessensfrage, benannt:** ob in einem Feld neben dem Namen noch die **Rolle**
 stehen soll. Zurzeit nicht — ein Feld hat auf A4 quer etwa drei Zentimeter, und ein
 Aushang beantwortet „wer ist da". Wer das anders will, ändert die Zellendarstellung in
-`drucken/page.tsx`; die CSV führt die Rolle ohnehin als eigene Spalte.
+`drucken/page.tsx` und `plan-excel.ts`; die Liste führt die Rolle ohnehin als eigene Spalte.
 
 ## Der Betriebsexport
 

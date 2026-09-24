@@ -13,10 +13,10 @@ import {
   baueMatrix,
   datumKurz,
   kalenderwoche,
-  kalenderwochenJahr,
   leseZeitraum,
   standText,
   zeitraumSpanne,
+  zeitraumTitel,
   tageIm,
   verschiebeZeitraum,
   wochenIm,
@@ -42,7 +42,7 @@ export async function generateMetadata({
   const t = getDictionary(sprache).planExport;
   const zeitraum = leseZeitraum(await searchParams, new Date());
   return {
-    title: `${t.titel} ${zeitraumTitel(zeitraum, t, monatsnamen(sprache), sprache)}`,
+    title: `${t.titel} ${zeitraumTitel(zeitraum, t.kw, monatsnamen(sprache), sprache)}`,
     description: t.beschreibung,
     robots: { index: false, follow: false },
   };
@@ -161,7 +161,7 @@ export default async function DruckSeite({
               <span className="sr-only">{t.vorheriger}</span>
             </Link>
             <span className="min-w-0 px-1 text-center text-sm font-medium tabular-nums">
-              {zeitraumTitel(zeitraum, t, monatsnamen(sprache), sprache)}
+              {zeitraumTitel(zeitraum, t.kw, monatsnamen(sprache), sprache)}
             </span>
             <Link href={param(zeitraum.art, verschiebeZeitraum(zeitraum, 1))} className={pfeil()}>
               <ChevronRight className="size-4" aria-hidden="true" />
@@ -208,7 +208,7 @@ export default async function DruckSeite({
             <div>
               <p className="qt-plan-betrieb">{position.betriebName}</p>
               <p className="qt-plan-zeitraum">
-                {zeitraumTitel(zeitraum, t, monatsnamen(sprache), sprache)}
+                {zeitraumTitel(zeitraum, t.kw, monatsnamen(sprache), sprache)}
               </p>
             </div>
             <p className="qt-plan-stand">
@@ -288,19 +288,6 @@ function monatVon(zeitraum: Zeitraum): string {
 /** Beim Wechsel Monat → Woche: die Woche, die den Monatsersten enthält. */
 function erstesImMonat(zeitraum: Zeitraum): string {
   return `${zeitraum.wert}-01`;
-}
-
-function zeitraumTitel(
-  zeitraum: Zeitraum,
-  t: Dictionary["planExport"],
-  monate: string[],
-  locale: string,
-): string {
-  if (zeitraum.art === "monat") {
-    const [jahr, monat] = zeitraum.wert.split("-").map(Number);
-    return `${monate[(monat ?? 1) - 1]} ${jahr}`;
-  }
-  return `${t.kw} ${kalenderwoche(zeitraum.von)}/${kalenderwochenJahr(zeitraum.von)} · ${zeitraumSpanne(zeitraum.von, zeitraum.bis, locale)}`;
 }
 
 /** Samstag und Sonntag — die Tabelle zeigt sie dezent abgesetzt. */

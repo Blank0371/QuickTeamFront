@@ -15,6 +15,21 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-24 — Dienstplan-Export als Excel-Datei statt CSV
+
+**Vorher:** `GET /api/plan-export` lieferte eine CSV in langer Form — Semikolon, BOM,
+entschärfte Formelzellen, Datum als Text `DD.MM.YYYY`. **Jetzt:** eine `.xlsx` mit zwei
+Blättern, „Dienstplan" (Matrix wie der Aushang) und „Liste" (lange Form mit echten
+Datums-/Zeitwerten, Stunden-Spalte, Filter, fixierter Kopfzeile), geschrieben ohne
+Abhängigkeit (`src/lib/export/xlsx.ts`). **Begründung:** der Nutzer nannte die Formatierung
+„grauenhaft"; in Excel geöffnet (per COM nachgesehen) hatten alle Spalten dieselbe
+Standardbreite, Überschriften waren abgeschnitten, nichts war hervorgehoben, es gab keinen
+Filter. Das Format selbst war die Ursache — CSV trägt keine Formatierung. Die Wahl der CSV
+am 2026-09-21 stützte sich auf „keine neue Abhängigkeit"; das gilt für den eigenen
+Schreiber weiterhin.
+
+---
+
 ## 2026-09-23 — Notiz zu Tageswünschen (vierte Schema-Ausnahme)
 
 **Vorher:** ein Tageswunsch (`mitarbeiter_schicht_tagesvorlieben`) war nur „gerne"/

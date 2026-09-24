@@ -3,14 +3,11 @@ import test from "node:test";
 
 import type { KalenderSchicht } from "./kalender";
 import {
-  alsCsv,
   baueMatrix,
   datumKurz,
   datumLang,
-  deutschesDatum,
   dateiname,
   kalenderwoche,
-  langeForm,
   leseZeitraum,
   monatsZeitraum,
   montagDerWoche,
@@ -18,7 +15,8 @@ import {
   tageIm,
   verschiebeZeitraum,
   wochenIm,
-  type CsvKopf,
+  zeitraumSpanne,
+  zeitraumTitel,
 } from "./plan-export";
 
 function schicht(teil: Partial<KalenderSchicht> & { datum: string }): KalenderSchicht {
@@ -167,88 +165,18 @@ test("Verschiedene Uhrzeiten unter gleichem Namen bleiben getrennte Zeilen", () 
   assert.equal(matrix[1]!.start, "07:00");
 });
 
-const kopf: CsvKopf = {
-  datum: "Datum",
-  wochentag: "Wochentag",
-  schicht: "Schicht",
-  beginn: "Beginn",
-  ende: "Ende",
-  ueberNacht: "Über Mitternacht",
-  status: "Status",
-  person: "Mitarbeiter",
-  rolle: "Rolle",
-  abgemeldet: "Abgemeldet",
-  ja: "ja",
-  nein: "nein",
-  entwurf: "Entwurf",
-  veroeffentlicht: "veröffentlicht",
-  archiviert: "archiviert",
-  unbesetzt: "(unbesetzt)",
-};
-
-test("Lange Form gibt eine Zeile je Zuweisung und behält unbesetzte Schichten", () => {
-  const zeilen = langeForm(
-    ["2026-09-21"],
-    proTagAus([
-      schicht({
-        datum: "2026-09-21",
-        participants: [
-          { name: "Anna", role_name: "Service", attendet: true, is_me: false },
-          { name: "Ben", role_name: "Küche", attendet: false, is_me: false },
-        ],
-      }),
-      schicht({ datum: "2026-09-21", label: "Spät", start_zeit: "14:00:00", end_zeit: "22:00:00" }),
-    ]),
-    kopf,
-    () => "Montag",
-  );
-
-  assert.equal(zeilen.length, 4); // Kopfzeile + zwei Personen + eine unbesetzte
-  assert.deepEqual(zeilen[1]!.slice(0, 5), ["21.09.2026", "Montag", "Früh", "06:00", "14:00"]);
-  // Anna ist dabei (`attendet: true`) → nicht abgemeldet; Ben ist abgemeldet.
-  assert.equal(zeilen[1]!.at(-1), "nein");
-  assert.equal(zeilen[2]!.at(-1), "ja");
-  assert.equal(zeilen[3]![7], "(unbesetzt)");
-});
-
-test("Nachtschicht wird als solche ausgewiesen", () => {
-  const zeilen = langeForm(
-    ["2026-09-21"],
-    proTagAus([
-      schicht({ datum: "2026-09-21", label: "Nacht", start_zeit: "22:00:00", end_zeit: "06:00:00" }),
-    ]),
-    kopf,
-    () => "Montag",
-  );
-  assert.equal(zeilen[1]![5], "ja");
-});
-
-test("CSV trennt mit Semikolon, trägt ein BOM und entschärft Formelzellen", () => {
-  const text = alsCsv([
-    ["Name", "Notiz"],
-    ["=SUMME(A1)", 'Er sagte "hallo"; dann ging er'],
-    ["-Ali", "Zeile\nUmbruch"],
-  ]);
-
-  assert.ok(text.startsWith("﻿"), "BOM fehlt");
-  const zeilen = text.slice(1).split("\r\n");
-  assert.equal(zeilen[0]!, "Name;Notiz");
-  assert.equal(zeilen[1]!, `'=SUMME(A1);"Er sagte ""hallo""; dann ging er"`);
-  assert.ok(zeilen[2]!.startsWith(`'-Ali;"Zeile`));
-});
-
 test("Dateiname trägt Zeitraum und übersteht Umlaute im Betriebsnamen", () => {
   assert.equal(
     dateiname("Café Grün", monatsZeitraum(2026, 9)),
-    "quickteam-dienstplan-cafe-gruen-2026-09.csv",
+    "quickteam-dienstplan-cafe-gruen-2026-09.xlsx",
   );
   assert.equal(
     dateiname("Test", leseZeitraum({ woche: "2026-09-23" }, new Date())),
-    "quickteam-dienstplan-test-kw39-2026.csv",
+    "quickteam-dienstplan-test-kw39-2026.xlsx",
   );
 });
 
-test("Bildschirmdatum folgt der Sprache, das CSV-Datum bleibt deutsch", () => {
+test("Datumsangaben folgen der Sprache und rechnen nicht in der lokalen Zone", () => {
   const vorher = process.env.TZ;
   try {
     // Eine westliche Zone: hier faellt ein UTC-Datum lokal auf den Vortag,
@@ -258,10 +186,13 @@ test("Bildschirmdatum folgt der Sprache, das CSV-Datum bleibt deutsch", () => {
     assert.equal(datumKurz("2026-09-07", "de"), "7.9.");
     assert.equal(datumKurz("2026-09-07", "en"), "9/7");
     assert.equal(datumLang("2026-09-07", "de"), "07.09.2026");
-
-    // Die CSV richtet sich nach Excels Laendereinstellung, nicht nach der
-    // Oberflaeche — sie bleibt in beiden Sprachen gleich.
-    assert.equal(deutschesDatum("2026-09-07"), "07.09.2026");
+    assert.equal(zeitraumSpanne("2026-09-21", "2026-09-27", "de"), "21.–27. September 2026");
+    // `Intl` setzt schmale Leerzeichen (U+2009) um den Gedankenstrich — richtig
+    // gesetzt, aber im Vergleich unsichtbar; deshalb normalisiert.
+    assert.equal(
+      zeitraumSpanne("2026-08-31", "2026-09-06", "de").replace(/\s/g, " "),
+      "31. August – 6. September 2026",
+    );
   } finally {
     if (vorher === undefined) delete process.env.TZ;
     else process.env.TZ = vorher;
@@ -279,4 +210,12 @@ test("Stand-Vermerk rechnet in Wiener Zeit, nicht in der des Servers", () => {
     if (vorher === undefined) delete process.env.TZ;
     else process.env.TZ = vorher;
   }
+});
+
+test("Dateiname und Titel nehmen das Jahr der Kalenderwoche, nicht das des Montags", () => {
+  // Die Woche ab Montag, 29.12.2025 ist KW 1 von 2026.
+  const woche = leseZeitraum({ woche: "2025-12-29" }, new Date());
+  assert.equal(dateiname("Test", woche), "quickteam-dienstplan-test-kw01-2026.xlsx");
+  assert.match(zeitraumTitel(woche, "KW", [], "de"), /^KW 1\/2026 · /);
+  assert.equal(zeitraumTitel(monatsZeitraum(2026, 9), "KW", ["", "", "", "", "", "", "", "", "September"], "de"), "September 2026");
 });

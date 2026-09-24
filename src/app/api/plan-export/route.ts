@@ -1,17 +1,14 @@
 import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
-import { holeSchichten, wochentageLang } from "@/lib/dashboard/kalender";
-import {
-  alsCsv,
-  dateiname,
-  langeForm,
-  leseZeitraum,
-  tageIm,
-} from "@/lib/dashboard/plan-export";
+import { holeSchichten, monatsnamen, wochentageKurz, wochentageLang } from "@/lib/dashboard/kalender";
+import { planArbeitsmappe } from "@/lib/dashboard/plan-excel";
+import { datumKurz, dateiname, leseZeitraum, zeitraumTitel } from "@/lib/dashboard/plan-export";
+import { baueXlsx } from "@/lib/export/xlsx";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 
 /**
- * Der Dienstplan eines Zeitraums als CSV — die Excel-Hälfte des Exports.
+ * Der Dienstplan eines Zeitraums als Excel-Datei (`.xlsx`, zwei Blätter —
+ * Begründung in `plan-excel.ts`).
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Warum ein Route Handler
@@ -84,19 +81,28 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const lang = wochentageLang(sprache);
-  const wochentagName = (datum: string) => {
-    const [jahr, monat, tag] = datum.split("-").map(Number);
-    const js = new Date(Date.UTC(jahr ?? 1970, (monat ?? 1) - 1, tag ?? 1)).getUTCDay();
-    return lang[(js + 6) % 7] ?? "";
-  };
+  const jetzt = new Date();
 
-  const csv = alsCsv(langeForm(tageIm(zeitraum), proTag, t.csvKopf, wochentagName));
+  const datei = baueXlsx(
+    planArbeitsmappe(zeitraum, proTag, {
+      t,
+      locale: sprache,
+      betriebName: position.betriebName,
+      jetzt,
+      zeitraumTitel: zeitraumTitel(zeitraum, t.kw, monatsnamen(sprache), sprache),
+      wochentageKurz: wochentageKurz(sprache),
+      datumKurz: (datum) => datumKurz(datum, sprache),
+      wochentagLang: (datum) => {
+        const [jahr, monat, tag] = datum.split("-").map(Number);
+        const js = new Date(Date.UTC(jahr ?? 1970, (monat ?? 1) - 1, tag ?? 1)).getUTCDay();
+        return lang[(js + 6) % 7] ?? "";
+      },
+    }),
+  );
 
-  return new Response(csv, {
+  return new Response(datei, {
     headers: {
-      // `text/csv` allein reicht nicht: ohne `charset` raten manche Programme
-      // die Kodierung, obwohl das BOM in der Datei steht.
-      "content-type": "text/csv; charset=utf-8",
+      "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "content-disposition": `attachment; filename="${dateiname(position.betriebName, zeitraum)}"`,
       // Ein Dienstplan nennt Namen und Arbeitszeiten — nichts für einen
       // Zwischenspeicher, weder im Browser noch in einem Proxy.

@@ -379,7 +379,7 @@ export const de = {
   /**
    * Dienstplan zum Ausdrucken und für Excel (`/dashboard/kalender/drucken`).
    *
-   * Die `csv`-Gruppe sind **Spaltenköpfe einer Datei**, keine Oberfläche.
+   * `tabellenKopf` sind **Spaltenköpfe einer Excel-Datei**, keine Oberfläche.
    * Sie stehen trotzdem hier und nicht als Literal im Route Handler: wer den
    * Plan auf Englisch liest, bekommt sonst eine Tabelle mit deutschen
    * Spalten — und die Datei überlebt die Sitzung, in der sie entstanden ist.
@@ -412,12 +412,15 @@ export const de = {
     hinweisEntwurf:
       "Enthält Entwürfe (kursiv), die noch nicht veröffentlicht sind — das Team sieht sie nicht.",
     wocheLeer: "In dieser Woche liegt keine Schicht.",
-    csvKopf: {
+    blattPlan: "Dienstplan",
+    blattListe: "Liste",
+    tabellenKopf: {
       datum: "Datum",
       wochentag: "Wochentag",
       schicht: "Schicht",
       beginn: "Beginn",
       ende: "Ende",
+      stunden: "Stunden",
       ueberNacht: "Über Mitternacht",
       status: "Status",
       person: "Mitarbeiter",
