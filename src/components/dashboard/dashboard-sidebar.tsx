@@ -139,6 +139,7 @@ export function DashboardSidebar({
       wegzudrücken.
     */
     <nav
+      data-qt-schale=""
       aria-label={beschriftung}
       className="hidden bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:self-start lg:overflow-y-auto lg:border-r lg:border-line"
     >

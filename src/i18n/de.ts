@@ -98,9 +98,15 @@ export const de = {
     notfall: "Notfall",
     einstellungen: "Einstellungen",
     /* Gruppentitel der Sidebar. Zwei, nicht fünf: die Gliederung soll
-       das Suchen verkürzen, nicht selbst zum Lesestoff werden. */
-    gruppeDienstplan: "Dienstplan",
-    gruppeBetrieb: "Betrieb",
+       das Suchen verkürzen, nicht selbst zum Lesestoff werden.
+
+       Sie hiessen bis zum 2026-09-21 `gruppeDienstplan`/`gruppeBetrieb`
+       und trugen „Dienstplan"/„Betrieb" — die Sidebar schrieb da längst
+       „Arbeitsplatz"/„Organisation" hartkodiert daneben. Gefunden hat das
+       `npm run i18n:pruefen` als Schlüssel ohne Verwendung; sichtbar war
+       es nur auf Englisch, wo zwei deutsche Wörter stehen blieben. */
+    gruppeArbeitsplatz: "Arbeitsplatz",
+    gruppeOrganisation: "Organisation",
     folgt: "folgt",
     folgtHinweis: "Dieser Bereich ist noch nicht gebaut.",
     /* Untere Tab-Leiste auf dem Handy: die mittlere Kachel öffnet die
@@ -368,6 +374,62 @@ export const de = {
     mehrfachauswahl: "Mehrfachauswahl",
     anonym: "Anonym",
     fehlerFallback: "Das hat nicht geklappt.",
+  },
+
+  /**
+   * Dienstplan zum Ausdrucken und für Excel (`/dashboard/kalender/drucken`).
+   *
+   * Die `csv`-Gruppe sind **Spaltenköpfe einer Datei**, keine Oberfläche.
+   * Sie stehen trotzdem hier und nicht als Literal im Route Handler: wer den
+   * Plan auf Englisch liest, bekommt sonst eine Tabelle mit deutschen
+   * Spalten — und die Datei überlebt die Sitzung, in der sie entstanden ist.
+   */
+  planExport: {
+    metaTitel: "Dienstplan drucken",
+    titel: "Dienstplan",
+    beschreibung:
+      "Der Dienstplan als Wochen- oder Monatsblatt — zum Aushängen oder als Tabelle für Excel.",
+    woche: "Woche",
+    monat: "Monat",
+    kw: "KW",
+    zurueck: "Zurück zum Kalender",
+    vorheriger: "Vorheriger Zeitraum",
+    naechster: "Nächster Zeitraum",
+    heute: "Heute",
+    drucken: "Drucken",
+    csv: "Für Excel herunterladen",
+    spalteSchicht: "Schicht",
+    keineSchichten: "In diesem Zeitraum liegt keine Schicht.",
+    erstelltAm: "Stand",
+    legendeTitel: "Zeichen",
+    legendeUnbesetzt: "niemand eingeteilt",
+    legendeAbgemeldet: "abgemeldet (Notfall)",
+    legendeUnterbesetzt: "Mindestbesetzung nicht erreicht",
+    legendeEntwurf: "Entwurf, noch nicht veröffentlicht",
+    legendeUeberNacht: "Schicht endet am Folgetag",
+    /* Musterwort in der Legende, an dem Durchstreichung und Kursive gezeigt werden. */
+    legendeMuster: "Name",
+    hinweisEntwurf:
+      "Enthält Entwürfe (kursiv), die noch nicht veröffentlicht sind — das Team sieht sie nicht.",
+    wocheLeer: "In dieser Woche liegt keine Schicht.",
+    csvKopf: {
+      datum: "Datum",
+      wochentag: "Wochentag",
+      schicht: "Schicht",
+      beginn: "Beginn",
+      ende: "Ende",
+      ueberNacht: "Über Mitternacht",
+      status: "Status",
+      person: "Mitarbeiter",
+      rolle: "Rolle",
+      abgemeldet: "Abgemeldet",
+      ja: "ja",
+      nein: "nein",
+      entwurf: "Entwurf",
+      veroeffentlicht: "veröffentlicht",
+      archiviert: "archiviert",
+      unbesetzt: "(unbesetzt)",
+    },
   },
 
   /**

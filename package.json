@@ -8,7 +8,8 @@
     "start": "node scripts/next-getrennt.mjs start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --experimental-test-module-mocks --import ./scripts/test-loader.mjs --test \"src/**/*.test.ts\""
+    "test": "node --experimental-strip-types --experimental-test-module-mocks --import ./scripts/test-loader.mjs --test \"src/**/*.test.ts\"",
+    "i18n:pruefen": "node --experimental-strip-types --import ./scripts/test-loader.mjs scripts/i18n-pruefen.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

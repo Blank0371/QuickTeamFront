@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -136,6 +136,18 @@ export default async function KalenderSeite({
           >
             <ChevronRight className="size-5 sm:size-4" aria-hidden="true" />
             <span className="sr-only">{t.kalender.naechsterMonat}</span>
+          </Link>
+
+          {/*
+            Der Weg zum Blatt. Er trägt den angesehenen Monat mit, damit
+            niemand auf der Druckseite noch einmal dorthin blättern muss.
+          */}
+          <Link
+            href={`/dashboard/kalender/drucken?monat=${jahr}-${String(monat).padStart(2, "0")}`}
+            className="flex h-11 items-center gap-1.5 rounded-blk border border-line px-3 text-sm font-medium text-text transition-colors hover:border-signal hover:bg-signal-weak hover:text-signal sm:h-9 sm:px-2.5"
+          >
+            <Printer className="size-5 sm:size-4" aria-hidden="true" />
+            <span className="sr-only sm:not-sr-only">{t.planExport.drucken}</span>
           </Link>
         </nav>
       </div>

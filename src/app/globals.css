@@ -828,3 +828,303 @@
 
 }
 
+
+/* ────────────────────────────────────────────────────────────────────
+   Druck: der Dienstplan auf Papier
+   ────────────────────────────────────────────────────────────────────
+
+   Betrifft `/dashboard/kalender/drucken`; das Ausblenden der Schale gilt
+   für jede Seite — ein Ausdruck ohne Navigation ist nirgends falsch.
+
+   Warum das hier steht und nicht in der Seite: die Dashboard-Schale
+   (Sidebar, Kopfzeile, Tab-Leiste, Zustimmungsstreifen) gehört dem
+   Layout, und eine Seite kann ihr Layout nicht ausblenden. Die
+   Alternative wäre gewesen, die Druckseite neben `(arbeit)` zu legen —
+   dann liefe aber das Tor aus `betreteDashboard()` nicht mehr.
+
+   ─────────────────────────────────────────────────────────────────
+    Eine eigene Druckpalette, unabhängig vom Thema
+   ─────────────────────────────────────────────────────────────────
+
+   Das Dashboard hat seit dem Theme-Umschalter einen Dunkelmodus. Ein
+   Blatt Papier hat keinen: wer im Dunkelmodus druckt, soll nicht hellen
+   Text auf fehlendem Grund bekommen. Deshalb setzt der Druck die
+   semantischen Tokens (Ebene 2) selbst — mit höherer Spezifität als
+   `:root[data-theme="dunkel"]` und nach der @media-Regel für den
+   Systemwunsch, also gegen beide Auslöser.
+
+   Die Werte kommen ausschliesslich aus Ebene 1 (`--qt-c-*`) und dem
+   Schlüsselwort `white`; kein neuer Hex-Wert (`.claude/rules/ui.md`).
+   Die Wahl folgt dem Zweck:
+
+     Schrift      Green Deep — fast schwarz, trägt aber die Hausfarbe
+     Sekundär     Stone — der Sekundärton der hellen Palette
+     Linien       Paper Line — Haarlinien, die das Raster zeigen, ohne
+                  es zu einem Gitter aus schwarzen Balken zu machen
+     Akzent       Bronze Mid — Kopflinie, Schichtkante, Wochentitel
+     Flächen      Paper, stark mit Weiss verdünnt — Kopfzeile und
+                  Wochenende heben sich ab und kosten kaum Toner
+     Warnung      Red Mid — nur das `!` der Unterbesetzung
+
+   `print-color-adjust: exact` am Blatt: ohne das lässt Chrome
+   Hintergründe beim Drucken weg, und Kopfzeile wie Wochenende wären
+   nicht mehr zu unterscheiden. Die Flächen sind bewusst so hell, dass
+   das den Toner nicht merklich belastet. */
+
+.qt-nur-druck {
+  display: none;
+}
+
+@media print {
+  /* `html:root:root` ist Absicht, keine Verdopplung aus Versehen: es hebt
+     die Spezifität auf (0,2,1). Die Dunkel-Regeln liegen bei (0,2,0) —
+     `:root:not([data-theme="hell"])` für den Systemwunsch,
+     `:root[data-theme="dunkel"]` für die ausdrückliche Wahl. Ein schlichtes
+     `html:root` (0,1,1) verlöre gegen die erste, und wer „System" gewählt
+     hat und dunkel arbeitet, bekäme einen dunklen Ausdruck. */
+  html:root:root {
+    color-scheme: light;
+    --qt-bg: white;
+    --qt-surface: white;
+    --qt-surface-sunk: color-mix(in oklab, var(--qt-c-paper) 75%, white);
+    --qt-surface-weekend: color-mix(in oklab, var(--qt-c-paper-sunk) 40%, white);
+    --qt-text: var(--qt-c-green-deep);
+    --qt-muted: var(--qt-c-stone);
+    --qt-border: var(--qt-c-paper-line);
+    --qt-border-strong: var(--qt-c-bronze-lo);
+    --qt-signal: var(--qt-c-bronze-mid);
+    --qt-stop: var(--qt-c-red-mid);
+  }
+
+  body {
+    background: white;
+    color: var(--qt-text);
+  }
+
+  /* Die Dashboard-Schale und alles, was nur am Bildschirm hilft. */
+  [data-qt-schale],
+  .qt-nur-bildschirm {
+    display: none !important;
+  }
+
+  .qt-nur-druck {
+    display: block;
+  }
+
+  /* Flex zurück zu normalem Blockfluss.
+
+     Die Dashboard-Schale ist eine Kette von Flex-Containern (Sidebar neben
+     Inhalt). Ein Flex-Item paginiert Chrome nicht wie einen Textfluss: im
+     ersten Ausdruck brach Seite 1 nach zwei Wochentabellen um und liess die
+     untere Hälfte leer. Erst als Block bricht der Inhalt dort um, wo das
+     Blatt endet. Das Padding fällt mit weg: unten hält es am Handy Platz
+     für die Tab-Leiste frei, die im Druck nicht existiert. */
+  main,
+  [data-qt-flaeche] {
+    display: block !important;
+    flex: none !important;
+    padding: 0 !important;
+  }
+
+  /* ── Das Blatt ──────────────────────────────────────────────────── */
+
+  .qt-blatt {
+    margin: 0;
+    max-width: none;
+    padding: 0;
+    font-size: 9pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Kopf: Marke klein, Betrieb gross, Zeitraum darunter, Stand rechts —
+     und eine Bronzelinie, die ihn vom Plan trennt. */
+  .qt-plan-kopf {
+    border-bottom: 1.5pt solid var(--qt-c-bronze-mid);
+    margin-bottom: 5mm;
+    padding-bottom: 3mm;
+  }
+
+  .qt-plan-kopf-marke {
+    align-items: center;
+    color: var(--qt-c-bronze-mid);
+    display: flex;
+    font-family: var(--font-display);
+    font-size: 7.5pt;
+    font-weight: 700;
+    gap: 1.5mm;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .qt-plan-logo {
+    height: 5mm;
+    width: 5mm;
+  }
+
+  .qt-plan-kopf-haupt {
+    align-items: flex-end;
+    display: flex;
+    gap: 8mm;
+    justify-content: space-between;
+    margin-top: 2mm;
+  }
+
+  .qt-plan-betrieb {
+    font-family: var(--font-display);
+    font-size: 20pt;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .qt-plan-zeitraum {
+    color: var(--qt-muted);
+    font-size: 11pt;
+    margin-top: 0.8mm;
+  }
+
+  .qt-plan-stand {
+    color: var(--qt-muted);
+    font-size: 7.5pt;
+    white-space: nowrap;
+  }
+
+  .qt-plan-hinweis {
+    border-color: var(--qt-c-bronze-lo) !important;
+    font-size: 8.5pt;
+  }
+
+  /* Wochentitel im Monat: Bronze statt Grau, damit das Auge die Wochen
+     als Abschnitte greift. */
+  .qt-plan-woche {
+    color: var(--qt-c-bronze-mid) !important;
+    font-size: 8pt !important;
+  }
+
+  /* Eine Woche wird nicht zwischen zwei Blättern zerrissen — der Aushang
+     hinge sonst mit einer halben Woche da. */
+  .qt-wochenblock {
+    break-inside: avoid;
+    margin-bottom: 5mm !important;
+  }
+
+  /* ── Die Tabelle ────────────────────────────────────────────────── */
+
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .qt-plan-tabelle {
+    border: 0.75pt solid var(--qt-c-paper-line);
+    font-size: 9pt;
+    min-width: 0 !important;
+  }
+
+  .qt-plan-tabelle th,
+  .qt-plan-tabelle td {
+    border: 0.5pt solid var(--qt-c-paper-line) !important;
+    padding: 1.8mm 2mm !important;
+  }
+
+  /* Der Tageskopf trägt eine kräftigere Unterkante: dort beginnt der
+     Plan, und das Auge braucht die Grenze zwischen „wann" und „wer". */
+  .qt-plan-tabelle thead th {
+    border-bottom: 1.25pt solid var(--qt-c-bronze-mid) !important;
+    font-size: 9.5pt;
+  }
+
+  /* Die Schichtspalte bekommt eine Bronzekante links — sie ist die
+     Zeilenbeschriftung und soll auch auf Abstand als solche lesbar sein. */
+  /* Mit Tabellenklasse davor: `.qt-plan-tabelle th` oben setzt alle vier
+     Kanten und läge sonst mit höherer Spezifität über dieser Regel. */
+  .qt-plan-tabelle .qt-plan-schicht {
+    background: var(--qt-surface-sunk) !important;
+    border-left: 2.5pt solid var(--qt-c-bronze-mid) !important;
+  }
+
+  .qt-plan-tabelle li {
+    line-height: 1.35;
+  }
+
+  .qt-plan-leerzelle {
+    color: var(--qt-c-paper-line) !important;
+  }
+
+  /* Wiederholt den Tageskopf, wenn eine Tabelle doch umbricht. */
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  .qt-plan-leer {
+    font-size: 8.5pt;
+  }
+
+  /* ── Die Woche: für den Aushang, aus Abstand gelesen ────────────────
+     Ein Wochenblatt hängt an der Wand und wird im Vorbeigehen gelesen.
+     In Monatsgrösse belegte es ein Drittel des Blattes und liess den Rest
+     leer. Grössere Schrift und eine Mindesthöhe je Schichtzeile füllen
+     das Blatt und machen den eigenen Namen aus einem Meter Abstand
+     findbar. Der Monat bleibt kompakt — dort sollen mehrere Wochen auf
+     eine Seite. */
+  .qt-blatt-woche .qt-plan-tabelle {
+    font-size: 11.5pt;
+  }
+
+  .qt-blatt-woche .qt-plan-tabelle thead th {
+    font-size: 12pt;
+    padding: 3mm !important;
+  }
+
+  .qt-blatt-woche .qt-plan-tabelle tbody th,
+  .qt-blatt-woche .qt-plan-tabelle tbody td {
+    height: 24mm;
+    padding: 3mm !important;
+  }
+
+  .qt-blatt-woche .qt-plan-tabelle li {
+    line-height: 1.45;
+  }
+
+  .qt-plan-legende {
+    border-top: 0.5pt solid var(--qt-c-paper-line);
+    break-inside: avoid;
+    margin-top: 4mm !important;
+    padding-top: 2.5mm;
+  }
+
+  /* Ein Link, dessen Ziel man nicht anklicken kann, braucht keine
+     Hervorhebung. */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  /* Quer, weil sieben Tagesspalten hochkant nicht lesbar werden.
+
+     Die Seitenzahl steht in einem Randfeld (`@bottom-right`, Chrome ab
+     131). Ein älterer Browser lässt das Feld weg und druckt sonst
+     unverändert — die Angabe ist Komfort, nicht Inhalt. Sprachneutral
+     („2 / 3"), weil CSS das Wörterbuch nicht lesen kann. */
+  @page {
+    size: A4 landscape;
+    margin: 11mm 12mm 13mm;
+
+    @bottom-right {
+      color: var(--qt-c-stone);
+      content: counter(page) " / " counter(pages);
+      font-size: 7.5pt;
+    }
+
+    @bottom-left {
+      color: var(--qt-c-stone);
+      content: "QuickTeam";
+      font-size: 7.5pt;
+      letter-spacing: 0.08em;
+    }
+  }
+}

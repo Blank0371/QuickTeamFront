@@ -119,6 +119,7 @@ export function DashboardTableiste({
         das Inhalts-Padding im Layout wider. Fünf Kacheln, feste Reihenfolge.
       */}
       <nav
+        data-qt-schale=""
         aria-label={beschriftung}
         className="fixed inset-x-0 bottom-0 z-40 grid grid-flow-col border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
@@ -241,7 +242,7 @@ function Blatt({
   }, [onSchliessen]);
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
+    <div data-qt-schale="" className="fixed inset-0 z-50 lg:hidden">
       <button
         type="button"
         aria-label={schliessenLabel}

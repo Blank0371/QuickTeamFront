@@ -64,7 +64,10 @@ export function DashboardTopbar({
   themaDunkel: string;
 }) {
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-line bg-surface px-5 py-3 sm:px-8">
+    <header
+      data-qt-schale=""
+      className="flex items-center justify-between gap-4 border-b border-line bg-surface px-5 py-3 sm:px-8"
+    >
       {/*
         Nur unterhalb von `lg` sichtbar: dort fehlt der Sidebar-Kopf.
         Ab `lg` bleibt die Stelle leer und schiebt die Handgriffe nach

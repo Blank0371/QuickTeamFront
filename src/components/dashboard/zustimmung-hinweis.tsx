@@ -38,6 +38,7 @@ export function ZustimmungHinweis({ befund }: { befund: ZustimmungBefund | null 
 
   return (
     <div
+      data-qt-schale=""
       role="status"
       className="border-b border-line bg-surface-sunk px-4 py-3 text-sm text-muted sm:px-6"
     >

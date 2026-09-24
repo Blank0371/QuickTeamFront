@@ -709,6 +709,104 @@ CTA verweist auf `/registrieren` ohne Plan.
 der nativen App** hindert (RLS oder app-seitig) — betrifft das Repo des Kollegen, wird
 mit ihm abgestimmt.
 
+## Der Dienstplan-Export: Blatt und Tabelle
+
+`/dashboard/kalender/drucken` (Ansicht) und `GET /api/plan-export` (Datei), beide mit
+`?woche=YYYY-MM-DD` oder `?monat=YYYY-MM`. Logik in `src/lib/dashboard/plan-export.ts`,
+ohne DB- und React-Berührung und deshalb in `npm test` geprüft.
+
+**Zwei Formen, eine Quelle.** Beide lesen dieselbe `kalender_schichten`-Antwort — es gibt
+keine zweite Abfrage, die anders zählen könnte. Sie formen sie entgegengesetzt, und das
+ist der Kern:
+
+- **Gedruckt eine Matrix** — Schichten untereinander, Tage nebeneinander, Namen in den
+  Feldern. So hängt ein Dienstplan an der Wand. Ein Monat wird **nicht** als
+  einunddreissig-spaltiges Gitter gedruckt (passt auf kein Blatt), sondern als vier bis
+  sechs Wochentabellen untereinander — dieselbe Tabelle, nur mehrfach.
+- **In Excel die lange Form** — eine Zeile je **Zuweisung**, jede Angabe in eigener
+  Spalte. Eine unbesetzte Schicht bekommt trotzdem eine Zeile, sonst verschwindet gerade
+  die Lücke aus der Auswertung, die man sucht.
+
+**Die Seite liegt unter `(arbeit)`**, obwohl sie ohne Schale druckt: dort läuft das Tor.
+Dass Sidebar und Kopfzeile auf Papier nichts verloren haben, ist ein Darstellungsproblem
+und wird in `globals.css` gelöst (`@media print`, `[data-qt-schale]`, `.qt-nur-bildschirm`
+/ `.qt-nur-druck`, `@page { size: A4 landscape }`). Einzige Client-Insel ist der
+Druckknopf — `window.print()` läuft nun einmal im Browser; Zeitraumwahl, Blättern und der
+CSV-Download sind gewöhnliche Links.
+
+**`[data-qt-flaeche]` wird im Druck zu `display: block`.** Die Schale ist eine Kette von
+Flex-Containern, und ein Flex-Item paginiert Chrome nicht wie einen Textfluss: der erste
+Ausdruck brach nach zwei Wochentabellen um und liess die untere Blatthälfte leer (am
+2026-09-21 als PDF gegengeprüft). Wer die Schale umbaut, behält das Attribut an den
+Flex-Wrappern — sonst kehrt der halbleere Ausdruck zurück, ohne dass etwas fehlschlägt.
+**Jedes neue Schalen-Element bekommt `data-qt-schale`** — die mobile Tab-Leiste
+(`dashboard-tableiste.tsx`, Leiste **und** Blatt) hat es seit 2026-09-24; ohne das hinge
+sie unten auf jedem Ausdruck.
+
+**Das Blatt hat eine eigene Druckpalette, unabhängig vom Thema.** Im Druck setzt
+`globals.css` die Ebene-2-Tokens selbst, aus Ebene-1-Werten (`--qt-c-*`) und `white` —
+kein neuer Hex-Wert: Schrift Green Deep, Sekundär Stone, Haarlinien Paper Line, Akzent
+Bronze Mid (Kopflinie, Schichtkante, Wochentitel), Flächen stark verdünntes Paper,
+Warnung Red Mid. Der Selektor ist `html:root:root` (Spezifität 0,2,1) — mit Absicht, denn
+die Dunkel-Regeln liegen bei (0,2,0), und ein schlichtes `html:root` verlor gegen den
+**System**-Dunkelmodus. Am 2026-09-24 mit emuliertem `prefers-color-scheme: dark` **und**
+mit `qt_theme=dunkel` als PDF gegengeprüft: Bildschirm dunkel, Blatt hell.
+`print-color-adjust: exact` hält die hellen Flächen im Ausdruck.
+
+**Aufbau des Blatts:** Kopf mit Bildmarke, Betrieb gross, Zeitraum, „Stand" (fest
+`Europe/Vienna`, `standText()` — Vercel rechnet in UTC, kurz nach Mitternacht stünde sonst
+das Datum von gestern); Fuss mit „QuickTeam" und Seitenzahl „1 / 2" über
+`@page`-Randfelder (Chrome ab 131, sprachneutral, weil CSS das Wörterbuch nicht lesen
+kann). Die **Woche** druckt grösser und mit Mindestzeilenhöhe (Aushang, aus Abstand
+gelesen), der **Monat** kompakt (mehrere Wochen je Blatt); eine leere Woche bleibt als
+Hinweiszeile stehen. Ein Name je Zeile statt Komma-Liste. Enthält der Zeitraum
+**Entwürfe**, trägt das Blatt einen Vermerk — Entwürfe sieht nur die Betriebsleitung, ein
+vorab ausgehängter Plan zeigte dem Team sonst Schichten, die es in der App nicht sieht.
+
+**Der Seitentitel ist der PDF-Dateiname.** „Als PDF speichern" übernimmt ihn, deshalb trägt
+er den Zeitraum (`generateMetadata` mit `searchParams`). Zeitspannen über
+`Intl.DateTimeFormat.formatRange` (`zeitraumSpanne()`): „21.–27. September 2026" /
+„September 21 – 27, 2026" statt zweier Formate in einer Zeile.
+
+**Datumsformate laufen auseinander, mit Absicht.** Bildschirm und Papier formatieren über
+`Intl` nach der Sprachwahl (`datumKurz()` / `datumLang()`); auf Englisch stand sonst
+„7.9." im Tageskopf. Die **CSV bleibt `DD.MM.YYYY`** (`deutschesDatum()`): dort richtet
+sich das Format nicht nach der Oberfläche, sondern nach den Ländereinstellungen des
+Rechners, auf dem Excel die Datei aufmacht — und der Markt ist per `betriebe.land` AT und
+DE. Wer die Oberfläche auf Englisch stellt, wechselt nicht sein Windows.
+
+**Drei Eigenheiten der CSV, keine davon Geschmackssache:**
+
+1. **Semikolon**, nicht Komma — Excel liest das Trennzeichen aus den Ländereinstellungen,
+   und in AT/DE ist das Komma das Dezimalzeichen. Der Markt ist per `betriebe.land` genau
+   AT und DE.
+2. **Byte Order Mark** — ohne die drei Bytes rät Excel die Kodierung und trifft die
+   Windows-Codepage („MÃ¼ller").
+3. **Formelzellen entschärft** — ein Feld, das mit `=`, `+`, `-` oder `@` beginnt, bekommt
+   ein führendes Hochkomma. Namen und Notizen sind Freitext fremder Nutzer; ohne das ist
+   eine CSV-Injection ein offener Weg.
+
+**Der Endpunkt nimmt `betreteDashboard()`, nicht `betreteOhneTore()`** — anders als der
+Betriebsexport. Dort ist der Export eine vertragliche Zusage über das Vertragsende hinaus
+(§ 6 Abs. 4 AGB); hier ist er dieselbe Ansicht in anderer Verpackung, und was am
+Bildschirm gesperrt ist, soll nicht als Download offenstehen. **Angestellte bekommen ihn**
+— begrenzt auf das, was `kalender_schichten` ihnen ohnehin zeigt (Roster-Privacy,
+Entwürfe ausgeblendet). Eine eigene Prüfung hier wäre die zweite Autorisierungsebene, die
+es nicht geben soll. Aus der Anfrage kommt **nur der Zeitraum**; kein `?betrieb=`.
+
+**`attendet === false` heisst abgemeldet, nicht „noch nicht zugesagt".** Der Name legt
+das Gegenteil nahe und wurde hier zunächst auch so gelesen; massgeblich ist der
+Expo-Quelltext (`.claude/rules/product.md`): `shift/[id].tsx` streicht den Namen durch und
+setzt `manager.calledOut` daneben, `manager.tsx:205` überspringt die Zeile bei der
+Besetzungsrechnung. `Besetzung.abgemeldet` dreht den Wert deshalb um, damit der Feldname
+sagt, was er bedeutet. Im Blatt steht der Name durchgestrichen (überlebt den
+Schwarzweissdruck, eine Farbe täte es nicht), in der CSV heisst die Spalte „Abgemeldet".
+
+**Offene Ermessensfrage, benannt:** ob in einem Feld neben dem Namen noch die **Rolle**
+stehen soll. Zurzeit nicht — ein Feld hat auf A4 quer etwa drei Zentimeter, und ein
+Aushang beantwortet „wer ist da". Wer das anders will, ändert die Zellendarstellung in
+`drucken/page.tsx`; die CSV führt die Rolle ohnehin als eigene Spalte.
+
 ## Der Betriebsexport
 
 `GET /api/betrieb-export` liefert ein JSON-Paket mit 30 Tabellen (Stand 2026-09-15) und
@@ -833,6 +931,37 @@ Stepper-Schritte), Dashboard-Bereiche (grösster Teil, App massgeblich), verblei
 `nachricht`-Sätze in `src/lib/`. Danach zu entscheiden: `/en/`-Präfix für **öffentliche**
 Seiten (Cookie ist dort ein SEO-Nachteil, fürs Dashboard folgenlos).
 
+### Die Sprachkontrolle (`npm run i18n:pruefen`)
+
+`scripts/i18n-pruefen.mjs`, ohne neue Abhängigkeit. Importiert `de.ts` und `en.ts`
+**wirklich** (über `scripts/test-loader.mjs`, wie die Tests) statt sie mit einem Regex zu
+lesen — gezählt wird damit, was zur Laufzeit ankommt.
+
+**Zwei Härtegrade, mit Absicht:**
+
+| Befund | Folge |
+| ------ | ----- |
+| Schlüssel fehlt in `de.ts` oder `en.ts` | **Fehler**, `exit 1` |
+| Hartkodierter Text in einer Datei **gewachsen** | **Fehler**, `exit 1` |
+| Schlüssel ohne Verwendung im Quelltext | Hinweis |
+| Wert in beiden Sprachen wörtlich gleich (ab drei Wörtern) | Hinweis |
+
+Der hartkodierte Text wird gegen `docs/i18n-bestand.json` gezählt — je Datei, nicht als
+Summe. **Ein Gate, das den ganzen Bestand verbietet, wäre am ersten Tag rot** (Stand
+2026-09-24, nach dem Zusammenführen mit GitHub: 694 Fundstellen in 110 Dateien) und damit binnen einer Woche abgeschaltet. So
+ist nur die Richtung erzwungen: wer eine Datei anfasst, darf ihre Zahl nicht erhöhen.
+
+- `-- --datei <pfad>` listet die Fundstellen einer Datei — der Weg, eine Datei
+  abzuarbeiten.
+- `-- --schreiben` schreibt den Bestand neu fest. Nach einer Übersetzungsrunde
+  nachziehen, damit das Erreichte nicht wieder verfällt.
+
+**Die Erkennung ist eine Heuristik und darf lieber übersehen als anschwärzen.** Ein
+einzelnes Wort ohne Umlaut gilt nicht als Satz („Drucken" fällt durch), und wo ein Anteil
+der Wörter Bindestriche oder Doppelpunkte trägt, wird eine Klassenliste vermutet. Die
+Schwelle ist gemessen, nicht geraten: die erste Fassung verwarf jeden umlautfreien
+deutschen Satz mit Bindestrich als Tailwind-Liste.
+
 ## Harte Vorgaben
 
 **Farben aus `docs/Farbpalette.html`** (Grün/Bronze/Rot auf dunklem Grund), übernommen in
@@ -871,8 +1000,12 @@ blockt AI-Crawler (GPTBot, ClaudeBot, PerplexityBot) **nicht**; `public/llms.txt
 
 **Sauberkeit:** Console beim Laden leer (keine Hydration-Mismatches, Key-Warnungen,
 404s); keine Source Maps in Produktion (`productionBrowserSourceMaps` aus); **First Load
-JS der Landing Page unter 165 kB gzip bzw. 140 kB brotli** (am 2026-09-10 gemessen: 158,5
-kB gzip / 137,4 kB brotli / 493,5 kB roh; die Zahl in `next build` ist bereits gzipped);
+JS der Landing Page unter 165 kB gzip bzw. 140 kB brotli** (die Zahl in `next build` ist
+bereits gzipped). **Am 2026-09-21 nachgemessen: 164 kB gzip — noch 1 kB Luft.** Der zuvor
+hier stehende Wert (158,5 kB, 2026-09-10) war überholt; die Differenz ist zwischen den
+beiden Messungen entstanden und **nicht** durch den Dienstplan-Export (gegen `HEAD`
+gestasht und gegengebaut, beide 164 kB). Wer die nächste Client-Insel auf der Landing Page
+anfasst, misst vorher — die Grenze ist praktisch erreicht;
 keine Animationsbibliothek für etwas, das CSS kann; keine Template-Reste.
 
 **Barrierefreiheit:** responsiv ab 375px, sichtbarer Keyboard-Fokus,
@@ -1070,8 +1203,9 @@ Getestet werden die **echten** Quelldateien — was dort läuft, muss ohne Bundl
 (Module mit React, `next/headers` oder `server-only` gehören nicht in einen Unit-Test,
 dafür ist der Browserlauf da, `.claude/skills/run-quickteam-web`).
 
-**Drei Gates:** `npm run typecheck`, `npm run build`, `npm test`. `npm run lint` bleibt
-unbrauchbar (fragt interaktiv und hängt).
+**Vier Gates:** `npm run typecheck`, `npm run build`, `npm test`, `npm run i18n:pruefen`
+(siehe „Die Sprachkontrolle"). `npm run lint` bleibt unbrauchbar (fragt interaktiv und
+hängt).
 
 ## Schema nachschlagen statt raten
 

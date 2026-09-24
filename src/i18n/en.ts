@@ -139,8 +139,8 @@ export const en: Dictionary = {
     verfuegbarkeit: "Availability",
     notfall: "Emergency",
     einstellungen: "Settings",
-    gruppeDienstplan: "Schedule",
-    gruppeBetrieb: "Business",
+    gruppeArbeitsplatz: "Workspace",
+    gruppeOrganisation: "Organisation",
     folgt: "soon",
     folgtHinweis: "This area has not been built yet.",
     mehr: "More",
@@ -377,6 +377,58 @@ export const en: Dictionary = {
     mehrfachauswahl: "Multiple choice",
     anonym: "Anonymous",
     fehlerFallback: "That didn't work.",
+  },
+
+  /*
+   * Roster for printing and for Excel. The `csvKopf` group are **column
+   * headings in a file**, not screen text — they live here anyway, because a
+   * file outlives the session it was created in.
+   */
+  planExport: {
+    metaTitel: "Print roster",
+    titel: "Roster",
+    beschreibung:
+      "The roster as a weekly or monthly sheet — to pin up, or as a table for Excel.",
+    woche: "Week",
+    monat: "Month",
+    kw: "W",
+    zurueck: "Back to the calendar",
+    vorheriger: "Previous period",
+    naechster: "Next period",
+    heute: "Today",
+    drucken: "Print",
+    csv: "Download for Excel",
+    spalteSchicht: "Shift",
+    keineSchichten: "No shifts fall within this period.",
+    erstelltAm: "As of",
+    legendeTitel: "Key",
+    legendeUnbesetzt: "nobody assigned",
+    legendeAbgemeldet: "called out (emergency)",
+    legendeUnterbesetzt: "below minimum staffing",
+    legendeEntwurf: "draft, not published yet",
+    legendeUeberNacht: "shift ends the next day",
+    legendeMuster: "Name",
+    hinweisEntwurf:
+      "Contains drafts (italic) that are not published yet — your team cannot see them.",
+    wocheLeer: "No shifts this week.",
+    csvKopf: {
+      datum: "Date",
+      wochentag: "Weekday",
+      schicht: "Shift",
+      beginn: "Start",
+      ende: "End",
+      ueberNacht: "Past midnight",
+      status: "Status",
+      person: "Employee",
+      rolle: "Role",
+      abgemeldet: "Called out",
+      ja: "yes",
+      nein: "no",
+      entwurf: "draft",
+      veroeffentlicht: "published",
+      archiviert: "archived",
+      unbesetzt: "(unassigned)",
+    },
   },
 
   /*

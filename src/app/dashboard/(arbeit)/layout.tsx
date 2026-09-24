@@ -78,7 +78,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
        * zum Tagesgeschäft gehört, während Urlaub und Tausch
        * Vorgänge mit Genehmigung sind.
        */
-      titel: "Arbeitsplatz",
+      titel: t.dashboard.gruppeArbeitsplatz,
       bereiche: [
         { href: "/dashboard", label: t.dashboard.uebersicht, icon: "uebersicht" },
         { href: "/dashboard/kalender", label: t.dashboard.kalender, icon: "kalender" },
@@ -102,7 +102,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       ],
     },
     {
-      titel: "Organisation",
+      titel: t.dashboard.gruppeOrganisation,
       bereiche: [
         {
           href: "/dashboard/urlaub",
@@ -157,7 +157,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const gruppen = alleGruppen.filter((gruppe) => gruppe.bereiche.length > 0);
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div data-qt-flaeche="" className="flex flex-1 flex-col">
 
       {/*
         ─────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         darin steht — eine lange Tabelle, ein Datumsband —, und die
         Sidebar würde aus dem Bild geschoben.
       */}
-      <div className="flex w-full flex-1 flex-col lg:flex-row">
+      <div data-qt-flaeche="" className="flex w-full flex-1 flex-col lg:flex-row">
         <DashboardSidebar
           gruppen={gruppen}
           beschriftung={t.dashboard.navigation}
@@ -209,7 +209,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           Höhe plus Safe-Area, sonst verdeckte sie das Seitenende. Ab `lg`
           gibt es die Leiste nicht — dort kein Padding.
         */}
-        <div className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+        <div
+          data-qt-flaeche=""
+          className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0 print:pb-0"
+        >
           <DashboardTopbar
             sprache={sprache}
             thema={thema}
