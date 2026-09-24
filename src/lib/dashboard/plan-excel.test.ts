@@ -5,7 +5,7 @@ import { de } from "@/i18n/de";
 
 import type { KalenderSchicht } from "./kalender";
 import { planArbeitsmappe, stunden } from "./plan-excel";
-import { leseZeitraum } from "./plan-export";
+import { leseZeitraum, tageIm } from "./plan-export";
 
 function schicht(teil: Partial<KalenderSchicht> & { datum: string }): KalenderSchicht {
   return {
@@ -163,4 +163,86 @@ test("Kalender: ein Monat als Raster, jeder Tag ein umrandeter Kasten mit seinen
 
   assert.equal(kalender!.rasterlinien, false);
   assert.equal(kalender!.aufEineSeite, true);
+});
+
+/* ------------------------------------------------------------------ */
+/* Wachstum: grosse Betriebe                                           */
+/* ------------------------------------------------------------------ */
+
+/** Ein Monat mit `personen` Beschäftigten, `schichten` Schichten am Tag und `jeSchicht` Personen je Schicht. */
+function betrieb(personen: number, schichten: number, jeSchicht: number): Map<string, KalenderSchicht[]> {
+  const namen = Array.from({ length: personen }, (_, i) => `Person Nummer${String(i).padStart(2, "0")}`);
+  const zeitraum = leseZeitraum({ monat: "2026-09" }, new Date());
+  const karte = new Map<string, KalenderSchicht[]>();
+  let n = 0;
+  for (const d of tageIm(zeitraum)) {
+    karte.set(
+      d,
+      Array.from({ length: schichten }, (_, s) =>
+        schicht({
+          datum: d,
+          id: `${d}-${s}`,
+          label: `Schicht ${s}`,
+          start_zeit: `${String(6 + s * 2).padStart(2, "0")}:00:00`,
+          end_zeit: `${String(12 + s * 2).padStart(2, "0")}:00:00`,
+          participants: Array.from({ length: jeSchicht }, () => ({
+            name: namen[n++ % personen]!,
+            role_name: null,
+            attendet: true,
+            is_me: false,
+          })),
+        }),
+      ),
+    );
+  }
+  return karte;
+}
+
+test("Kleiner Betrieb: der Monat bleibt auf einer Seite", () => {
+  const [kalender] = planArbeitsmappe(leseZeitraum({ monat: "2026-09" }, new Date()), betrieb(8, 2, 2), kontext);
+  assert.equal(kalender!.aufEineSeite, true);
+  assert.deepEqual(kalender!.seitenumbruchVor, []);
+});
+
+test("Grosser Betrieb: keine Zeile über Excels Grenze, Kalender auf Seiten verteilt, Kürzung sichtbar", () => {
+  const mappe = planArbeitsmappe(leseZeitraum({ monat: "2026-09" }, new Date()), betrieb(40, 6, 12), kontext);
+  const [kalender, plan] = mappe;
+
+  for (const blatt of mappe) {
+    for (const zeile of blatt.zeilen) {
+      assert.ok((zeile.hoehe ?? 15) <= 409, `${blatt.name}: Zeile mit ${zeile.hoehe} pt`);
+    }
+  }
+
+  // Mehrere Seiten, Umbrüche nur zwischen Wochen, Wochentagszeile wiederholt.
+  assert.equal(kalender!.aufEineSeite, false);
+  assert.ok(kalender!.seitenumbruchVor!.length > 0);
+  const kopf = kalender!.druckTitelZeilen as { von: number; bis: number };
+  assert.equal(kalender!.zeilen[kopf.von - 1]!.zellen[1]!.wert, "Montag");
+  for (const vor of kalender!.seitenumbruchVor!) {
+    // Die Zeile nach dem Umbruch ist eine Datumszeile (KW-Nummer in Spalte A).
+    assert.equal(typeof kalender!.zeilen[vor - 1]!.zellen[0]!.wert, "number");
+  }
+
+  // 72 Namen an einem Tag passen in keinen Kasten — der Rest wird gezählt, nicht verschluckt.
+  const text = JSON.stringify(kalender!.zeilen);
+  assert.match(text, /weitere – vollständig im Blatt/);
+
+  // Der Schichtplan setzt auf jeder Folgeseite KW-Zeile und Tageskopf neu.
+  assert.ok(plan!.seitenumbruchVor!.length > 0);
+  for (const vor of plan!.seitenumbruchVor!) {
+    const erste = plan!.zeilen[vor - 1]!.zellen[0]!.wert;
+    assert.match(String(erste), /^KW \d+/);
+  }
+  assert.match(JSON.stringify(plan!.zeilen), /\(Fortsetzung\)/);
+});
+
+test("Ab vier Personen fliessen die Namen, bis drei stehen sie untereinander", () => {
+  const [kalender] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), betrieb(10, 2, 3), kontext);
+  const [kalenderGross] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), betrieb(10, 2, 6), kontext);
+  const inhalt = (b: typeof kalender) =>
+    (b!.zeilen.find((z) => Array.isArray(z.zellen[1]?.wert) && JSON.stringify(z.zellen[1]!.wert).includes("Person"))!
+      .zellen[1]!.wert as { text: string }[]).map((l) => l.text).join("");
+  assert.match(inhalt(kalender), /Person Nummer\d\d\n {6}Person/);
+  assert.match(inhalt(kalenderGross), /Person Nummer\d\d, Person Nummer\d\d, /);
 });

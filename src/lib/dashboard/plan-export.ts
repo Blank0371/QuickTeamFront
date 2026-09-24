@@ -232,6 +232,27 @@ export type MatrixZeile = {
 };
 
 /**
+ * Ab wie vielen Personen eine Schicht ihre Namen **fliessend** setzt statt
+ * untereinander.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum überhaupt zwei Formen
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Ein Name je Zeile liest sich am besten — bei zwei, drei Leuten. Ein
+ * Gastrobetrieb mit vierzig Beschäftigten hat aber Schichten mit acht,
+ * zehn Personen, und untereinander gesetzt wird jeder Kalenderkasten dann
+ * so hoch wie eine halbe Seite. Fliessend („Anna, Ben, Cem, Dora …",
+ * umbrochen) braucht dieselbe Besetzung rund ein Drittel der Höhe.
+ *
+ * Gilt für Excel-Datei **und** Druckseite — eine Stelle, damit beide bei
+ * derselben Besetzung dasselbe Bild zeigen. Die Grenze gilt je Schicht,
+ * nicht je Datei: die kleine Frühschicht bleibt
+ * untereinander, die grosse Abendschicht daneben fliesst.
+ */
+export const GESTAPELT_BIS = 3;
+
+/**
  * Wie eine Schicht ihre Zeile findet.
  *
  * Gruppiert wird über **Bezeichnung und Uhrzeit zusammen**, nicht über die

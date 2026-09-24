@@ -412,6 +412,8 @@ export const en: Dictionary = {
       "Contains drafts (italic) that are not published yet — your team cannot see them.",
     wocheLeer: "No shifts this week.",
     blattKalender: "Calendar",
+    fortsetzung: "continued",
+    weitere: "… +{anzahl} more – full list on sheet \"{blatt}\"",
     blattPlan: "Shift plan",
     blattListe: "List",
     tabellenKopf: {

@@ -282,9 +282,9 @@ function istKlassenliste(text) {
   const tokens = text.split(/\s+/).filter(Boolean);
   if (tokens.length < 2) return false;
   // `+`, `,` und `*` stehen in Arbitrary Values (`pb-[calc(3.5rem+env(…))]`,
-  // `grid-cols-[1fr,auto]`, `[&>*]:…`) — ohne sie galt die Klassenliste der
-  // Dashboard-Schale als Satz.
-  if (!/^[\w\-./:[\]()%#!+,*&>=\s]+$/.test(text)) return false;
+  // `grid-cols-[1fr,auto]`, `[&>*]:…`, `after:content-[',_']`) — ohne sie
+  // galt die Klassenliste der Dashboard-Schale als Satz.
+  if (!/^[\w\-./:[\]()%#!+,*&>='\s]+$/.test(text)) return false;
   const technisch = tokens.filter((tok) => /[-:/]/.test(tok)).length;
   return technisch * 2 >= tokens.length;
 }

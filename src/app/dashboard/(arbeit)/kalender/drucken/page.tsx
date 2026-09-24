@@ -11,6 +11,7 @@ import { leseSprache } from "@/i18n/sprache";
 import { holeSchichten, monatsnamen, wochentageKurz } from "@/lib/dashboard/kalender";
 import {
   baueMatrix,
+  GESTAPELT_BIS,
   datumKurz,
   kalenderwoche,
   leseZeitraum,
@@ -383,20 +384,28 @@ function Wochentabelle({
                           <span className="text-muted">·</span>
                         ) : (
                           /*
-                            Ein Name je Zeile statt „Anna, Ben, Cem": auf einem
-                            Aushang sucht man den eigenen Namen, und eine Spalte
-                            lässt sich von oben nach unten überfliegen. Eine
-                            abgemeldete Person wird durchgestrichen, wie in
-                            `shift/[id].tsx` der App — das überlebt auch den
-                            Schwarzweissdruck.
+                            Bis drei Personen ein Name je Zeile: auf einem Aushang
+                            sucht man den eigenen Namen, und eine Spalte lässt
+                            sich von oben nach unten überfliegen. Darüber fliessen
+                            die Namen („Anna, Ben, Cem …") — bei zehn Leuten je
+                            Schicht wäre sonst jede Zeile der Tabelle eine halbe
+                            Seite hoch (`GESTAPELT_BIS`, dieselbe Grenze wie in
+                            der Excel-Datei). Abgemeldete sind durchgestrichen,
+                            wie in `shift/[id].tsx` der App.
                           */
-                          <ul>
+                          <ul className={s.besetzung.length > GESTAPELT_BIS ? "qt-plan-fliessend" : ""}>
                             {s.besetzung.map((person, n) => (
                               <li
                                 key={`${person.name}-${n}`}
-                                className={person.abgemeldet ? "text-muted line-through" : ""}
+                                className={
+                                  s.besetzung.length > GESTAPELT_BIS
+                                    ? "inline after:content-[',_'] last:after:content-none"
+                                    : ""
+                                }
                               >
-                                {person.name}
+                                <span className={person.abgemeldet ? "text-muted line-through" : ""}>
+                                  {person.name}
+                                </span>
                               </li>
                             ))}
                           </ul>

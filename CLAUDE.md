@@ -741,6 +741,32 @@ Die Excel-Datei trägt drei Blätter (`src/lib/dashboard/plan-excel.ts`):
 - **„Liste"**: die lange Form; Tage abwechselnd getönt, Bronzelinie bei jedem
   Tageswechsel (Tag-, nicht Zeilen-Zebrierung — sonst zerschnitte sie die Gruppen).
 
+**Grosse Betriebe (2026-09-24, auf Anweisung des Nutzers — „bei vielen Mitarbeitern").**
+Geprüft mit 40 Personen, 6 Schichten am Tag, 4–12 je Schicht, in Excel über COM:
+
+- **Excel nimmt höchstens 409 pt Zeilenhöhe** (`MAX_ZEILENHOEHE`); was darüber liegt, ist
+  ohne Meldung unsichtbar. Kalenderkasten und Schichtplan-Feld werden deshalb vorher
+  gekürzt und enden sichtbar mit „… +N weitere – vollständig im Blatt ‚Liste'". Die Liste
+  ist nie gekürzt.
+- **Namen fliessen ab vier Personen je Schicht** (`GESTAPELT_BIS`, gemeinsam für Excel
+  **und** Druckseite) — „Anna, Ben, Cem …" statt eines Namens je Zeile; das spart rund
+  zwei Drittel der Höhe.
+- **Höhen werden geschätzt, nicht gemessen** (Excel misst Text beim Öffnen nicht nach):
+  `KALENDER_ZEICHEN`/`PLAN_ZEICHEN` sind Zeichen je Zeile, am PDF abgezählt. Lieber zu
+  niedrig (Weissraum) als zu hoch (verschluckter Name).
+- **Der Monatskalender geht nach Dichte auf eine oder mehrere Seiten**
+  (`KALENDER_EINE_SEITE_PT`): Umbruch nur zwischen Wochen, Wochentagszeile auf jeder Seite
+  (`druckTitelZeilen` als Bereich). Ein voller Monat auf ein Blatt gepresst ergäbe
+  5-pt-Schrift.
+- **Der Schichtplan füllt Seiten zeilenweise**: passt die nächste Schichtzeile nicht mehr,
+  folgt ein fester Umbruch mit „KW … (Fortsetzung)" und neuem Tageskopf. Vorher brach
+  Excel eine übergrosse Woche selbst um, und die Folgeseite hatte keinen Tageskopf.
+- **Leere Textläufe verwirft der Schreiber**: Excel lehnt eine Datei mit einem
+  formatierten Lauf ohne Text als „ungültig" ab — die kleine Testdatei hatte keinen und
+  öffnete sich, die grosse nicht.
+
+Tests dazu in `plan-excel.test.ts` („Grosser Betrieb …").
+
 **Rahmen setzt Excel je Zelle, nicht je Bereich.** `umrande()` (`xlsx.ts`) legt einen
 Aussenrahmen um einen Bereich und lässt die Innenstile stehen; verbundene Zellen brauchen
 den Stil in **jeder** beteiligten Zelle (`volleZeile()`), sonst endet eine Titelleiste

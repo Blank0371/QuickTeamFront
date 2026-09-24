@@ -93,8 +93,12 @@ export type Blatt = {
   filter?: boolean;
   /** Bereiche wie `"A1:H1"`, die zu einer Zelle verbunden werden. */
   verbunden?: string[];
-  /** Diese Zeilen (1-basiert) wiederholen sich auf jeder gedruckten Seite. */
-  druckTitelZeilen?: number;
+  /**
+   * Diese Zeilen (1-basiert) wiederholen sich auf jeder gedruckten Seite:
+   * eine Zahl `n` meint Zeile 1 bis `n`, ein Bereich auch Zeilen mitten im
+   * Blatt — etwa die Wochentagszeile unter einem Titel.
+   */
+  druckTitelZeilen?: number | { von: number; bis: number };
   querformat?: boolean;
   /** Fusszeile: links, rechts. `&P` Seite, `&N` Seitenzahl. */
   fuss?: { links?: string; rechts?: string };
@@ -117,6 +121,13 @@ export type Blatt = {
 /* ------------------------------------------------------------------ */
 
 /** 0 → `A`, 25 → `Z`, 26 → `AA`. */
+/**
+ * Die grösste Zeilenhöhe, die Excel annimmt (409,5 pt). Darüber wird nicht
+ * etwa gekürzt oder gewarnt — der Inhalt jenseits der Grenze ist einfach
+ * nicht zu sehen. Wer Zeilen aus Daten bemisst, muss vorher selbst kürzen.
+ */
+export const MAX_ZEILENHOEHE = 409;
+
 export function spaltenName(index: number): string {
   let name = "";
   let n = index + 1;
@@ -346,7 +357,15 @@ function zelleXml(zelle: Zelle, bezug: string, stile: StilTabelle): string {
    * die Standardschrift zurück und verlöre Farbe und Grösse der Zelle.
    */
   const grund = zelle.stil ?? {};
+  /*
+   * Leere Läufe fallen heraus: Excel verweigert eine Datei mit einem
+   * formatierten Lauf ohne Text rundweg („Dateiformat ungültig"), statt ihn
+   * zu übergehen. Gefunden am 2026-09-24 mit fliessenden Namen ohne Einzug —
+   * die kleine Testdatei hatte keine und öffnete sich, die mit 40 Personen
+   * nicht.
+   */
   const laeufe = zelle.wert
+    .filter((lauf) => lauf.text.length > 0)
     .map(
       (lauf) =>
         `<r>${schriftXml(
@@ -382,7 +401,9 @@ function blattXml(blatt: Blatt, stile: StilTabelle): string {
   const zeilen = blatt.zeilen
     .map((zeile, z) => {
       const nr = z + 1;
-      const hoehe = zeile.hoehe ? ` ht="${zeile.hoehe}" customHeight="1"` : "";
+      const hoehe = zeile.hoehe
+        ? ` ht="${Math.min(zeile.hoehe, MAX_ZEILENHOEHE)}" customHeight="1"`
+        : "";
       const zellen = zeile.zellen
         .map((zelle, s) => zelleXml(zelle, `${spaltenName(s)}${nr}`, stile))
         .join("");
@@ -469,7 +490,9 @@ export function baueXlsx(blaetter: Blatt[]): Uint8Array<ArrayBuffer> {
     if (b.druckTitelZeilen) {
       definiert.push(
         `<definedName name="_xlnm.Print_Titles" localSheetId="${i}">${xml(
-          `${bezug}!$1:$${b.druckTitelZeilen}`,
+          typeof b.druckTitelZeilen === "number"
+            ? `${bezug}!$1:$${b.druckTitelZeilen}`
+            : `${bezug}!$${b.druckTitelZeilen.von}:$${b.druckTitelZeilen.bis}`,
         )}</definedName>`,
       );
     }

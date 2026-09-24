@@ -91,8 +91,6 @@
   "src/components/preise/abrechnung-umschalter.tsx": 3,
   "src/components/preise/preis-liste.tsx": 2,
   "src/components/sprach-wahl.tsx": 3,
-  "src/components/ui/button-group.tsx": 2,
-  "src/components/ui/button.tsx": 3,
   "src/lib/abo-konditionen.ts": 8,
   "src/lib/dashboard/ausschreibung-aktionen.ts": 3,
   "src/lib/dashboard/ausschreibung.ts": 8,

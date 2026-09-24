@@ -413,6 +413,9 @@ export const de = {
       "Enthält Entwürfe (kursiv), die noch nicht veröffentlicht sind — das Team sieht sie nicht.",
     wocheLeer: "In dieser Woche liegt keine Schicht.",
     blattKalender: "Kalender",
+    fortsetzung: "Fortsetzung",
+    /* Wenn ein Tag mehr Namen hat, als in einen Excel-Kasten passen. */
+    weitere: "… +{anzahl} weitere – vollständig im Blatt „{blatt}“",
     blattPlan: "Schichtplan",
     blattListe: "Liste",
     tabellenKopf: {

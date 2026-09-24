@@ -2,6 +2,7 @@ import type { Dictionary } from "@/i18n";
 import {
   excelDatum,
   excelZeit,
+  MAX_ZEILENHOEHE,
   spaltenName,
   umrande,
   type Blatt,
@@ -16,11 +17,13 @@ import type { KalenderSchicht } from "./kalender";
 import { hhmm, schichtName, ueberNacht } from "./kalender";
 import {
   baueMatrix,
+  GESTAPELT_BIS,
   kalenderwoche,
   standText,
   tageIm,
   wochenIm,
   zeitraumSpanne,
+  type MatrixZeile,
   type Zeitraum,
 } from "./plan-export";
 
@@ -199,6 +202,95 @@ function hoeheFuer(textzeilen: number, pt = 15, rand = 6): number {
 /* Blatt 1: Kalender                                                   */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Wachstum: viele Namen in wenig Platz                                */
+/* ------------------------------------------------------------------ */
+
+
+type Person = { name: string; abgemeldet: boolean };
+
+/**
+ * Die Personen einer Schicht als Textzeilen — samt Schätzung, wie viele
+ * Zeilen Excel beim Umbruch daraus macht.
+ *
+ * Excel misst Text beim Öffnen nicht nach; die Zeilenhöhe muss vorher
+ * stimmen. Geschätzt wird über Zeichen je Zeile (je Spalte und Schrift
+ * gemessen, siehe Aufrufer) und lieber eine Zeile zu viel als zu wenig:
+ * zu hoch ist Weissraum, zu niedrig ist ein verschluckter Name.
+ */
+function personenZeilen(
+  personen: readonly Person[],
+  opts: { einzug: string; zeichenJeZeile: number; kursiv?: boolean; blass?: boolean },
+): { zeilen: Lauf[][]; hoehe: number } {
+  const lauf = (p: Person, text: string): Lauf => ({
+    text,
+    durchgestrichen: p.abgemeldet,
+    kursiv: opts.kursiv,
+    farbe: p.abgemeldet || opts.blass ? FARBE.sekundaer : undefined,
+  });
+
+  if (personen.length <= GESTAPELT_BIS) {
+    return {
+      zeilen: personen.map((p) => [lauf(p, `${opts.einzug}${p.name}`)]),
+      hoehe: personen.length,
+    };
+  }
+
+  const laeufe: Lauf[] = [{ text: opts.einzug }];
+  personen.forEach((p, i) => {
+    laeufe.push(lauf(p, p.name));
+    if (i < personen.length - 1) laeufe.push({ text: ", " });
+  });
+  const zeichen = opts.einzug.length + personen.reduce((n, p) => n + p.name.length + 2, 0);
+  return { zeilen: [laeufe], hoehe: Math.ceil(zeichen / opts.zeichenJeZeile) };
+}
+
+/** Der Hinweis „+N weitere" bricht in einer Tagesspalte um — er belegt zwei Zeilen. */
+const HINWEIS_ZEILEN = 2;
+
+/** „… +12 weitere – vollständig im Blatt „Liste"" */
+function weitereText(t: Texte, anzahl: number): string {
+  return t.weitere.replace("{anzahl}", String(anzahl)).replace("{blatt}", t.blattListe);
+}
+
+/* ------------------------------------------------------------------ */
+/* Blatt 1: Kalender                                                   */
+/* ------------------------------------------------------------------ */
+
+/** Zeilenhöhe einer 9-pt-Zeile im Kalenderkasten. */
+const KALENDER_ZEILE_PT = 12.5;
+/**
+ * Zeichen einer 9-pt-Zeile in einer 25 Zeichen breiten Spalte.
+ *
+ * Am 2026-09-24 im exportierten PDF mit 40 Personen abgezählt: eine Zeile
+ * fasst rund 38 Zeichen samt Einzug („Stefan Steiner, Tamara Steiner, Anna").
+ * 36 lässt Reserve für breite Buchstaben. Die Richtung des Fehlers ist nicht
+ * gleichgültig: zu niedrig geschätzt heisst Weissraum und ein zu früher
+ * „+N weitere"; zu hoch geschätzt heisst, dass Excel die letzten Namen
+ * unter der Zeilengrenze verschluckt — ohne Hinweis.
+ */
+const KALENDER_ZEICHEN = 36;
+/**
+ * Wie viel Zeilenhöhe eine gedruckte Kalenderseite fasst, wenn auf
+ * Blattbreite skaliert wird.
+ *
+ * Am 2026-09-24 im exportierten PDF abgemessen: das 182 Zeichen breite
+ * Raster wird auf A4 quer auf rund 77 % verkleinert, die nutzbare Höhe
+ * (595 pt minus Ränder) fasst damit gut 660 pt Zeilenhöhe.
+ */
+const KALENDER_SEITE_PT = 660;
+/**
+ * Bis zu dieser Gesamthöhe wird der Monat auf **eine** Seite gezwungen.
+ * Knapp über der Seitenhöhe, damit ein gewöhnlicher Monat nicht wegen
+ * einer Handvoll Punkte auf zwei Blätter zerfällt — aber nicht mehr: ein
+ * voller Monat auf eine Seite gepresst ergäbe 5-pt-Schrift, und ein
+ * Aushang, den niemand lesen kann, ist keiner.
+ */
+const KALENDER_EINE_SEITE_PT = 700;
+
+/** So viele Textzeilen passen unter Excels Höhengrenze in einen Kasten. */
+const KALENDER_MAX_ZEILEN = Math.floor((MAX_ZEILENHOEHE - 10) / KALENDER_ZEILE_PT);
+
 /**
  * Die Schichten eines Tages als Textläufe für einen Kalenderkasten.
  *
@@ -206,34 +298,69 @@ function hoeheFuer(textzeilen: number, pt = 15, rand = 6): number {
  * Nachtschichten und ein rotes `!` bei Unterbesetzung —, darunter die
  * Personen eingerückt. So liest sich der Kasten wie ein Kalendereintrag,
  * nicht wie eine Tabellenzeile.
+ *
+ * **Passt der Tag nicht in den Kasten, wird gekürzt — sichtbar.** Excel
+ * nimmt höchstens 409 pt Zeilenhöhe; was darüber hinausgeht, ist ohne
+ * Meldung unsichtbar. Statt still Namen zu verlieren, endet der Kasten dann
+ * mit „… +N weitere" und dem Verweis auf die Liste, die immer vollständig
+ * ist.
  */
-function tagesInhalt(schichten: readonly KalenderSchicht[], ausserhalb: boolean): { laeufe: Lauf[]; zeilen: number } {
+function tagesInhalt(
+  schichten: readonly KalenderSchicht[],
+  ausserhalb: boolean,
+  t: Texte,
+): { laeufe: Lauf[]; zeilen: number } {
   const zeilen: Lauf[][] = [];
+  let belegt = 0;
+  let ausgelassen = 0;
+
   for (const s of schichten) {
     const entwurf = s.status === "geplant";
-    const kopf: Lauf[] = [
-      // Die Leerzeichen sind der Innenabstand: Excel kennt keinen Zellrand-
-      // abstand, und ohne sie klebt die Uhrzeit an der Kastenlinie.
+    const personen = (s.participants ?? []).map((p) => ({ name: p.name, abgemeldet: !p.attendet }));
+
+    // Zwei Zeilen Reserve für den Hinweis am Ende — er bricht in der
+    // schmalen Spalte um. Mit nur einer lag die Zeile im Test mit 40
+    // Personen bei 422 pt, über Excels Grenze.
+    // Überschrift plus wenigstens eine Namenszeile muss noch passen — eine
+    // Schichtüberschrift ohne jeden Namen darunter wäre irreführend.
+    if (belegt + 2 + HINWEIS_ZEILEN > KALENDER_MAX_ZEILEN) {
+      ausgelassen += personen.length || 1;
+      continue;
+    }
+
+    // Die Leerzeichen sind der Innenabstand: Excel kennt keinen Zellrand-
+    // abstand, und ohne sie klebt die Uhrzeit an der Kastenlinie.
+    zeilen.push([
       { text: ` ${hhmm(s.start_zeit)}–${hhmm(s.end_zeit)}`, fett: true, farbe: ausserhalb ? FARBE.sekundaer : FARBE.bronze, kursiv: entwurf },
       ...(ueberNacht(s) ? [{ text: " +1", farbe: FARBE.sekundaer }] : []),
       { text: `  ${schichtName(s) ?? ""}`, fett: true, kursiv: entwurf },
       ...(s.understaffed ? [{ text: "  !", fett: true, farbe: FARBE.warnung }] : []),
-    ];
-    zeilen.push(kopf);
-    for (const p of s.participants ?? []) {
-      zeilen.push([
-        {
-          text: `      ${p.name}`,
-          durchgestrichen: !p.attendet,
-          kursiv: entwurf,
-          farbe: !p.attendet || ausserhalb ? FARBE.sekundaer : undefined,
-        },
-      ]);
+    ]);
+    belegt += 1;
+
+    let block = personenZeilen(personen, { einzug: "      ", zeichenJeZeile: KALENDER_ZEICHEN, kursiv: entwurf, blass: ausserhalb });
+    const frei = KALENDER_MAX_ZEILEN - HINWEIS_ZEILEN - belegt;
+    if (block.hoehe > frei) {
+      // Nur so viele Personen, wie noch passen — der Rest wird gezählt.
+      let passend = personen.length;
+      while (passend > 0 && block.hoehe > frei) {
+        passend--;
+        block = personenZeilen(personen.slice(0, passend), { einzug: "      ", zeichenJeZeile: KALENDER_ZEICHEN, kursiv: entwurf, blass: ausserhalb });
+      }
+      ausgelassen += personen.length - passend;
     }
+    zeilen.push(...block.zeilen);
+    belegt += block.hoehe;
   }
+
+  if (ausgelassen > 0) {
+    zeilen.push([{ text: ` ${weitereText(t, ausgelassen)}`, kursiv: true, farbe: FARBE.warnung }]);
+    belegt += HINWEIS_ZEILEN;
+  }
+
   return {
     laeufe: zeilen.flatMap((z, i) => (i === 0 ? z : [{ text: "\n" }, ...z])),
-    zeilen: zeilen.length,
+    zeilen: belegt,
   };
 }
 
@@ -278,6 +405,11 @@ function kalenderBlatt(
   });
   umrande(zeilen, { zeileVon: zeilen.length - 1, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
 
+  // Die Wochentagszeile, 0-basiert. Nicht `zeilen.length` an dieser Stelle —
+  // da ist sie schon eingefügt, und alles Folgende läge eine Zeile daneben:
+  // die falsche Zeile wiederholt sich auf jeder Seite, und der Umbruch
+  // trennt die Tageszahl von ihrem Inhalt (am 2026-09-24 im PDF gesehen).
+  const kopfZeile = rasterStart;
   const woche = zeitraum.art === "woche";
   // Eine Woche füllt das Blatt als Aushang; ein Monat soll mit fünf oder
   // sechs Wochen noch auf eine Seite passen.
@@ -287,7 +419,7 @@ function kalenderBlatt(
     const datumsZeile = zeilen.length;
     const inhalte = w.tage.map((tag) => {
       const ausserhalb = zeitraum.art === "monat" && tag.slice(0, 7) !== zeitraum.wert;
-      return { tag, ausserhalb, ...tagesInhalt(proTag.get(tag) ?? [], ausserhalb) };
+      return { tag, ausserhalb, ...tagesInhalt(proTag.get(tag) ?? [], ausserhalb, t) };
     });
 
     // Zeile 1 des Kastens: die Tageszahl.
@@ -355,6 +487,36 @@ function kalenderBlatt(
   // Aussenrahmen um das ganze Raster, kräftiger als die Kästen.
   umrande(zeilen, { zeileVon: rasterStart, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
 
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   *  Eine Seite oder mehrere — nach Dichte, nicht nach Zeitraum
+   * ───────────────────────────────────────────────────────────────────
+   *
+   * Ein Betrieb mit zehn Leuten bekommt seinen Monat auf ein Blatt. Einer
+   * mit vierzig hätte auf demselben Blatt 5-pt-Schrift. Ab
+   * `KALENDER_EINE_SEITE_PT` verteilt sich der Monat deshalb auf mehrere
+   * Seiten: Umbruch **zwischen** Wochen (nie durch einen Kasten), und die
+   * Wochentagszeile wiederholt sich oben auf jeder Seite — sonst weiss auf
+   * Seite 2 niemand, welche Spalte der Mittwoch ist.
+   */
+  const hoeheVon = (von: number, bis: number) =>
+    zeilen.slice(von, bis).reduce((summe, z) => summe + (z.hoehe ?? 15), 0);
+  const eineSeite = hoeheVon(0, zeilen.length) <= KALENDER_EINE_SEITE_PT;
+  const umbrueche: number[] = [];
+
+  if (!eineSeite) {
+    const kopfHoehe = zeilen[kopfZeile]!.hoehe ?? 26;
+    let belegt = hoeheVon(0, kopfZeile + 1);
+    for (let z = kopfZeile + 1; z < zeilen.length; z += 2) {
+      const wochenHoehe = hoeheVon(z, z + 2);
+      if (belegt + wochenHoehe > KALENDER_SEITE_PT && belegt > kopfHoehe) {
+        umbrueche.push(z + 1);
+        belegt = kopfHoehe;
+      }
+      belegt += wochenHoehe;
+    }
+  }
+
   legende(zeilen, verbunden, breite, t);
 
   return {
@@ -364,7 +526,9 @@ function kalenderBlatt(
     verbunden,
     rasterlinien: false,
     querformat: true,
-    aufEineSeite: true,
+    aufEineSeite: eineSeite,
+    seitenumbruchVor: umbrueche,
+    druckTitelZeilen: eineSeite ? undefined : { von: kopfZeile + 1, bis: kopfZeile + 1 },
     registerFarbe: FARBE.gruen,
     fuss: { links: "QuickTeam", rechts: "&P / &N" },
   };
@@ -386,6 +550,79 @@ function kalenderBlatt(
  */
 const SEITE_PT = 575;
 
+/** Zeichen einer 11-pt-Zeile in einer 19 Zeichen breiten Tagesspalte (mit Reserve). */
+const PLAN_ZEICHEN = 18;
+/** So viele 15-pt-Zeilen passen unter Excels Höhengrenze in ein Feld. */
+const PLAN_MAX_ZEILEN = Math.floor((MAX_ZEILENHOEHE - 6) / 15);
+
+/** Eine Schichtzeile des Schichtplans: Name und Zeit links, je Tag die Besetzung. */
+function schichtZeile(zeile: MatrixZeile, zebra: boolean, t: Texte): Zeile {
+  let hoechste = 2;
+  const felder = zeile.zellen.map((zelle, i): Zelle => {
+    const feldZeilen: Lauf[][] = [];
+    let belegt = 0;
+    let ausgelassen = 0;
+    for (const schicht of zelle.schichten) {
+      const warnung: Lauf = { text: "! ", fett: true, farbe: FARBE.warnung };
+      if (schicht.besetzung.length === 0) {
+        if (schicht.unterbesetzt) {
+          feldZeilen.push([{ ...warnung, text: "!" }]);
+          belegt += 1;
+        }
+        continue;
+      }
+      const frei = PLAN_MAX_ZEILEN - HINWEIS_ZEILEN - belegt;
+      let passend = schicht.besetzung.length;
+      let block = personenZeilen(schicht.besetzung, { einzug: "", zeichenJeZeile: PLAN_ZEICHEN, kursiv: schicht.entwurf });
+      while (block.hoehe > frei && passend > 0) {
+        passend--;
+        block = personenZeilen(schicht.besetzung.slice(0, passend), { einzug: "", zeichenJeZeile: PLAN_ZEICHEN, kursiv: schicht.entwurf });
+      }
+      ausgelassen += schicht.besetzung.length - passend;
+      if (passend === 0) continue;
+      const [erste, ...rest] = block.zeilen;
+      feldZeilen.push([...(schicht.unterbesetzt ? [warnung] : []), ...erste!], ...rest);
+      belegt += block.hoehe;
+    }
+    if (ausgelassen > 0) {
+      feldZeilen.push([{ text: weitereText(t, ausgelassen), kursiv: true, farbe: FARBE.warnung, groesse: 9 }]);
+      belegt += HINWEIS_ZEILEN;
+    }
+    hoechste = Math.max(hoechste, belegt);
+    return {
+      wert: feldZeilen.length ? feldZeilen.flatMap((z, j) => (j === 0 ? z : [{ text: "\n" }, ...z])) : "",
+      stil: {
+        farbe: FARBE.gruen,
+        fuellung: i >= 5 ? FARBE.wochenende : zebra ? FARBE.papier : FARBE.weiss,
+        rahmen: FARBE.linie,
+        senkrecht: "top",
+        umbruch: true,
+      },
+    };
+  });
+
+  return {
+    hoehe: hoeheFuer(hoechste),
+    zellen: [
+      {
+        wert: [
+          { text: zeile.name ?? "—", fett: true },
+          { text: `\n${zeile.start}–${zeile.ende}${zeile.ueberNacht ? " +1" : ""}`, farbe: FARBE.bronze, groesse: 10 },
+        ],
+        stil: {
+          farbe: FARBE.gruen,
+          fuellung: FARBE.papierTief,
+          rahmen: FARBE.linie,
+          kanten: { links: { farbe: FARBE.bronze, staerke: "dick" } },
+          senkrecht: "top",
+          umbruch: true,
+        },
+      },
+      ...felder,
+    ],
+  };
+}
+
 function schichtplanBlatt(
   zeitraum: Zeitraum,
   proTag: ReadonlyMap<string, KalenderSchicht[]>,
@@ -399,17 +636,25 @@ function schichtplanBlatt(
   const hoeheAb = (ab: number) => zeilen.slice(ab).reduce((summe, z) => summe + (z.hoehe ?? 15), 0);
 
   blattKopf(zeilen, verbunden, breite, k, `${t.titel} · ${k.zeitraumTitel}`);
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   *  Seiten werden Zeile für Zeile gefüllt, nicht Woche für Woche
+   * ───────────────────────────────────────────────────────────────────
+   *
+   * Bei einem kleinen Betrieb passt eine Woche auf ein Drittel Seite, und
+   * „Umbruch vor der Woche, die nicht mehr passt" genügt. Bei vierzig
+   * Personen ist eine einzige Woche höher als ein Blatt; Excel bricht sie
+   * dann selbst mitten in der Tabelle um, und auf der Folgeseite stehen
+   * Namen ohne Tageskopf — niemand weiss, welche Spalte der Mittwoch ist
+   * (am 2026-09-24 im Test mit 40 Personen gesehen).
+   *
+   * Deshalb entscheidet jede Schichtzeile selbst: passt sie nicht mehr, kommt
+   * davor ein fester Umbruch, und oben auf der neuen Seite stehen die
+   * KW-Zeile mit „Fortsetzung" und der Tageskopf erneut. Eine Woche beginnt
+   * nie so weit unten, dass nur ihre Überschrift auf die Seite passt.
+   */
   let belegt = hoeheAb(0);
-
-  const seitePruefen = (blockStart: number) => {
-    const block = hoeheAb(blockStart);
-    if (belegt > 0 && belegt + block > SEITE_PT) {
-      umbrueche.push(blockStart + 1);
-      belegt = block;
-    } else {
-      belegt += block;
-    }
-  };
+  const hoehe = (z: Zeile) => z.hoehe ?? 15;
 
   const alle = tageIm(zeitraum).flatMap((d) => proTag.get(d) ?? []);
   if (alle.length === 0) {
@@ -426,19 +671,34 @@ function schichtplanBlatt(
     umbruch: true,
   });
 
-  for (const woche of alle.length === 0 ? [] : wochenIm(zeitraum)) {
-    const blockStart = zeilen.length;
-    volleZeile(
-      zeilen,
-      verbunden,
-      breite,
-      `${t.kw} ${kalenderwoche(woche.von)}  ·  ${zeitraumSpanne(woche.tage[0]!, woche.tage[6]!, k.locale)}`,
-      { fett: true, groesse: 11, farbe: FARBE.bronze, senkrecht: "bottom" },
-      22,
-    );
+  const UEBERSCHRIFT_PT = 22;
+  const TAGESKOPF_PT = hoeheFuer(2);
 
+  /** Neue Seite ab der nächsten Zeile. */
+  const umbrechen = () => {
+    umbrueche.push(zeilen.length + 1);
+    belegt = 0;
+  };
+
+  for (const woche of alle.length === 0 ? [] : wochenIm(zeitraum)) {
+    const wochenTitel = `${t.kw} ${kalenderwoche(woche.von)}  ·  ${zeitraumSpanne(woche.tage[0]!, woche.tage[6]!, k.locale)}`;
     const matrix = baueMatrix(woche.tage, proTag);
+
+    const ueberschrift = (fortsetzung: boolean) => {
+      volleZeile(
+        zeilen,
+        verbunden,
+        breite,
+        fortsetzung ? `${wochenTitel}  (${t.fortsetzung})` : wochenTitel,
+        { fett: true, groesse: 11, farbe: FARBE.bronze, senkrecht: "bottom" },
+        UEBERSCHRIFT_PT,
+      );
+      belegt += UEBERSCHRIFT_PT;
+    };
+
     if (matrix.length === 0) {
+      if (belegt + UEBERSCHRIFT_PT + 30 > SEITE_PT) umbrechen();
+      ueberschrift(false);
       volleZeile(zeilen, verbunden, breite, `  ${t.wocheLeer}`, {
         kursiv: true,
         groesse: 10,
@@ -447,13 +707,12 @@ function schichtplanBlatt(
         rahmen: FARBE.linie,
       }, 20);
       zeilen.push({ zellen: [], hoehe: 10 });
-      seitePruefen(blockStart);
+      belegt += 30;
       continue;
     }
 
-    const tabelleStart = zeilen.length;
-    zeilen.push({
-      hoehe: hoeheFuer(2),
+    const tageskopf = (): Zeile => ({
+      hoehe: TAGESKOPF_PT,
       zellen: [
         { wert: t.spalteSchicht, stil: { ...kopfStil(false), waagrecht: "left" } },
         ...woche.tage.map((datum, i) => ({
@@ -463,65 +722,35 @@ function schichtplanBlatt(
       ],
     });
 
-    matrix.forEach((zeile, n) => {
-      const zebra = n % 2 === 1;
-      let hoechste = 2;
-      const felder = zeile.zellen.map((zelle, i): Zelle => {
-        const feldZeilen: Lauf[][] = [];
-        for (const schicht of zelle.schichten) {
-          const warnung: Lauf = { text: "! ", fett: true, farbe: FARBE.warnung };
-          if (schicht.besetzung.length === 0 && schicht.unterbesetzt) feldZeilen.push([{ ...warnung, text: "!" }]);
-          schicht.besetzung.forEach((person, j) => {
-            feldZeilen.push([
-              ...(j === 0 && schicht.unterbesetzt ? [warnung] : []),
-              {
-                text: person.name,
-                durchgestrichen: person.abgemeldet,
-                kursiv: schicht.entwurf,
-                farbe: person.abgemeldet ? FARBE.sekundaer : undefined,
-              },
-            ]);
-          });
-        }
-        hoechste = Math.max(hoechste, feldZeilen.length);
-        return {
-          wert: feldZeilen.length ? feldZeilen.flatMap((z, j) => (j === 0 ? z : [{ text: "\n" }, ...z])) : "",
-          stil: {
-            farbe: FARBE.gruen,
-            fuellung: i >= 5 ? FARBE.wochenende : zebra ? FARBE.papier : FARBE.weiss,
-            rahmen: FARBE.linie,
-            senkrecht: "top",
-            umbruch: true,
-          },
-        };
-      });
+    const schichtZeilen = matrix.map((zeile, n) => schichtZeile(zeile, n % 2 === 1, t));
 
-      zeilen.push({
-        hoehe: hoeheFuer(hoechste),
-        zellen: [
-          {
-            wert: [
-              { text: zeile.name ?? "—", fett: true },
-              { text: `\n${zeile.start}–${zeile.ende}${zeile.ueberNacht ? " +1" : ""}`, farbe: FARBE.bronze, groesse: 10 },
-            ],
-            stil: {
-              farbe: FARBE.gruen,
-              fuellung: FARBE.papierTief,
-              rahmen: FARBE.linie,
-              kanten: { links: { farbe: FARBE.bronze, staerke: "dick" } },
-              senkrecht: "top",
-              umbruch: true,
-            },
-          },
-          ...felder,
-        ],
-      });
-    });
+    // Überschrift, Tageskopf und die erste Schicht gehören zusammen.
+    if (belegt > 0 && belegt + UEBERSCHRIFT_PT + TAGESKOPF_PT + hoehe(schichtZeilen[0]!) > SEITE_PT) {
+      umbrechen();
+    }
+    ueberschrift(false);
+    let tabelleStart = zeilen.length;
+    zeilen.push(tageskopf());
+    belegt += TAGESKOPF_PT;
+
+    for (const zeile of schichtZeilen) {
+      if (belegt + hoehe(zeile) > SEITE_PT) {
+        // Den bisherigen Teil schliessen, auf der neuen Seite fortsetzen.
+        umrande(zeilen, { zeileVon: tabelleStart, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
+        umbrechen();
+        ueberschrift(true);
+        tabelleStart = zeilen.length;
+        zeilen.push(tageskopf());
+        belegt += TAGESKOPF_PT;
+      }
+      zeilen.push(zeile);
+      belegt += hoehe(zeile);
+    }
 
     // Die Tabelle einer Woche als geschlossener Block.
     umrande(zeilen, { zeileVon: tabelleStart, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
     zeilen.push({ zellen: [], hoehe: 12 });
-    seitePruefen(blockStart);
+    belegt += 12;
   }
 
   legende(zeilen, verbunden, breite, t);
