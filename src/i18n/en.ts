@@ -139,6 +139,7 @@ export const en: Dictionary = {
     verfuegbarkeit: "Availability",
     notfall: "Emergency",
     einstellungen: "Settings",
+    joseph: "Joseph",
     gruppeArbeitsplatz: "Workspace",
     gruppeOrganisation: "Organisation",
     folgt: "soon",
@@ -163,6 +164,24 @@ export const en: Dictionary = {
     rolle: {
       chef: "Manager",
       mitarbeiter: "Employee",
+    },
+    josephSeite: {
+      metaTitel: "Joseph",
+      metaBeschreibung: "Joseph, the secretary for managers — in development.",
+      titel: "Joseph",
+      untertitel: "The secretary for managers.",
+      beschreibung: [
+        "Joseph is the secretary that answers your employees' questions automatically.",
+        "Someone asks where to find the folder with the recipes? Joseph checks the documentation and previous questions and answers for you within seconds.",
+      ],
+      entwicklung: "Joseph is still in development.",
+      kontakt: "Have suggestions, wishes or questions? Contact us:",
+      mailBetreff: "About Joseph",
+      experimentell:
+        "Experimental — Joseph does not reply yet. Messages are not stored or sent anywhere.",
+      chatLabel: "Message to Joseph",
+      chatPlatzhalter: "Write Joseph a message …",
+      senden: "Send",
     },
     beendet: {
       metaTitel: "Business no longer active",

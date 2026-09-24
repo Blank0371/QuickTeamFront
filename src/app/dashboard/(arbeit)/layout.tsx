@@ -11,6 +11,7 @@ import { ZustimmungHinweis } from "@/components/dashboard/zustimmung-hinweis";
 import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
+import { JOSEPH_PFAD, josephZustand } from "@/lib/joseph";
 import { leseThema } from "@/lib/thema";
 
 /**
@@ -58,6 +59,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const t = getDictionary(sprache);
   const chef = istChef(position);
   const mehrfachAnstellung = alle.length > 1;
+  /* Joseph nur für Chefs und nur, wenn einer der Schalter an ist
+     (`src/lib/joseph.ts`) — derselbe Wert steuert die Route. */
+  const joseph = chef && josephZustand() !== "aus";
 
   /*
    * Chef-Bereiche fehlen für Angestellte ganz, statt leer dazustehen.
@@ -99,6 +103,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           label: t.dashboard.mitteilungen,
           icon: "mitteilungen",
         },
+        ...(joseph
+          ? ([{ href: JOSEPH_PFAD, label: t.dashboard.joseph, icon: "joseph" }] as const)
+          : []),
       ],
     },
     {

@@ -456,6 +456,28 @@ lässt aber die wirtschaftlichen Tore weg. Genau zwei Aufrufer: `aboVerwalten()`
 (Kündigung) und `/api/betrieb-export`. Gesperrt wird die Verwaltung, nicht der Ausgang
 aus dem Vertrag.
 
+### Joseph — experimentell, noch nicht umgesetzt
+
+**Neue Produktentscheidung vom 2026-09-24 (auf Anweisung des Nutzers), kein
+Expo-Gegenstück.** Joseph soll einmal der Sekretär für Chefs werden, der Fragen der Mitarbeiter automatisch
+aus Dokumentation und früheren Fragen beantwortet (so beschreibt ihn die Seite — ein
+Ziel, kein Ist-Zustand). Heute gibt es
+**nichts dahinter** — kein Backend, keine Tabelle, kein Modellaufruf. Nur im Dashboard
+(`/dashboard/joseph`), nur für Chefs; nie auf der öffentlichen Seite.
+
+Zwei Schalter (`src/lib/joseph.ts`), beide gelten nur bei exakt „an", alles andere
+(fehlend, leer, vertippt) ist „aus" — wie `PROMO_CODE`:
+
+| `JOSEPH_ENABLED` | `JOSEPH_SHOWOFF` | Wirkung |
+| ---------------- | ---------------- | ------- |
+| an | beliebig | Chat-Attrappe: Eingabe und Senden, Senden leert nur das Feld |
+| aus | an | Hinweis „in Entwicklung" + `blanktrading@web.de` (Betreff „About Joseph") |
+| aus | aus | kein Menüeintrag, Route 404 |
+
+Derselbe Wert steuert Menüeintrag (Layout) **und** Route (`notFound()` in der Seite).
+Angestellte bekommen den Eintrag nie und auf der Adresse 404. `JOSEPH_ENABLED` bleibt
+absehbar lange „aus". Wer Joseph wirklich baut, trifft dafür eine eigene Entscheidung.
+
 ### Aktive Position im Cookie `qt_position`
 
 `mitarbeiter` ist eine Anstellungstabelle: dieselbe `auth_id` kann mehrere Zeilen halten,

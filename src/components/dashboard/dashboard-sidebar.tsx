@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BotMessageSquare,
   CalendarClock,
   CalendarDays,
   ChevronRight,
@@ -39,6 +40,7 @@ export const ICONS = {
   verfuegbarkeit: CalendarClock,
   notfall: TriangleAlert,
   einstellungen: Settings,
+  joseph: BotMessageSquare,
 } as const;
 
 export type IconName = keyof typeof ICONS;

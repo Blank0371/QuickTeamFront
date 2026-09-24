@@ -15,6 +15,18 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-24 — Joseph als Platzhalter hinter zwei Schaltern
+
+**Vorher:** kein Joseph. **Jetzt:** Chef-Bereich `/dashboard/joseph` hinter
+`JOSEPH_ENABLED` / `JOSEPH_SHOWOFF` (nur „an" schaltet): Vorschau zeigt „in
+Entwicklung" mit Kontaktadresse, aktiv eine Chat-Attrappe ohne Funktion, beide aus
+blendet alles aus. **Begründung:** Anweisung des Nutzers — Interesse an einem
+Sekretär für Chefs sichtbar machen und Rückmeldungen sammeln, bevor etwas gebaut
+wird. **Experimentell, nicht umgesetzt**, neue Produktentscheidung ohne
+Expo-Gegenstück.
+
+---
+
 ## 2026-09-24 — Ein Name je Zeile im Dienstplan-Export
 
 **Vorher (einige Stunden lang):** ab vier Personen je Schicht flossen die Namen

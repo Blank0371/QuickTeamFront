@@ -97,6 +97,7 @@ export const de = {
     verfuegbarkeit: "Verfügbarkeit",
     notfall: "Notfall",
     einstellungen: "Einstellungen",
+    joseph: "Joseph",
     /* Gruppentitel der Sidebar. Zwei, nicht fünf: die Gliederung soll
        das Suchen verkürzen, nicht selbst zum Lesestoff werden.
 
@@ -137,6 +138,28 @@ export const de = {
     rolle: {
       chef: "Chef",
       mitarbeiter: "Mitarbeiter",
+    },
+    /* `/dashboard/joseph` — experimentell, noch nicht umgesetzt. Zwei
+       Schalter (`src/lib/joseph.ts`): Vorschau zeigt nur den Hinweis,
+       aktiv eine Chat-Attrappe ohne Funktion. */
+    josephSeite: {
+      metaTitel: "Joseph",
+      metaBeschreibung: "Joseph, der Sekretär für Chefs — in Entwicklung.",
+      titel: "Joseph",
+      untertitel: "Der Sekretär für Chefs.",
+      beschreibung: [
+        "Joseph ist der Sekretär, der die Fragen deiner Mitarbeiter automatisch beantwortet.",
+        "Fragt jemand, wo der Ordner mit den Rezepten liegt? Joseph sieht in der Dokumentation und in früheren Fragen nach und antwortet in Sekunden für dich.",
+      ],
+      entwicklung: "Joseph befindet sich noch in Entwicklung.",
+      kontakt:
+        "Du hast Vorschläge, Wünsche oder Fragen? Schreib uns:",
+      mailBetreff: "About Joseph",
+      experimentell:
+        "Experimentell — Joseph antwortet noch nicht. Nachrichten werden nicht gespeichert und nirgendwohin gesendet.",
+      chatLabel: "Nachricht an Joseph",
+      chatPlatzhalter: "Schreib Joseph eine Nachricht …",
+      senden: "Senden",
     },
     /* `/dashboard/beendet` — Angestellte eines Betriebs mit beendetem Vertrag. */
     beendet: {
