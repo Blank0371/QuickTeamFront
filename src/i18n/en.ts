@@ -411,7 +411,8 @@ export const en: Dictionary = {
     hinweisEntwurf:
       "Contains drafts (italic) that are not published yet — your team cannot see them.",
     wocheLeer: "No shifts this week.",
-    blattPlan: "Roster",
+    blattKalender: "Calendar",
+    blattPlan: "Shift plan",
     blattListe: "List",
     tabellenKopf: {
       datum: "Date",

@@ -1,5 +1,16 @@
 import type { Dictionary } from "@/i18n";
-import { excelDatum, excelZeit, spaltenName, type Blatt, type Lauf, type Stil, type Zeile } from "@/lib/export/xlsx";
+import {
+  excelDatum,
+  excelZeit,
+  spaltenName,
+  umrande,
+  type Blatt,
+  type Kante,
+  type Lauf,
+  type Stil,
+  type Zelle,
+  type Zeile,
+} from "@/lib/export/xlsx";
 
 import type { KalenderSchicht } from "./kalender";
 import { hhmm, schichtName, ueberNacht } from "./kalender";
@@ -14,26 +25,28 @@ import {
 } from "./plan-export";
 
 /**
- * Der Dienstplan als Excel-Arbeitsmappe: ein Blatt zum Lesen, eines zum
- * Rechnen.
+ * Der Dienstplan als Excel-Arbeitsmappe — drei Blätter, drei Fragen.
  *
  * ─────────────────────────────────────────────────────────────────────
- *  Zwei Blätter, weil es zwei Fragen sind
+ *  Warum drei
  * ─────────────────────────────────────────────────────────────────────
  *
- * **„Dienstplan"** ist die Matrix vom Aushang — Schichten untereinander,
- * Tage nebeneinander, Namen in den Feldern, je Woche ein Block. Wer die
- * Datei öffnet, um nachzusehen, wer wann arbeitet, soll dort landen und
- * nicht in einer Liste mit hundert Zeilen suchen.
+ *   **Kalender**    „Was ist wann los?" — ein Wandkalender: Wochentage
+ *                   nebeneinander, Wochen untereinander, jeder Tag ein
+ *                   umrandeter Kasten mit grosser Tageszahl und den
+ *                   Schichten darin. Das erste Blatt, weil es das ist,
+ *                   was jemand erwartet, der einen Dienstplan öffnet.
+ *   **Schichtplan** „Wer hat welche Schicht?" — die Matrix vom Aushang,
+ *                   Schichten untereinander, Tage nebeneinander.
+ *   **Liste**       „Wie viele Stunden?" — die lange Form für Filter,
+ *                   Sortierung und Pivot-Tabelle, Datum und Uhrzeit als
+ *                   echte Excel-Werte.
  *
- * **„Liste"** ist dieselbe Information in der langen Form — eine Zeile je
- * Zuweisung, jede Angabe in einer Spalte, Datum und Uhrzeit als **echte
- * Excel-Werte** statt Text. Darauf greifen Filter, Sortierung und
- * Pivot-Tabelle ohne eine einzige Formel. Die Spalte „Stunden" ist genau
- * dafür da: „Stunden je Person im Monat" ist eine Pivot-Tabelle mit zwei
- * Klicks.
+ * Bis zum 2026-09-24 gab es nur die letzten beiden, und der Nutzer nannte
+ * das Ergebnis zu Recht „eine simple Auflistung von Daten". Ein Dienstplan
+ * wird als Kalender gelesen; die Liste ist das Werkzeug dahinter.
  *
- * Beide Blätter entstehen aus derselben `kalender_schichten`-Antwort wie
+ * Alle drei entstehen aus derselben `kalender_schichten`-Antwort wie
  * Bildschirm und Ausdruck — keine zweite Abfrage, die anders zählen könnte.
  *
  * ─────────────────────────────────────────────────────────────────────
@@ -43,188 +56,424 @@ import {
  * Excel kennt keine CSS-Variablen; die Werte müssen als Zahl in der Datei
  * stehen. Es sind **dieselben Ebene-1-Werte**, aus denen `globals.css` die
  * Druckpalette baut (`docs/Farbpalette.html`), hier abgeschrieben — wie bei
- * den Mail-Vorlagen (`docs/mail-vorlagen.md`), die vor demselben Problem
- * stehen. Wer die Palette ändert, ändert sie auch hier. Die zwei
- * Mischtöne sind ausgerechnet, nicht erfunden (Kommentar an der Stelle).
+ * den Mail-Vorlagen (`docs/mail-vorlagen.md`). Wer die Palette ändert,
+ * ändert sie auch hier. Der eine Mischton ist ausgerechnet (Kommentar).
  */
 const FARBE = {
-  /** `--qt-c-green-deep` */
-  schrift: "16241C",
+  /** `--qt-c-green-deep` — Schrift, Titelleiste */
+  gruen: "16241C",
   /** `--qt-c-stone` */
   sekundaer: "5B564A",
-  /** `--qt-c-paper-line` */
+  /** `--qt-c-paper-line` — feine Innenlinien */
   linie: "D9CFB6",
-  /** `--qt-c-bronze-mid` */
-  akzent: "8A6B3C",
+  /** `--qt-c-bronze-mid` — Akzent, Kastenrahmen */
+  bronze: "8A6B3C",
+  /** `--qt-c-bronze-lo` */
+  bronzeDunkel: "7A6238",
   /** `--qt-c-paper` */
-  flaeche: "F3F0E8",
+  papier: "F3F0E8",
   /** `--qt-c-paper-sunk` */
-  kopf: "E9E2D0",
+  papierTief: "E9E2D0",
   /** 40 % `--qt-c-paper-sunk` auf Weiss — dieselbe Mischung wie im Druck. */
   wochenende: "F6F3EC",
+  /** `--qt-c-ivory` — Schrift auf Grün und Bronze */
+  elfenbein: "FAF7F0",
   /** `--qt-c-red-mid` */
   warnung: "A83824",
+  weiss: "FFFFFF",
 } as const;
+
+const KASTEN: Kante = { farbe: FARBE.bronze, staerke: "mittel" };
+const BLOCK: Kante = { farbe: FARBE.gruen, staerke: "mittel" };
 
 type Texte = Dictionary["planExport"];
 
-/* ------------------------------------------------------------------ */
-/* Stile                                                               */
-/* ------------------------------------------------------------------ */
-
-const S = {
-  titel: { fett: true, groesse: 18, farbe: FARBE.schrift } satisfies Stil,
-  untertitel: { groesse: 12, farbe: FARBE.sekundaer } satisfies Stil,
-  stand: { groesse: 9, farbe: FARBE.sekundaer } satisfies Stil,
-  woche: { fett: true, groesse: 10, farbe: FARBE.akzent } satisfies Stil,
-  kopf: {
-    fett: true,
-    farbe: FARBE.schrift,
-    fuellung: FARBE.kopf,
-    rahmen: FARBE.linie,
-    unterkante: FARBE.akzent,
-    senkrecht: "center",
-    umbruch: true,
-  } satisfies Stil,
-  schicht: {
-    farbe: FARBE.schrift,
-    fuellung: FARBE.flaeche,
-    rahmen: FARBE.linie,
-    linkskante: FARBE.akzent,
-    senkrecht: "top",
-    umbruch: true,
-  } satisfies Stil,
-  zelle: { farbe: FARBE.schrift, rahmen: FARBE.linie, senkrecht: "top", umbruch: true } satisfies Stil,
-  hinweis: { kursiv: true, groesse: 10, farbe: FARBE.sekundaer } satisfies Stil,
+export type Kontext = {
+  t: Texte;
+  locale: string;
+  betriebName: string;
+  jetzt: Date;
+  /** „KW 39/2026 · 21.–27. September 2026" bzw. „September 2026". */
+  zeitraumTitel: string;
+  /** Mo … So in der aktiven Sprache. */
+  wochentageKurz: string[];
+  /** Montag … Sonntag in der aktiven Sprache. */
+  wochentageLang: string[];
+  datumKurz: (datum: string) => string;
+  wochentagLang: (datum: string) => string;
+  /** „Sep", „Okt" — für den Monatswechsel im Kalenderraster. */
+  monatKurz: (datum: string) => string;
 };
 
-function mitWochenende(stil: Stil, wochenende: boolean): Stil {
-  return wochenende ? { ...stil, fuellung: FARBE.wochenende } : stil;
-}
+/* ------------------------------------------------------------------ */
+/* Bausteine                                                           */
+/* ------------------------------------------------------------------ */
 
 /**
- * Wie viel Zeilenhöhe (in Punkt) auf eine gedruckte Seite passt.
+ * Eine Zeile, die über die ganze Breite verbunden ist.
  *
- * Gemessen, nicht gerechnet: am 2026-09-24 hielt Seite 1 eines in Excel
- * exportierten Monats Titel, vier Wochenblöcke und noch eine
- * KW-Überschrift — zusammen rund 560 pt. Die Überschrift stand dann allein
- * unten, ihre Tabelle auf der nächsten Seite. Excel kennt kein „mit dem
- * Folgenden zusammenhalten"; deshalb setzt das Blatt vor jeden Wochenblock,
- * der nicht mehr ganz passt, einen festen Umbruch. 550 lässt etwas Reserve
- * für die Skalierung auf Blattbreite.
+ * Excel zeichnet den Rahmen und die Füllung einer verbundenen Zelle aus den
+ * Stilen **aller** beteiligten Zellen — steht nur in der ersten ein Stil,
+ * endet die Titelleiste nach einer Spalte. Deshalb bekommt jede Zelle des
+ * Bereichs denselben Stil, nur die erste trägt den Wert.
  */
-const SEITE_PT = 550;
+function volleZeile(
+  zeilen: Zeile[],
+  verbunden: string[],
+  breite: number,
+  wert: string | number | Lauf[],
+  stil: Stil,
+  hoehe?: number,
+): void {
+  const zellen: Zelle[] = [{ wert, stil }];
+  for (let i = 1; i < breite; i++) zellen.push({ wert: "", stil });
+  zeilen.push({ zellen, hoehe });
+  verbunden.push(`A${zeilen.length}:${spaltenName(breite - 1)}${zeilen.length}`);
+}
 
-/** Zeilenhöhe für so viele Textzeilen — Excel passt sie beim Öffnen nicht selbst an. */
-function hoeheFuer(zeilen: number): number {
-  return Math.max(1, zeilen) * 15 + 6;
+/** Titelleiste, Betrieb und Stand — der Kopf, den alle drei Blätter teilen. */
+function blattKopf(zeilen: Zeile[], verbunden: string[], breite: number, k: Kontext, titel: string) {
+  volleZeile(
+    zeilen,
+    verbunden,
+    breite,
+    `  ${titel}`,
+    { fett: true, groesse: 18, farbe: FARBE.elfenbein, fuellung: FARBE.gruen, senkrecht: "center" },
+    36,
+  );
+
+  // Betrieb links, Stand rechts, darunter eine Bronzelinie über die ganze Breite.
+  const trenn: Kante = { farbe: FARBE.bronze, staerke: "mittel" };
+  const links = Math.max(1, breite - 3);
+  const zellen: Zelle[] = [];
+  for (let i = 0; i < breite; i++) {
+    const betrieb = i < links;
+    zellen.push({
+      wert: i === 0 ? `  ${k.betriebName}` : i === links ? `${k.t.erstelltAm}: ${standText(k.jetzt, k.locale)}  ` : "",
+      stil: betrieb
+        ? { fett: true, groesse: 13, farbe: FARBE.gruen, senkrecht: "center", kanten: { unten: trenn } }
+        : { groesse: 9, farbe: FARBE.sekundaer, waagrecht: "right", senkrecht: "center", kanten: { unten: trenn } },
+    });
+  }
+  zeilen.push({ zellen, hoehe: 24 });
+  verbunden.push(`A${zeilen.length}:${spaltenName(links - 1)}${zeilen.length}`);
+  verbunden.push(`${spaltenName(links)}${zeilen.length}:${spaltenName(breite - 1)}${zeilen.length}`);
+
+  zeilen.push({ zellen: [], hoehe: 8 });
+}
+
+/** Die Legende als umrandeter Kasten am Blattende. */
+function legende(zeilen: Zeile[], verbunden: string[], breite: number, t: Texte) {
+  zeilen.push({ zellen: [], hoehe: 10 });
+  volleZeile(
+    zeilen,
+    verbunden,
+    breite,
+    [
+      { text: `  ${t.legendeTitel}:   `, fett: true },
+      { text: t.legendeMuster, durchgestrichen: true },
+      { text: ` ${t.legendeAbgemeldet}      ` },
+      { text: t.legendeMuster, kursiv: true },
+      { text: ` ${t.legendeEntwurf}      ` },
+      { text: "!", fett: true, farbe: FARBE.warnung },
+      { text: ` ${t.legendeUnterbesetzt}      ` },
+      { text: "+1", fett: true },
+      { text: ` ${t.legendeUeberNacht}` },
+    ],
+    { groesse: 9, farbe: FARBE.sekundaer, fuellung: FARBE.papier, senkrecht: "center" },
+    22,
+  );
+  umrande(
+    zeilen,
+    { zeileVon: zeilen.length - 1, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: breite - 1 },
+    { farbe: FARBE.linie, staerke: "duenn" },
+  );
+}
+
+/** Zeilenhöhe für so viele Textzeilen einer Grösse — Excel passt sie beim Öffnen nicht an. */
+function hoeheFuer(textzeilen: number, pt = 15, rand = 6): number {
+  return Math.max(1, textzeilen) * pt + rand;
 }
 
 /* ------------------------------------------------------------------ */
-/* Blatt 1: der Plan                                                   */
+/* Blatt 1: Kalender                                                   */
 /* ------------------------------------------------------------------ */
 
-function planBlatt(
+/**
+ * Die Schichten eines Tages als Textläufe für einen Kalenderkasten.
+ *
+ * Je Schicht eine Kopfzeile — Uhrzeit in Bronze, Name fett, dazu `+1` für
+ * Nachtschichten und ein rotes `!` bei Unterbesetzung —, darunter die
+ * Personen eingerückt. So liest sich der Kasten wie ein Kalendereintrag,
+ * nicht wie eine Tabellenzeile.
+ */
+function tagesInhalt(schichten: readonly KalenderSchicht[], ausserhalb: boolean): { laeufe: Lauf[]; zeilen: number } {
+  const zeilen: Lauf[][] = [];
+  for (const s of schichten) {
+    const entwurf = s.status === "geplant";
+    const kopf: Lauf[] = [
+      // Die Leerzeichen sind der Innenabstand: Excel kennt keinen Zellrand-
+      // abstand, und ohne sie klebt die Uhrzeit an der Kastenlinie.
+      { text: ` ${hhmm(s.start_zeit)}–${hhmm(s.end_zeit)}`, fett: true, farbe: ausserhalb ? FARBE.sekundaer : FARBE.bronze, kursiv: entwurf },
+      ...(ueberNacht(s) ? [{ text: " +1", farbe: FARBE.sekundaer }] : []),
+      { text: `  ${schichtName(s) ?? ""}`, fett: true, kursiv: entwurf },
+      ...(s.understaffed ? [{ text: "  !", fett: true, farbe: FARBE.warnung }] : []),
+    ];
+    zeilen.push(kopf);
+    for (const p of s.participants ?? []) {
+      zeilen.push([
+        {
+          text: `      ${p.name}`,
+          durchgestrichen: !p.attendet,
+          kursiv: entwurf,
+          farbe: !p.attendet || ausserhalb ? FARBE.sekundaer : undefined,
+        },
+      ]);
+    }
+  }
+  return {
+    laeufe: zeilen.flatMap((z, i) => (i === 0 ? z : [{ text: "\n" }, ...z])),
+    zeilen: zeilen.length,
+  };
+}
+
+function kalenderBlatt(
   zeitraum: Zeitraum,
   proTag: ReadonlyMap<string, KalenderSchicht[]>,
-  kontext: Kontext,
+  k: Kontext,
 ): Blatt {
-  const { t, locale, betriebName, jetzt, zeitraumTitel, wochentageKurz, datumKurz } = kontext;
-  const spalten = 8;
-  const letzte = spaltenName(spalten - 1);
+  const { t } = k;
+  const breite = 8; // KW + sieben Tage
   const zeilen: Zeile[] = [];
   const verbunden: string[] = [];
-  const umbrueche: number[] = [];
-  const hoeheAb = (ab: number) =>
-    zeilen.slice(ab).reduce((summe, z) => summe + (z.hoehe ?? 15), 0);
-  let belegt = 0;
 
-  const ueberAlles = (zelle: Zeile["zellen"][number], hoehe?: number) => {
-    zeilen.push({ zellen: [zelle], hoehe });
-    verbunden.push(`A${zeilen.length}:${letzte}${zeilen.length}`);
-  };
-
-  ueberAlles({ wert: betriebName, stil: S.titel }, 26);
-  ueberAlles({ wert: `${t.titel} · ${zeitraumTitel}`, stil: S.untertitel }, 18);
-  ueberAlles({ wert: `${t.erstelltAm}: ${standText(jetzt, locale)}`, stil: S.stand });
+  blattKopf(zeilen, verbunden, breite, k, `${t.titel} · ${k.zeitraumTitel}`);
 
   const alle = tageIm(zeitraum).flatMap((d) => proTag.get(d) ?? []);
   if (alle.some((s) => s.status === "geplant")) {
-    ueberAlles({ wert: t.hinweisEntwurf, stil: { ...S.hinweis, farbe: FARBE.akzent } });
+    volleZeile(zeilen, verbunden, breite, `  ${t.hinweisEntwurf}`, {
+      kursiv: true,
+      groesse: 10,
+      farbe: FARBE.bronzeDunkel,
+      fuellung: FARBE.papier,
+      senkrecht: "center",
+    }, 20);
+    zeilen.push({ zellen: [], hoehe: 8 });
   }
-  zeilen.push({ zellen: [] });
 
-  if (alle.length === 0) {
-    ueberAlles({ wert: t.keineSchichten, stil: S.hinweis });
-  }
-
-  /** Passt der eben gebaute Block noch auf die Seite? Sonst beginnt er eine neue. */
-  const seitePruefen = (blockStart: number, bisher: number): number => {
-    const block = hoeheAb(blockStart);
-    if (bisher > 0 && bisher + block > SEITE_PT) {
-      umbrueche.push(blockStart + 1);
-      return block;
-    }
-    return bisher + block;
+  // Kopf der Wochentage — Bronze mit heller Schrift, kräftig umrandet.
+  const kopfStil: Stil = {
+    fett: true,
+    groesse: 11,
+    farbe: FARBE.elfenbein,
+    fuellung: FARBE.bronze,
+    waagrecht: "center",
+    senkrecht: "center",
+    rahmen: FARBE.bronzeDunkel,
   };
+  const rasterStart = zeilen.length;
+  zeilen.push({
+    hoehe: 26,
+    zellen: [{ wert: t.kw, stil: kopfStil }, ...k.wochentageLang.map((w) => ({ wert: w, stil: kopfStil }))],
+  });
+  umrande(zeilen, { zeileVon: zeilen.length - 1, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
 
-  belegt = hoeheAb(0);
+  const woche = zeitraum.art === "woche";
+  // Eine Woche füllt das Blatt als Aushang; ein Monat soll mit fünf oder
+  // sechs Wochen noch auf eine Seite passen.
+  const mindestHoehe = woche ? 330 : 78;
 
-  for (const woche of alle.length === 0 ? [] : wochenIm(zeitraum)) {
-    const blockStart = zeilen.length;
-    ueberAlles(
-      {
-        wert: `${t.kw} ${kalenderwoche(woche.von)} · ${zeitraumSpanne(woche.tage[0]!, woche.tage[6]!, locale)}`,
-        stil: S.woche,
-      },
-      18,
-    );
+  for (const w of wochenIm(zeitraum)) {
+    const datumsZeile = zeilen.length;
+    const inhalte = w.tage.map((tag) => {
+      const ausserhalb = zeitraum.art === "monat" && tag.slice(0, 7) !== zeitraum.wert;
+      return { tag, ausserhalb, ...tagesInhalt(proTag.get(tag) ?? [], ausserhalb) };
+    });
 
-    const matrix = baueMatrix(woche.tage, proTag);
-    if (matrix.length === 0) {
-      ueberAlles({ wert: t.wocheLeer, stil: S.hinweis });
-      zeilen.push({ zellen: [] });
-      belegt = seitePruefen(blockStart, belegt);
-      continue;
-    }
-
+    // Zeile 1 des Kastens: die Tageszahl.
     zeilen.push({
-      hoehe: hoeheFuer(2),
+      hoehe: 22,
       zellen: [
-        { wert: t.spalteSchicht, stil: S.kopf },
-        ...woche.tage.map((datum, i) => ({
-          wert: `${wochentageKurz[i]}\n${datumKurz(datum)}`,
-          stil: mitWochenende(S.kopf, i >= 5),
+        {
+          wert: kalenderwoche(w.von),
+          stil: {
+            fett: true,
+            groesse: 14,
+            farbe: FARBE.bronze,
+            fuellung: FARBE.papierTief,
+            waagrecht: "center",
+            senkrecht: "center",
+          },
+        },
+        ...inhalte.map(({ tag, ausserhalb }, i): Zelle => {
+          const nummer = Number(tag.slice(8));
+          // Den Monatsnamen nur, wo er etwas sagt: am Monatsersten und in der
+          // allerersten Zelle — sonst stünde er dreissigmal da.
+          const mitMonat = nummer === 1 || (i === 0 && w.von === zeitraum.von);
+          return {
+            wert: [
+              { text: ` ${nummer}`, fett: true, groesse: 14, farbe: ausserhalb ? FARBE.linie : FARBE.gruen },
+              ...(mitMonat ? [{ text: `  ${k.monatKurz(tag)}`, groesse: 9, farbe: FARBE.sekundaer }] : []),
+            ],
+            stil: {
+              fuellung: ausserhalb ? FARBE.weiss : i >= 5 ? FARBE.papierTief : FARBE.papier,
+              senkrecht: "center",
+              kanten: { unten: { farbe: FARBE.linie, staerke: "duenn" } },
+            },
+          };
+        }),
+      ],
+    });
+
+    // Zeile 2 des Kastens: die Schichten.
+    const hoechste = Math.max(...inhalte.map((i) => i.zeilen));
+    zeilen.push({
+      hoehe: Math.max(mindestHoehe, hoeheFuer(hoechste, 12.5, 10)),
+      zellen: [
+        { wert: "", stil: { fuellung: FARBE.papierTief } },
+        ...inhalte.map(({ laeufe, ausserhalb }, i): Zelle => ({
+          wert: laeufe.length ? laeufe : "",
+          stil: {
+            groesse: 9,
+            farbe: ausserhalb ? FARBE.sekundaer : FARBE.gruen,
+            fuellung: ausserhalb ? FARBE.weiss : i >= 5 ? FARBE.wochenende : FARBE.weiss,
+            umbruch: true,
+            senkrecht: "top",
+          },
         })),
       ],
     });
 
-    for (const zeile of matrix) {
-      let hoechste = 2;
-      const kopf: Lauf[] = [
-        { text: zeile.name ?? "—", fett: true },
-        {
-          text: `\n${zeile.start}–${zeile.ende}${zeile.ueberNacht ? " +1" : ""}`,
-          farbe: FARBE.sekundaer,
-          groesse: 10,
-        },
-      ];
+    // Die KW-Spalte über beide Zeilen, jeder Tag ein eigener Kasten.
+    verbunden.push(`A${datumsZeile + 1}:A${datumsZeile + 2}`);
+    umrande(zeilen, { zeileVon: datumsZeile, zeileBis: datumsZeile + 1, spalteVon: 0, spalteBis: 0 }, KASTEN);
+    for (let s = 1; s <= 7; s++) {
+      umrande(zeilen, { zeileVon: datumsZeile, zeileBis: datumsZeile + 1, spalteVon: s, spalteBis: s }, KASTEN);
+    }
+  }
 
-      const felder = zeile.zellen.map((zelle, i) => {
-        /*
-          Erst Zeilen sammeln, dann mit Umbrüchen verbinden. Ein Umbruch
-          „vor jedem Namen ausser dem ersten" klebte bei zwei Schichten im
-          selben Feld das `!` der zweiten an den letzten Namen der ersten.
-        */
+  // Aussenrahmen um das ganze Raster, kräftiger als die Kästen.
+  umrande(zeilen, { zeileVon: rasterStart, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
+
+  legende(zeilen, verbunden, breite, t);
+
+  return {
+    name: t.blattKalender,
+    spalten: [7, 25, 25, 25, 25, 25, 25, 25],
+    zeilen,
+    verbunden,
+    rasterlinien: false,
+    querformat: true,
+    aufEineSeite: true,
+    registerFarbe: FARBE.gruen,
+    fuss: { links: "QuickTeam", rechts: "&P / &N" },
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Blatt 2: Schichtplan (Matrix)                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Wie viel Zeilenhöhe (in Punkt) auf eine gedruckte Seite passt.
+ *
+ * Gemessen, nicht gerechnet, im als PDF exportierten Blatt (2026-09-24):
+ * nach dem Kopf und zwei Wochenblöcken (rund 400 pt) war erst gut die
+ * Hälfte der Seite belegt. Excel kennt kein „mit dem Folgenden
+ * zusammenhalten"; deshalb setzt das Blatt vor jeden Wochenblock, der nicht
+ * mehr ganz passt, einen festen Umbruch — sonst stünde eine
+ * KW-Überschrift allein unten und ihre Tabelle auf der nächsten Seite.
+ */
+const SEITE_PT = 575;
+
+function schichtplanBlatt(
+  zeitraum: Zeitraum,
+  proTag: ReadonlyMap<string, KalenderSchicht[]>,
+  k: Kontext,
+): Blatt {
+  const { t } = k;
+  const breite = 8;
+  const zeilen: Zeile[] = [];
+  const verbunden: string[] = [];
+  const umbrueche: number[] = [];
+  const hoeheAb = (ab: number) => zeilen.slice(ab).reduce((summe, z) => summe + (z.hoehe ?? 15), 0);
+
+  blattKopf(zeilen, verbunden, breite, k, `${t.titel} · ${k.zeitraumTitel}`);
+  let belegt = hoeheAb(0);
+
+  const seitePruefen = (blockStart: number) => {
+    const block = hoeheAb(blockStart);
+    if (belegt > 0 && belegt + block > SEITE_PT) {
+      umbrueche.push(blockStart + 1);
+      belegt = block;
+    } else {
+      belegt += block;
+    }
+  };
+
+  const alle = tageIm(zeitraum).flatMap((d) => proTag.get(d) ?? []);
+  if (alle.length === 0) {
+    volleZeile(zeilen, verbunden, breite, `  ${t.keineSchichten}`, { kursiv: true, farbe: FARBE.sekundaer });
+  }
+
+  const kopfStil = (wochenende: boolean): Stil => ({
+    fett: true,
+    farbe: FARBE.elfenbein,
+    fuellung: wochenende ? FARBE.bronzeDunkel : FARBE.gruen,
+    rahmen: FARBE.gruen,
+    waagrecht: "center",
+    senkrecht: "center",
+    umbruch: true,
+  });
+
+  for (const woche of alle.length === 0 ? [] : wochenIm(zeitraum)) {
+    const blockStart = zeilen.length;
+    volleZeile(
+      zeilen,
+      verbunden,
+      breite,
+      `${t.kw} ${kalenderwoche(woche.von)}  ·  ${zeitraumSpanne(woche.tage[0]!, woche.tage[6]!, k.locale)}`,
+      { fett: true, groesse: 11, farbe: FARBE.bronze, senkrecht: "bottom" },
+      22,
+    );
+
+    const matrix = baueMatrix(woche.tage, proTag);
+    if (matrix.length === 0) {
+      volleZeile(zeilen, verbunden, breite, `  ${t.wocheLeer}`, {
+        kursiv: true,
+        groesse: 10,
+        farbe: FARBE.sekundaer,
+        fuellung: FARBE.papier,
+        rahmen: FARBE.linie,
+      }, 20);
+      zeilen.push({ zellen: [], hoehe: 10 });
+      seitePruefen(blockStart);
+      continue;
+    }
+
+    const tabelleStart = zeilen.length;
+    zeilen.push({
+      hoehe: hoeheFuer(2),
+      zellen: [
+        { wert: t.spalteSchicht, stil: { ...kopfStil(false), waagrecht: "left" } },
+        ...woche.tage.map((datum, i) => ({
+          wert: `${k.wochentageKurz[i]}\n${k.datumKurz(datum)}`,
+          stil: kopfStil(i >= 5),
+        })),
+      ],
+    });
+
+    matrix.forEach((zeile, n) => {
+      const zebra = n % 2 === 1;
+      let hoechste = 2;
+      const felder = zeile.zellen.map((zelle, i): Zelle => {
         const feldZeilen: Lauf[][] = [];
         for (const schicht of zelle.schichten) {
           const warnung: Lauf = { text: "! ", fett: true, farbe: FARBE.warnung };
-          if (schicht.besetzung.length === 0 && schicht.unterbesetzt) {
-            feldZeilen.push([{ ...warnung, text: "!" }]);
-          }
-          schicht.besetzung.forEach((person, n) => {
+          if (schicht.besetzung.length === 0 && schicht.unterbesetzt) feldZeilen.push([{ ...warnung, text: "!" }]);
+          schicht.besetzung.forEach((person, j) => {
             feldZeilen.push([
-              ...(n === 0 && schicht.unterbesetzt ? [warnung] : []),
+              ...(j === 0 && schicht.unterbesetzt ? [warnung] : []),
               {
                 text: person.name,
                 durchgestrichen: person.abgemeldet,
@@ -234,53 +483,64 @@ function planBlatt(
             ]);
           });
         }
-        const laeufe = feldZeilen.flatMap((z, n) => (n === 0 ? z : [{ text: "\n" }, ...z]));
         hoechste = Math.max(hoechste, feldZeilen.length);
         return {
-          wert: laeufe.length ? laeufe : "",
-          stil: mitWochenende(S.zelle, i >= 5),
+          wert: feldZeilen.length ? feldZeilen.flatMap((z, j) => (j === 0 ? z : [{ text: "\n" }, ...z])) : "",
+          stil: {
+            farbe: FARBE.gruen,
+            fuellung: i >= 5 ? FARBE.wochenende : zebra ? FARBE.papier : FARBE.weiss,
+            rahmen: FARBE.linie,
+            senkrecht: "top",
+            umbruch: true,
+          },
         };
       });
 
       zeilen.push({
         hoehe: hoeheFuer(hoechste),
-        zellen: [{ wert: kopf, stil: S.schicht }, ...felder],
+        zellen: [
+          {
+            wert: [
+              { text: zeile.name ?? "—", fett: true },
+              { text: `\n${zeile.start}–${zeile.ende}${zeile.ueberNacht ? " +1" : ""}`, farbe: FARBE.bronze, groesse: 10 },
+            ],
+            stil: {
+              farbe: FARBE.gruen,
+              fuellung: FARBE.papierTief,
+              rahmen: FARBE.linie,
+              kanten: { links: { farbe: FARBE.bronze, staerke: "dick" } },
+              senkrecht: "top",
+              umbruch: true,
+            },
+          },
+          ...felder,
+        ],
       });
-    }
-    zeilen.push({ zellen: [] });
-    belegt = seitePruefen(blockStart, belegt);
+    });
+
+    // Die Tabelle einer Woche als geschlossener Block.
+    umrande(zeilen, { zeileVon: tabelleStart, zeileBis: zeilen.length - 1, spalteVon: 0, spalteBis: 7 }, BLOCK);
+    zeilen.push({ zellen: [], hoehe: 12 });
+    seitePruefen(blockStart);
   }
 
-  // Die Legende: auf Papier und in einer weitergeschickten Datei kann man
-  // nicht nachfragen, was durchgestrichen bedeutet.
-  ueberAlles({
-    wert: [
-      { text: `${t.legendeTitel}:  `, fett: true },
-      { text: t.legendeMuster, durchgestrichen: true },
-      { text: ` ${t.legendeAbgemeldet}   ·   ` },
-      { text: t.legendeMuster, kursiv: true },
-      { text: ` ${t.legendeEntwurf}   ·   ` },
-      { text: "!", fett: true, farbe: FARBE.warnung },
-      { text: ` ${t.legendeUnterbesetzt}   ·   ` },
-      { text: "+1", fett: true },
-      { text: ` ${t.legendeUeberNacht}` },
-    ],
-    stil: { groesse: 9, farbe: FARBE.sekundaer },
-  });
+  legende(zeilen, verbunden, breite, t);
 
   return {
     name: t.blattPlan,
-    seitenumbruchVor: umbrueche,
-    spalten: [20, 19, 19, 19, 19, 19, 19, 19],
+    spalten: [22, 19, 19, 19, 19, 19, 19, 19],
     zeilen,
     verbunden,
+    rasterlinien: false,
     querformat: true,
+    seitenumbruchVor: umbrueche,
+    registerFarbe: FARBE.bronze,
     fuss: { links: "QuickTeam", rechts: "&P / &N" },
   };
 }
 
 /* ------------------------------------------------------------------ */
-/* Blatt 2: die Liste                                                  */
+/* Blatt 3: Liste                                                      */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -300,88 +560,103 @@ export function stunden(start: string, ende: string, abgemeldet: boolean): numbe
 function listenBlatt(
   zeitraum: Zeitraum,
   proTag: ReadonlyMap<string, KalenderSchicht[]>,
-  kontext: Kontext,
+  k: Kontext,
 ): Blatt {
-  const { t, wochentagLang } = kontext;
-  const k = t.tabellenKopf;
+  const { t } = k;
+  const kopf = t.tabellenKopf;
   const statusText: Record<string, string> = {
-    geplant: k.entwurf,
-    veroeffentlicht: k.veroeffentlicht,
-    archiviert: k.archiviert,
+    geplant: kopf.entwurf,
+    veroeffentlicht: kopf.veroeffentlicht,
+    archiviert: kopf.archiviert,
   };
 
-  const kopfStil: Stil = { ...S.kopf, umbruch: false };
-  const rand: Stil = { farbe: FARBE.schrift, rahmen: FARBE.linie };
-  const datum: Stil = { ...rand, zahlformatId: 14, waagrecht: "left" };
-  const zeit: Stil = { ...rand, zahlformat: "hh:mm", waagrecht: "center" };
-  const zahl: Stil = { ...rand, zahlformat: "0.00" };
-  const mitte: Stil = { ...rand, waagrecht: "center" };
-  const leer: Stil = { ...rand, kursiv: true, farbe: FARBE.sekundaer };
+  const kopfStil: Stil = {
+    fett: true,
+    farbe: FARBE.elfenbein,
+    fuellung: FARBE.gruen,
+    rahmen: FARBE.gruen,
+    senkrecht: "center",
+    kanten: { unten: { farbe: FARBE.bronze, staerke: "dick" } },
+  };
 
   const zeilen: Zeile[] = [
     {
-      hoehe: 20,
+      hoehe: 24,
       zellen: [
-        k.datum, k.wochentag, t.kw, k.schicht, k.beginn, k.ende, k.stunden,
-        k.ueberNacht, k.status, k.person, k.rolle, k.abgemeldet,
+        kopf.datum, kopf.wochentag, t.kw, kopf.schicht, kopf.beginn, kopf.ende, kopf.stunden,
+        kopf.ueberNacht, kopf.status, kopf.person, kopf.rolle, kopf.abgemeldet,
       ].map((wert) => ({ wert, stil: kopfStil })),
     },
   ];
 
+  /*
+   * Gruppiert wird nach **Tag**, nicht nach Zeile: alle Zuweisungen eines
+   * Tages tragen dieselbe Tönung, der nächste Tag die andere, und über jedem
+   * Tageswechsel liegt eine Bronzelinie. So sieht man beim Scrollen, wo ein
+   * Tag endet — eine Zeilen-Zebrierung zerschnitte gerade die Gruppen.
+   */
+  let tagNr = 0;
   for (const tag of tageIm(zeitraum)) {
-    for (const schicht of proTag.get(tag) ?? []) {
+    const schichten = proTag.get(tag) ?? [];
+    if (schichten.length === 0) continue;
+    const grund = tagNr++ % 2 === 1 ? FARBE.papier : FARBE.weiss;
+    let ersteDesTages = true;
+
+    const stil = (extra: Stil = {}): Stil => ({
+      farbe: FARBE.gruen,
+      fuellung: grund,
+      rahmen: FARBE.linie,
+      senkrecht: "center",
+      ...(ersteDesTages ? { kanten: { oben: { farbe: FARBE.bronze, staerke: "mittel" } } } : {}),
+      ...extra,
+    });
+
+    for (const schicht of schichten) {
       const start = hhmm(schicht.start_zeit);
       const ende = hhmm(schicht.end_zeit);
-      const basis = [
-        { wert: excelDatum(tag), stil: datum },
-        { wert: wochentagLang(tag), stil: rand },
-        { wert: kalenderwoche(tag), stil: mitte },
-        { wert: schichtName(schicht) ?? "", stil: rand },
-        { wert: excelZeit(start), stil: zeit },
-        { wert: excelZeit(ende), stil: zeit },
-      ];
-      const nachStunden = [
-        { wert: ueberNacht(schicht) ? k.ja : k.nein, stil: mitte },
-        { wert: statusText[schicht.status] ?? schicht.status, stil: rand },
-      ];
-
       const teilnehmer = schicht.participants ?? [];
-      if (teilnehmer.length === 0) {
+      const personen = teilnehmer.length
+        ? teilnehmer.map((p) => ({ name: p.name, rolle: p.role_name ?? "", abgemeldet: !p.attendet, leer: false }))
+        : [{ name: kopf.unbesetzt, rolle: "", abgemeldet: false, leer: true }];
+
+      for (const p of personen) {
         zeilen.push({
+          hoehe: 18,
           zellen: [
-            ...basis,
-            { wert: stunden(start, ende, false), stil: zahl },
-            ...nachStunden,
-            { wert: k.unbesetzt, stil: leer },
-            { wert: "", stil: rand },
-            { wert: "", stil: mitte },
+            { wert: excelDatum(tag), stil: stil({ zahlformatId: 14, waagrecht: "left", fett: ersteDesTages }) },
+            { wert: k.wochentagLang(tag), stil: stil() },
+            { wert: kalenderwoche(tag), stil: stil({ waagrecht: "center" }) },
+            { wert: schichtName(schicht) ?? "", stil: stil({ fett: true }) },
+            { wert: excelZeit(start), stil: stil({ zahlformat: "hh:mm", waagrecht: "center" }) },
+            { wert: excelZeit(ende), stil: stil({ zahlformat: "hh:mm", waagrecht: "center" }) },
+            { wert: p.leer ? stunden(start, ende, false) : stunden(start, ende, p.abgemeldet), stil: stil({ zahlformat: "0.00" }) },
+            { wert: ueberNacht(schicht) ? kopf.ja : kopf.nein, stil: stil({ waagrecht: "center" }) },
+            { wert: statusText[schicht.status] ?? schicht.status, stil: stil() },
+            {
+              wert: p.name,
+              stil: stil(p.leer ? { kursiv: true, farbe: FARBE.sekundaer } : p.abgemeldet ? { farbe: FARBE.sekundaer } : {}),
+            },
+            { wert: p.rolle, stil: stil() },
+            {
+              wert: p.leer ? "" : p.abgemeldet ? kopf.ja : kopf.nein,
+              stil: stil({ waagrecht: "center", ...(p.abgemeldet ? { fett: true, farbe: FARBE.warnung } : {}) }),
+            },
           ],
         });
-        continue;
-      }
-      for (const p of teilnehmer) {
-        zeilen.push({
-          zellen: [
-            ...basis,
-            { wert: stunden(start, ende, !p.attendet), stil: zahl },
-            ...nachStunden,
-            { wert: p.name, stil: rand },
-            { wert: p.role_name ?? "", stil: rand },
-            { wert: p.attendet ? k.nein : k.ja, stil: mitte },
-          ],
-        });
+        ersteDesTages = false;
       }
     }
   }
 
   return {
     name: t.blattListe,
-    spalten: [12, 13, 6, 18, 8, 8, 9, 17, 15, 24, 16, 12],
+    spalten: [12, 13, 6, 18, 9, 9, 10, 17, 15, 24, 16, 12],
     zeilen,
     fixierteZeilen: 1,
     filter: true,
     druckTitelZeilen: 1,
     querformat: true,
+    registerFarbe: FARBE.sekundaer,
     fuss: { links: "QuickTeam", rechts: "&P / &N" },
   };
 }
@@ -390,23 +665,14 @@ function listenBlatt(
 /* Arbeitsmappe                                                        */
 /* ------------------------------------------------------------------ */
 
-export type Kontext = {
-  t: Texte;
-  locale: string;
-  betriebName: string;
-  jetzt: Date;
-  /** „KW 39/2026 · 21.–27. September 2026" bzw. „September 2026". */
-  zeitraumTitel: string;
-  /** Mo … So in der aktiven Sprache. */
-  wochentageKurz: string[];
-  datumKurz: (datum: string) => string;
-  wochentagLang: (datum: string) => string;
-};
-
 export function planArbeitsmappe(
   zeitraum: Zeitraum,
   proTag: ReadonlyMap<string, KalenderSchicht[]>,
   kontext: Kontext,
 ): Blatt[] {
-  return [planBlatt(zeitraum, proTag, kontext), listenBlatt(zeitraum, proTag, kontext)];
+  return [
+    kalenderBlatt(zeitraum, proTag, kontext),
+    schichtplanBlatt(zeitraum, proTag, kontext),
+    listenBlatt(zeitraum, proTag, kontext),
+  ];
 }

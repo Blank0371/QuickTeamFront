@@ -47,12 +47,13 @@ export type Stil = {
   groesse?: number;
   farbe?: Farbe;
   fuellung?: Farbe;
-  /** Dünner Rahmen ringsum in dieser Farbe. */
+  /** Dünner Rahmen ringsum in dieser Farbe — Grundlage für jede Seite ohne eigene Kante. */
   rahmen?: Farbe;
-  /** Kräftige Unterkante — für Kopfzeilen. */
-  unterkante?: Farbe;
-  /** Kräftige Linkskante — für Zeilenbeschriftungen. */
-  linkskante?: Farbe;
+  /**
+   * Einzelne Kanten, die vom `rahmen` abweichen. Ein Kalenderkasten ist
+   * aussen kräftig und innen fein — das geht nur je Seite.
+   */
+  kanten?: Partial<Record<Seite, Kante>>;
   /** Excel-Zahlformat, z. B. `"hh:mm"` oder `"0.00"`. */
   zahlformat?: string;
   /** Eingebautes Zahlformat nach Nummer (14 = kurzes Datum der Ländereinstellung). */
@@ -61,6 +62,9 @@ export type Stil = {
   waagrecht?: "left" | "center" | "right";
   senkrecht?: "top" | "center" | "bottom";
 };
+
+export type Seite = "links" | "rechts" | "oben" | "unten";
+export type Kante = { farbe: Farbe; staerke?: "duenn" | "mittel" | "dick" };
 
 /** Ein Textstück mit eigener Auszeichnung — für „Anna, ~~Ben~~" in einer Zelle. */
 export type Lauf = {
@@ -96,6 +100,16 @@ export type Blatt = {
   fuss?: { links?: string; rechts?: string };
   /** Vor diesen Zeilen (1-basiert) beginnt beim Drucken eine neue Seite. */
   seitenumbruchVor?: number[];
+  /**
+   * `false` blendet Excels graue Gitternetzlinien aus. Ein gestaltetes Blatt
+   * (Kalender) wirkt mit ihnen wie eine Tabelle, in die jemand Rahmen gemalt
+   * hat; ohne sie tragen nur die gesetzten Rahmen die Struktur.
+   */
+  rasterlinien?: boolean;
+  /** Beim Drucken auf genau eine Seite skalieren (statt nur auf Blattbreite). */
+  aufEineSeite?: boolean;
+  /** Farbe des Blattregisters unten in Excel. */
+  registerFarbe?: Farbe;
 };
 
 /* ------------------------------------------------------------------ */
@@ -133,6 +147,39 @@ export function excelDatum(datum: string): number {
 export function excelZeit(zeit: string): number {
   const [h, m] = zeit.split(":").map(Number);
   return ((h ?? 0) * 60 + (m ?? 0)) / 1440;
+}
+
+/**
+ * Legt einen Rahmen um einen Bereich — aussen, nicht innen.
+ *
+ * Excel kennt keinen Rahmen „um einen Bereich"; jede Zelle trägt ihre
+ * eigenen vier Kanten. Ein Kasten um B5:B6 heisst also: B5 oben/links/
+ * rechts, B6 unten/links/rechts. Die Funktion setzt genau diese Kanten und
+ * lässt alles andere am Stil der Zelle stehen — so lassen sich feine
+ * Innenlinien (`rahmen`) und ein kräftiger Aussenrahmen kombinieren. Leere
+ * Stellen im Bereich werden als leere Zellen angelegt, sonst hätte der
+ * Rahmen dort eine Lücke.
+ *
+ * Zeilen und Spalten sind 0-basiert und einschliesslich.
+ */
+export function umrande(
+  zeilen: Zeile[],
+  bereich: { zeileVon: number; zeileBis: number; spalteVon: number; spalteBis: number },
+  kante: Kante,
+): void {
+  for (let z = bereich.zeileVon; z <= bereich.zeileBis; z++) {
+    const zeile = zeilen[z];
+    if (!zeile) continue;
+    for (let s = bereich.spalteVon; s <= bereich.spalteBis; s++) {
+      const alt = zeile.zellen[s] ?? { wert: "" };
+      const kanten = { ...alt.stil?.kanten };
+      if (z === bereich.zeileVon) kanten.oben = kante;
+      if (z === bereich.zeileBis) kanten.unten = kante;
+      if (s === bereich.spalteVon) kanten.links = kante;
+      if (s === bereich.spalteBis) kanten.rechts = kante;
+      zeile.zellen[s] = { ...alt, stil: { ...alt.stil, kanten } };
+    }
+  }
 }
 
 function xml(text: string): string {
@@ -253,20 +300,26 @@ function schriftXml(stil: Pick<Stil, "fett" | "kursiv" | "groesse" | "farbe"> & 
   );
 }
 
+const EXCEL_STAERKE = { duenn: "thin", mittel: "medium", dick: "thick" } as const;
+
 function rahmenXml(stil: Stil): string {
-  const kante = (farbe: Farbe | undefined, dick: boolean) =>
-    farbe ? ` style="${dick ? "medium" : "thin"}"><color rgb="FF${farbe}"/>` : ">";
-  const seite = (tag: string, dick: Farbe | undefined) =>
-    `<${tag}${kante(dick ?? stil.rahmen, Boolean(dick))}</${tag}>`;
-  if (!stil.rahmen && !stil.unterkante && !stil.linkskante) {
+  if (!stil.rahmen && !stil.kanten) {
     return "<border><left/><right/><top/><bottom/><diagonal/></border>";
   }
+  const seite = (tag: string, name: Seite) => {
+    const kante: Kante | undefined =
+      stil.kanten?.[name] ?? (stil.rahmen ? { farbe: stil.rahmen } : undefined);
+    return kante
+      ? `<${tag} style="${EXCEL_STAERKE[kante.staerke ?? "duenn"]}"><color rgb="FF${kante.farbe}"/></${tag}>`
+      : `<${tag}/>`;
+  };
+  // Reihenfolge links, rechts, oben, unten ist im Schema vorgeschrieben.
   return (
     "<border>" +
-    seite("left", stil.linkskante) +
-    seite("right", undefined) +
-    seite("top", undefined) +
-    seite("bottom", stil.unterkante) +
+    seite("left", "links") +
+    seite("right", "rechts") +
+    seite("top", "oben") +
+    seite("bottom", "unten") +
     "<diagonal/></border>"
   );
 }
@@ -315,11 +368,12 @@ function blattXml(blatt: Blatt, stile: StilTabelle): string {
   const breite = Math.max(1, blatt.spalten.length);
   const letzteSpalte = spaltenName(breite - 1);
 
+  const raster = blatt.rasterlinien === false ? ' showGridLines="0"' : "";
   const ansicht = blatt.fixierteZeilen
-    ? `<sheetViews><sheetView workbookViewId="0"><pane ySplit="${blatt.fixierteZeilen}" topLeftCell="A${
+    ? `<sheetViews><sheetView${raster} workbookViewId="0"><pane ySplit="${blatt.fixierteZeilen}" topLeftCell="A${
         blatt.fixierteZeilen + 1
       }" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft"/></sheetView></sheetViews>`
-    : '<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
+    : `<sheetViews><sheetView${raster} workbookViewId="0"/></sheetViews>`;
 
   const spalten = `<cols>${blatt.spalten
     .map((b, i) => `<col min="${i + 1}" max="${i + 1}" width="${b}" customWidth="1"/>`)
@@ -369,7 +423,7 @@ function blattXml(blatt: Blatt, stile: StilTabelle): string {
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
+    `<sheetPr>${blatt.registerFarbe ? `<tabColor rgb="FF${blatt.registerFarbe}"/>` : ""}<pageSetUpPr fitToPage="1"/></sheetPr>` +
     ansicht +
     '<sheetFormatPr defaultRowHeight="15"/>' +
     spalten +
@@ -378,7 +432,7 @@ function blattXml(blatt: Blatt, stile: StilTabelle): string {
     verbunden +
     '<printOptions horizontalCentered="1"/>' +
     '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.6" header="0.3" footer="0.3"/>' +
-    `<pageSetup paperSize="9" orientation="${blatt.querformat ? "landscape" : "portrait"}" fitToWidth="1" fitToHeight="0"/>` +
+    `<pageSetup paperSize="9" orientation="${blatt.querformat ? "landscape" : "portrait"}" fitToWidth="1" fitToHeight="${blatt.aufEineSeite ? 1 : 0}"/>` +
     fuss +
     umbrueche +
     "</worksheet>"

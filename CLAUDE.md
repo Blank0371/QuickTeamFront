@@ -727,9 +727,24 @@ ist der Kern:
   Spalte. Eine unbesetzte Schicht bekommt trotzdem eine Zeile, sonst verschwindet gerade
   die Lücke aus der Auswertung, die man sucht.
 
-Die Excel-Datei trägt **beide** als zwei Blätter (`src/lib/dashboard/plan-excel.ts`):
-„Dienstplan" (die Matrix wie auf dem Aushang, je Woche ein Block) und „Liste" (die lange
-Form).
+Die Excel-Datei trägt drei Blätter (`src/lib/dashboard/plan-excel.ts`):
+
+- **„Kalender"** (zuerst, seit 2026-09-24 auf Anweisung des Nutzers — vorher war die
+  Datei „eine simple Auflistung von Daten"): ein Wandkalender. Wochentage nebeneinander,
+  Wochen untereinander, KW-Spalte links, **jeder Tag ein kräftig umrandeter Kasten** mit
+  grosser Tageszahl und darin je Schicht eine Kopfzeile (Uhrzeit in Bronze, Name fett,
+  `+1`, rotes `!`) und die Personen eingerückt. Titelleiste Grün, Wochentagskopf Bronze,
+  Wochenende getönt, Nachbarmonatstage blass, Gitternetzlinien aus
+  (`rasterlinien: false`), Druck auf **eine** Seite (`aufEineSeite`).
+- **„Schichtplan"**: die Matrix wie auf dem Aushang, je Woche ein umrandeter Block mit
+  dunkler Kopfzeile, abwechselnd getönten Zeilen und festen Seitenumbrüchen.
+- **„Liste"**: die lange Form; Tage abwechselnd getönt, Bronzelinie bei jedem
+  Tageswechsel (Tag-, nicht Zeilen-Zebrierung — sonst zerschnitte sie die Gruppen).
+
+**Rahmen setzt Excel je Zelle, nicht je Bereich.** `umrande()` (`xlsx.ts`) legt einen
+Aussenrahmen um einen Bereich und lässt die Innenstile stehen; verbundene Zellen brauchen
+den Stil in **jeder** beteiligten Zelle (`volleZeile()`), sonst endet eine Titelleiste
+nach der ersten Spalte.
 
 **Die Seite liegt unter `(arbeit)`**, obwohl sie ohne Schale druckt: dort läuft das Tor.
 Dass Sidebar und Kopfzeile auf Papier nichts verloren haben, ist ein Darstellungsproblem
@@ -787,12 +802,10 @@ für einen kleinen, festen Ausschnitt). Historie: `docs/claude-md-historie.md`.
   gedruckten Seite, Spalte **Stunden** als Zahl (über Mitternacht korrekt; eine
   **abgemeldete** Person zählt 0 — sonst wäre die Pivot-Summe „Stunden je Person" um genau
   die Notfälle zu hoch).
-- **„Dienstplan"**: Titel, Zeitraum, Stand, Wochenblöcke mit Kopfzeile und Bronzekante,
-  Namen untereinander (abgemeldet durchgestrichen, Entwurf kursiv, Unterbesetzung als
-  rotes `!`), Wochenende abgesetzt, Legende; A4 quer, auf Blattbreite skaliert, Fusszeile
-  mit Seitenzahl. Excel kennt kein „mit dem Folgenden zusammenhalten" — vor jeden
+- **„Schichtplan"**: Excel kennt kein „mit dem Folgenden zusammenhalten" — vor jeden
   Wochenblock, der nicht mehr aufs Blatt passt, setzt die Datei einen festen Umbruch
-  (`SEITE_PT`, gemessen: sonst stand eine KW-Überschrift allein unten).
+  (`SEITE_PT`, am exportierten PDF gemessen: sonst stand eine KW-Überschrift allein
+  unten). Wer Zeilenhöhen oder Spaltenbreiten ändert, misst neu.
 - **Farben** sind dieselben Ebene-1-Werte wie im Druck, als Zahl abgeschrieben (Excel
   kennt keine CSS-Variablen) — wie bei den Mail-Vorlagen. Wer die Palette ändert, ändert
   `FARBE` in `plan-excel.ts` mit.

@@ -34,6 +34,8 @@ const kontext = {
   jetzt: new Date(Date.UTC(2026, 8, 24, 10, 0)),
   zeitraumTitel: "KW 39",
   wochentageKurz: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+  wochentageLang: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+  monatKurz: () => "Sep",
   datumKurz: (d: string) => d.slice(8),
   wochentagLang: () => "Montag",
 };
@@ -62,7 +64,7 @@ test("Liste: eine Zeile je Zuweisung, unbesetzte Schicht bleibt, Werte sind Zahl
     ],
   ]);
 
-  const [plan, liste] = planArbeitsmappe(
+  const [kalender, plan, liste] = planArbeitsmappe(
     leseZeitraum({ woche: "2026-09-21" }, new Date()),
     proTag,
     kontext,
@@ -84,7 +86,7 @@ test("Liste: eine Zeile je Zuweisung, unbesetzte Schicht bleibt, Werte sind Zahl
 
   assert.equal(liste!.fixierteZeilen, 1);
   assert.equal(liste!.filter, true);
-  assert.equal(plan!.name, "Dienstplan");
+  assert.deepEqual([kalender!.name, plan!.name, liste!.name], ["Kalender", "Schichtplan", "Liste"]);
 });
 
 test("Plan: zwei Schichten mit Warnung im selben Feld stehen auf eigenen Zeilen", () => {
@@ -107,7 +109,7 @@ test("Plan: zwei Schichten mit Warnung im selben Feld stehen auf eigenen Zeilen"
     ],
   ]);
 
-  const [plan] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), proTag, kontext);
+  const [, plan] = planArbeitsmappe(leseZeitraum({ woche: "2026-09-21" }, new Date()), proTag, kontext);
   const zeile = plan!.zeilen.find((z) => {
     const erste = z.zellen[0];
     return erste && Array.isArray(erste.wert) && erste.wert[0]?.text === "Früh";
@@ -115,4 +117,50 @@ test("Plan: zwei Schichten mit Warnung im selben Feld stehen auf eigenen Zeilen"
   const montag = zeile.zellen[1]!.wert as { text: string }[];
   // „! Anna" – Umbruch – „! Ben", nicht „Anna! Ben".
   assert.equal(montag.map((l) => l.text).join(""), "! Anna\n! Ben");
+});
+
+test("Kalender: ein Monat als Raster, jeder Tag ein umrandeter Kasten mit seinen Schichten", () => {
+  const proTag = new Map([
+    [
+      "2026-09-21",
+      [
+        schicht({
+          datum: "2026-09-21",
+          understaffed: true,
+          participants: [
+            { name: "Anna", role_name: null, attendet: true, is_me: false },
+            { name: "Ben", role_name: null, attendet: false, is_me: false },
+          ],
+        }),
+      ],
+    ],
+  ]);
+
+  const [kalender] = planArbeitsmappe(leseZeitraum({ monat: "2026-09" }, new Date()), proTag, kontext);
+
+  // September 2026: 31.08. bis 04.10. — fünf Wochen, je zwei Zeilen.
+  const wochenZeilen = kalender!.zeilen.filter((z) => typeof z.zellen[0]?.wert === "number");
+  assert.deepEqual(
+    wochenZeilen.map((z) => z.zellen[0]!.wert),
+    [36, 37, 38, 39, 40],
+  );
+
+  const kw39 = kalender!.zeilen.indexOf(wochenZeilen[3]!);
+  const montagInhalt = kalender!.zeilen[kw39 + 1]!.zellen[1]!.wert as { text: string; durchgestrichen?: boolean }[];
+  const text = montagInhalt.map((l) => l.text).join("");
+  assert.match(text, /^ 06:00–14:00 {2}Früh {2}!\n {6}Anna\n {6}Ben$/);
+  assert.equal(montagInhalt.find((l) => l.text.includes("Ben"))!.durchgestrichen, true);
+
+  // Der Tageskasten ist aussen kräftig umrandet.
+  const datumZelle = kalender!.zeilen[kw39]!.zellen[1]!;
+  assert.equal(datumZelle.stil!.kanten!.oben!.staerke, "mittel");
+  assert.equal(kalender!.zeilen[kw39 + 1]!.zellen[1]!.stil!.kanten!.unten!.staerke, "mittel");
+
+  // Tage des Nachbarmonats (31.08.) sind blass gesetzt.
+  const erste = kalender!.zeilen.indexOf(wochenZeilen[0]!);
+  const august = kalender!.zeilen[erste]!.zellen[1]!.wert as { text: string }[];
+  assert.equal(august[0]!.text.trim(), "31");
+
+  assert.equal(kalender!.rasterlinien, false);
+  assert.equal(kalender!.aufEineSeite, true);
 });

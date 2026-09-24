@@ -412,7 +412,8 @@ export const de = {
     hinweisEntwurf:
       "Enthält Entwürfe (kursiv), die noch nicht veröffentlicht sind — das Team sieht sie nicht.",
     wocheLeer: "In dieser Woche liegt keine Schicht.",
-    blattPlan: "Dienstplan",
+    blattKalender: "Kalender",
+    blattPlan: "Schichtplan",
     blattListe: "Liste",
     tabellenKopf: {
       datum: "Datum",

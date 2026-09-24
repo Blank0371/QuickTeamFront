@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { baueXlsx, crc32, excelDatum, excelZeit, spaltenName } from "./xlsx";
+import { baueXlsx, crc32, excelDatum, excelZeit, spaltenName, umrande, type Zeile } from "./xlsx";
 
 /** Liest die Dateien eines ungepackten ZIP über das zentrale Verzeichnis. */
 function entpacke(zip: Uint8Array): Map<string, string> {
@@ -97,4 +97,23 @@ test("Arbeitsmappe enthält alle Teile, gültige Prüfsummen und entschärften T
   // Unzulässige Zeichen im Blattnamen werden ersetzt, sonst öffnet Excel die Datei nicht.
   assert.match(teile.get("xl/workbook.xml")!, /<sheet name="Plan  Woche 1"/);
   assert.match(teile.get("xl/styles.xml")!, /formatCode="0.00"/);
+});
+
+test("umrande setzt nur die Aussenkanten und lässt Innenstile stehen", () => {
+  const zeilen: Zeile[] = [
+    { zellen: [{ wert: "a", stil: { fett: true } }, null] },
+    { zellen: [null, { wert: "d" }] },
+  ];
+  const kante = { farbe: "000000", staerke: "mittel" as const };
+  umrande(zeilen, { zeileVon: 0, zeileBis: 1, spalteVon: 0, spalteBis: 1 }, kante);
+
+  const [a, b] = zeilen[0]!.zellen;
+  const [c, d] = zeilen[1]!.zellen;
+  assert.equal(a!.stil!.fett, true, "vorhandener Stil bleibt");
+  assert.deepEqual(Object.keys(a!.stil!.kanten!).sort(), ["links", "oben"]);
+  assert.deepEqual(Object.keys(b!.stil!.kanten!).sort(), ["oben", "rechts"]);
+  assert.deepEqual(Object.keys(c!.stil!.kanten!).sort(), ["links", "unten"]);
+  assert.deepEqual(Object.keys(d!.stil!.kanten!).sort(), ["rechts", "unten"]);
+  // Leere Stellen werden angelegt, sonst hätte der Rahmen dort eine Lücke.
+  assert.equal(b!.wert, "");
 });

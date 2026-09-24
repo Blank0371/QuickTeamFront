@@ -91,6 +91,11 @@ export async function GET(request: Request): Promise<Response> {
       jetzt,
       zeitraumTitel: zeitraumTitel(zeitraum, t.kw, monatsnamen(sprache), sprache),
       wochentageKurz: wochentageKurz(sprache),
+      wochentageLang: lang,
+      monatKurz: (datum) =>
+        new Intl.DateTimeFormat(sprache, { month: "short", timeZone: "UTC" }).format(
+          new Date(`${datum}T00:00:00Z`),
+        ),
       datumKurz: (datum) => datumKurz(datum, sprache),
       wochentagLang: (datum) => {
         const [jahr, monat, tag] = datum.split("-").map(Number);
