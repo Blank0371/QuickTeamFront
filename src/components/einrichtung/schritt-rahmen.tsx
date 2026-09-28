@@ -43,32 +43,3 @@ export function SchrittRahmen({
     </Container>
   );
 }
-
-/**
- * Platzhalterinhalt für die Schritte, die noch entstehen. Sagt, was hier
- * hinkommt, statt eine leere Karte zu zeigen — `curl` auf die Route
- * liefert damit auch jetzt schon echten Text.
- */
-export function NochNicht({ punkte }: { punkte: readonly string[] }) {
-  return (
-    <>
-      <h2 className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-        Baustand
-      </h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted">
-        Dieser Schritt ist als Gerüst da. Es fehlt noch:
-      </p>
-      <ul className="mt-5 flex flex-col gap-3">
-        {punkte.map((punkt) => (
-          <li key={punkt} className="flex items-start gap-3 text-sm text-text">
-            <span
-              aria-hidden="true"
-              className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-sm bg-schicht"
-            />
-            <span>{punkt}</span>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}

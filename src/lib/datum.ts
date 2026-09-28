@@ -25,3 +25,19 @@ export function betriebsZeitpunkt(datum: string, tagesende = false): string {
   }
   return new Date(zeitpunkt).toISOString();
 }
+
+/**
+ * Das heutige Datum in Betriebszeit. `new Date().toISOString()` liefert auf
+ * Vercel (UTC) zwischen Mitternacht und 1–2 Uhr in Wien noch den Vortag.
+ */
+export function heuteImBetrieb(jetzt: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(jetzt);
+}
+
+/** Kalendertage addieren, in UTC gerechnet — kein Sommerzeit-Versatz. */
+export function tagPlus(datum: string, tage: number): string {
+  const [jahr, monat, tag] = datum.split("-").map(Number);
+  return new Date(Date.UTC(jahr ?? 1970, (monat ?? 1) - 1, (tag ?? 1) + tage)).toISOString().slice(0, 10);
+}

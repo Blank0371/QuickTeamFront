@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { promoCodeAusMetadaten, pruefePromoCode, schreibePromoCode } from "@/lib/promo-code";
+import { pruefePromoCode, schreibePromoCode } from "@/lib/promo-code";
 import { feldSchemata, PROMO_CODE_MAX } from "@/lib/validierung";
 
 /**
@@ -34,20 +34,6 @@ describe("feldSchemata.promo_code", () => {
     for (const roh of ["partner10", " a b c ", "x-y_z", "A".repeat(PROMO_CODE_MAX)]) {
       assert.match(feldSchemata.promo_code.parse(roh), DB_CHECK);
     }
-  });
-});
-
-describe("promoCodeAusMetadaten", () => {
-  it("liest und normalisiert den Code", () => {
-    assert.equal(promoCodeAusMetadaten({ promo_code: "partner10" }), "PARTNER10");
-  });
-
-  it("gibt null ohne Code, bei leerem und bei ungültigem Code", () => {
-    assert.equal(promoCodeAusMetadaten({}), null);
-    assert.equal(promoCodeAusMetadaten(null), null);
-    assert.equal(promoCodeAusMetadaten({ promo_code: "" }), null);
-    assert.equal(promoCodeAusMetadaten({ promo_code: 42 }), null);
-    assert.equal(promoCodeAusMetadaten({ promo_code: "<script>" }), null);
   });
 });
 

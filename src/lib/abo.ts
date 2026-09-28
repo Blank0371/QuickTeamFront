@@ -59,14 +59,6 @@ export function testphaseAbgelaufen(abo: Abo | null): boolean {
 }
 
 /**
- * Stripe mahnt gerade. Kein Grund zu sperren, aber einer, es zu sagen —
- * sonst erfährt der Betrieb erst davon, wenn das Abo weg ist.
- */
-export function zahlungStockt(abo: Abo | null): boolean {
-  return abo?.status === "zahlung_ausstehend";
-}
-
-/**
  * Das Abo ist gekündigt und kommt aus eigener Kraft nicht zurück.
  *
  * ─────────────────────────────────────────────────────────────────────

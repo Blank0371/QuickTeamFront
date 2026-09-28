@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 
 import {
   ABRECHNUNG_COOKIE,
-  ABRECHNUNG_COOKIE_MAX_AGE,
   alsAbrechnung,
   type Abrechnung,
 } from "@/lib/site";
@@ -30,22 +29,12 @@ import {
  *
  * Der Umschalter auf den Marketing-Seiten ist die einzige Stelle, die den
  * Wert setzt; er reist als `?abrechnung=jahr` an die Registrierung, wo er
- * ins Cookie wandert. Fehlt er, wird monatlich abgerechnet — der bisherige
+ * ins Cookie wandert (gesetzt in `src/middleware.ts`, dort ohne
+ * `next/headers`, weil die Middleware in der Edge-Laufzeit läuft). Fehlt er, wird monatlich abgerechnet — der bisherige
  * Normalfall.
  */
 
 const MERKER = ABRECHNUNG_COOKIE;
-
-export async function merkeAbrechnung(intervall: Abrechnung): Promise<void> {
-  const store = await cookies();
-  store.set(MERKER, intervall, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: ABRECHNUNG_COOKIE_MAX_AGE,
-  });
-}
 
 /**
  * Liest die gemerkte Wahl — oder `null`, wenn keine getroffen wurde.

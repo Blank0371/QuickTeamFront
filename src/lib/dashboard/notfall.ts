@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { heuteImBetrieb } from "@/lib/datum";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -114,7 +115,7 @@ export async function holeEigeneMeldbareSchichten(
   supabase: SupabaseServerClient,
   mitarbeiterId: string,
 ): Promise<EigeneMeldbareSchicht[]> {
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = heuteImBetrieb();
 
   const { data, error } = await supabase
     .from("schicht_zuweisungen")

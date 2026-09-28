@@ -41,9 +41,6 @@ export { SPRACH_COOKIE } from "./config";
  * Anzeigevorliebe, und ein Client-Skript darf sie lesen dürfen.
  */
 
-/** Ein Jahr — eine Sprachwahl ist keine Sitzungssache. */
-const MAX_ALTER = 60 * 60 * 24 * 365;
-
 export async function leseSprache(): Promise<Locale> {
   // `?lang=` aus einem App-Link geht dem Cookie vor — nur für diese Anfrage,
   // ohne etwas zu speichern. Begründung in `sprach-parameter.ts`.
@@ -53,35 +50,4 @@ export async function leseSprache(): Promise<Locale> {
   const laden = await cookies();
   const wert = laden.get(SPRACH_COOKIE)?.value;
   return wert && istLocale(wert) ? wert : defaultLocale;
-}
-
-/**
- * Schreibt die Sprachwahl. Nur aus Server Actions und Route Handlern —
- * Server Components dürfen keine Cookies setzen.
- */
-export async function setzeSprache(locale: Locale): Promise<void> {
-  const laden = await cookies();
-  laden.set(SPRACH_COOKIE, locale, {
-    httpOnly: false,
-    sameSite: "lax",
-    /*
-     * Wie bei `qt_position`: `Secure` folgt dem tatsächlichen Protokoll
-     * und nicht `NODE_ENV`. Ein Produktionsbuild über schlichtes http://
-     * setzte das Cookie sonst mit `Secure`, der Browser verwürfe es
-     * still, und die Sprachwahl fiele bei jedem Klick zurück — genau
-     * der Fehler, der am 2026-09-07 für die Positionswahl gemeldet
-     * wurde.
-     */
-    secure: await ueberHttps(),
-    path: "/",
-    maxAge: MAX_ALTER,
-  });
-}
-
-async function ueberHttps(): Promise<boolean> {
-  const { headers } = await import("next/headers");
-  const kopf = await headers();
-  const proto = kopf.get("x-forwarded-proto");
-  if (proto === null) return false;
-  return proto.split(",")[0]?.trim().toLowerCase() === "https";
 }

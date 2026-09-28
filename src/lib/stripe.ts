@@ -555,7 +555,7 @@ export async function schliessePendingAbo({
     invoice_settings: { default_payment_method: zahlungsmittelId },
   });
 
-  const { lebend } = await verlaufFuerKunde(kundeId);
+  const { lebend, anzahl } = await verlaufFuerKunde(kundeId);
   if (lebend) {
     if (lebend.items.data[0]?.price.id === preis) {
       const abo = await stripe.subscriptions.update(lebend.id, {
@@ -567,17 +567,31 @@ export async function schliessePendingAbo({
     await stripe.subscriptions.cancel(lebend.id);
   }
 
-  const abo = await stripe.subscriptions.create({
-    customer: kundeId,
-    items: [{ price: preis }],
-    default_payment_method: zahlungsmittelId,
-    payment_behavior: "default_incomplete",
-    ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
-    payment_settings: { save_default_payment_method: "on_subscription" },
-    automatic_tax: { enabled: true },
-    expand: ["latest_invoice"],
-    metadata: { [PENDING_SCHLUESSEL]: userId },
-  });
+  const abo = await stripe.subscriptions.create(
+    {
+      customer: kundeId,
+      items: [{ price: preis }],
+      default_payment_method: zahlungsmittelId,
+      payment_behavior: "default_incomplete",
+      ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
+      payment_settings: { save_default_payment_method: "on_subscription" },
+      automatic_tax: { enabled: true },
+      expand: ["latest_invoice"],
+      metadata: { [PENDING_SCHLUESSEL]: userId },
+    },
+    /*
+     * Derselbe Schlüsselaufbau wie in `erstelleAbo` (dort begründet). Ohne
+     * ihn sahen zwei Tabs, die gleichzeitig abschliessen, beide „kein
+     * lebendes Abo" und legten zwei an — beide sofort bezahlt. Mit ihm
+     * bekommt der zweite Aufruf dasselbe Abo zurück oder, bei anderem
+     * Zahlungsmittel, einen Idempotenzfehler statt einer zweiten Abbuchung.
+     */
+    {
+      idempotencyKey: `pending:${userId}:abo:${plan}:${intervall}:${anzahl}${
+        promotionCodeId ? ":r" : ""
+      }`,
+    },
+  );
 
   return bezahleOffeneRechnung(abo, ablehnung);
 }
@@ -615,10 +629,18 @@ export async function verknuepfePendingMitBetrieb({
     [P.promotion]: "",
   };
 
-  await stripe.customers.update(kundeId, { metadata: geleert });
+  /*
+   * Erst das Abo, dann der Kunde. Umgekehrt liess ein Fehler zwischen den
+   * beiden Aufrufen ein Abo ohne `betrieb_id` zurück, das der Webhook nie
+   * zuordnen kann — und der Kunde galt schon nicht mehr als „pending", ein
+   * erneuter Versuch fand ihn nicht. So bleibt er „pending", und derselbe
+   * Abschluss läuft beim nächsten Klick durch (Abo wiedergefunden, Betrieb
+   * `vorhanden`).
+   */
   await stripe.subscriptions.update(aboId, {
     metadata: { [BETRIEB_SCHLUESSEL]: betriebId, [PENDING_SCHLUESSEL]: "" },
   });
+  await stripe.customers.update(kundeId, { metadata: geleert });
 }
 
 /* ------------------------------------------------------------------ */

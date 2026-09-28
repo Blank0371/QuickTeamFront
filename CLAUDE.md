@@ -290,9 +290,10 @@ Registrierung — der Code gehört zum Betrieb, und den gibt es zum Zeitpunkt de
 nicht); der benutzte Code je Betrieb steht in `betrieb_promo_codes` (neue
 Produktentscheidung, kein Expo-Gegenstück).
 
-- **Weg:** Feld im Betrieb-Formular (`/einrichtung/betrieb`), geprüft und geschrieben in
-  `betriebAnlegen()` nach der Zustimmung (`src/lib/promo-code.ts`). Kein Umweg mehr über
-  `user_metadata` — die Session steht beim Anlegen bereits.
+- **Weg:** Feld im Betrieb-Formular (`/einrichtung/betrieb`), geprüft in
+  `pendingInfoSpeichern()`, geparkt in der Stripe-Kunden-Metadata und geschrieben in
+  `betriebAbschliessen()` nach der Zustimmung (`src/lib/promo-code.ts`). Kein Umweg mehr
+  über `user_metadata`.
 - **Schreibweise:** Leerraum raus, gross, `[A-Z0-9_-]{1,40}` (`feldSchemata.promo_code`;
   der Tabellen-CHECK verlangt genau das, damit „partner10" nicht gegen „PARTNER10" zerfällt).
 - **Ein Code je Betrieb** (`betrieb_id` ist PK, `ignoreDuplicates`, erster gewinnt).
@@ -300,7 +301,7 @@ Produktentscheidung, kein Expo-Gegenstück).
   Einrichtung läuft weiter.
 - **Nur zugelassene Codes.** `promo_codes` (`code`, `partner`, `email` Pflicht, `aktiv`)
   ist die Liste, gepflegt vom Betreiber im SQL-Editor; `betrieb_promo_codes.promo_code`
-  ist FK darauf. `betriebAnlegen()` fragt **vor** `registriere_betrieb` über die
+  ist FK darauf. `pendingInfoSpeichern()` fragt **vor** Zahlung und `registriere_betrieb` über die
   SECURITY-DEFINER-RPC `promo_code_gueltig(text)` (nur Ja/Nein, Liste für Clients nicht
   lesbar) und zeigt einen unbekannten Code am Feld an. INSERT-Policy verlangt zusätzlich
   einen **aktiven** Code.
@@ -389,7 +390,7 @@ Index auf `(betrieb_id, auth_id, dokument, version)` macht den Schreibweg idempo
 Kontoerstellung (`/registrieren`); ihre Fassung reist in
 `options.data.zustimmung_versionen.datenschutz` beim `signUp` mit (eine Zeile ist noch
 nicht schreibbar — es gibt keine `betrieb_id`). Die **AGB/AVV**-Vertragsannahme sitzt beim
-Anlegen des Betriebs (`/einrichtung/betrieb`). Dort schreibt `betriebAnlegen()` alle **drei**
+Anlegen des Betriebs (`/einrichtung/betrieb`). Nach der Zahlung schreibt `betriebAbschliessen()` alle **drei**
 Zeilen auf einmal (`schreibeZustimmungen()`, ein `insert`, nicht drei Aufrufe): AGB/AVV in
 geltender Fassung, Datenschutz in der beim Signup zugestimmten (`zustimmungFuerBetrieb()`).
 **Mitgeführt werden die Fassungen, nicht nur ein Ja** (ändert sich ein Text dazwischen, hat
@@ -430,7 +431,7 @@ existieren bereits — jemanden hier steckenzulassen hiesse, ein halbes Konto zu
 hinterlassen). Ob das der richtige Handel ist, ist eine offene Frage an den Betreiber.
 
 **Service-Role-Konten bekommen keine Datenschutz-Fassung mitgeführt** — der Schlüssel
-`zustimmung_versionen` wird allein vom Registrierungsformular gesetzt. `betriebAnlegen()`
+`zustimmung_versionen` wird allein vom Registrierungsformular gesetzt. `betriebAbschliessen()`
 schreibt AGB/AVV in geltender Fassung und Datenschutz aus den Metadaten, sofern vorhanden;
 fehlt der Schlüssel, fällt `zustimmungFuerBetrieb()` für Datenschutz auf die geltende
 Fassung zurück. Wer den vollständigen Zustimmungsweg prüfen will, nimmt `/registrieren`.
@@ -974,9 +975,9 @@ Dashboard-Topbar). Sprachpakete als getippte Objekte, kein next-intl.
   müsste `en` wörtlich dieselben Sätze tragen)
 - `src/i18n/en.ts` — `export const en: Dictionary`; ein fehlender Schlüssel bricht
   `npm run typecheck` statt als `undefined` aufzutauchen
-- `src/i18n/sprache.ts` — `leseSprache()` / `setzeSprache()` über Cookie `qt_sprache`,
-  kein Pfad-Präfix
-- `src/components/sprach-wahl.tsx` — Server Action, kein Client-Bündel, ohne JS
+- `src/i18n/sprache.ts` — `leseSprache()` über Cookie `qt_sprache`, kein Pfad-Präfix
+- `src/components/sprach-wahl.tsx` — kleine Client-Insel (seit 2026-09-21): setzt das
+  Cookie im Browser und ruft `router.refresh()`; Begründung im Dateikopf
 - `src/i18n/server.ts` — `holeTexte()` / `holeValidierung()` / `holeAuthTexte()` für
   Server Components/Actions
 - `src/i18n/sprach-provider.tsx` — `<SprachProvider>` / `useKlientTexte()` **nur** für
@@ -1169,12 +1170,13 @@ kein Postfach erreichbar ist) **oder** direkt per Service-Role:
 auth.admin.createUser({
   email, password,
   email_confirm: true,          // spart Mail und OTP-Code
-  user_metadata: { betrieb_name, land, vorname, nachname },
 })
 ```
 
-`user_metadata` ist der Kern — `betriebNachtragen()` liest genau diese vier Felder.
-Fehlen sie, sagt die Oberfläche „Angaben nicht mehr auffindbar". Ein Service-Role-Konto
+Seit der Kursänderung vom 2026-09-22 trägt `user_metadata` **keine** Betriebsdaten mehr
+(früher las `betriebNachtragen()` dort `betrieb_name`, `land`, `vorname`, `nachname`).
+Ein so angelegtes Konto landet in der Übersicht und legt den Betrieb über
+`/einrichtung/betrieb` samt Zahlung an (Stripe-Testmodus). Ein Service-Role-Konto
 bekommt **keine Zustimmungszeile** (der Schlüssel `zustimmung_versionen` fehlt) — wer den
 Zustimmungsweg prüfen will, nimmt `/registrieren`. `SUPABASE_SERVICE_ROLE_KEY` bleibt auf
 die in `.claude/rules/security.md` genannten Stellen beschränkt (`hole-code.mjs` und ein

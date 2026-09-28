@@ -589,28 +589,3 @@ function naechsterTag(datum: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * Die Rollennamen eines Zeitraums, stabil sortiert.
- *
- * Bestimmt, welche Kennfarbe eine Rolle im Monatsraster bekommt
- * (`rollenFarbe()` in `tages-indikator.tsx`). Sortiert wird alphabetisch
- * und nicht nach Häufigkeit: eine Rolle soll ihre Farbe behalten, wenn
- * im nächsten Monat mehr Küchen- als Bardienste anfallen.
- *
- * Gelesen wird aus den Schichten selbst und nicht aus `rollen`, weil die
- * Kalenderansicht die Rollentabelle gar nicht lädt — und weil eine
- * Rolle, die im Zeitraum nicht vorkommt, auch keine Farbe belegen soll.
- */
-export function rollenReihenfolge(
-  proTag: ReadonlyMap<string, KalenderSchicht[]>,
-): string[] {
-  const namen = new Set<string>();
-  for (const schichten of proTag.values()) {
-    for (const schicht of schichten) {
-      for (const t of schicht.participants ?? []) {
-        if (t.role_name) namen.add(t.role_name);
-      }
-    }
-  }
-  return [...namen].sort((a, b) => a.localeCompare(b, "de"));
-}

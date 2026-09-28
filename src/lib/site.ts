@@ -142,16 +142,6 @@ export function alsAbrechnung(wert: unknown): Abrechnung {
 }
 
 /**
- * Ersparnis in Euro pro Jahr gegenüber zwölf Monatszahlungen — die Zahl
- * hinter „statt 468 € nur 390 €". Kommt aus `plaene`, damit die Werbeaussage
- * nie einen anderen Betrag nennt als die Preiskarten daneben.
- */
-export function ersparnisProJahr(plan: PlanId): number {
-  const p = plaene.find((x) => x.id === plan);
-  return p ? p.preis * 12 - p.preisJahr : 0;
-}
-
-/**
  * Länge der Testphase, Entscheidung vom 2026-08-10. Steht hier und nicht
  * in `lib/stripe.ts`, weil die Preisseite den Wert nennt und dafür nicht
  * das Stripe-SDK importieren soll. `trial_period_days` beim Checkout

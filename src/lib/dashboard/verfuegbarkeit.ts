@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { heuteImBetrieb } from "@/lib/datum";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -112,7 +113,7 @@ export async function holeTagesPraeferenzen(
   supabase: SupabaseServerClient,
   mitarbeiterId: string,
 ): Promise<TagesPraeferenz[]> {
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = heuteImBetrieb();
 
   const { data, error } = await supabase
     .from("mitarbeiter_schicht_tagesvorlieben")
@@ -158,7 +159,7 @@ export async function holeTeamTagesPraeferenzen(
 
   abfrage = filter
     ? abfrage.eq("schicht_vorlage_id", filter.schichtVorlageId).eq("datum", filter.datum)
-    : abfrage.gte("datum", new Date().toISOString().slice(0, 10));
+    : abfrage.gte("datum", heuteImBetrieb());
 
   const { data, error } = await abfrage.order("datum", { ascending: true }).limit(500);
   if (error) {

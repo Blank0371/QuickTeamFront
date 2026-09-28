@@ -1,34 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
-import { feldSchemata } from "@/lib/validierung";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-
-/** Schlüssel in `user_metadata`, unter dem der Promo-Code mitreist. */
-export const PROMO_METADATEN_SCHLUESSEL = "promo_code";
-
-/**
- * Liest den Promo-Code aus `user_metadata` — oder stellt fest, dass keiner
- * da ist.
- *
- * Er nimmt denselben Weg wie die Zustimmung (`src/lib/zustimmung.ts`):
- * eingetippt wird er in Abschnitt A, der Betrieb entsteht erst nach der
- * Code-Bestätigung, und dazwischen gibt es keine `betrieb_id`, an der eine
- * Zeile hängen könnte.
- *
- * Die Metadaten sind so vertrauenswürdig wie ein Formularfeld — sie
- * stammen aus derselben Quelle. Deshalb laufen sie noch einmal durch
- * `feldSchemata.promo_code`; was dort nicht besteht, wird nicht
- * geschrieben, statt am CHECK der Datenbank zu scheitern.
- */
-export function promoCodeAusMetadaten(
-  metadaten: Record<string, unknown> | null | undefined,
-): string | null {
-  const roh = metadaten?.[PROMO_METADATEN_SCHLUESSEL];
-  if (typeof roh !== "string") return null;
-
-  const geprueft = feldSchemata.promo_code.safeParse(roh);
-  return geprueft.success && geprueft.data !== "" ? geprueft.data : null;
-}
 
 export type PromoPruefung = "gueltig" | "unbekannt" | "nicht-pruefbar";
 

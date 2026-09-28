@@ -19,7 +19,7 @@ import { aktuelleZustimmungVersionen, schreibeZustimmungen } from "@/lib/zustimm
  *  Dieselbe Schreiblogik wie bei der Registrierung
  * ─────────────────────────────────────────────────────────────────────
  *
- * `schreibeZustimmungen()` ist dieselbe Funktion, die `betriebAnlegen()`
+ * `schreibeZustimmungen()` ist dieselbe Funktion, die `betriebAbschliessen()`
  * beim Anlegen des Betriebs aufruft — ein `insert` mit drei Zeilen,
  * idempotent über den eindeutigen Index. Hier steht keine zweite
  * Umsetzung, nur ein zweiter Aufrufer.

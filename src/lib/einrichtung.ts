@@ -36,13 +36,6 @@ export type Stand = {
   betriebId: string | null;
 };
 
-export const SCHRITT_TITEL: Record<Schritt, string> = {
-  betrieb: "Betrieb",
-  zahlung: "Zahlung",
-  team: "Team",
-  schichten: "Schichten",
-};
-
 /** Position im Ablauf. `fertig` liegt hinter allen Schritten. */
 export function schrittIndex(schritt: Schritt | "fertig"): number {
   return schritt === "fertig" ? SCHRITTE.length : SCHRITTE.indexOf(schritt);

@@ -34,15 +34,9 @@ export const ANZEIGBARE_TYPEN = [
 ] as const;
 export type Prioritaet = (typeof PRIORITAETEN)[number];
 
-export const KATEGORIE_LABEL: Record<MitteilungsTyp, string> = {
-  allgemein: "Ankündigung",
-  aufgabenliste: "Checkliste",
-  umfrage: "Umfrage",
-  dokument: "Dokument",
-};
-
 /*
- * Bewusst nicht die App-Übersetzungen übernommen: `notifications.item.*`
+ * Die Beschriftungen stehen im Wörterbuch (`de.ts`/`en.ts`, Abschnitt
+ * Mitteilungen). Bewusst nicht die App-Übersetzungen übernommen: `notifications.item.*`
  * in `de.json`/`en.json` der App trägt nur die rohen `typ`-Werte
  * (`allgemein`, `umfrage`, …) als Schlüssel, während `messages.tsx` beim
  * Anzeigen über `catKey()` andere Namen anfragt (`announcement`, `tasks`,
@@ -51,12 +45,6 @@ export const KATEGORIE_LABEL: Record<MitteilungsTyp, string> = {
  * announcement` statt „Ankündigungen". Gemeldet im Audit, hier nicht
  * nachgebaut.
  */
-
-export const PRIORITAET_LABEL: Record<Prioritaet, string> = {
-  normal: "Normal",
-  wichtig: "Wichtig",
-  dringend: "Dringend",
-};
 
 function istTyp(wert: string): wert is MitteilungsTyp {
   return wert === "dokument" || (MITTEILUNGS_TYPEN as readonly string[]).includes(wert);

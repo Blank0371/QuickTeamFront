@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { betriebsZeitpunkt, istKalendertag } from "./datum";
+import { betriebsZeitpunkt, heuteImBetrieb, istKalendertag, tagPlus } from "./datum";
 import { fristNochOffen } from "./dashboard/planung";
 
 test("Kalendertage prüfen Monatslängen und Schaltjahre", () => {
@@ -22,4 +22,20 @@ test("Planungsfristen richten sich nach Sommer- und Winterzeit inklusive Umstell
 test("Winterfrist bleibt bis zum tatsächlichen Tagesende offen", () => {
   assert.deepEqual(fristNochOffen(1, "2026-12-01", "2026-11-20", new Date("2026-11-20T22:30:00Z")), { stichtag: "2026-11-20" });
   assert.equal(fristNochOffen(1, "2026-12-01", "2026-11-20", new Date("2026-11-20T23:00:00Z")), null);
+});
+
+test("„heute“ gilt in Betriebszeit, nicht in der UTC des Servers", () => {
+  // 00:30 in Wien (Sommerzeit) ist in UTC noch der Vortag.
+  assert.equal(heuteImBetrieb(new Date("2026-07-14T22:30:00Z")), "2026-07-15");
+  // 00:30 in Wien (Winterzeit).
+  assert.equal(heuteImBetrieb(new Date("2026-01-14T23:30:00Z")), "2026-01-15");
+  assert.equal(heuteImBetrieb(new Date("2026-07-15T12:00:00Z")), "2026-07-15");
+});
+
+test("tagPlus zählt Kalendertage über Monats-, Jahres- und Umstellungsgrenzen", () => {
+  assert.equal(tagPlus("2026-01-31", 1), "2026-02-01");
+  assert.equal(tagPlus("2026-12-31", 1), "2027-01-01");
+  assert.equal(tagPlus("2026-03-28", 1), "2026-03-29");
+  assert.equal(tagPlus("2026-03-29", 1), "2026-03-30");
+  assert.equal(tagPlus("2026-03-01", -1), "2026-02-28");
 });

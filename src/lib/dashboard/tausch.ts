@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { heuteImBetrieb, tagPlus } from "@/lib/datum";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -93,10 +94,8 @@ export async function holeEigeneSchichten(
   betriebId: string,
   mitarbeiterId: string,
 ): Promise<EigeneSchicht[]> {
-  const heute = new Date().toISOString().slice(0, 10);
-  const bis = new Date();
-  bis.setDate(bis.getDate() + 60);
-  const bisStr = bis.toISOString().slice(0, 10);
+  const heute = heuteImBetrieb();
+  const bisStr = tagPlus(heute, 60);
 
   const { data, error } = await supabase.rpc("kalender_schichten", {
     p_betrieb_id: betriebId,
@@ -133,12 +132,10 @@ export async function holeEigeneSchichten(
  */
 export function holeFreieTage(eigeneSchichten: readonly EigeneSchicht[]): string[] {
   const belegt = new Set(eigeneSchichten.map((s) => s.datum));
-  const heute = new Date();
+  const heute = heuteImBetrieb();
   const tage: string[] = [];
   for (let i = 1; i <= 30; i++) {
-    const d = new Date(heute);
-    d.setDate(d.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = tagPlus(heute, i);
     if (!belegt.has(iso)) tage.push(iso);
   }
   return tage;
@@ -164,7 +161,7 @@ export async function holeTauschAngebote(
   mitarbeiterId: string,
   chef: boolean,
 ): Promise<TauschAngebot[]> {
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = heuteImBetrieb();
 
   const { data: anfragenRoh, error: anfragenFehler } = await supabase
     .from("schichttausch_anfragen")

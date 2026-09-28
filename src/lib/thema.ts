@@ -1,4 +1,4 @@
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 
 import { THEMA_COOKIE, istThema, type Thema } from "./thema-basis";
 
@@ -29,40 +29,9 @@ export { THEMA_COOKIE, istThema, type Thema };
  * die Wahl fiele bei jedem Klick zurück.
  */
 
-/** Ein Jahr — eine Themenwahl ist keine Sitzungssache. */
-const MAX_ALTER = 60 * 60 * 24 * 365;
-
 /** `null` heisst „keine ausdrückliche Wahl" → dem System folgen. */
 export async function leseThema(): Promise<Thema | null> {
   const laden = await cookies();
   const wert = laden.get(THEMA_COOKIE)?.value;
   return istThema(wert) ? wert : null;
-}
-
-/**
- * Schreibt oder löscht die Themenwahl. `"system"` entfernt das Cookie und
- * überlässt die Entscheidung wieder dem Betriebssystem. Nur aus Server
- * Actions und Route Handlern — Server Components dürfen keine Cookies
- * setzen.
- */
-export async function setzeThema(wunsch: Thema | "system"): Promise<void> {
-  const laden = await cookies();
-  if (wunsch === "system") {
-    laden.delete(THEMA_COOKIE);
-    return;
-  }
-  laden.set(THEMA_COOKIE, wunsch, {
-    httpOnly: false,
-    sameSite: "lax",
-    secure: await ueberHttps(),
-    path: "/",
-    maxAge: MAX_ALTER,
-  });
-}
-
-async function ueberHttps(): Promise<boolean> {
-  const kopf = await headers();
-  const proto = kopf.get("x-forwarded-proto");
-  if (proto === null) return false;
-  return proto.split(",")[0]?.trim().toLowerCase() === "https";
 }
