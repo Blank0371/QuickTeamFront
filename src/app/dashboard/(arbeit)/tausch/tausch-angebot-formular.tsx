@@ -5,12 +5,18 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { FormMeldung } from "@/components/formular/felder";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/de";
+import { useKlientTexte } from "@/i18n/sprach-provider";
+import { fuelle } from "@/i18n/text";
 import type { EigeneSchicht } from "@/lib/dashboard/tausch";
 import { leererZustand } from "@/lib/formular";
 
 import { angebotErstellen } from "./aktionen";
 
-function SendenKnopf() {
+type Texte = Dictionary["tausch"];
+
+function SendenKnopf({ texte }: { texte: Texte }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -19,7 +25,7 @@ function SendenKnopf() {
       aria-disabled={pending}
       className="self-start rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Wird gesendet…" : "Angebot senden"}
+      {pending ? texte.sendenLaufend : texte.senden}
     </button>
   );
 }
@@ -28,16 +34,16 @@ const feldBasis =
   "w-full rounded-blk border border-line-strong bg-surface px-3.5 py-2.5 text-base text-text " +
   "transition-colors placeholder:text-muted";
 
-function formatiereTag(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("de-DE", {
+function formatiereTag(iso: string, locale: Locale): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
   });
 }
 
-function formatiereSchicht(s: EigeneSchicht): string {
-  const tag = formatiereTag(s.datum);
+function formatiereSchicht(s: EigeneSchicht, locale: Locale): string {
+  const tag = formatiereTag(s.datum, locale);
   const zeit = `${s.start_zeit.slice(0, 5)}–${s.end_zeit.slice(0, 5)}`;
   return s.label ? `${tag} · ${zeit} · ${s.label}` : `${tag} · ${zeit}`;
 }
@@ -54,10 +60,13 @@ function formatiereSchicht(s: EigeneSchicht): string {
 export function TauschAngebotFormular({
   eigeneSchichten,
   freieTage,
+  texte: t,
 }: {
   eigeneSchichten: EigeneSchicht[];
   freieTage: string[];
+  texte: Texte;
 }) {
+  const { locale } = useKlientTexte();
   const [zustand, aktion] = useActionState(angebotErstellen, leererZustand);
   const [instanzId, setInstanzId] = useState("");
   const [praeferenzTage, setPraeferenzTage] = useState<string[]>([]);
@@ -72,30 +81,28 @@ export function TauschAngebotFormular({
 
   const fehlermeldung =
     zustand.status === "fehler"
-      ? (zustand.nachricht ?? Object.values(zustand.felder)[0] ?? "Das hat nicht geklappt.")
+      ? (zustand.nachricht ?? Object.values(zustand.felder)[0] ?? t.fehlerFallback)
       : null;
 
   if (eigeneSchichten.length === 0) {
     return (
       <div className="rounded-card border border-line bg-surface p-5">
-        <h2 className="font-display text-lg text-text">Schicht anbieten</h2>
-        <p className="mt-2 text-sm text-muted">
-          Du hast in den nächsten 60 Tagen keine anstehende Schicht, die du anbieten könntest.
-        </p>
+        <h2 className="font-display text-lg text-text">{t.anbieten}</h2>
+        <p className="mt-2 text-sm text-muted">{t.keineSchicht}</p>
       </div>
     );
   }
 
   return (
     <form action={aktion} className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5">
-      <h2 className="font-display text-lg text-text">Schicht anbieten</h2>
+      <h2 className="font-display text-lg text-text">{t.anbieten}</h2>
 
       {fehlermeldung ? <FormMeldung art="fehler">{fehlermeldung}</FormMeldung> : null}
-      {zustand.status === "erfolg" ? <FormMeldung art="erfolg">Angebot gesendet.</FormMeldung> : null}
+      {zustand.status === "erfolg" ? <FormMeldung art="erfolg">{t.gesendet}</FormMeldung> : null}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="tausch-schicht" className="text-sm font-medium text-text">
-          Welche Schicht?
+          {t.welcheSchicht}
         </label>
         <select
           id="tausch-schicht"
@@ -106,11 +113,11 @@ export function TauschAngebotFormular({
           className={feldBasis}
         >
           <option value="" disabled>
-            Bitte wählen
+            {t.bitteWaehlen}
           </option>
           {eigeneSchichten.map((s) => (
             <option key={s.id} value={s.id}>
-              {formatiereSchicht(s)}
+              {formatiereSchicht(s, locale)}
             </option>
           ))}
         </select>
@@ -120,11 +127,8 @@ export function TauschAngebotFormular({
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-text">Wunschtage (optional, bis zu drei)</p>
-        <p className="text-xs text-muted">
-          Tage, an denen du stattdessen arbeiten möchtest. Ohne Angabe zählt der ganze Monat der
-          angebotenen Schicht.
-        </p>
+        <p className="text-sm font-medium text-text">{t.wunschtage}</p>
+        <p className="text-xs text-muted">{t.wunschtageText}</p>
 
         {praeferenzTage.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -133,11 +137,11 @@ export function TauschAngebotFormular({
                 key={tag}
                 className="flex items-center gap-1.5 rounded-full border border-signal bg-signal-weak px-3 py-1 text-xs font-semibold text-text"
               >
-                {formatiereTag(tag)}
+                {formatiereTag(tag, locale)}
                 <button
                   type="button"
-                  onClick={() => setPraeferenzTage(praeferenzTage.filter((t) => t !== tag))}
-                  aria-label={`${formatiereTag(tag)} entfernen`}
+                  onClick={() => setPraeferenzTage(praeferenzTage.filter((x) => x !== tag))}
+                  aria-label={fuelle(t.tagEntfernen, { tag: formatiereTag(tag, locale) })}
                 >
                   <X className="size-3.5" aria-hidden="true" />
                 </button>
@@ -155,12 +159,12 @@ export function TauschAngebotFormular({
             }}
             className={feldBasis}
           >
-            <option value="">Tag hinzufügen</option>
+            <option value="">{t.tagHinzufuegen}</option>
             {freieTage
               .filter((tag) => !praeferenzTage.includes(tag))
               .map((tag) => (
                 <option key={tag} value={tag}>
-                  {formatiereTag(tag)}
+                  {formatiereTag(tag, locale)}
                 </option>
               ))}
           </select>
@@ -171,7 +175,7 @@ export function TauschAngebotFormular({
         ))}
       </div>
 
-      <SendenKnopf />
+      <SendenKnopf texte={t} />
     </form>
   );
 }

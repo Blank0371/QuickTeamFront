@@ -13,7 +13,7 @@
 
 import { redirect } from "next/navigation";
 
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import {
   pruefePromoCode,
@@ -106,8 +106,7 @@ export async function pendingInfoSpeichern(
     console.error(`[betrieb] pendingInfoSpeichern: ${text}`);
     return {
       status: "fehler",
-      nachricht:
-        "Die Angaben liessen sich gerade nicht speichern. Versuch es gleich noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await holeTexte()).betrieb.speichernFehler,
       felder: {},
       werte,
     };

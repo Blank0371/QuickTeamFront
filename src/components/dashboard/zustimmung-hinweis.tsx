@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { holeTexte } from "@/i18n/server";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
 import type { ZustimmungBefund } from "@/lib/zustimmung";
 
@@ -33,8 +34,10 @@ import type { ZustimmungBefund } from "@/lib/zustimmung";
  * Betreibers pro Änderung und keine Konstante im Code; einen Countdown
  * anzuzeigen, den niemand durchsetzt, wäre eine Drohung ohne Deckung.
  */
-export function ZustimmungHinweis({ befund }: { befund: ZustimmungBefund | null }) {
+export async function ZustimmungHinweis({ befund }: { befund: ZustimmungBefund | null }) {
   if (befund?.art !== "aenderung-offen") return null;
+
+  const { zustimmungSeite: t } = await holeTexte();
 
   return (
     <div
@@ -43,15 +46,12 @@ export function ZustimmungHinweis({ befund }: { befund: ZustimmungBefund | null 
       className="border-b border-line bg-surface-sunk px-4 py-3 text-sm text-muted sm:px-6"
     >
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-1">
-        <span>
-          Es gibt eine neue Fassung der Vertragsunterlagen. Bis du zustimmst, gelten die
-          bisherigen Bedingungen weiter.
-        </span>
+        <span>{t.hinweis}</span>
         <Link
           href={zustimmungAdresse(null)}
           className="font-semibold text-text underline underline-offset-4 transition-colors hover:text-signal"
         >
-          Ansehen
+          {t.hinweisLink}
         </Link>
       </div>
     </div>

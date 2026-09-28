@@ -7,7 +7,7 @@ import { holePositionen, gewuenschtePositionsId, waehleAktive } from "@/lib/dash
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { createClient } from "@/lib/supabase/server";
 import { zustimmungSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import { aktuelleZustimmungVersionen, schreibeZustimmungen } from "@/lib/zustimmung";
@@ -92,8 +92,7 @@ export async function zustimmen(
   if (ergebnis.art === "fehler") {
     return {
       status: "fehler",
-      nachricht:
-        "Die Zustimmung liess sich gerade nicht speichern. Versuch es gleich noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await holeTexte()).zustimmungSeite.speichernFehler,
       felder: {},
     };
   }

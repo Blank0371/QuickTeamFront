@@ -12,8 +12,8 @@ import {
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { entferneMitglied, entferneRolle, holeEingeladene, schonEingeladen } from "@/lib/team";
-import { holeValidierung } from "@/i18n/server";
-import type { Textblock } from "@/i18n/text";
+import { holeTexte, holeValidierung } from "@/i18n/server";
+import { fuelle, loeseMeldung, type Textblock } from "@/i18n/text";
 import {
   anstellungSchema,
   einladungSchema,
@@ -42,8 +42,6 @@ function fehler(nachricht: string, felder: Record<string, string> = {}): FormZus
   return { status: "fehler", nachricht, felder };
 }
 
-const NUR_CHEF = "Nur die Betriebsleitung darf das Team verwalten.";
-
 async function alsChef() {
   const { supabase, position } = await betreteDashboard();
   return {
@@ -51,6 +49,7 @@ async function alsChef() {
     betriebId: position.betriebId,
     chef: position.rolleTyp === "chef",
     eigeneId: position.mitarbeiterId,
+    t: (await holeTexte()).teamVerwaltung,
   };
 }
 
@@ -62,12 +61,17 @@ export async function rolleAnlegen(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const geprueft = rollenNameSchema.safeParse(String(formData.get("name") ?? ""));
   if (!geprueft.success) {
-    const meldung = geprueft.error.issues[0]?.message ?? "Der Rollenname passt nicht.";
+    /*
+     * Die Zod-Meldung ist ein Schlüssel (`src/i18n/text.ts`), kein Satz —
+     * aufgelöst wird sie hier gegen den Validierungsblock der Anfrage.
+     */
+    const roh = geprueft.error.issues[0]?.message;
+    const meldung = roh ? loeseMeldung(roh, await holeValidierung()) : t.rollennameFalsch;
     return fehler(meldung, { name: meldung });
   }
 
@@ -93,10 +97,8 @@ export async function rolleAnlegen(
 
   if (kollision) {
     return fehler(
-      kollision.aktiv
-        ? `Die Rolle „${name}" gibt es schon.`
-        : `Den Namen „${name}" trägt eine ausgeblendete Rolle. Blend sie wieder ein, statt eine zweite anzulegen.`,
-      { name: "Diesen Namen gibt es schon." },
+      fuelle(kollision.aktiv ? t.rolleDoppelt : t.rolleAusgeblendetDoppelt, { name }),
+      { name: t.nameDoppeltFeld },
     );
   }
 
@@ -106,7 +108,7 @@ export async function rolleAnlegen(
 
   if (error) {
     console.error(`[dashboard/team] rolleAnlegen: ${error.message}`);
-    return fehler("Die Rolle liess sich nicht anlegen. Versuch es noch einmal.");
+    return fehler(t.rolleAnlegenFehler);
   }
 
   revalidatePath(PFAD);
@@ -117,19 +119,16 @@ export async function rolleEntfernen(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const rolleId = String(formData.get("rolle_id") ?? "");
-  if (!rolleId) return fehler("Es wurde keine Rolle angegeben.");
+  if (!rolleId) return fehler(t.keineRolleAngegeben);
 
   const ergebnis = await entferneRolle(supabase, betriebId, rolleId);
 
   if (ergebnis.art === "belegt") {
-    return fehler(
-      "Diese Rolle hängt noch an einer Schichtvorlage oder an geplanten Schichten. " +
-        "Entfern sie zuerst dort.",
-    );
+    return fehler(t.rolleBelegt);
   }
 
   if (ergebnis.art === "gesperrt") {
@@ -142,16 +141,14 @@ export async function rolleEntfernen(
      */
     return {
       status: "fehler",
-      nachricht:
-        "Rollen lassen sich derzeit nicht entfernen — die Datenbank lässt das Löschen " +
-        "noch nicht zu. Das ist gemeldet. Deine Rollenzuweisungen sind unverändert.",
+      nachricht: t.rolleGesperrt,
       felder: {},
       werte: { rolle_id: rolleId },
     };
   }
 
   if (ergebnis.art === "fehler") {
-    return fehler("Die Rolle liess sich nicht entfernen. Versuch es noch einmal.");
+    return fehler(t.rolleEntfernenFehler);
   }
 
   revalidatePath(PFAD);
@@ -172,12 +169,12 @@ export async function rolleUmblenden(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const rolleId = String(formData.get("rolle_id") ?? "");
   const zielRoh = String(formData.get("aktiv") ?? "");
-  if (!rolleId) return fehler("Es wurde keine Rolle angegeben.");
+  if (!rolleId) return fehler(t.keineRolleAngegeben);
 
   const ziel = zielRoh === "true";
 
@@ -190,11 +187,11 @@ export async function rolleUmblenden(
 
   if (error) {
     console.error(`[dashboard/team] rolleUmblenden: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   if (geaendert.length === 0) {
-    return fehler("Diese Rolle gibt es nicht mehr. Lad die Seite neu.");
+    return fehler(t.rolleWeg);
   }
 
   revalidatePath(PFAD);
@@ -250,17 +247,17 @@ export async function anstellungSpeichern(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
-  if (!mitarbeiterId) return fehler("Es wurde niemand angegeben.");
+  if (!mitarbeiterId) return fehler(t.niemand);
 
   const gelesen = anstellungAus(formData, await holeValidierung());
   if (!gelesen.ok) {
     return {
       status: "fehler",
-      nachricht: Object.values(gelesen.felder)[0] ?? "Die Eingaben stimmen so nicht.",
+      nachricht: Object.values(gelesen.felder)[0] ?? t.eingabenFalsch,
       felder: gelesen.felder,
       /*
        * Die ID reist zurück, damit die Oberfläche weiss, **welche** der
@@ -282,10 +279,7 @@ export async function anstellungSpeichern(
   if (!ergebnis.ok) {
     return {
       status: "fehler",
-      nachricht:
-        ergebnis.grund === "rls"
-          ? "Gespeichert wurde nichts — entweder gibt es diese Person nicht mehr, oder die Berechtigung fehlt inzwischen. Lad die Seite neu."
-          : "Die Anstellungsdaten liessen sich nicht speichern. Versuch es noch einmal.",
+      nachricht: ergebnis.grund === "rls" ? t.rlsFehler : t.anstellungFehler,
       felder: {},
       werte: { mitarbeiter_id: mitarbeiterId },
     };
@@ -294,7 +288,7 @@ export async function anstellungSpeichern(
   revalidatePath(PFAD);
   return {
     status: "erfolg",
-    nachricht: "Gespeichert.",
+    nachricht: t.gespeichert,
     felder: {},
     werte: { mitarbeiter_id: mitarbeiterId },
   };
@@ -308,8 +302,8 @@ export async function mitarbeiterEinladen(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const roh = {
     vorname: String(formData.get("vorname") ?? ""),
@@ -365,7 +359,7 @@ export async function mitarbeiterEinladen(
   if (doppelt) {
     return {
       status: "fehler",
-      nachricht: `${doppelt.vorname} ${doppelt.nachname} ist mit genau diesen Angaben schon im Team. Für eine zweite Person unter derselben Adresse trag einen anderen Namen ein.`,
+      nachricht: fuelle(t.doppelt, { name: `${doppelt.vorname} ${doppelt.nachname}` }),
       felder: {},
       werte: roh,
     };
@@ -390,7 +384,7 @@ export async function mitarbeiterEinladen(
     console.error(`[dashboard/team] einladen: ${error?.message ?? "keine Zeile"}`);
     return {
       status: "fehler",
-      nachricht: "Die Einladung liess sich nicht anlegen. Versuch es noch einmal.",
+      nachricht: t.einladungFehler,
       felder: {},
       werte: roh,
     };
@@ -407,9 +401,7 @@ export async function mitarbeiterEinladen(
     );
     if (zuweisungFehler) {
       console.error(`[dashboard/team] einladen/rollen: ${zuweisungFehler.message}`);
-      return fehler(
-        "Die Person ist angelegt, aber die Rollen konnten nicht zugewiesen werden. Setz sie in der Liste.",
-      );
+      return fehler(t.rollenZuweisungFehler);
     }
   }
 
@@ -422,14 +414,14 @@ export async function rolleUmschalten(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
   const rolleId = String(formData.get("rolle_id") ?? "");
   const anhaken = String(formData.get("anhaken") ?? "") === "true";
 
-  if (!mitarbeiterId || !rolleId) return fehler("Angabe fehlt.");
+  if (!mitarbeiterId || !rolleId) return fehler(t.angabeFehlt);
 
   const { error } = anhaken
     ? await supabase
@@ -450,11 +442,7 @@ export async function rolleUmschalten(
      * eingeteilt wurde. Die Rolle wegzunehmen, während eine Schicht
      * daran hängt, verhindert der Constraint.
      */
-    return fehler(
-      anhaken
-        ? "Die Rolle liess sich nicht zuweisen. Versuch es noch einmal."
-        : "Die Rolle liess sich nicht entfernen — vermutlich ist die Person damit schon zu einer Schicht eingeteilt.",
-    );
+    return fehler(anhaken ? t.zuweisenFehler : t.abnehmenFehler);
   }
 
   revalidatePath(PFAD);
@@ -480,27 +468,24 @@ export async function statusSetzen(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
   const ziel = String(formData.get("status") ?? "");
 
-  if (!mitarbeiterId) return fehler("Es wurde niemand angegeben.");
+  if (!mitarbeiterId) return fehler(t.niemand);
   if (!istStatus(ziel) || !SETZBARE_STATUS.includes(ziel)) {
-    return fehler("Dieser Status lässt sich nicht setzen.");
+    return fehler(t.statusNichtSetzbar);
   }
 
   const team = await holeTeam(supabase, betriebId);
   const person = team.find((mitglied) => mitglied.id === mitarbeiterId);
 
-  if (!person) return fehler("Diese Person gehört nicht zu deinem Betrieb.");
+  if (!person) return fehler(t.nichtImBetrieb);
 
   if (!darfStatusAendern(person)) {
-    return fehler(
-      "Der Status der Betriebsleitung lässt sich hier nicht ändern. Sonst könnte ein " +
-        "Betrieb ohne aktive Leitung zurückbleiben — und damit für alle verschlossen sein.",
-    );
+    return fehler(t.leitungStatusFehler);
   }
 
   const { data: geaendert, error } = await supabase
@@ -512,11 +497,11 @@ export async function statusSetzen(
 
   if (error) {
     console.error(`[dashboard/team] statusSetzen: ${error.message}`);
-    return fehler("Der Status liess sich nicht ändern. Versuch es noch einmal.");
+    return fehler(t.statusFehler);
   }
 
   if (geaendert.length === 0) {
-    return fehler("Diese Person gibt es nicht mehr. Lad die Seite neu.");
+    return fehler(t.personWeg);
   }
 
   revalidatePath(PFAD);
@@ -534,24 +519,22 @@ export async function einladungZuruecknehmen(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
-  if (!mitarbeiterId) return fehler("Es wurde niemand angegeben.");
+  if (!mitarbeiterId) return fehler(t.niemand);
 
   const team = await holeTeam(supabase, betriebId);
   const person = team.find((mitglied) => mitglied.id === mitarbeiterId);
 
-  if (!person) return fehler("Diese Person gehört nicht zu deinem Betrieb.");
+  if (!person) return fehler(t.nichtImBetrieb);
   if (person.status !== "eingeladen") {
-    return fehler(
-      "Diese Person ist bereits im Team. Setz sie auf inaktiv oder anonymisiere sie.",
-    );
+    return fehler(t.schonImTeam);
   }
 
   const ok = await entferneMitglied(supabase, betriebId, mitarbeiterId);
-  if (!ok) return fehler("Die Einladung liess sich nicht zurücknehmen.");
+  if (!ok) return fehler(t.zuruecknehmenFehler);
 
   revalidatePath(PFAD);
   return { status: "erfolg", nachricht: null, felder: {} };
@@ -574,23 +557,23 @@ export async function anonymisieren(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const { supabase, betriebId, chef, eigeneId } = await alsChef();
-  if (!chef) return fehler(NUR_CHEF);
+  const { supabase, betriebId, chef, eigeneId, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
 
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
   const bestaetigt = String(formData.get("bestaetigt") ?? "") === "ja";
 
-  if (!mitarbeiterId) return fehler("Es wurde niemand angegeben.");
-  if (!bestaetigt) return fehler("Setz das Häkchen, wenn du das wirklich willst.");
+  if (!mitarbeiterId) return fehler(t.niemand);
+  if (!bestaetigt) return fehler(t.haekchen);
 
   if (mitarbeiterId === eigeneId) {
-    return fehler("Dich selbst kannst du hier nicht anonymisieren.");
+    return fehler(t.selbstNicht);
   }
 
   const team = await holeTeam(supabase, betriebId);
   const person = team.find((mitglied) => mitglied.id === mitarbeiterId);
 
-  if (!person) return fehler("Diese Person gehört nicht zu deinem Betrieb.");
+  if (!person) return fehler(t.nichtImBetrieb);
 
   /*
    * Auch hier bleibt die Leitung aussen vor: die Funktion setzt
@@ -599,9 +582,7 @@ export async function anonymisieren(
    * Unterschied, dass es sich nicht rückgängig machen lässt.
    */
   if (person.rolleTyp === "chef") {
-    return fehler(
-      "Mitglieder der Betriebsleitung lassen sich hier nicht anonymisieren.",
-    );
+    return fehler(t.leitungAnon);
   }
 
   const { error } = await supabase.rpc("mitarbeiter_anonymisieren", {
@@ -610,7 +591,7 @@ export async function anonymisieren(
 
   if (error) {
     console.error(`[dashboard/team] anonymisieren: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   revalidatePath(PFAD);

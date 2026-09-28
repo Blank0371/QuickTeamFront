@@ -1,3 +1,6 @@
+import type { Dictionary } from "@/i18n/de";
+import { holeTexte } from "@/i18n/server";
+
 /**
  * Bausteine für die Ladezustände des Dashboards.
  *
@@ -57,10 +60,15 @@ export function KartenSkelett({ hoehe = "h-24" }: { hoehe?: string }) {
  * `aria-hidden` — eine Reihe leerer Kästen vorgelesen zu bekommen hilft
  * niemandem, die Auskunft „lädt" schon.
  */
-export function LadeAnsage({ text = "Wird geladen" }: { text?: string }) {
+export async function LadeAnsage({
+  art = "allgemein",
+}: {
+  art?: keyof Dictionary["laden"];
+}) {
+  const { laden } = await holeTexte();
   return (
     <p role="status" aria-live="polite" className="sr-only">
-      {text}
+      {laden[art]}
     </p>
   );
 }

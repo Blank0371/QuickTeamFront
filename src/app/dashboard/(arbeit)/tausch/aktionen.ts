@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { tauschAngebotSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 
 /**
  * Server Actions von Tausch.
@@ -25,6 +25,10 @@ const PFAD = "/dashboard/tausch";
 
 function fehler(nachricht: string, felder: Record<string, string> = {}): FormZustand {
   return { status: "fehler", nachricht, felder };
+}
+
+async function texte() {
+  return (await holeTexte()).tausch;
 }
 
 export async function angebotErstellen(
@@ -52,7 +56,7 @@ export async function angebotErstellen(
 
   if (error) {
     console.error(`[dashboard/tausch] anbieten: ${error.message}`);
-    return fehler("Das Angebot liess sich nicht anlegen. Versuch es noch einmal.");
+    return fehler((await texte()).anlegenFehler);
   }
 
   /*
@@ -62,9 +66,7 @@ export async function angebotErstellen(
    * genau wie in `compose.tsx`s „notPossibleTitle/notPossibleBody".
    */
   if (!benachrichtigungId) {
-    return fehler(
-      "Dafür gibt es aktuell niemanden, der passt — weder die Rolle noch ein freier Tag treffen sich mit jemandem im Team.",
-    );
+    return fehler((await texte()).niemandPasst);
   }
 
   revalidatePath(PFAD);
@@ -76,8 +78,9 @@ export async function antworten(_vorher: FormZustand, formData: FormData): Promi
 
   const benachrichtigungId = String(formData.get("benachrichtigung_id") ?? "");
   const gegenZuweisungId = String(formData.get("gegen_zuweisung_id") ?? "");
-  if (!benachrichtigungId) return fehler("Dieses Angebot ist nicht mehr gültig. Lad die Seite neu.");
-  if (!gegenZuweisungId) return fehler("Wähl eine eigene Schicht, die du dafür anbietest.");
+  const t = await texte();
+  if (!benachrichtigungId) return fehler(t.ungueltigNeuLaden);
+  if (!gegenZuweisungId) return fehler(t.eigeneWaehlen);
 
   const { data: code, error } = await supabase.rpc("tausch_annehmen", {
     p_benachrichtigung_id: benachrichtigungId,
@@ -87,25 +90,13 @@ export async function antworten(_vorher: FormZustand, formData: FormData): Promi
 
   if (error) {
     console.error(`[dashboard/tausch] annehmen: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
-  const MELDUNG: Record<string, string> = {
-    bereits_besetzt: "Dieses Angebot ist schon vergeben.",
-    nicht_moeglich: "Diese Schicht gibt es nicht mehr.",
-    eigene_schicht: "Das ist deine eigene Schicht.",
-    gegen_ungueltig: "Diese Schicht gehört dir nicht (mehr).",
-    nicht_qualifiziert: "Dir fehlt die erforderliche Rolle.",
-    anbieter_nicht_qualifiziert: "Die anbietende Person hat für deine Schicht nicht die passende Rolle.",
-    schon_zugewiesen: "Eine der beiden Personen ist für den jeweils anderen Tag schon eingeteilt.",
-    gegen_vergangen: "Diese Schicht liegt in der Vergangenheit.",
-    nicht_wunschtag: "Dieser Tag passt nicht zu den Wunschtagen der anbietenden Person.",
-    schon_belegt: "Du arbeitest an diesem Tag schon.",
-    anbieter_belegt: "Die anbietende Person arbeitet an diesem Tag schon.",
-  };
+  const meldung: Record<string, string> = t.code;
 
   if (code !== "angefragt") {
-    return fehler(MELDUNG[code as string] ?? "Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(meldung[code as string] ?? t.nochmal);
   }
 
   revalidatePath(PFAD);
@@ -120,7 +111,8 @@ export async function anbieterEntscheiden(
 
   const anfrageId = String(formData.get("anfrage_id") ?? "");
   const zustimmen = String(formData.get("zustimmen") ?? "") === "true";
-  if (!anfrageId) return fehler("Diese Anfrage gibt es nicht mehr.");
+  const t = await texte();
+  if (!anfrageId) return fehler(t.anfrageWeg);
 
   const { error } = await supabase.rpc("tausch_anbieter_entscheiden", {
     p_anfrage_id: anfrageId,
@@ -130,7 +122,7 @@ export async function anbieterEntscheiden(
 
   if (error) {
     console.error(`[dashboard/tausch] anbieterEntscheiden: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   revalidatePath(PFAD);
@@ -149,13 +141,14 @@ export async function chefEntscheiden(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = await texte();
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf über Tauschanfragen entscheiden.");
+    return fehler(t.nurChef);
   }
 
   const anfrageId = String(formData.get("anfrage_id") ?? "");
   const genehmigt = String(formData.get("genehmigt") ?? "") === "true";
-  if (!anfrageId) return fehler("Diese Anfrage gibt es nicht mehr.");
+  if (!anfrageId) return fehler(t.anfrageWeg);
 
   const { error } = await supabase.rpc("tausch_entscheiden", {
     p_anfrage_id: anfrageId,
@@ -165,7 +158,7 @@ export async function chefEntscheiden(
 
   if (error) {
     console.error(`[dashboard/tausch] chefEntscheiden: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   revalidatePath(PFAD);
@@ -185,7 +178,8 @@ export async function zurueckziehen(
   const { supabase, position } = await betreteDashboard();
 
   const anfrageId = String(formData.get("anfrage_id") ?? "");
-  if (!anfrageId) return fehler("Diese Anfrage gibt es nicht mehr.");
+  const t = await texte();
+  if (!anfrageId) return fehler(t.anfrageWeg);
 
   const { error } = await supabase.rpc("tausch_zurueckziehen", {
     p_anfrage_id: anfrageId,
@@ -194,7 +188,7 @@ export async function zurueckziehen(
 
   if (error) {
     console.error(`[dashboard/tausch] zurueckziehen: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   revalidatePath(PFAD);

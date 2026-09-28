@@ -11,6 +11,9 @@ import {
 } from "@/lib/dashboard/planung";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import type { FormZustand } from "@/lib/formular";
+import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
+import { fuelle } from "@/i18n/text";
 
 const PFAD = "/dashboard/planung";
 
@@ -34,9 +37,11 @@ export async function zyklusAnlegen(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).planung;
+  const locale = await leseSprache();
 
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf Zeiträume anlegen.");
+    return fehler(t.nurChefAnlegen);
   }
 
   const start = String(formData.get("start") ?? "");
@@ -45,8 +50,8 @@ export async function zyklusAnlegen(
   const trotzdem = String(formData.get("trotzdem") ?? "") === "ja";
   const fristEgal = String(formData.get("frist_trotzdem") ?? "") === "ja";
 
-  if (!istKalendertag(start)) return fehler("Der Beginn fehlt oder ist ungültig.", { start: "Datum prüfen." });
-  if (!istKalendertag(ende)) return fehler("Das Ende fehlt oder ist ungültig.", { ende: "Datum prüfen." });
+  if (!istKalendertag(start)) return fehler(t.beginnFehlt, { start: t.datumPruefen });
+  if (!istKalendertag(ende)) return fehler(t.endeFehlt, { ende: t.datumPruefen });
 
   /*
    * Dieselbe Bedingung wie `chk_zeitraum` und der RPC: das Ende muss
@@ -55,20 +60,15 @@ export async function zyklusAnlegen(
    * niemandem hilft.
    */
   if (ende <= start) {
-    return fehler("Das Ende muss nach dem Beginn liegen.", {
-      ende: "Muss nach dem Beginn liegen.",
-    });
+    return fehler(t.endeNachBeginn, { ende: t.endeNachBeginnFeld });
   }
 
   if (deadlineRoh && !istKalendertag(deadlineRoh)) {
-    return fehler("Die Frist ist kein gültiges Datum.", { deadline: "Datum prüfen." });
+    return fehler(t.fristUngueltig, { deadline: t.datumPruefen });
   }
 
   if (deadlineRoh && deadlineRoh > start) {
-    return fehler(
-      "Die Frist liegt nach dem Beginn des Zeitraums. Bis dahin müsste der Plan längst stehen.",
-      { deadline: "Sollte vor dem Beginn liegen." },
-    );
+    return fehler(t.fristNachBeginn, { deadline: t.fristNachBeginnFeld });
   }
 
   const zyklen = await holeZyklen(supabase, position.betriebId);
@@ -85,26 +85,23 @@ export async function zyklusAnlegen(
   if (kollision && !trotzdem) {
     felder["ueberschneidung"] = "ja";
     warnungen.push(
-      `Es gibt schon einen Zeitraum von ${langesDatum(kollision.start)} bis ` +
-        `${langesDatum(kollision.ende)}. Zwei Pläne für dieselben Tage erzeugen ` +
-        `Schichten doppelt.`,
+      fuelle(t.warnungUeberschneidung, {
+        von: langesDatum(kollision.start, locale),
+        bis: langesDatum(kollision.ende, locale),
+      }),
     );
   }
 
   const frist = fristNochOffen(zyklen.length, start, deadlineRoh);
   if (frist && !fristEgal) {
     felder["frist"] = "ja";
-    warnungen.push(
-      `Die Frist für Wünsche läuft erst am ${langesDatum(frist.stichtag)} ab. Wer ` +
-        `bis dahin noch Verfügbarkeiten oder Schichtvorlieben einträgt, wird in ` +
-        `diesem Plan nicht mehr berücksichtigt.`,
-    );
+    warnungen.push(fuelle(t.warnungFrist, { datum: langesDatum(frist.stichtag, locale) }));
   }
 
   if (warnungen.length > 0) {
     return {
       status: "fehler",
-      nachricht: `${warnungen.join(" ")} Setz das Häkchen, wenn du es trotzdem willst.`,
+      nachricht: `${warnungen.join(" ")} ${t.haekchen}`,
       felder,
       /*
        * Ohne diese Zeile fallen die Datumsfelder auf ihren Vorschlag
@@ -135,7 +132,7 @@ export async function zyklusAnlegen(
 
   if (error) {
     console.error(`[planung] zyklusAnlegen: ${error.message}`);
-    return fehler("Der Zeitraum liess sich nicht anlegen. Versuch es noch einmal.");
+    return fehler(t.anlegenFehler);
   }
 
   revalidatePath(PFAD);
@@ -162,25 +159,30 @@ export async function erinnerungSenden(
   _formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).planung;
 
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf erinnern.");
+    return fehler(t.nurChefErinnern);
   }
 
+  /*
+   * Titel und Text in der Sprache der absendenden Person — wie in der App,
+   * die `prefReminderTitle/Body` beim Senden aus ihrem Wörterbuch auflöst.
+   */
   const { error } = await supabase.rpc("ankuendigung_erstellen", {
     p_betrieb_id: position.betriebId,
     p_typ: "allgemein",
-    p_titel: "Bitte Schichtvorlieben eintragen",
-    p_text: "Der neue Dienstplan wird geplant. Bitte trage deine Schichtvorlieben vor der Deadline ein.",
+    p_titel: t.erinnerungTitel,
+    p_text: t.erinnerungText,
     p_prioritaet: "dringend",
   });
 
   if (error) {
     console.error(`[planung] erinnerungSenden: ${error.message}`);
-    return fehler("Erinnerung konnte nicht gesendet werden.");
+    return fehler(t.erinnerungFehler);
   }
 
-  return { status: "erfolg", nachricht: "Erinnerung an alle Mitarbeiter gesendet.", felder: {} };
+  return { status: "erfolg", nachricht: t.erinnerungGesendet, felder: {} };
 }
 
 export async function zyklusEntfernen(
@@ -188,13 +190,14 @@ export async function zyklusEntfernen(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).planung;
 
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf Zeiträume entfernen.");
+    return fehler(t.nurChefEntfernen);
   }
 
   const zyklusId = String(formData.get("zyklus_id") ?? "");
-  if (!zyklusId) return fehler("Es wurde kein Zeitraum angegeben.");
+  if (!zyklusId) return fehler(t.keinZeitraumAngegeben);
 
   const { data: geloescht, error } = await supabase
     .from("planungszyklen")
@@ -205,13 +208,11 @@ export async function zyklusEntfernen(
 
   if (error) {
     console.error(`[planung] zyklusEntfernen: ${error.message}`);
-    return fehler(
-      "An diesem Zeitraum hängen bereits Schichten. Verwirf zuerst den Plan, dann lässt er sich entfernen.",
-    );
+    return fehler(t.haengenSchichten);
   }
 
   if (geloescht.length === 0) {
-    return fehler("Diesen Zeitraum gibt es nicht mehr. Lad die Seite neu.");
+    return fehler(t.zeitraumWeg);
   }
 
   revalidatePath(PFAD);
@@ -234,9 +235,10 @@ export async function planVeroeffentlichen(
   _formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).planung;
 
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf Pläne freigeben.");
+    return fehler(t.nurChefFreigeben);
   }
 
   const { data, error } = await supabase.rpc("geplante_schichten_veroeffentlichen", {
@@ -245,7 +247,7 @@ export async function planVeroeffentlichen(
 
   if (error) {
     console.error(`[planung] veroeffentlichen: ${error.message}`);
-    return fehler("Der Plan liess sich nicht freigeben. Versuch es noch einmal.");
+    return fehler(t.freigebenFehler);
   }
 
   const anzahl = typeof data === "number" ? data : 0;
@@ -256,8 +258,8 @@ export async function planVeroeffentlichen(
     status: "erfolg",
     nachricht:
       anzahl === 0
-        ? "Es gab nichts freizugeben."
-        : `${anzahl} ${anzahl === 1 ? "Schicht ist" : "Schichten sind"} jetzt für dein Team sichtbar.`,
+        ? t.nichtsFrei
+        : fuelle(anzahl === 1 ? t.freiEins : t.freiMehr, { n: anzahl }),
     felder: {},
   };
 }
@@ -277,13 +279,14 @@ export async function planVerwerfen(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).planung;
 
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf Pläne verwerfen.");
+    return fehler(t.nurChefVerwerfen);
   }
 
   if (String(formData.get("bestaetigt") ?? "") !== "ja") {
-    return fehler("Setz das Häkchen, wenn du den Vorschlag wirklich verwerfen willst.");
+    return fehler(t.verwerfenHaekchen);
   }
 
   const { data, error } = await supabase.rpc("geplante_schichten_verwerfen", {
@@ -292,7 +295,7 @@ export async function planVerwerfen(
 
   if (error) {
     console.error(`[planung] verwerfen: ${error.message}`);
-    return fehler("Der Vorschlag liess sich nicht verwerfen. Versuch es noch einmal.");
+    return fehler(t.verwerfenFehler);
   }
 
   const anzahl = typeof data === "number" ? data : 0;
@@ -301,7 +304,7 @@ export async function planVerwerfen(
 
   return {
     status: "erfolg",
-    nachricht: `${anzahl} geplante ${anzahl === 1 ? "Schicht wurde" : "Schichten wurden"} verworfen. Der Zeitraum ist mit entfernt worden.`,
+    nachricht: fuelle(anzahl === 1 ? t.verworfenEins : t.verworfenMehr, { n: anzahl }),
     felder: {},
   };
 }

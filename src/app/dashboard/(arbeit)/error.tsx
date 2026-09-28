@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { Container } from "@/components/container";
 import { useKlientTexte } from "@/i18n/sprach-provider";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Fehlergrenze **innerhalb** der Dashboard-Schale.
@@ -46,19 +47,22 @@ export default function DashboardFehler({
   return (
     <Container className="py-12 sm:py-16">
       <div className="w-full max-w-3xl">
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-stop">Fehler</p>
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-stop">
+          {fehler.kicker}
+        </p>
 
         <h1 className="mt-3 text-2xl leading-tight sm:text-3xl">
           {fehler.fehlerTitel}
         </h1>
 
         <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">
-          Dieser Bereich liess sich nicht laden. Die Anmeldung besteht weiter — du
-          kannst es noch einmal versuchen oder in einen anderen Bereich wechseln.
+          {fehler.bereichText}
         </p>
 
         {error.digest ? (
-          <p className="mt-4 font-mono text-xs text-muted">Kennung: {error.digest}</p>
+          <p className="mt-4 font-mono text-xs text-muted">
+            {fuelle(fehler.kennung, { id: error.digest })}
+          </p>
         ) : null}
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -73,7 +77,7 @@ export default function DashboardFehler({
             href="/dashboard"
             className="rounded-blk border border-line-strong px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
           >
-            Zur Übersicht
+            {fehler.zurUebersicht}
           </Link>
         </div>
       </div>

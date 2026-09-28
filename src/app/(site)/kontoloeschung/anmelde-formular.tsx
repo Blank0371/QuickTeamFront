@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { AbsendenButton } from "@/components/formular/absenden-button";
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
+import type { Dictionary } from "@/i18n/de";
 import { leererZustand } from "@/lib/formular";
 
 import { anmeldenZurLoeschung } from "./aktionen";
@@ -26,7 +27,11 @@ import { anmeldenZurLoeschung } from "./aktionen";
  * gegen die Mindestlänge zu prüfen wäre falsch: wer ein älteres,
  * kürzeres hat, muss trotzdem an sein Konto kommen — gerade hier.
  */
-export function AnmeldeFormular() {
+export function AnmeldeFormular({
+  texte,
+}: {
+  texte: Dictionary["kontoloeschung"]["anmelden"];
+}) {
   const [zustand, aktion] = useActionState(anmeldenZurLoeschung, leererZustand);
   const { beiVerlassen, fehlerFuer } = useFeldPruefung(["email"]);
 
@@ -43,7 +48,7 @@ export function AnmeldeFormular() {
         id="email"
         name="email"
         type="email"
-        label="E-Mail-Adresse"
+        label={texte.email}
         autoComplete="email"
         defaultValue={zustand.werte?.["email"]}
         fehler={fehlerFuer("email", zustand.felder)}
@@ -53,12 +58,12 @@ export function AnmeldeFormular() {
         id="passwort"
         name="passwort"
         type="password"
-        label="Passwort"
+        label={texte.passwort}
         autoComplete="current-password"
         fehler={fehlerFuer("passwort", zustand.felder)}
       />
 
-      <AbsendenButton laufend="Wird geprüft …">Weiter</AbsendenButton>
+      <AbsendenButton laufend={texte.laufend}>{texte.weiter}</AbsendenButton>
     </form>
   );
 }

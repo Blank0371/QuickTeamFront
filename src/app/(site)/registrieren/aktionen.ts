@@ -30,7 +30,7 @@ import {
   type FormZustand,
 } from "@/lib/formular";
 import { createClient } from "@/lib/supabase/server";
-import { holeAuthTexte, holeValidierung } from "@/i18n/server";
+import { holeAuthTexte, holeTexte, holeValidierung } from "@/i18n/server";
 import {
   bestaetigungSchema,
   kontoSchema,
@@ -86,7 +86,7 @@ export async function bestaetigen(
       status: "fehler",
       nachricht: error
         ? authFehlerText(error, await holeAuthTexte())
-        : "Der Code liess sich nicht bestätigen. Fordere einen neuen an.",
+        : (await holeTexte()).codeVersand.nichtBestaetigt,
       felder: {},
       werte: { email: geprueft.data.email },
     };
@@ -119,8 +119,7 @@ export async function erneutSenden(
   if (!geprueft.success) {
     return {
       status: "fehler",
-      nachricht:
-        "Ohne E-Mail-Adresse lässt sich nichts erneut verschicken. Geh zurück zur Registrierung.",
+      nachricht: (await holeTexte()).codeVersand.ohneEmail,
       felder: feldFehler(geprueft.error, await holeValidierung()),
     };
   }
@@ -138,7 +137,7 @@ export async function erneutSenden(
 
   return {
     status: "erfolg",
-    nachricht: "Ein neuer Code ist unterwegs. Schau auch im Spam-Ordner nach.",
+    nachricht: (await holeTexte()).codeVersand.neuUnterwegs,
     felder: {},
   };
 }

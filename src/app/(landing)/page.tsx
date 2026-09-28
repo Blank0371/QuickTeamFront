@@ -51,7 +51,10 @@ export default async function StartSeite() {
         Browser-Buendel. Dieselbe eine Quelle wie in der Middleware.
       */}
       <Hero authOffen={!softLaunchAktiv()} texte={t.landing} />
-      <KalenderBuehne versprechen={versprechen(t.versprechen)} />
+      <KalenderBuehne
+        versprechen={versprechen(t.versprechen)}
+        beschriftung={t.landing.buehneAria}
+      />
       <VersprechenKarten />
       <PricingAbschnitt />
       <LandingFooter />

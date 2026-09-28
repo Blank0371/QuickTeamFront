@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { holeTexte } from "@/i18n/server";
 import { abmelden } from "@/lib/auth-aktionen";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseKonfiguriert } from "@/lib/supabase/env";
@@ -39,24 +40,26 @@ export async function SessionHinweis() {
 
   if (!user) return null;
 
+  const { login } = await holeTexte();
+
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-blk border border-line bg-surface-sunk px-4 py-3">
       <p className="text-sm text-muted">
-        Angemeldet als <span className="font-medium text-text">{user.email}</span>
+        {login.angemeldetAls} <span className="font-medium text-text">{user.email}</span>
       </p>
       <span className="flex items-center gap-4">
         <Link
           href="/einrichtung"
           className="text-sm font-semibold text-signal underline underline-offset-4 hover:text-signal-hover"
         >
-          Zur Planung
+          {login.zurPlanung}
         </Link>
         <form action={abmelden}>
           <button
             type="submit"
             className="text-sm text-muted underline underline-offset-4 transition-colors hover:text-text"
           >
-            Abmelden
+            {login.abmelden}
           </button>
         </form>
       </span>

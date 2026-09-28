@@ -51,8 +51,8 @@ export async function RechtsDokument({
 }: {
   /** Dateiname je Sprache, relativ zu `docs/rechtliches/`. */
   dateien: Record<Locale, string>;
-  /** Überschrift je Sprache. Steht nicht im Dokument, damit `<h1>` uns gehört. */
-  titel: Record<Locale, string>;
+  /** Überschrift aus dem Wörterbuch. Steht nicht im Dokument, damit `<h1>` uns gehört. */
+  titel: string;
   /**
    * Kasten über dem Text — ein Slot, kein `boolean`.
    *
@@ -89,7 +89,7 @@ export async function RechtsDokument({
           {t.rechtliches.bereich}
         </p>
 
-        <h1 className="mt-3 text-3xl leading-[1.1] [overflow-wrap:anywhere] sm:text-4xl">{titel[sprache]}</h1>
+        <h1 className="mt-3 text-3xl leading-[1.1] [overflow-wrap:anywhere] sm:text-4xl">{titel}</h1>
 
         {hinweis}
 

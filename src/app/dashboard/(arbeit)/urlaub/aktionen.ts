@@ -6,7 +6,8 @@ import { genehmigteTageOhne, tageImJahr } from "@/lib/dashboard/urlaub";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { urlaubAntragSchema, urlaubEntscheidungSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Server Actions von Urlaub.
@@ -36,12 +37,9 @@ function fehler(
   return { status: "fehler", nachricht, felder, werte };
 }
 
-const RPC_FEHLER: Record<string, string> = {
-  URLAUB_DATUM: "Das Datum passt nicht — der Beginn darf nicht in der Vergangenheit liegen und muss vor dem Ende liegen.",
-  URLAUB_KONTINGENT: "Das übersteigt deinen verbleibenden Urlaubsanspruch.",
-  URLAUB_SCHICHTEN: "Für diesen Zeitraum bist du bereits zu Schichten eingeteilt.",
-  URLAUB_GEPLANT: "Für diesen Zeitraum ist bereits ein veröffentlichter Plan vorhanden.",
-};
+async function texte() {
+  return (await holeTexte()).urlaub;
+}
 
 export async function beantragen(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
@@ -69,7 +67,9 @@ export async function beantragen(_vorher: FormZustand, formData: FormData): Prom
   if (error) {
     const code = error.message.trim();
     console.error(`[dashboard/urlaub] beantragen: ${error.message}`);
-    return fehler(RPC_FEHLER[code] ?? "Das hat nicht geklappt. Versuch es noch einmal.", {}, roh);
+    const t = await texte();
+    const rpcFehler: Record<string, string> = t.rpc;
+    return fehler(rpcFehler[code] ?? t.nochmal, {}, roh);
   }
 
   revalidatePath(PFAD);
@@ -78,8 +78,9 @@ export async function beantragen(_vorher: FormZustand, formData: FormData): Prom
 
 export async function entscheiden(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = await texte();
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf über Urlaubsanträge entscheiden.");
+    return fehler(t.nurChef);
   }
 
   const roh = {
@@ -102,7 +103,7 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
       .single();
 
     if (antragFehler || !antrag) {
-      return fehler("Diesen Antrag gibt es nicht mehr.");
+      return fehler(t.antragWeg);
     }
 
     const [{ data: mitarbeiterZeile, error: mitarbeiterFehler }, { data: genehmigt, error: urlaubFehler }] = await Promise.all([
@@ -115,7 +116,7 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
     ]);
 
     if (mitarbeiterFehler || urlaubFehler || !mitarbeiterZeile || !genehmigt) {
-      return fehler("Der Urlaubsanspruch liess sich nicht prüfen. Versuch es noch einmal.");
+      return fehler(t.anspruchUnlesbar);
     }
     const anspruch = mitarbeiterZeile.urlaubsanspruch_tage ?? 0;
     for (let jahr = Number(antrag.von.slice(0, 4)); jahr <= Number(antrag.bis.slice(0, 4)); jahr++) {
@@ -128,9 +129,7 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
       const beantragt = tageImJahr(antrag.von, antrag.bis, jahr);
       if (bereits + beantragt > anspruch) {
         const rest = Math.max(0, anspruch - bereits);
-        return fehler(
-          `Das übersteigt den Urlaubsanspruch für ${jahr}: noch ${rest} von ${anspruch} Tagen übrig, dieser Antrag braucht ${beantragt}.`,
-        );
+        return fehler(fuelle(t.anspruchUeberschritten, { jahr, rest, anspruch, beantragt }));
       }
     }
   }
@@ -144,10 +143,10 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
 
   if (error) {
     console.error(`[dashboard/urlaub] entscheiden: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
-  if (!aktualisiert?.length) return fehler("Diesen Antrag gibt es nicht mehr. Lad die Seite neu.");
+  if (!aktualisiert?.length) return fehler(t.antragWegNeuLaden);
 
   revalidatePath(PFAD);
   return { status: "erfolg", nachricht: null, felder: {} };

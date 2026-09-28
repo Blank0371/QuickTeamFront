@@ -7,11 +7,14 @@ import { Megaphone } from "lucide-react";
 
 import { DatumWahl } from "@/components/formular/datum-wahl";
 import { FormMeldung } from "@/components/formular/felder";
+import type { Dictionary } from "@/i18n/de";
 import { leererZustand } from "@/lib/formular";
 
 import { erinnerungSenden, zyklusAnlegen } from "./aktionen";
 
-function Absenden() {
+type Texte = Dictionary["planung"];
+
+function Absenden({ text }: { text: string }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -20,12 +23,12 @@ function Absenden() {
       aria-disabled={pending}
       className="rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "…" : "Zeitraum anlegen"}
+      {pending ? "…" : text}
     </button>
   );
 }
 
-function ErinnernKnopf() {
+function ErinnernKnopf({ text }: { text: string }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -34,7 +37,7 @@ function ErinnernKnopf() {
       className="flex items-center gap-1.5 rounded-blk border border-signal/40 bg-signal-weak px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-signal-weak/70 disabled:cursor-not-allowed disabled:opacity-70"
     >
       <Megaphone className="size-4" aria-hidden="true" />
-      {pending ? "…" : "Erinnerung: Vorlieben eintragen"}
+      {pending ? "…" : text}
     </button>
   );
 }
@@ -45,7 +48,7 @@ function ErinnernKnopf() {
  * konnte niemand Wünsche eintragen, eine Erinnerung daran wäre sinnlos —
  * dieselbe Bedingung wie `hasPrevCycle` in `manager.tsx`.
  */
-function ErinnerungFormular() {
+function ErinnerungFormular({ text }: { text: string }) {
   const [zustand, aktion] = useActionState(erinnerungSenden, leererZustand);
 
   return (
@@ -55,7 +58,7 @@ function ErinnerungFormular() {
           {zustand.nachricht}
         </FormMeldung>
       ) : null}
-      <ErinnernKnopf />
+      <ErinnernKnopf text={text} />
     </form>
   );
 }
@@ -75,9 +78,11 @@ function ErinnerungFormular() {
 export function ZyklusFormular({
   vorschlag,
   hatVorherigenZyklus,
+  texte: t,
 }: {
   vorschlag: { start: string; ende: string };
   hatVorherigenZyklus: boolean;
+  texte: Texte;
 }) {
   const [zustand, aktion] = useActionState(zyklusAnlegen, leererZustand);
   const ueberschneidung = zustand.felder["ueberschneidung"] === "ja";
@@ -97,12 +102,9 @@ export function ZyklusFormular({
       className="rounded-panel border border-line bg-surface p-5 sm:p-6"
     >
       <h2 id="neuer-zeitraum" className="font-display text-base text-text">
-        Neuer Zeitraum
+        {t.neuerZeitraum}
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        Der Rahmen, für den geplant wird — üblicherweise ein Monat. Die Schichten
-        entstehen daraus erst im nächsten Schritt.
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{t.neuerZeitraumText}</p>
 
       {zustand.nachricht ? (
         <div className="mt-4">
@@ -121,14 +123,14 @@ export function ZyklusFormular({
         <div className="grid gap-4 sm:grid-cols-2">
           <DatumWahl
             name="start"
-            label="Beginn"
+            label={t.beginn}
             defaultValue={werte["start"] ?? vorschlag.start}
             fehler={zustand.felder["start"]}
           />
 
           <DatumWahl
             name="ende"
-            label="Ende"
+            label={t.ende}
             defaultValue={werte["ende"] ?? vorschlag.ende}
             fehler={zustand.felder["ende"]}
           />
@@ -144,25 +146,21 @@ export function ZyklusFormular({
           name="deadline"
           label={
             <>
-              Frist für Wünsche{" "}
-              <span className="font-normal text-muted">(optional)</span>
+              {t.frist} <span className="font-normal text-muted">{t.optional}</span>
             </>
           }
           defaultValue={werte["deadline"]}
-          platzhalter="Keine Frist"
+          platzhalter={t.keineFrist}
           loeschbar
           className="sm:max-w-xs"
-          hinweis="Bis dahin kann dein Team Verfügbarkeiten und Wünsche eintragen. Ohne Angabe gilt der Beginn des Zeitraums."
+          hinweis={t.fristHinweis}
           fehler={zustand.felder["deadline"]}
         />
 
         {ueberschneidung ? (
           <label className="flex items-start gap-2 rounded-blk border border-stop/40 bg-stop/10 px-4 py-3 text-sm text-text">
             <input type="checkbox" name="trotzdem" value="ja" className="mt-1" />
-            <span>
-              Ja, den Zeitraum trotz Überschneidung anlegen. Mir ist klar, dass für die
-              gemeinsamen Tage doppelt Schichten entstehen können.
-            </span>
+            <span>{t.trotzUeberschneidung}</span>
           </label>
         ) : null}
 
@@ -177,21 +175,18 @@ export function ZyklusFormular({
         {frist ? (
           <label className="flex items-start gap-2 rounded-blk border border-signal/40 bg-signal-weak px-4 py-3 text-sm text-text">
             <input type="checkbox" name="frist_trotzdem" value="ja" className="mt-1" />
-            <span>
-              Ja, jetzt schon planen. Wünsche, die nach dem Absenden noch eingehen,
-              fliessen in diesen Plan nicht mehr ein.
-            </span>
+            <span>{t.trotzFrist}</span>
           </label>
         ) : null}
 
         <div>
-          <Absenden />
+          <Absenden text={t.anlegen} />
         </div>
       </form>
 
       {hatVorherigenZyklus ? (
         <div className="mt-5 border-t border-line pt-5">
-          <ErinnerungFormular />
+          <ErinnerungFormular text={t.erinnern} />
         </div>
       ) : null}
     </section>

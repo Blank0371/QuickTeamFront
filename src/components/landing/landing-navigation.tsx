@@ -4,6 +4,8 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import type { Dictionary } from "@/i18n/de";
+
 /**
  * Schmale, mitlaufende Section-Navigation der Landingpage.
  *
@@ -27,11 +29,12 @@ import { useEffect, useRef, useState } from "react";
  * tatsaechlich aendert. Bei einer 380vh langen Kalender-Sequenz sind
  * das ueber die gesamte Seite weniger als ein Dutzend Renders.
  */
+/* Beschriftungen kommen aus `landing` im Wörterbuch (Prop `texte`). */
 const PUNKTE = [
-  { id: "kalender", label: "Was ist QuickTeam?" },
-  { id: "versprechen", label: "Versprechen" },
-  { id: "pricing", label: "Preise" },
-  { id: "rechtliches", label: "Rechtliches" },
+  { id: "kalender", label: "navKalender" },
+  { id: "versprechen", label: "navVersprechen" },
+  { id: "pricing", label: "navPreise" },
+  { id: "rechtliches", label: "navRechtliches" },
 ] as const;
 
 /*
@@ -41,9 +44,19 @@ const PUNKTE = [
  * mehr.
  */
 const AUTH_PUNKTE = [
-  { href: "/registrieren", label: "Registrieren", stark: true },
-  { href: "/login", label: "Anmelden", stark: false },
+  { href: "/registrieren", label: "heroTesten", stark: true },
+  { href: "/login", label: "heroAnmelden", stark: false },
 ] as const;
+
+/** Genau die Schlüssel aus `landing`, die diese Leiste braucht. */
+export type LandingNavTexte = Pick<
+  Dictionary["landing"],
+  | (typeof PUNKTE)[number]["label"]
+  | (typeof AUTH_PUNKTE)[number]["label"]
+  | "navAria"
+  | "navMenue"
+  | "navSchliessen"
+>;
 
 /**
  * `authOffen` kommt als Prop aus `src/app/(landing)/layout.tsx`.
@@ -67,10 +80,12 @@ export function LandingNavigation({
   authOffen,
   promoHref,
   promoLabel,
+  texte,
 }: {
   authOffen: boolean;
   promoHref?: string;
   promoLabel?: string;
+  texte: LandingNavTexte;
 }) {
   const [aktiv, setAktiv] = useState<string | null>(null);
   const [offen, setOffen] = useState(false);
@@ -165,7 +180,7 @@ export function LandingNavigation({
       }}
     >
       <nav
-        aria-label="Abschnitte dieser Seite"
+        aria-label={texte.navAria}
         className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8"
       >
         <a
@@ -196,7 +211,7 @@ export function LandingNavigation({
                 aria-current={aktiv === punkt.id ? "true" : undefined}
                 className={linkKlasse(punkt.id)}
               >
-                {punkt.label}
+                {texte[punkt.label]}
                 <span
                   aria-hidden="true"
                   className="absolute inset-x-3 -bottom-[3px] h-[2px] rounded-full transition-opacity"
@@ -247,7 +262,7 @@ export function LandingNavigation({
                       }
                 }
               >
-                {punkt.label}
+                {texte[punkt.label]}
               </Link>
                 ))
               : null}
@@ -271,7 +286,7 @@ export function LandingNavigation({
           ) : (
             <Menu aria-hidden="true" className="size-4" strokeWidth={2} />
           )}
-          {offen ? "Schließen" : "Menü"}
+          {offen ? texte.navSchliessen : texte.navMenue}
         </button>
       </nav>
 
@@ -295,7 +310,7 @@ export function LandingNavigation({
                       : "color-mix(in oklab, var(--qt-c-bone) 70%, transparent)",
                 }}
               >
-                {punkt.label}
+                {texte[punkt.label]}
               </a>
             </li>
           ))}
@@ -337,7 +352,7 @@ export function LandingNavigation({
                         }
                   }
                 >
-                  {punkt.label}
+                  {texte[punkt.label]}
                 </Link>
               ))}
             </li>

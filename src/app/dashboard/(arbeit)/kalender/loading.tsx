@@ -17,7 +17,7 @@ import { Balken, LadeAnsage } from "@/components/dashboard/skelett";
 export default function KalenderLaedt() {
   return (
     <Container className="py-8 sm:py-10">
-      <LadeAnsage text="Dienstplan wird geladen" />
+      <LadeAnsage art="dienstplan" />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">

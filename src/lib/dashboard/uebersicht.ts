@@ -178,7 +178,11 @@ export type RollenEimer = {
  * neben dem Rollennamen sagen. Abgemeldete (`attendet = false`) zählen
  * nicht mit — sie stehen zwar noch in der Schicht, arbeiten aber nicht.
  */
-export function sammleRollen(schichten: readonly KalenderSchicht[]): RollenEimer[] {
+export function sammleRollen(
+  schichten: readonly KalenderSchicht[],
+  /** Beschriftung für Zuteilungen ohne Rolle, aus dem Wörterbuch. */
+  ohneRolle: string,
+): RollenEimer[] {
   const gezaehlt = new Map<string, { name: string; anzahl: number }>();
 
   for (const schicht of schichten) {
@@ -187,7 +191,7 @@ export function sammleRollen(schichten: readonly KalenderSchicht[]): RollenEimer
 
       const name = person.role_name?.trim();
       const wert = name ? name : OHNE_ROLLE;
-      const beschriftung = name ? name : "Ohne Rolle";
+      const beschriftung = name ? name : ohneRolle;
 
       const eintrag = gezaehlt.get(wert);
       if (eintrag) eintrag.anzahl += 1;
@@ -444,6 +448,7 @@ export function fasseBesetzung(
   schichten: readonly KalenderSchicht[],
   bedarf: Bedarf,
   rollenNamen: ReadonlyMap<string, string>,
+  ohneRolle: string,
 ): Besetzungsstand[] {
   const stand = new Map<string, Besetzungsstand>();
 
@@ -470,7 +475,7 @@ export function fasseBesetzung(
     for (const person of schicht.participants) {
       if (person.attendet === false) continue;
       const name = person.role_name?.trim();
-      hole(name ? name : "Ohne Rolle").besetzt += 1;
+      hole(name ? name : ohneRolle).besetzt += 1;
     }
   }
 
@@ -510,12 +515,13 @@ export type RollenGruppe = {
  */
 export function gruppiereNachRolle(
   participants: KalenderSchicht["participants"],
+  ohneRolle: string,
 ): RollenGruppe[] {
   const gruppen = new Map<string, KalenderSchicht["participants"]>();
 
   for (const person of participants) {
     const name = person.role_name?.trim();
-    const rolle = name ? name : "Ohne Rolle";
+    const rolle = name ? name : ohneRolle;
     const vorhanden = gruppen.get(rolle);
     if (vorhanden) vorhanden.push(person);
     else gruppen.set(rolle, [person]);

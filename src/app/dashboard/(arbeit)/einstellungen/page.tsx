@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Container } from "@/components/container";
 import { FormMeldung } from "@/components/formular/felder";
+import { holeTexte } from "@/i18n/server";
 import { einzelwert } from "@/lib/auth-meldungen";
 import { holeEinstellungen } from "@/lib/dashboard/einstellungen";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
@@ -10,11 +11,14 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { AboAbschnitt } from "./abo-abschnitt";
 import { EinstellungenFormular } from "./einstellungen-formular";
 
-export const metadata: Metadata = {
-  title: "Einstellungen",
-  description: "Sichtbarkeit, Abläufe und Abrechnung deines Betriebs.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { einstellungen } = await holeTexte();
+  return {
+    title: einstellungen.metaTitel,
+    description: einstellungen.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Betriebseinstellungen — Chef-Bereich.
@@ -51,22 +55,18 @@ export default async function EinstellungenSeite({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const alle = await holeTexte();
+  const t = alle.einstellungen;
+
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Einstellungen</h1>
-        <p className="mt-2 text-base leading-relaxed text-muted">
-          Was dein Team sehen darf, wie Tausch und Notfall gerechnet werden, und bis
-          wann abgerechnet ist.
-        </p>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t.lead}</p>
 
         <div className="mt-8">
           {!chef ? (
-            <FormMeldung art="fehler">
-              Diese Einstellungen gehören der Betriebsleitung. Du siehst sie als
-              angestellte Person nicht — was hier steht, wirkt aber auf deinen
-              Kalender.
-            </FormMeldung>
+            <FormMeldung art="fehler">{t.nurChef}</FormMeldung>
           ) : einstellungen === null ? (
             /*
              * Kein Formular mit Standardwerten anbieten: die Zeile legt
@@ -75,13 +75,13 @@ export default async function EinstellungenSeite({
              * sie ersetzen könnten. Fehlt sie, ist das ein Datenproblem
              * und keine leere Eingabemaske.
              */
-            <FormMeldung art="fehler">
-              Für diesen Betrieb sind keine Einstellungen hinterlegt. Das sollte nicht
-              vorkommen — lad die Seite neu, und meld dich beim Support, wenn es
-              bleibt.
-            </FormMeldung>
+            <FormMeldung art="fehler">{t.keineZeile}</FormMeldung>
           ) : (
-            <EinstellungenFormular start={einstellungen} />
+            <EinstellungenFormular
+              start={einstellungen}
+              texte={t}
+              sprachNamen={{ de: alle.auswahl.spracheDE, en: alle.auswahl.spracheEN }}
+            />
           )}
         </div>
 
@@ -114,18 +114,13 @@ export default async function EinstellungenSeite({
               id="export-titel"
               className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
             >
-              Daten exportieren
+              {t.exportTitel}
             </h2>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-              Alle Daten deines Betriebs als eine JSON-Datei: Mitarbeiter und Rollen,
-              Vorlagen und Schichten, Urlaub, Verfügbarkeiten, Mitteilungen, Tausch,
-              Notfälle und das Änderungsprotokoll. Das Paket nennt zu jedem Abschnitt,
-              was er enthält, und listet auf, was bewusst fehlt.
+              {t.exportText1}
             </p>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-              Einzelstimmen anonymer Umfragen sind nicht enthalten — für sie steht die
-              Auszählung im Paket. Der Export ist kostenlos und beliebig oft möglich,
-              auch nach einer Kündigung.
+              {t.exportText2}
             </p>
             <p className="mt-4">
               <a
@@ -133,7 +128,7 @@ export default async function EinstellungenSeite({
                 download
                 className="inline-flex rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
               >
-                Export herunterladen
+                {t.exportKnopf}
               </a>
             </p>
           </section>
@@ -152,19 +147,15 @@ export default async function EinstellungenSeite({
             id="konto-titel"
             className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
           >
-            Konto
+            {t.kontoTitel}
           </h2>
-          <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-            Wenn du QuickTeam nicht mehr nutzen willst, kannst du deinen Zugang
-            endgültig löschen. Der Betrieb und die Dienstpläne bleiben bestehen —
-            dein Name verschwindet daraus.
-          </p>
+          <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{t.kontoText}</p>
           <p className="mt-3">
             <Link
               href="/kontoloeschung"
               className="text-sm font-medium text-stop underline underline-offset-4"
             >
-              Konto löschen
+              {t.kontoLoeschen}
             </Link>
           </p>
         </section>

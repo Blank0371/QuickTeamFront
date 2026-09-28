@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/container";
+import { holeTexte } from "@/i18n/server";
 import { holeEigeneSchichten, holeFreieTage, holeTauschAngebote } from "@/lib/dashboard/tausch";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 
 import { TauschAngebotFormular } from "./tausch-angebot-formular";
 import { TauschListe } from "./tausch-liste";
 
-export const metadata: Metadata = {
-  title: "Tausch",
-  description: "Eigene Schichten zum Tausch anbieten und auf Angebote reagieren.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { tausch } = await holeTexte();
+  return {
+    title: tausch.metaTitel,
+    description: tausch.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Schichttausch — für beide Rollensichten, nicht nur für Chefs.
@@ -30,21 +34,25 @@ export default async function TauschSeite() {
   const eigeneSchichten = await holeEigeneSchichten(supabase, position.betriebId, position.mitarbeiterId);
   const freieTage = holeFreieTage(eigeneSchichten);
   const angebote = await holeTauschAngebote(supabase, position.betriebId, position.mitarbeiterId, chef);
+  const t = (await holeTexte()).tausch;
 
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Tausch</h1>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
         <p className="mt-2 text-base leading-relaxed text-muted">
-          Eigene Schichten anbieten, auf Angebote reagieren
-          {chef ? ", Freigaben erteilen." : "."}
+          {chef ? t.leadChef : t.lead}
         </p>
 
         <div className="mt-8">
-          <TauschAngebotFormular eigeneSchichten={eigeneSchichten} freieTage={freieTage} />
+          <TauschAngebotFormular
+            eigeneSchichten={eigeneSchichten}
+            freieTage={freieTage}
+            texte={t}
+          />
         </div>
 
-        <TauschListe angebote={angebote} chef={chef} />
+        <TauschListe angebote={angebote} chef={chef} texte={t} />
       </div>
     </Container>
   );

@@ -30,21 +30,7 @@ export const ZYKLUS_STATUS: readonly ZyklusStatus[] = [
   "veroeffentlicht",
 ];
 
-export const ZYKLUS_TEXT: Record<ZyklusStatus, string> = {
-  offen: "Offen",
-  deadline_erreicht: "Frist abgelaufen",
-  solver_laeuft: "Wird geplant",
-  vorschlag_bereit: "Vorschlag liegt vor",
-  veroeffentlicht: "Veröffentlicht",
-};
-
-export const ZYKLUS_ERKLAERUNG: Record<ZyklusStatus, string> = {
-  offen: "Dein Team kann noch Wünsche und Verfügbarkeiten eintragen.",
-  deadline_erreicht: "Die Frist ist vorbei, geplant wurde noch nicht.",
-  solver_laeuft: "Die Schichtverteilung wird gerade berechnet.",
-  vorschlag_bereit: "Ein Vorschlag steht — noch nicht für das Team sichtbar.",
-  veroeffentlicht: "Der Plan ist freigegeben und für alle sichtbar.",
-};
+/* Anzeigename und Erklärung je Status stehen im Wörterbuch (`planung.status`/`.erklaerung`). */
 
 export function istZyklusStatus(wert: string): wert is ZyklusStatus {
   return (ZYKLUS_STATUS as readonly string[]).includes(wert);
@@ -205,7 +191,7 @@ export function fristNochOffen(
 }
 
 /** `YYYY-MM-DD` → „1. September 2026". */
-export function langesDatum(iso: string, locale: Locale = "de"): string {
+export function langesDatum(iso: string, locale: Locale): string {
   const [jahr, monat, tag] = iso.split("-").map(Number);
   if (!jahr || !monat || !tag) return iso;
   return new Intl.DateTimeFormat(locale, {

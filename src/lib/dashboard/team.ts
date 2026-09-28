@@ -25,19 +25,7 @@ export const STATUS_REIHE: readonly Status[] = [
   "inaktiv",
 ];
 
-export const STATUS_TEXT: Record<Status, string> = {
-  eingeladen: "Eingeladen",
-  aktiv: "Aktiv",
-  pausiert: "Pausiert",
-  inaktiv: "Inaktiv",
-};
-
-export const STATUS_ERKLAERUNG: Record<Status, string> = {
-  eingeladen: "Hat die Einladung noch nicht angenommen.",
-  pausiert: "Vorübergehend nicht einplanbar, bleibt im Team.",
-  inaktiv: "Arbeitet nicht mehr hier.",
-  aktiv: "Wird ganz normal eingeplant.",
-};
+/* Anzeigename und Erklärung je Status: `teamVerwaltung.status`/`.statusErklaerung`. */
 
 export function istStatus(wert: string): wert is Status {
   return (STATUS_REIHE as readonly string[]).includes(wert);

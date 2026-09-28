@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 import {
   tagesNotizSchema,
   tagesPraeferenzLoeschenSchema,
@@ -27,6 +27,10 @@ function fehler(nachricht: string, felder: Record<string, string> = {}): FormZus
   return { status: "fehler", nachricht, felder };
 }
 
+async function texte() {
+  return (await holeTexte()).verfuegbarkeit;
+}
+
 /**
  * Speichert alle gesammelten wiederkehrenden Wünsche in einem Zug —
  * Entscheidung vom 2026-09-01: erst auswählen, dann speichern oder
@@ -44,17 +48,18 @@ export async function speichereWiederkehrendePraeferenzen(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = await texte();
 
   let roh: unknown;
   try {
     roh = JSON.parse(String(formData.get("aenderungen") ?? "[]"));
   } catch {
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   const geprueft = wiederkehrendePraeferenzenSchema.safeParse(roh);
   if (!geprueft.success) {
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
   const aenderungen = geprueft.data;
   if (aenderungen.length === 0) {
@@ -73,7 +78,7 @@ export async function speichereWiederkehrendePraeferenzen(
 
     if (error) {
       console.error(`[dashboard/verfuegbarkeit] wiederkehrend loeschen: ${error.message}`);
-      return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+      return fehler(t.nochmal);
     }
   }
 
@@ -90,12 +95,12 @@ export async function speichereWiederkehrendePraeferenzen(
 
     if (error) {
       console.error(`[dashboard/verfuegbarkeit] wiederkehrend setzen: ${error.message}`);
-      return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+      return fehler(t.nochmal);
     }
   }
 
   revalidatePath(PFAD);
-  return { status: "erfolg", nachricht: "Gespeichert.", felder: {} };
+  return { status: "erfolg", nachricht: t.gespeichert, felder: {} };
 }
 
 /**
@@ -110,18 +115,19 @@ export async function speichereWiederkehrendePraeferenzen(
  */
 export async function speichereTageswuensche(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = await texte();
 
   let roh: unknown;
   try {
     roh = JSON.parse(String(formData.get("aenderungen") ?? "[]"));
   } catch {
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   const geprueft = tageswuenscheSchema.safeParse(roh);
   if (!geprueft.success) {
     const felder = feldFehler(geprueft.error, await holeValidierung());
-    return fehler(Object.values(felder)[0] ?? "Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(Object.values(felder)[0] ?? t.nochmal);
   }
   const aenderungen = geprueft.data;
   if (aenderungen.length === 0) {
@@ -138,7 +144,7 @@ export async function speichereTageswuensche(_vorher: FormZustand, formData: For
 
     if (error) {
       console.error(`[dashboard/verfuegbarkeit] tageswunsch loeschen: ${error.message}`);
-      return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+      return fehler(t.nochmal);
     }
   }
 
@@ -159,12 +165,12 @@ export async function speichereTageswuensche(_vorher: FormZustand, formData: For
 
     if (error) {
       console.error(`[dashboard/verfuegbarkeit] tageswunsch setzen: ${error.message}`);
-      return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+      return fehler(t.nochmal);
     }
   }
 
   revalidatePath(PFAD);
-  return { status: "erfolg", nachricht: "Gespeichert.", felder: {} };
+  return { status: "erfolg", nachricht: t.gespeichert, felder: {} };
 }
 
 export async function loescheTagesPraeferenz(
@@ -191,7 +197,7 @@ export async function loescheTagesPraeferenz(
 
   if (error) {
     console.error(`[dashboard/verfuegbarkeit] loeschen: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler((await texte()).nochmal);
   }
 
   revalidatePath(PFAD);
@@ -226,14 +232,15 @@ export async function speichereTagesNotiz(_vorher: FormZustand, formData: FormDa
     .is("geloescht_am", null)
     .select("datum");
 
+  const t = await texte();
   if (error) {
     console.error(`[dashboard/verfuegbarkeit] notiz: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
   if (!data || data.length === 0) {
-    return fehler("Diesen Wunsch gibt es nicht mehr.");
+    return fehler(t.wunschWeg);
   }
 
   revalidatePath(PFAD);
-  return { status: "erfolg", nachricht: notiz ? "Notiz gespeichert." : "Notiz entfernt.", felder: {} };
+  return { status: "erfolg", nachricht: notiz ? t.notizGespeichert : t.notizEntfernt, felder: {} };
 }

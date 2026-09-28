@@ -1,5 +1,6 @@
 import { baueExportPaket } from "@/lib/export/paket";
 import { betreteOhneTore, istChef } from "@/lib/dashboard/zugang";
+import { holeTexte } from "@/i18n/server";
 
 /**
  * Der Datenexport eines Betriebs — § 6 Abs. 4 und 5 der AGB, Art. 20
@@ -57,7 +58,7 @@ export async function GET(): Promise<Response> {
 
   if (!istChef(position)) {
     return new Response(
-      "Nur die Betriebsleitung kann den Betriebsexport anfordern.",
+      (await holeTexte()).einstellungen.exportNurChef,
       { status: 403, headers: { "content-type": "text/plain; charset=utf-8" } },
     );
   }

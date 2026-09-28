@@ -36,13 +36,29 @@ export async function erstelleKundenportal({
 }
 
 /**
+ * In welcher Lage eine Zahlung abgelehnt wurde — bestimmt den Satz, den
+ * der Kunde sieht (`zahlung.ablehnung` im Wörterbuch).
+ *
+ *   `nicht-gestartet`   neues Abo, Erstrechnung abgelehnt
+ *   `noch-nicht`        bestehendes, noch unbezahltes Abo (`incomplete`)
+ *   `testphase`         pausiertes Abo nach der Testphase, Wiederaufnahme
+ */
+export type AblehnungsArt = "nicht-gestartet" | "noch-nicht" | "testphase";
+
+/**
  * Fehler, der dem Kunden gezeigt werden darf — die Karte hat nicht
  * funktioniert, und das ist keine Panne auf unserer Seite.
+ *
+ * Trägt die Lage, nicht den Satz: diese Datei kennt die Sprache der
+ * Anfrage nicht. Übersetzt wird beim Aufrufer (`zahlung-aktionen.ts`).
  */
 export class ZahlungAbgelehnt extends Error {
-  constructor(nachricht: string) {
-    super(nachricht);
+  readonly art: AblehnungsArt;
+
+  constructor(art: AblehnungsArt) {
+    super(`Zahlung abgelehnt (${art})`);
     this.name = "ZahlungAbgelehnt";
+    this.art = art;
   }
 }
 
@@ -81,10 +97,7 @@ export async function nimmAboWiederAuf(
     billing_cycle_anchor: "now",
   });
 
-  return bezahleOffeneRechnung(
-    abo,
-    "Die Karte wurde abgelehnt. Deine Testphase ist abgelaufen und die erste Abbuchung steht an — versuch es mit einer anderen Zahlungsmethode.",
-  );
+  return bezahleOffeneRechnung(abo, "testphase");
 }
 
 /**
@@ -100,7 +113,7 @@ export async function nimmAboWiederAuf(
  */
 export async function bezahleOffeneRechnung(
   abo: Stripe.Subscription,
-  ablehnung: string,
+  ablehnung: AblehnungsArt,
 ): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
 
@@ -225,10 +238,7 @@ export async function uebernimmZahlungsmittel({
   }
 
   if (abo.status === "incomplete") {
-    return bezahleOffeneRechnung(
-      abo,
-      "Die Zahlung wurde abgelehnt, das Abo ist noch nicht gestartet. Versuch es mit einer anderen Zahlungsmethode.",
-    );
+    return bezahleOffeneRechnung(abo, "noch-nicht");
   }
 
   return abo;

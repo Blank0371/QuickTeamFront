@@ -24,11 +24,14 @@ export function PreisListe({
   jaehrlich,
   vorteil,
   ustHinweis,
-  testphaseTage,
+  testMonat,
+  testJahr,
   b2b,
   authOffen,
   baldLabel,
   baldText,
+  betriebAnlegen,
+  planHinweis,
 }: {
   karten: PreisKarte[];
   proMonat: string;
@@ -37,11 +40,15 @@ export function PreisListe({
   jaehrlich: string;
   vorteil: string;
   ustHinweis: string;
-  testphaseTage: number;
+  /** Satz zu Testphase und Abrechnung, fertig mit Tageszahl, je Intervall. */
+  testMonat: string;
+  testJahr: string;
   b2b: string;
   authOffen: boolean;
   baldLabel: string;
   baldText: string;
+  betriebAnlegen: string;
+  planHinweis: string;
 }) {
   const [intervall, setIntervall] = useState<Abrechnung>("monat");
   const istJahr = intervall === "jahr";
@@ -89,7 +96,7 @@ export function PreisListe({
             <p className="mt-3 text-sm font-medium text-text">{karte.grenze}</p>
 
             <p className="mt-4 grow text-sm leading-relaxed text-muted">
-              {testphaseTage} Tage testen, danach {istJahr ? "jährliche" : "monatliche"} Abrechnung im Voraus.{" "}
+              {istJahr ? testJahr : testMonat}{" "}
               {istJahr ? karte.jahrKuendigung : karte.monatKuendigung}
             </p>
           </li>
@@ -109,11 +116,9 @@ export function PreisListe({
             href={`/registrieren?abrechnung=${intervall}`}
             className="rounded-blk bg-signal px-6 py-3 text-center text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
           >
-            Betrieb anlegen
+            {betriebAnlegen}
           </Link>
-          <p className="text-sm text-muted">
-            Den Plan wählst du während der Einrichtung — wechseln geht dort jederzeit.
-          </p>
+          <p className="text-sm text-muted">{planHinweis}</p>
         </div>
       ) : (
         <p className="mt-8 max-w-xl rounded-blk border border-dashed border-line px-5 py-4 text-sm leading-relaxed text-muted">

@@ -249,7 +249,7 @@ export function Hero({
         </div>
       </div>
 
-      <ScrollHinweis />
+      <ScrollHinweis text={texte.scrollen} />
     </section>
   );
 }

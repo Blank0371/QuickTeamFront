@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { FormMeldung } from "@/components/formular/felder";
+import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Wie lange der Knopf nach einem Klick gesperrt bleibt (Millisekunden).
@@ -92,6 +94,7 @@ export function SolverLauf({
   funktionsUrl,
   token,
   anonKey,
+  texte: t,
 }: {
   zyklusId: string;
   laeuft: boolean;
@@ -100,6 +103,7 @@ export function SolverLauf({
   funktionsUrl: string;
   token: string;
   anonKey: string;
+  texte: Dictionary["planung"];
 }) {
   const router = useRouter();
   const [fehler, setFehler] = useState<string | null>(null);
@@ -148,7 +152,7 @@ export function SolverLauf({
            * Planung, sondern ein abgelaufenes Zugangstoken.
            */
           if (antwort.status === 401) {
-            setFehler("Deine Sitzung ist abgelaufen. Lad die Seite neu.");
+            setFehler(t.sitzungAbgelaufen);
             setGestartet(false);
             return;
           }
@@ -156,14 +160,20 @@ export function SolverLauf({
           const koerper = (await antwort.json().catch(() => null)) as
             | { error?: unknown }
             | null;
-          const text = String(koerper?.error ?? `Fehler ${antwort.status}`);
+          const text = String(
+            koerper?.error ?? fuelle(t.fehlerStatus, { status: antwort.status }),
+          );
 
+          /*
+           * Die Function antwortet auf Deutsch; erkannt werden die
+           * bekannten Sätze, übersetzt wird unsere Antwort darauf.
+           */
           setFehler(
             text.includes("bereits bearbeitet")
-              ? "Für diesen Zeitraum liegt schon ein Ergebnis vor. Lad die Seite neu."
+              ? t.schonErgebnis
               : text.includes("Nicht berechtigt")
-                ? "Dafür fehlt dir die Berechtigung."
-                : `Die Planung ist gescheitert: ${text}`,
+                ? t.keineBerechtigung
+                : fuelle(t.gescheitert, { text }),
           );
           setGestartet(false);
           router.refresh();
@@ -177,22 +187,19 @@ export function SolverLauf({
          * womöglich weiter — deshalb kein „ist gescheitert", sondern ein
          * Verweis auf den Stand, der in der Datenbank steht.
          */
-        setFehler(
-          "Die Verbindung ist abgerissen. Der Lauf kann trotzdem durchgelaufen sein — lad die Seite neu.",
-        );
+        setFehler(t.verbindungWeg);
       }
 
       setGestartet(false);
     },
-    [router, zyklusId, funktionsUrl, token, anonKey],
+    [router, zyklusId, funktionsUrl, token, anonKey, t],
   );
 
   if (laeuft && !haengend) {
     return (
       <div className="mt-3">
         <p className="text-sm text-muted">
-          <span aria-hidden="true">⋯</span> Die Schichten werden gerade verteilt. Das
-          kann ein paar Minuten dauern — du kannst die Seite ruhig verlassen.
+          <span aria-hidden="true">⋯</span> {t.laeuft}
         </p>
         <StatusPoller />
       </div>
@@ -209,26 +216,20 @@ export function SolverLauf({
 
       {klickGesperrt && !gestartet ? (
         <p className="mb-3 text-sm text-muted" role="status">
-          Ein Planungslauf wurde gerade angestossen. Der Knopf ist ein paar
-          Sekunden gesperrt, damit nicht versehentlich zweimal gerechnet wird.
+          {t.gesperrt}
         </p>
       ) : null}
 
       {haengend ? (
         <>
-          <p className="mb-3 text-sm leading-relaxed text-muted">
-            Dieser Lauf steht seit über zehn Minuten auf „wird geplant". Vermutlich
-            ist er abgebrochen, ohne das melden zu können. Ein neuer Lauf verwirft
-            die bisherigen Vorschläge dieses Zeitraums und rechnet neu; von Hand
-            gesetzte Zuweisungen bleiben unberührt.
-          </p>
+          <p className="mb-3 text-sm leading-relaxed text-muted">{t.haengt}</p>
           <button
             type="button"
             onClick={() => void starten(true)}
             disabled={gestartet || klickGesperrt}
             className="rounded-blk border border-line px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {gestartet ? "Wird gestartet …" : "Neu berechnen"}
+            {gestartet ? t.wirdGestartet : t.neuBerechnen}
           </button>
         </>
       ) : (
@@ -238,7 +239,7 @@ export function SolverLauf({
           disabled={gestartet || klickGesperrt}
           className="rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {gestartet ? "Wird gestartet …" : "Schichten verteilen"}
+          {gestartet ? t.wirdGestartet : t.verteilen}
         </button>
       )}
     </div>

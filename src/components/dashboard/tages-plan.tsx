@@ -308,7 +308,7 @@ function Namen({
 
   return (
     <ul className="mt-1 flex flex-col gap-0.5">
-      {gruppiereNachRolle(schicht.participants).map((gruppe) => (
+      {gruppiereNachRolle(schicht.participants, texte.ohneRolle).map((gruppe) => (
         <li key={gruppe.rolle} className="flex flex-wrap items-baseline gap-x-2">
           {/* Die Rolle steht einmal vorn statt hinter jedem Namen: sie
               ist die Frage, die Namen sind die Antwort. */}

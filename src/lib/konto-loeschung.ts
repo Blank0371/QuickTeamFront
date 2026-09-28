@@ -1,3 +1,4 @@
+import type { Dictionary } from "@/i18n/de";
 import { holeAbo } from "@/lib/abo";
 import { loescheAktivePosition, type Position } from "@/lib/dashboard/position";
 import { holeAboFuerBetrieb, kuendigeAbo } from "@/lib/stripe";
@@ -176,19 +177,15 @@ export async function fuehreLoeschungAus({
  */
 export function loeschFehlerText(
   ergebnis: Exclude<LoeschErgebnis, { art: "erfolg" }>,
+  texte: Dictionary["kontoloeschung"]["fehler"],
 ): string {
   switch (ergebnis.art) {
     case "abo-unlesbar":
-      return "Die Abonnements konnten nicht geprüft werden. Dein Konto wurde nicht gelöscht. Versuch es später erneut.";
+      return texte.aboUnlesbar;
     case "chef-mit-mitgliedern":
-      return (
-        "Dein Konto leitet noch einen Betrieb, in dem weitere Personen stehen. " +
-        "Solange das so ist, lässt es sich nicht löschen — sonst bliebe ein Betrieb " +
-        "ohne Leitung zurück. Entferne zuerst die übrigen Mitglieder im Team oder " +
-        "übergib die Leitung an jemand anderen."
-      );
+      return texte.chefMitMitgliedern;
     case "fehlgeschlagen":
-      return "Das Konto liess sich nicht löschen. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.";
+      return texte.fehlgeschlagen;
   }
 }
 

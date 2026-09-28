@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Container } from "@/components/container";
+import { holeTexte } from "@/i18n/server";
 
 /**
  * Kasten für einen Hinweis über dem Text.
@@ -38,7 +39,7 @@ export function Hinweis({ titel, children }: { titel: string; children: ReactNod
  * blosse Gliederung auszugeben oder ganz ohne Vorbehalt dazustehen —
  * beides wäre unzutreffend.
  */
-export function RechtstextSeite({
+export async function RechtstextSeite({
   titel,
   lead,
   hinweis,
@@ -49,9 +50,12 @@ export function RechtstextSeite({
   hinweis?: ReactNode;
   children: ReactNode;
 }) {
+  const { rechtliches } = await holeTexte();
   return (
     <Container className="py-14 sm:py-20">
-      <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">Rechtliches</p>
+      <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">
+        {rechtliches.bereich}
+      </p>
 
       <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">{titel}</h1>
 

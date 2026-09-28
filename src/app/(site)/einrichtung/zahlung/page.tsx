@@ -34,12 +34,14 @@ import { ZahlungsFormular } from "@/components/einrichtung/zahlungs-formular";
 import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 
-export const metadata: Metadata = {
-  title: "Plan und Zahlung",
-  description:
-    "Wähle deinen Plan und hinterlege ein Zahlungsmittel — dein Betrieb wird angelegt, sobald die Zahlung bestätigt ist.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { stepper } = await holeTexte();
+  return {
+    title: stepper.zahlung.metaTitel,
+    description: stepper.zahlung.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -203,7 +205,7 @@ export default async function ZahlungSeite({
 
     const konditionen = aboKonditionen(stripeAbo);
     pruefePreisGleichstand(gewaehlt, konditionen);
-    const preis = preisZeile(konditionen);
+    const preis = preisZeile(konditionen, t.aboKonditionen, locale);
 
     const preisTeil = preis ? `, ${preis}` : "";
 
@@ -216,7 +218,7 @@ export default async function ZahlungSeite({
       >
         <ZahlungsFormular
           clientSecret={intent.clientSecret}
-          zusammenfassung={zusammenfassungNeuabschluss(konditionen)}
+          zusammenfassung={zusammenfassungNeuabschluss(konditionen, t.aboKonditionen, locale)}
           knopfText={sz.knopfSofort}
           texte={t.stepper.zahlungsFormular}
           rechnungTexte={t.stepper.rechnung}

@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 
+import { holeTexte } from "@/i18n/server";
 import { PFAD_KOPFZEILE } from "@/lib/dashboard/pfad";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -111,12 +112,14 @@ export async function holePositionen(
     throw new Error("Die Betriebszugehörigkeiten konnten nicht geladen werden.");
   }
 
+  const ohneNamen = (await holeTexte()).dashboard.betriebOhneNamen;
+
   return data
     .filter((zeile) => istRolleTyp(zeile.rolle_typ))
     .map((zeile) => ({
       mitarbeiterId: zeile.id,
       betriebId: zeile.betrieb_id,
-      betriebName: zeile.betriebe?.name ?? "Betrieb ohne Namen",
+      betriebName: zeile.betriebe?.name ?? ohneNamen,
       rolleTyp: zeile.rolle_typ as RolleTyp,
       name: `${zeile.vorname ?? ""} ${zeile.nachname ?? ""}`.trim(),
     }))

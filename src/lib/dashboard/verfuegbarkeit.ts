@@ -55,11 +55,15 @@ export type TeamTagesPraeferenz = TagesPraeferenz & {
  * Vorlagen, die zu den eigenen Rollen passen — Spiegel von `load()` in
  * `scheduling.tsx`: nur Vorlagen mit einer Mindestbesetzungs-Zeile für
  * eine Rolle, die diese Person hat, montagsbasiert sortiert.
+ *
+ * `ersatzBezeichnung` steht für eine Vorlage ohne Bezeichnung — aus dem
+ * Wörterbuch der Anfrage, weil diese Datei keine Sprache kennt.
  */
 export async function holeMeineVorlagen(
   supabase: SupabaseServerClient,
   betriebId: string,
   mitarbeiterId: string,
+  ersatzBezeichnung: string,
 ): Promise<MeineVorlage[]> {
   const [{ data: meineRollen }, { data: mindest }, { data: vorlagen }] = await Promise.all([
     supabase.from("mitarbeiter_rollen").select("rolle_id").eq("mitarbeiter_id", mitarbeiterId),
@@ -83,7 +87,7 @@ export async function holeMeineVorlagen(
     .filter((v) => vorlagenMitRolle.has(v.id))
     .map((v) => ({
       id: v.id,
-      bezeichnung: v.bezeichnung ?? "Schicht",
+      bezeichnung: v.bezeichnung ?? ersatzBezeichnung,
       wochentag: v.wochentag,
       start_zeit: v.start_zeit,
       end_zeit: v.end_zeit,
@@ -145,10 +149,13 @@ export async function holeTagesPraeferenzen(
  * Ohne `filter` alle künftigen Wünsche (Chef-Übersicht auf
  * `/dashboard/verfuegbarkeit`), sonst die für genau eine Vorlage an einem
  * Tag (Schichtdetail) — jeweils mit oder ohne Notiz.
+ *
+ * `ohneNamen` ersetzt einen fehlenden Namen (aus dem Wörterbuch).
  */
 export async function holeTeamTagesPraeferenzen(
   supabase: SupabaseServerClient,
   betriebId: string,
+  ohneNamen: string,
   filter?: { schichtVorlageId: string; datum: string },
 ): Promise<TeamTagesPraeferenz[]> {
   let abfrage = supabase
@@ -168,12 +175,12 @@ export async function holeTeamTagesPraeferenzen(
   }
   if (!data || data.length === 0) return [];
 
-  const namen = await holeNamen(supabase, betriebId, data.map((r) => r.mitarbeiter_id));
+  const namen = await holeNamen(supabase, betriebId, data.map((r) => r.mitarbeiter_id), ohneNamen);
 
   return data
     .map((r) => ({
       mitarbeiterId: r.mitarbeiter_id,
-      name: namen.get(r.mitarbeiter_id) ?? "Ohne Namen",
+      name: namen.get(r.mitarbeiter_id) ?? ohneNamen,
       schichtVorlageId: r.schicht_vorlage_id,
       datum: r.datum,
       praeferenz: r.praeferenz as Praeferenz,
@@ -198,6 +205,7 @@ export type TeamWiederkehrendePraeferenz = {
 export async function holeTeamWiederkehrendePraeferenzen(
   supabase: SupabaseServerClient,
   betriebId: string,
+  ohneNamen: string,
 ): Promise<TeamWiederkehrendePraeferenz[]> {
   const { data, error } = await supabase
     .from("mitarbeiter_schicht_vorlieben")
@@ -211,11 +219,11 @@ export async function holeTeamWiederkehrendePraeferenzen(
   }
   if (!data || data.length === 0) return [];
 
-  const namen = await holeNamen(supabase, betriebId, data.map((r) => r.mitarbeiter_id));
+  const namen = await holeNamen(supabase, betriebId, data.map((r) => r.mitarbeiter_id), ohneNamen);
   return data
     .map((r) => ({
       mitarbeiterId: r.mitarbeiter_id,
-      name: namen.get(r.mitarbeiter_id) ?? "Ohne Namen",
+      name: namen.get(r.mitarbeiter_id) ?? ohneNamen,
       schichtVorlageId: r.schicht_vorlage_id,
       praeferenz: r.praeferenz as Praeferenz,
     }))
@@ -227,6 +235,7 @@ async function holeNamen(
   supabase: SupabaseServerClient,
   betriebId: string,
   ids: string[],
+  ohneNamen: string,
 ): Promise<Map<string, string>> {
   const { data, error } = await supabase
     .from("mitarbeiter")
@@ -237,7 +246,7 @@ async function holeNamen(
     console.error(`[dashboard/verfuegbarkeit] team-namen: ${error.message}`);
   }
   return new Map(
-    (data ?? []).map((p) => [p.id, `${p.vorname ?? ""} ${p.nachname ?? ""}`.trim() || "Ohne Namen"]),
+    (data ?? []).map((p) => [p.id, `${p.vorname ?? ""} ${p.nachname ?? ""}`.trim() || ohneNamen]),
   );
 }
 

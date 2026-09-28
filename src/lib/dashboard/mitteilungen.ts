@@ -35,8 +35,10 @@ export const ANZEIGBARE_TYPEN = [
 export type Prioritaet = (typeof PRIORITAETEN)[number];
 
 /*
- * Die Beschriftungen stehen im Wörterbuch (`de.ts`/`en.ts`, Abschnitt
- * Mitteilungen). Bewusst nicht die App-Übersetzungen übernommen: `notifications.item.*`
+ * Anzeigenamen je Kategorie und Priorität stehen im Wörterbuch
+ * (`mitteilungen.kategorie` / `.prioritaet`).
+ *
+ * Bewusst nicht die App-Übersetzungen übernommen: `notifications.item.*`
  * in `de.json`/`en.json` der App trägt nur die rohen `typ`-Werte
  * (`allgemein`, `umfrage`, …) als Schlüssel, während `messages.tsx` beim
  * Anzeigen über `catKey()` andere Namen anfragt (`announcement`, `tasks`,

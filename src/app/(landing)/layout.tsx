@@ -124,6 +124,17 @@ export default async function LandingLayout({ children }: { children: ReactNode 
         authOffen={!softLaunchAktiv()}
         promoHref={promoAktiv ? PROMO_CODE_PRAEFIX : undefined}
         promoLabel={promoAktiv ? t.nav.promoPartner : undefined}
+        texte={{
+          navAria: t.landing.navAria,
+          navKalender: t.landing.navKalender,
+          navVersprechen: t.landing.navVersprechen,
+          navPreise: t.landing.navPreise,
+          navRechtliches: t.landing.navRechtliches,
+          navMenue: t.landing.navMenue,
+          navSchliessen: t.landing.navSchliessen,
+          heroTesten: t.landing.heroTesten,
+          heroAnmelden: t.landing.heroAnmelden,
+        }}
       />
 
       <div className="relative z-10 flex-1">{children}</div>

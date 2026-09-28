@@ -3,6 +3,8 @@ import { Archivo, Inter, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { getDictionary } from "@/i18n";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/de";
 import { leseSprache } from "@/i18n/sprache";
 import { SprachProvider } from "@/i18n/sprach-provider";
 import { softLaunchAktiv } from "@/lib/soft-launch";
@@ -33,35 +35,35 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "QuickTeam — Dienstplanung für Gastronomiebetriebe",
-    template: "%s · QuickTeam",
-  },
-  description:
-    "QuickTeam plant Schichten für Restaurants, Cafés und Bars in Österreich und Deutschland. Dienstplan erstellen, Team informieren, Stunden im Blick behalten.",
-  alternates: { canonical: "/" },
-  applicationName: siteName,
-  authors: [{ name: siteName }],
-  creator: siteName,
-  openGraph: {
-    type: "website",
-    locale: "de_AT",
-    url: siteUrl,
-    siteName,
-    title: "QuickTeam — Dienstplanung für Gastronomiebetriebe",
-    description:
-      "Schichtplanung für Gastronomie in Österreich und Deutschland. In Minuten geplant statt in Stunden.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "QuickTeam — Dienstplanung für Gastronomiebetriebe",
-    description:
-      "Schichtplanung für Gastronomie in Österreich und Deutschland. In Minuten geplant statt in Stunden.",
-  },
-  formatDetection: { telephone: false, address: false, email: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { meta } = getDictionary(await leseSprache());
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: meta.titel,
+      template: "%s · QuickTeam",
+    },
+    description: meta.beschreibung,
+    alternates: { canonical: "/" },
+    applicationName: siteName,
+    authors: [{ name: siteName }],
+    creator: siteName,
+    openGraph: {
+      type: "website",
+      locale: meta.ogLocale,
+      url: siteUrl,
+      siteName,
+      title: meta.titel,
+      description: meta.ogBeschreibung,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: meta.titel,
+      description: meta.ogBeschreibung,
+    },
+    formatDetection: { telephone: false, address: false, email: false },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -83,7 +85,7 @@ export const viewport: Viewport = {
  * sie seien buchbar, fehlt. Sie kommt zurück, sobald `SOFT_LAUNCH=aus`
  * gesetzt ist — dieselbe eine Stelle, die auch die Routen freigibt.
  */
-function jsonLd() {
+function jsonLd(sprache: Locale, t: Dictionary) {
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -98,8 +100,8 @@ function jsonLd() {
         // zeigt, ist schlimmer als keines.
         logo: `${siteUrl}/icon.png`,
         areaServed: [
-          { "@type": "Country", name: "Österreich" },
-          { "@type": "Country", name: "Deutschland" },
+          { "@type": "Country", name: t.auswahl.landAT },
+          { "@type": "Country", name: t.auswahl.landDE },
         ],
       },
       {
@@ -109,7 +111,7 @@ function jsonLd() {
         url: siteUrl,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
-        inLanguage: "de",
+        inLanguage: sprache,
         publisher: { "@id": `${siteUrl}/#organization` },
         ...(softLaunchAktiv()
           ? {}
@@ -196,6 +198,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             fehler: t.fehler,
             validierung: t.validierung,
             formular: t.formular,
+            sprachWahl: t.sprachWahl,
           }}
         >
           <main id="inhalt" className="flex flex-1 flex-col">
@@ -205,7 +208,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(sprache, t)) }}
         />
       </body>
     </html>

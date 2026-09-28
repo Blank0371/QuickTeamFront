@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { holeTexte } from "@/i18n/server";
 import { sicheresZiel, ZIEL_PARAMETER } from "@/lib/dashboard/pfad";
 import { holePositionen, setzeAktivePosition } from "@/lib/dashboard/position";
 import { type FormZustand } from "@/lib/formular";
@@ -40,14 +41,13 @@ export async function waehlePosition(
 
   if (!user) redirect("/login");
 
+  const t = (await holeTexte()).dashboard.wahl;
   const gewuenscht = String(formData.get("mitarbeiter_id") ?? "");
-  if (!gewuenscht) return fehler("Es wurde keine Position angegeben.");
+  if (!gewuenscht) return fehler(t.keinePosition);
 
   const positionen = await holePositionen(supabase, user.id);
   if (!positionen.some((p) => p.mitarbeiterId === gewuenscht)) {
-    return fehler(
-      "Diese Position gehört nicht mehr zu deinem Konto. Lad die Seite neu, dann siehst du den aktuellen Stand.",
-    );
+    return fehler(t.positionWeg);
   }
 
   await setzeAktivePosition(gewuenscht);
@@ -82,8 +82,9 @@ export async function nimmEinladungAn(
 
   if (!user) redirect("/login");
 
+  const t = (await holeTexte()).dashboard.wahl;
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
-  if (!mitarbeiterId) return fehler("Es wurde keine Einladung angegeben.");
+  if (!mitarbeiterId) return fehler(t.keineEinladung);
 
   const { error } = await supabase.rpc("einladung_annehmen", {
     p_mitarbeiter_id: mitarbeiterId,
@@ -91,9 +92,7 @@ export async function nimmEinladungAn(
 
   if (error) {
     console.error(`[dashboard] einladung_annehmen: ${error.message}`);
-    return fehler(
-      "Die Einladung liess sich nicht annehmen. Möglich, dass sie zurückgezogen wurde — lad die Seite neu.",
-    );
+    return fehler(t.annehmenFehler);
   }
 
   revalidatePath(PFAD);

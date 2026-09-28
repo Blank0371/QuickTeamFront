@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/container";
+import { holeTexte } from "@/i18n/server";
 import {
   holeChefNotfaelle,
   holeEigeneMeldbareSchichten,
@@ -12,11 +13,14 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { ChefNotfaelleListe, MeineMeldungenListe, OffeneVertretungenListe } from "./notfall-liste";
 import { NotfallFormular } from "./notfall-formular";
 
-export const metadata: Metadata = {
-  title: "Notfall",
-  description: "Notfälle melden, Vertretungen ausschreiben und übernehmen.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { notfall } = await holeTexte();
+  return {
+    title: notfall.metaTitel,
+    description: notfall.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Notfallvertretung — für beide Rollensichten. Referenz:
@@ -35,28 +39,29 @@ export default async function NotfallSeite() {
   const { supabase, position } = await betreteDashboard();
   const chef = istChef(position);
 
-  const [meldbareSchichten, meineMeldungen, chefNotfaelle, offeneVertretungen] = await Promise.all([
-    holeEigeneMeldbareSchichten(supabase, position.mitarbeiterId),
-    holeMeineMeldungen(supabase, position.mitarbeiterId),
-    chef ? holeChefNotfaelle(supabase, position.betriebId) : Promise.resolve([]),
-    holeOffeneVertretungen(supabase, position.betriebId, position.mitarbeiterId),
-  ]);
+  const [meldbareSchichten, meineMeldungen, chefNotfaelle, offeneVertretungen, texte] =
+    await Promise.all([
+      holeEigeneMeldbareSchichten(supabase, position.mitarbeiterId),
+      holeMeineMeldungen(supabase, position.mitarbeiterId),
+      chef ? holeChefNotfaelle(supabase, position.betriebId) : Promise.resolve([]),
+      holeOffeneVertretungen(supabase, position.betriebId, position.mitarbeiterId),
+      holeTexte(),
+    ]);
+  const t = texte.notfall;
 
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Notfall</h1>
-        <p className="mt-2 text-base leading-relaxed text-muted">
-          Eigene Schichten als Notfall melden, Vertretungen ausschreiben und übernehmen.
-        </p>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t.lead}</p>
 
         <div className="mt-8">
-          <NotfallFormular schichten={meldbareSchichten} />
+          <NotfallFormular schichten={meldbareSchichten} texte={t} />
         </div>
 
-        <MeineMeldungenListe meldungen={meineMeldungen} />
-        {chef ? <ChefNotfaelleListe notfaelle={chefNotfaelle} /> : null}
-        <OffeneVertretungenListe vertretungen={offeneVertretungen} />
+        <MeineMeldungenListe meldungen={meineMeldungen} texte={t} />
+        {chef ? <ChefNotfaelleListe notfaelle={chefNotfaelle} texte={t} /> : null}
+        <OffeneVertretungenListe vertretungen={offeneVertretungen} texte={t} />
       </div>
     </Container>
   );

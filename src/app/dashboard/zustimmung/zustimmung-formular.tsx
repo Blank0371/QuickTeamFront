@@ -26,10 +26,14 @@ import { zustimmen } from "./aktionen";
 export function ZustimmungFormular({
   ziel,
   zustimmungTexte,
+  knopf,
+  laufend,
 }: {
   ziel: string;
   /** Der Zustimmungssatz in der Sprache der Anfrage, vom Server-Elternteil. */
   zustimmungTexte: Dictionary["zustimmungFeld"];
+  knopf: string;
+  laufend: string;
 }) {
   const [zustand, aktion] = useActionState(zustimmen, leererZustand);
 
@@ -44,9 +48,7 @@ export function ZustimmungFormular({
       <ZustimmungFeld fehler={zustand.felder?.["zustimmung"]} texte={zustimmungTexte} />
 
       <div>
-        <AbsendenButton laufend="Wird gespeichert …">
-          Zustimmen und weiter
-        </AbsendenButton>
+        <AbsendenButton laufend={laufend}>{knopf}</AbsendenButton>
       </div>
     </form>
   );

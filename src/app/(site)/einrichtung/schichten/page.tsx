@@ -13,12 +13,14 @@ import { wochentageKurz, wochentageLang } from "@/lib/dashboard/kalender";
 import { zumAbschluss } from "./aktionen";
 import { VorlagenAbschnitt } from "./vorlagen-abschnitt";
 
-export const metadata: Metadata = {
-  title: "Schichtvorlagen",
-  description:
-    "Leg fest, wie eine gewöhnliche Woche in deinem Betrieb aussieht — je Schicht mit Mindestbesetzung pro Rolle.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { stepper } = await holeTexte();
+  return {
+    title: stepper.schichten.metaTitel,
+    description: stepper.schichten.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { leseSprache } from "@/i18n/sprache";
 
 import { RechtsDokument } from "@/components/rechtsdokument";
+import { holeTexte } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const englisch = (await leseSprache()) === "en";
+  const { rechtliches } = await holeTexte();
   return {
-    title: englisch ? "General Terms and Conditions" : "Allgemeine Geschäftsbedingungen",
-    description: englisch ? "Terms for using QuickTeam: registration, services, trial, prices, term and cancellation." : "Vertragsbedingungen für die Nutzung von QuickTeam: Vertragsschluss, Leistungsumfang, Testphase, Entgelte, Laufzeit und Kündigung.",
+    title: rechtliches.agb,
+    description: rechtliches.metaAgb,
     alternates: { canonical: "/agb" },
   };
 }
@@ -56,17 +56,15 @@ export async function generateMetadata(): Promise<Metadata> {
  * hier nicht zusätzlich behauptet — eine zweite Stelle für dieselbe
  * Aussage ist eine Stelle, an der sie veralten kann.
  */
-export default function AgbSeite() {
+export default async function AgbSeite() {
+  const { rechtliches } = await holeTexte();
   return (
     <RechtsDokument
       dateien={{
         de: "legals/AGB-QuickTeam-de.md",
         en: "legals/Terms-QuickTeam-en.md",
       }}
-      titel={{
-        de: "Allgemeine Geschäftsbedingungen",
-        en: "General Terms and Conditions",
-      }}
+      titel={rechtliches.agb}
     />
   );
 }

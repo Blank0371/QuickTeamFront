@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 import { leseAbrechnung, vergissAbrechnung } from "@/lib/abrechnung-merker";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import {
@@ -157,9 +157,7 @@ export async function planWaehlen(
     await vergissAbrechnung();
   } catch (ursache) {
     protokolliere("planWaehlen", ursache);
-    return fehler(
-      "Der gewählte Plan liess sich gerade nicht einrichten. Versuch es in einem Moment noch einmal — bleibt der Fehler, meld dich beim Support.",
-    );
+    return fehler((await holeTexte()).stepper.zahlung.planFehler);
   }
 
   /*
@@ -207,9 +205,7 @@ export async function planMerken(
     await vergissAbrechnung();
   } catch (ursache) {
     protokolliere("planMerken", ursache);
-    return fehler(
-      "Der gewählte Plan liess sich gerade nicht übernehmen. Versuch es in einem Moment noch einmal.",
-    );
+    return fehler((await holeTexte()).stepper.zahlung.planMerkenFehler);
   }
 
   redirect("/einrichtung/zahlung?zahlen=1");

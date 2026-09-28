@@ -6,7 +6,7 @@ import { erlaubteKategorien } from "@/lib/dashboard/mitteilungen";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { mitteilungSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 
 /**
  * Server Actions von Mitteilungen.
@@ -25,6 +25,10 @@ const PFAD = "/dashboard/mitteilungen";
 
 function fehler(nachricht: string, felder: Record<string, string> = {}): FormZustand {
   return { status: "fehler", nachricht, felder };
+}
+
+async function texte() {
+  return (await holeTexte()).mitteilungen;
 }
 
 export async function mitteilungErstellen(
@@ -52,7 +56,7 @@ export async function mitteilungErstellen(
   const daten = geprueft.data;
 
   if (!erlaubteKategorien(chef).includes(daten.typ)) {
-    return fehler("Diese Kategorie steht dir nicht zur Verfügung.");
+    return fehler((await texte()).kategorieVerboten);
   }
 
   const { error } = await supabase.rpc("ankuendigung_erstellen", {
@@ -70,7 +74,7 @@ export async function mitteilungErstellen(
 
   if (error) {
     console.error(`[dashboard/mitteilungen] erstellen: ${error.message}`);
-    return fehler("Die Mitteilung liess sich nicht senden. Versuch es noch einmal.");
+    return fehler((await texte()).sendenFehler);
   }
 
   revalidatePath(PFAD);
@@ -85,12 +89,12 @@ export async function aufgabeUmschalten(
   const { supabase } = await betreteDashboard();
 
   const aufgabeId = String(formData.get("aufgabe_id") ?? "");
-  if (!aufgabeId) return fehler("Es wurde keine Aufgabe angegeben.");
+  if (!aufgabeId) return fehler((await texte()).keineAufgabe);
 
   const { error } = await supabase.rpc("aufgabe_umschalten", { p_aufgabe_id: aufgabeId });
   if (error) {
     console.error(`[dashboard/mitteilungen] aufgabeUmschalten: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler((await texte()).umschaltenFehler);
   }
 
   revalidatePath(PFAD);
@@ -112,7 +116,7 @@ export async function stimmeAbgeben(
 
   const benachrichtigungId = String(formData.get("benachrichtigung_id") ?? "");
   const optionIds = formData.getAll("option_ids").map(String).filter(Boolean);
-  if (!benachrichtigungId) return fehler("Es wurde keine Umfrage angegeben.");
+  if (!benachrichtigungId) return fehler((await texte()).keineUmfrage);
 
   const { error } = await supabase.rpc("abstimmen", {
     p_benachrichtigung_id: benachrichtigungId,
@@ -122,7 +126,7 @@ export async function stimmeAbgeben(
 
   if (error) {
     console.error(`[dashboard/mitteilungen] abstimmen: ${error.message}`);
-    return fehler("Die Stimme liess sich nicht speichern. Versuch es noch einmal.");
+    return fehler((await texte()).stimmeFehler);
   }
 
   revalidatePath(PFAD);

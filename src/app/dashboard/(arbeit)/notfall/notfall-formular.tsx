@@ -4,12 +4,17 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { FormMeldung } from "@/components/formular/felder";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/de";
+import { useKlientTexte } from "@/i18n/sprach-provider";
 import type { EigeneMeldbareSchicht } from "@/lib/dashboard/notfall";
 import { leererZustand } from "@/lib/formular";
 
 import { melden } from "./aktionen";
 
-function SendenKnopf() {
+type Texte = Dictionary["notfall"];
+
+function SendenKnopf({ texte }: { texte: Texte }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -18,7 +23,7 @@ function SendenKnopf() {
       aria-disabled={pending}
       className="self-start rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Wird gemeldet…" : "Notfall melden"}
+      {pending ? texte.meldenLaufend : texte.melden}
     </button>
   );
 }
@@ -27,8 +32,8 @@ const feldBasis =
   "w-full rounded-blk border border-line-strong bg-surface px-3.5 py-2.5 text-base text-text " +
   "transition-colors placeholder:text-muted";
 
-function formatiereSchicht(s: EigeneMeldbareSchicht): string {
-  const tag = new Date(`${s.datum}T00:00:00`).toLocaleDateString("de-DE", {
+function formatiereSchicht(s: EigeneMeldbareSchicht, locale: Locale): string {
+  const tag = new Date(`${s.datum}T00:00:00`).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -49,7 +54,14 @@ function formatiereSchicht(s: EigeneMeldbareSchicht): string {
  * dafür keine Stelle im Quelltext. Ein Rücknahme-Knopf hier wäre eine
  * neue Funktion, keine Portierung.
  */
-export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchicht[] }) {
+export function NotfallFormular({
+  schichten,
+  texte: t,
+}: {
+  schichten: EigeneMeldbareSchicht[];
+  texte: Texte;
+}) {
+  const { locale } = useKlientTexte();
   const [zustand, aktion] = useActionState(melden, leererZustand);
   const [zuweisungId, setZuweisungId] = useState("");
   const [grund, setGrund] = useState("");
@@ -64,34 +76,29 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
 
   const fehlermeldung =
     zustand.status === "fehler"
-      ? (zustand.nachricht ?? Object.values(zustand.felder)[0] ?? "Das hat nicht geklappt.")
+      ? (zustand.nachricht ?? Object.values(zustand.felder)[0] ?? t.fehlerFallback)
       : null;
 
   if (schichten.length === 0) {
     return (
       <div className="rounded-card border border-line bg-surface p-5">
-        <h2 className="font-display text-lg text-text">Notfall melden</h2>
-        <p className="mt-2 text-sm text-muted">
-          Du hast keine anstehende Schicht, die du als Notfall melden könntest.
-        </p>
+        <h2 className="font-display text-lg text-text">{t.melden}</h2>
+        <p className="mt-2 text-sm text-muted">{t.keineSchicht}</p>
       </div>
     );
   }
 
   return (
     <form action={aktion} className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5">
-      <h2 className="font-display text-lg text-text">Notfall melden</h2>
-      <p className="text-sm text-muted">
-        Du wirst sofort aus dieser Schicht ausgetragen. Die Betriebsleitung entscheidet, ob eine
-        Vertretung ausgeschrieben wird.
-      </p>
+      <h2 className="font-display text-lg text-text">{t.melden}</h2>
+      <p className="text-sm text-muted">{t.meldenText}</p>
 
       {fehlermeldung ? <FormMeldung art="fehler">{fehlermeldung}</FormMeldung> : null}
-      {zustand.status === "erfolg" ? <FormMeldung art="erfolg">Gemeldet.</FormMeldung> : null}
+      {zustand.status === "erfolg" ? <FormMeldung art="erfolg">{t.gemeldet}</FormMeldung> : null}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="notfall-schicht" className="text-sm font-medium text-text">
-          Welche Schicht?
+          {t.welcheSchicht}
         </label>
         <select
           id="notfall-schicht"
@@ -102,11 +109,11 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
           className={feldBasis}
         >
           <option value="" disabled>
-            Bitte wählen
+            {t.bitteWaehlen}
           </option>
           {schichten.map((s) => (
             <option key={s.zuweisungId} value={s.zuweisungId}>
-              {formatiereSchicht(s)}
+              {formatiereSchicht(s, locale)}
             </option>
           ))}
         </select>
@@ -117,7 +124,7 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="notfall-grund" className="text-sm font-medium text-text">
-          Grund (optional)
+          {t.grund}
         </label>
         {/*
           Der Hinweis steht hier, weil dieses Feld der Ort ist, an dem
@@ -135,8 +142,7 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
           ein Publikum, das man sich falsch vorstellt.
         */}
         <p id="notfall-grund-hinweis" className="text-xs leading-relaxed text-muted">
-          Kurz und ohne Angaben zu deiner Gesundheit. Lesen können ihn die
-          Betriebsleitung und wer deine Schicht übernimmt.
+          {t.grundHinweis}
         </p>
         <textarea
           id="notfall-grund"
@@ -150,7 +156,7 @@ export function NotfallFormular({ schichten }: { schichten: EigeneMeldbareSchich
         />
       </div>
 
-      <SendenKnopf />
+      <SendenKnopf texte={t} />
     </form>
   );
 }

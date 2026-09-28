@@ -9,13 +9,15 @@ import { einzelwert, meldungFuer } from "@/lib/auth-meldungen";
 
 import { LoginFormular } from "./login-formular";
 
-export const metadata: Metadata = {
-  title: "Anmelden",
-  description:
-    "Melde dich mit deiner E-Mail-Adresse und deinem Passwort an. Danach landest du direkt in der Planung deines Betriebs.",
-  alternates: { canonical: "/login" },
-  robots: { index: false, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { login } = await holeTexte();
+  return {
+    title: login.metaTitel,
+    description: login.metaBeschreibung,
+    alternates: { canonical: "/login" },
+    robots: { index: false, follow: true },
+  };
+}
 
 export default async function LoginSeite({
   searchParams,

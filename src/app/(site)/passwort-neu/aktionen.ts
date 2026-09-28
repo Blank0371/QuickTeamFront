@@ -10,7 +10,7 @@ import {
 } from "@/lib/formular";
 import { createClient } from "@/lib/supabase/server";
 import { passwortNeuSchema, passwortVergessenSchema } from "@/lib/validierung";
-import { holeAuthTexte, holeValidierung } from "@/i18n/server";
+import { holeAuthTexte, holeTexte, holeValidierung } from "@/i18n/server";
 
 /**
  * Passwort-Reset in einem Schritt: Code prüfen, dann Passwort setzen.
@@ -63,7 +63,7 @@ export async function passwortSetzen(
       status: "fehler",
       nachricht: error
         ? authFehlerText(error, await holeAuthTexte())
-        : "Der Code liess sich nicht bestätigen. Fordere einen neuen an.",
+        : (await holeTexte()).codeVersand.nichtBestaetigt,
       felder: {},
       werte: { email: geprueft.data.email },
     };
@@ -130,7 +130,7 @@ async function erneutSenden(
 
   return {
     status: "erfolg",
-    nachricht: "Ein neuer Code ist unterwegs. Schau auch im Spam-Ordner nach.",
+    nachricht: (await holeTexte()).codeVersand.neuUnterwegs,
     felder: {},
     werte: { email: geprueft.data.email },
   };

@@ -86,6 +86,12 @@ export type KlientTexte = {
    */
   fehler: Dictionary["fehler"];
   /**
+   * Beschriftungen des Sprachumschalters. Querschnittlich wie `formular`:
+   * er steht in jeder Kopfzeile und im Konto-Blatt, oft unter einer
+   * Client-Insel, die ihn sonst als Prop durchreichen müsste.
+   */
+  sprachWahl: Dictionary["sprachWahl"];
+  /**
    * Meldungen der Zod-Schemata.
    *
    * Hier umgekehrt bewusst lose: `loeseMeldung()` schlägt zur Laufzeit

@@ -19,12 +19,14 @@ import { ermittleZustimmungBefund, offeneDokumente } from "@/lib/zustimmung";
 
 import { ZustimmungFormular } from "./zustimmung-formular";
 
-export const metadata: Metadata = {
-  title: "Zustimmung erforderlich",
-  description:
-    "Bestätige AGB, Auftragsverarbeitungsvereinbarung und Datenschutzerklärung, um mit dem Dashboard weiterzuarbeiten.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { zustimmungSeite } = await holeTexte();
+  return {
+    title: zustimmungSeite.metaTitel,
+    description: zustimmungSeite.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Das Zustimmungs-Tor für Bestandsbetriebe.
@@ -79,6 +81,7 @@ export default async function ZustimmungSeite({
   if (befund.art === "zugestimmt") redirect(ziel);
 
   const [t, sprache] = await Promise.all([holeTexte(), leseSprache()]);
+  const zs = t.zustimmungSeite;
 
   /*
    * Die Prüfung selbst ist gescheitert — wir wissen nicht, ob eine
@@ -97,18 +100,15 @@ export default async function ZustimmungSeite({
           </div>
 
           <p className="font-mono text-xs uppercase tracking-[0.16em] text-stop">
-            Prüfung fehlgeschlagen
+            {zs.pruefungKicker}
           </p>
 
-          <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">
-            Das ließ sich gerade nicht prüfen
-          </h1>
+          <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">{zs.pruefungTitel}</h1>
 
           <p className="mt-4 text-base leading-relaxed text-muted">
-            Ob für <span className="text-text">{position.betriebName}</span> eine
-            Zustimmung vorliegt, konnten wir gerade nicht abfragen — das liegt an uns,
-            nicht an dir. Versuch es gleich noch einmal. Bleibt der Fehler, meld dich
-            beim Support; dein Zugang besteht weiter.
+            {zs.pruefungVor}
+            <span className="text-text">{position.betriebName}</span>
+            {zs.pruefungNach}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -116,7 +116,7 @@ export default async function ZustimmungSeite({
               href={zustimmungAdresse(ziel === "/dashboard" ? null : ziel)}
               className="rounded-blk bg-signal px-5 py-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
             >
-              Erneut versuchen
+              {zs.erneut}
             </Link>
             <form action={abmelden}>
               <button
@@ -143,9 +143,7 @@ export default async function ZustimmungSeite({
         </div>
 
         <h1 className="text-3xl leading-[1.1] sm:text-4xl">
-          {aenderung
-            ? "Neue Fassung — bitte einmal ansehen"
-            : "Kurz bestätigen, dann geht's weiter"}
+          {aenderung ? zs.titelAenderung : zs.titelErst}
         </h1>
 
         {/*
@@ -164,19 +162,9 @@ export default async function ZustimmungSeite({
           eine machen.
         */}
         <p className="mt-4 text-base leading-relaxed text-muted">
-          {aenderung ? (
-            <>
-              Für <span className="text-text">{position.betriebName}</span> gibt es eine
-              neue Fassung der Vertragsunterlagen. Bis du zustimmst, gelten die bisherigen
-              Bedingungen weiter — du kannst also auch später entscheiden.
-            </>
-          ) : (
-            <>
-              Für <span className="text-text">{position.betriebName}</span> liegt uns noch
-              keine Zustimmung vor. Das holen wir einmal nach — danach landest du wieder
-              dort, wo du hinwolltest.
-            </>
-          )}
+          {aenderung ? zs.aenderungVor : zs.erstVor}
+          <span className="text-text">{position.betriebName}</span>
+          {aenderung ? zs.aenderungNach : zs.erstNach}
         </p>
 
         {offen.length > 0 ? (
@@ -186,18 +174,22 @@ export default async function ZustimmungSeite({
                 key={dokument}
                 className="rounded-blk border border-line px-2.5 py-1 uppercase tracking-[0.12em]"
               >
-                {DOKUMENT_NAME[dokument]}
+                {zs.dokument[dokument as keyof typeof zs.dokument] ?? dokument}
               </li>
             ))}
           </ul>
         ) : null}
 
         <div className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8">
-          <ZustimmungFormular ziel={ziel} zustimmungTexte={t.zustimmungFeld} />
+          <ZustimmungFormular
+            ziel={ziel}
+            zustimmungTexte={t.zustimmungFeld}
+            knopf={zs.zustimmen}
+            laufend={zs.laufend}
+          />
 
           <p className="mt-6 border-t border-line pt-5 text-xs leading-relaxed text-muted">
-            Du bestätigst für den Betrieb, nicht für dich persönlich. An deinem Tarif,
-            deiner Abrechnung und deinem Zahlungsmittel ändert sich dadurch nichts.
+            {zs.fussnote}
           </p>
         </div>
 
@@ -207,7 +199,7 @@ export default async function ZustimmungSeite({
               href={ziel}
               className="text-sm font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
             >
-              Später entscheiden und weiterarbeiten
+              {zs.spaeter}
             </Link>
           </p>
         ) : (
@@ -224,14 +216,14 @@ export default async function ZustimmungSeite({
                 type="submit"
                 className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
               >
-                Abo verwalten oder kündigen
+                {zs.aboVerwalten}
               </button>
             </form>
             <a
               href="/api/betrieb-export"
               className="font-medium text-muted underline underline-offset-4 transition-colors hover:text-text"
             >
-              Daten exportieren
+              {zs.datenExport}
             </a>
           </div>
         )}
@@ -251,9 +243,3 @@ export default async function ZustimmungSeite({
     </Container>
   );
 }
-
-const DOKUMENT_NAME: Record<string, string> = {
-  agb: "AGB",
-  avv: "AVV",
-  datenschutz: "Datenschutz",
-};

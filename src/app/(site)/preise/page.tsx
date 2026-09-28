@@ -3,16 +3,19 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { PreisListe } from "@/components/preise/preis-liste";
 import { holeTexte } from "@/i18n/server";
+import { fuelle } from "@/i18n/text";
 import { bauePreisKarten } from "@/lib/preis-karten";
 import { customTarif, kontaktEmail, TESTPHASE_TAGE } from "@/lib/site";
 import { softLaunchAktiv } from "@/lib/soft-launch";
 
-export const metadata: Metadata = {
-  title: "Preise",
-  description:
-    "Low für 39 €, Medium für 69 €, Business für 99 € im Monat — oder jährlich mit zwei Monaten geschenkt (390 / 690 / 990 €). Grössere Betriebe und mehrere Standorte auf Anfrage.",
-  alternates: { canonical: "/preise" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { preise } = await holeTexte();
+  return {
+    title: preise.metaTitel,
+    description: preise.metaBeschreibung,
+    alternates: { canonical: "/preise" },
+  };
+}
 
 /**
  * Reine Marketingseite. Die Planwahl ist seit dem 2026-08-19 Teil von
@@ -27,22 +30,25 @@ export default async function PreiseSeite() {
   const t = await holeTexte();
   return (
     <Container className="py-14 sm:py-20">
-      <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">Preise</p>
+      <p className="font-mono text-xs uppercase tracking-[0.16em] text-signal">
+        {t.preise.kennzeichen}
+      </p>
 
       <h1 className="mt-3 max-w-3xl text-3xl leading-[1.1] sm:text-4xl lg:text-5xl">
-        Ein Preis pro Betrieb. Keine Rechnung pro Kopf.
+        {t.preise.titel}
       </h1>
 
       <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
-        Such dir die Grösse aus, die zu deinem Team passt. Die ersten{" "}
-        <strong className="font-semibold text-text">{TESTPHASE_TAGE} Tage</strong> sind
-        kostenlos — Zahlungsdaten kannst du beim Einrichten auch überspringen und später
-        nachtragen.
+        {t.preise.leadVor}
+        <strong className="font-semibold text-text">
+          {fuelle(t.preise.leadTage, { n: TESTPHASE_TAGE })}
+        </strong>
+        {t.preise.leadNach}
       </p>
 
       <section aria-labelledby="plaene-titel" className="mt-12">
         <h2 id="plaene-titel" className="sr-only">
-          Die drei Pläne
+          {t.preise.plaeneTitel}
         </h2>
 
         <PreisListe
@@ -53,11 +59,14 @@ export default async function PreiseSeite() {
           jaehrlich={t.landing.preiseJaehrlich}
           vorteil={t.landing.preiseJahrVorteil}
           ustHinweis={t.landing.preiseUst}
-          testphaseTage={TESTPHASE_TAGE}
+          testMonat={fuelle(t.preise.testMonat, { n: TESTPHASE_TAGE })}
+          testJahr={fuelle(t.preise.testJahr, { n: TESTPHASE_TAGE })}
           b2b={t.landing.preiseB2b}
           authOffen={!softLaunchAktiv()}
           baldLabel={t.landing.preiseBald}
           baldText={t.landing.preiseBaldText}
+          betriebAnlegen={t.preise.betriebAnlegen}
+          planHinweis={t.preise.planHinweis}
         />
       </section>
 

@@ -1,3 +1,6 @@
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 import type { AboKonditionen } from "@/lib/stripe";
 import { plaene, type PlanId } from "@/lib/site";
 
@@ -18,30 +21,27 @@ import { plaene, type PlanId } from "@/lib/site";
  * soll trotzdem, was ab wann kostet. Zwei Seiten tragen das Formular
  * (Schritt 2 und die Sperrseite), deshalb stehen die Sätze einmal hier.
  *
- * Die Seiten sind bislang einsprachig deutsch wie der ganze Stepper; wenn
- * er übersetzt wird, wandern diese Sätze ins Wörterbuch.
+ * Die Sätze stehen im Wörterbuch (`aboKonditionen`); jede Funktion bekommt
+ * den Block und die Locale der Anfrage herein, damit Datum und Betrag im
+ * selben Format erscheinen wie der Satz drumherum.
  */
 
-const DATUM = new Intl.DateTimeFormat("de-DE", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
+type Texte = Dictionary["aboKonditionen"];
 
-export function formatiereDatum(datum: Date): string {
-  return DATUM.format(datum);
+export function formatiereDatum(datum: Date, locale: Locale): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(datum);
 }
 
-export function formatiereBetrag(k: AboKonditionen): string | null {
+export function formatiereBetrag(k: AboKonditionen, locale: Locale): string | null {
   if (k.betragCent === null) return null;
-  return new Intl.NumberFormat("de-DE", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: k.waehrung.toUpperCase(),
   }).format(k.betragCent / 100);
-}
-
-function jeZeitraum(k: AboKonditionen): string {
-  return k.intervall === "year" ? "pro Jahr" : "pro Monat";
 }
 
 /**
@@ -49,16 +49,18 @@ function jeZeitraum(k: AboKonditionen): string {
  * liefert (ein Price ohne `unit_amount`, etwa gestaffelte Preise, die es
  * hier nicht gibt).
  */
-export function preisZeile(k: AboKonditionen): string | null {
-  const betrag = formatiereBetrag(k);
-  return betrag ? `${betrag} ${jeZeitraum(k)} zzgl. USt.` : null;
+export function preisZeile(k: AboKonditionen, t: Texte, locale: Locale): string | null {
+  const betrag = formatiereBetrag(k, locale);
+  if (!betrag) return null;
+  return fuelle(t.preis, {
+    betrag,
+    zeitraum: k.intervall === "year" ? t.proJahr : t.proMonat,
+  });
 }
 
-const KUENDIGUNG =
-  "Kündbar jederzeit zum Ende des bezahlten Zeitraums — im Dashboard unter Einstellungen → „Abo verwalten“ oder per E-Mail (AGB § 6 Abs. 2).";
-
-/**
- * Was mit dem Hinterlegen erhoben und weitergegeben wird.
+/*
+ * `t.rechnungsangaben` — was mit dem Hinterlegen erhoben und weitergegeben
+ * wird.
  *
  * Steht seit dem 2026-09-14 in beiden Zusammenfassungen, weil seither
  * Rechnungsangaben **Pflicht** sind, bevor ein Abonnement kostenpflichtig
@@ -71,35 +73,37 @@ const KUENDIGUNG =
  * darüber im Formular, und sie hier ein zweites Mal zu nennen wäre eine
  * zweite Stelle, die beim nächsten Feld vergessen wird.
  */
-const RECHNUNGSANGABEN =
-  "Deine Rechnungsangaben werden an den Zahlungsdienstleister Stripe übermittelt, der daraus die Rechnung erstellt und die Umsatzsteuer berechnet (Datenschutzerklärung, Ziffer 6).";
 
 /**
  * Schritt 2 ohne Testphase: der Betrieb hatte schon ein Abo, die erste
  * Rechnung des neuen ist sofort fällig (`incomplete`, siehe `erstelleAbo`).
  */
-export function zusammenfassungNeuabschluss(k: AboKonditionen): string[] {
-  const preis = preisZeile(k);
+export function zusammenfassungNeuabschluss(
+  k: AboKonditionen,
+  t: Texte,
+  locale: Locale,
+): string[] {
+  const preis = preisZeile(k, t, locale);
   return [
-    "Ein Neuabschluss beginnt ohne kostenlose Testphase.",
-    preis
-      ? `Mit dem Hinterlegen beginnt dein Abo sofort, und ${preis} werden für den ersten Zeitraum abgebucht.`
-      : "Mit dem Hinterlegen beginnt dein Abo sofort, und der erste Zeitraum wird abgebucht.",
-    "Danach verlängert es sich automatisch und wird jeweils im Voraus abgebucht.",
-    KUENDIGUNG,
+    t.testphaseVerbraucht,
+    preis ? fuelle(t.beginntSofortPreis, { preis }) : t.beginntSofort,
+    t.danachVoraus,
+    t.kuendigung,
   ];
 }
 
 /** Sperrseite: Testphase ohne Zahlungsmittel abgelaufen, Abo pausiert. */
-export function zusammenfassungFortsetzen(k: AboKonditionen): string[] {
-  const preis = preisZeile(k);
+export function zusammenfassungFortsetzen(
+  k: AboKonditionen,
+  t: Texte,
+  locale: Locale,
+): string[] {
+  const preis = preisZeile(k, t, locale);
   return [
-    preis
-      ? `Mit dem Hinterlegen wird dein Abo sofort fortgesetzt, und ${preis} werden für den ersten Zeitraum abgebucht.`
-      : "Mit dem Hinterlegen wird dein Abo sofort fortgesetzt, und der erste Zeitraum wird abgebucht.",
-    "Danach verlängert es sich automatisch und wird jeweils im Voraus abgebucht.",
-    KUENDIGUNG,
-    RECHNUNGSANGABEN,
+    preis ? fuelle(t.fortsetzenPreis, { preis }) : t.fortsetzen,
+    t.danachVoraus,
+    t.kuendigung,
+    t.rechnungsangaben,
   ];
 }
 

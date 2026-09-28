@@ -19,7 +19,8 @@ import {
   monatsstundenAusWoche,
   rollenNameSchema,
 } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Server Actions von Schritt 3.
@@ -49,6 +50,11 @@ async function betriebOderWeiter(): Promise<{ supabase: Awaited<ReturnType<typeo
 
 function fehler(nachricht: string, felder: Record<string, string> = {}): FormZustand {
   return { status: "fehler", nachricht, felder };
+}
+
+/** Die Meldungen dieses Schritts in der Sprache der Anfrage. */
+async function meldungen() {
+  return (await holeTexte()).stepper.team.meldung;
 }
 
 /* ------------------------------------------------------------------ */
@@ -120,26 +126,14 @@ export async function rolleEntfernen(
 ): Promise<FormZustand> {
   const { supabase, betriebId } = await betriebOderWeiter();
   const rolleId = String(formData.get("rolle_id") ?? "");
-  if (!rolleId) return fehler("Es wurde keine Rolle angegeben.");
+  const m = await meldungen();
+  if (!rolleId) return fehler(m.keineRolle);
 
   const ergebnis = await entferneRolle(supabase, betriebId, rolleId);
 
-  if (ergebnis.art === "belegt") {
-    return fehler(
-      "Diese Rolle wird bereits von einer Schichtvorlage gebraucht. Entfern sie zuerst dort.",
-    );
-  }
-
-  if (ergebnis.art === "gesperrt") {
-    return fehler(
-      "Rollen lassen sich derzeit nicht entfernen — die Datenbank lässt das Löschen " +
-        "noch nicht zu. Das ist gemeldet. Deine Rollenzuweisungen sind unverändert.",
-    );
-  }
-
-  if (ergebnis.art === "fehler") {
-    return fehler("Die Rolle liess sich nicht entfernen. Versuch es noch einmal.");
-  }
+  if (ergebnis.art === "belegt") return fehler(m.rolleBelegt);
+  if (ergebnis.art === "gesperrt") return fehler(m.rolleGesperrt);
+  if (ergebnis.art === "fehler") return fehler(m.rolleEntfernenFehler);
 
   revalidatePath(PFAD);
   return { status: "erfolg", nachricht: null, felder: {} };
@@ -161,12 +155,9 @@ export async function mitarbeiterEinladen(
    * Entwurf hat keine. Bis zu diesem Klick liessen sie sich frei wieder
    * entfernen — genau das ist der Sinn der Sammlung.
    */
+  const m = await meldungen();
   const rollen = await rollenSicherstellen(supabase, betriebId, formData);
-  if (rollen === null) {
-    return fehler(
-      "Die Rollen liessen sich nicht anlegen — deshalb wurde auch niemand eingeladen. Versuch es noch einmal.",
-    );
-  }
+  if (rollen === null) return fehler(m.rollenAnlegenEinladung);
 
   const roh = {
     vorname: String(formData.get("vorname") ?? ""),
@@ -217,7 +208,7 @@ export async function mitarbeiterEinladen(
   if (doppelt) {
     return {
       status: "fehler",
-      nachricht: `${doppelt.vorname} ${doppelt.nachname} ist mit genau diesen Angaben schon eingeladen. Für eine zweite Person unter derselben Adresse trag einen anderen Namen ein.`,
+      nachricht: fuelle(m.doppelt, { name: `${doppelt.vorname} ${doppelt.nachname}` }),
       felder: {},
       werte: roh,
     };
@@ -250,7 +241,7 @@ export async function mitarbeiterEinladen(
     console.error(`[team] mitarbeiterEinladen: ${error?.message ?? "keine Zeile"}`);
     return {
       status: "fehler",
-      nachricht: "Die Einladung liess sich nicht anlegen. Versuch es noch einmal.",
+      nachricht: m.einladungFehler,
       felder: {},
       werte: roh,
     };
@@ -283,8 +274,7 @@ export async function mitarbeiterEinladen(
       console.error(`[team] mitarbeiterEinladen/rollen: ${zuweisungFehler.message}`);
       return {
         status: "fehler",
-        nachricht:
-          "Die Person ist angelegt, aber die Rollen konnten nicht zugewiesen werden. Setz sie unten in der Liste.",
+        nachricht: m.rollenZuweisungFehler,
         felder: {},
       };
     }
@@ -311,7 +301,8 @@ export async function mitarbeiterEntfernen(
 ): Promise<FormZustand> {
   const { supabase, betriebId } = await betriebOderWeiter();
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
-  if (!mitarbeiterId) return fehler("Es wurde niemand angegeben.");
+  const m = await meldungen();
+  if (!mitarbeiterId) return fehler(m.niemand);
 
   const { error: rollenFehler } = await supabase
     .from("mitarbeiter_rollen")
@@ -321,7 +312,7 @@ export async function mitarbeiterEntfernen(
 
   if (rollenFehler) {
     console.error(`[team] mitarbeiterEntfernen/rollen: ${rollenFehler.message}`);
-    return fehler("Die Einladung liess sich nicht entfernen. Versuch es noch einmal.");
+    return fehler(m.entfernenFehler);
   }
 
   const { error } = await supabase
@@ -333,7 +324,7 @@ export async function mitarbeiterEntfernen(
 
   if (error) {
     console.error(`[team] mitarbeiterEntfernen: ${error.message}`);
-    return fehler("Die Einladung liess sich nicht entfernen. Versuch es noch einmal.");
+    return fehler(m.entfernenFehler);
   }
 
   revalidatePath(PFAD);
@@ -351,7 +342,8 @@ export async function rolleUmschalten(
   const rolleId = String(formData.get("rolle_id") ?? "");
   const anhaken = formData.get("an") === "1";
 
-  if (!mitarbeiterId || !rolleId) return fehler("Angaben unvollständig.");
+  const m = await meldungen();
+  if (!mitarbeiterId || !rolleId) return fehler(m.unvollstaendig);
 
   const { error } = anhaken
     ? await supabase
@@ -366,7 +358,7 @@ export async function rolleUmschalten(
 
   if (error) {
     console.error(`[team] rolleUmschalten: ${error.message}`);
-    return fehler("Die Rolle liess sich nicht ändern. Versuch es noch einmal.");
+    return fehler(m.rolleAendernFehler);
   }
 
   revalidatePath(PFAD);
@@ -392,14 +384,10 @@ export async function weiterZuSchichten(
 ): Promise<FormZustand> {
   const { supabase, betriebId } = await betriebOderWeiter();
 
+  const texte = (await holeTexte()).stepper.team;
   const rollen = await rollenSicherstellen(supabase, betriebId, formData);
-  if (rollen === null) {
-    return fehler("Die Rollen liessen sich nicht anlegen. Versuch es noch einmal.");
-  }
-
-  if (rollen.length === 0) {
-    return fehler("Leg zuerst mindestens eine Rolle an.");
-  }
+  if (rollen === null) return fehler(texte.meldung.rollenAnlegenFehler);
+  if (rollen.length === 0) return fehler(texte.ersteRolle);
 
   revalidatePath(PFAD);
   redirect("/einrichtung/schichten");

@@ -19,12 +19,14 @@ import { zahlungsmittelUebernehmen } from "@/lib/zahlung-aktionen";
 import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 
-export const metadata: Metadata = {
-  title: "Testphase abgelaufen",
-  description:
-    "Deine Testphase ist vorbei. Hinterleg ein Zahlungsmittel, dann läuft dein Betrieb weiter — deine Daten bleiben bis zu 90 Tage erhalten.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { stepper } = await holeTexte();
+  return {
+    title: stepper.sperre.metaTitel,
+    description: stepper.sperre.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -102,6 +104,7 @@ export default async function TestphaseAbgelaufenSeite({
   pruefePreisGleichstand(planOderBasic(abo?.plan), konditionen);
 
   const t = await holeTexte();
+  const sprache = await leseSprache();
   const sp = t.stepper.sperre;
   const laender = LAENDER.map((land) => ({
     code: land.code,
@@ -137,13 +140,13 @@ export default async function TestphaseAbgelaufenSeite({
 
           <ZahlungsFormular
             clientSecret={intent.clientSecret}
-            zusammenfassung={zusammenfassungFortsetzen(konditionen)}
+            zusammenfassung={zusammenfassungFortsetzen(konditionen, t.aboKonditionen, sprache)}
             knopfText={sp.knopfFortsetzen}
             rueckkehrPfad="/einrichtung/testphase-abgelaufen"
             texte={t.stepper.zahlungsFormular}
             rechnungTexte={t.stepper.rechnung}
             laender={laender}
-            locale={await leseSprache()}
+            locale={sprache}
             rechnung={await holeVorbelegung(
               rechnung?.name ?? null,
               rechnung?.land ?? null,

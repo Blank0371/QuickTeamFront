@@ -1006,12 +1006,17 @@ Dashboard-Topbar). Sprachpakete als getippte Objekte, kein next-intl.
   `pruefeFeld()` (Browser) und `feldFehler()` (Server Action), Schlüsseltyp als
   `import type` aus `de.ts`
 - `KlientTexte` trägt `formular` (Beschriftungen geteilter Bausteine wie `SelectFeld`,
-  `DatumWahl`) und `locale` (**kein Text, ein `Intl`-Schlüssel** für Datums-/Zahlformate)
+  `DatumWahl`, `ZeitWahl`, `ZahlStepper`), `sprachWahl` (Umschalter) und `locale`
+  (**kein Text, ein `Intl`-Schlüssel** für Datums-/Zahlformate)
+- **Fallback-Beschriftungen in `src/lib/` kommen als Parameter** (`ohneRolle`,
+  `ohneNamen`, `ladeFehler`, …) oder über `holeTexte()` — keine deutschen Konstanten
+  mehr in Bibliotheksmodulen. Fehlerklassen tragen einen Code statt eines Satzes
+  (`ZahlungAbgelehnt.art` → `zahlung.ablehnung[art]`)
 
 **Neue Strings gehören ins Wörterbuch, nicht ins JSX.** Wochentage/Monate stehen in
 keinem Wörterbuch — `kalender.ts` leitet sie über `Intl.DateTimeFormat` aus der Locale
-ab; `MONATSNAMEN`/`WOCHENTAGE`/`WOCHENTAGE_LANG` sind abgeleitet. Wer eine der Dateien
-anfasst, die sie noch direkt benutzen, ersetzt den Zugriff durch `monatsnamen(locale)`.
+ab (`monatsnamen(locale)` u. ä.); die früheren deutschen Konstanten
+`MONATSNAMEN`/`WOCHENTAGE`/`WOCHENTAGE_LANG` gibt es seit 2026-09-28 nicht mehr.
 
 **Die App ist die Quelle für Englisch** (`../QuickTeamMobile/src/i18n/locales/{de,en}.json`,
 532 Schlüsselpaare). Vor einer eigenen englischen Formulierung dort nachsehen; Glossar
@@ -1027,13 +1032,16 @@ Kopfzeile `x-qt-sprache` → `leseSprache()`, `src/i18n/sprach-parameter.ts`), o
 zu speichern — für Links aus dem In-App-Browser der Expo-App. Eine vom Client
 mitgeschickte `x-qt-sprache` wird verworfen.
 
-**Offener Rest:** der Seitentext ist überwiegend hartkodiertes Deutsch. Übersetzt sind
-Navigation, beide Fussbereiche, Fehlerseiten, Dashboard-Sidebar, Rechtsseiten,
-Validierungs-/Auth-Meldungen, die vollständige Landingpage und die geteilten
-Formular-Bausteine. Zu tun (in dieser Reihenfolge): öffentliche Seiten (`/preise`, Auth,
-Stepper-Schritte), Dashboard-Bereiche (grösster Teil, App massgeblich), verbleibende
-`nachricht`-Sätze in `src/lib/`. Danach zu entscheiden: `/en/`-Präfix für **öffentliche**
-Seiten (Cookie ist dort ein SEO-Nachteil, fürs Dashboard folgenlos).
+**Stand 2026-09-28: die Oberfläche ist vollständig zweisprachig** — öffentliche Seiten,
+Auth, Stepper, alle Dashboard-Bereiche, Metadaten (`generateMetadata`) und die
+`nachricht`-Sätze der Server Actions. **Bewusst einsprachig** (steht im Bestand, s. u.):
+Registerangaben im Impressum, `VERTRAG_TYPEN`, `global-error.tsx` (zweisprachig in einer
+Fassung, weil dort kein Wörterbuch lädt), das OG-Bild (Crawler schicken kein
+Sprach-Cookie), Protokoll-/Konfigurationsmeldungen, Webhook-/Cron-Antworten,
+DB-Fehlermuster und das **JSON-Paket des Betriebsexports** (`lib/export/`, festes Format,
+von `paket.test.ts` geprüft — ob es übersetzt wird, ist offen beim Nutzer). Noch zu
+entscheiden: `/en/`-Präfix für **öffentliche** Seiten (Cookie ist dort ein SEO-Nachteil,
+fürs Dashboard folgenlos).
 
 ### Die Sprachkontrolle (`npm run i18n:pruefen`)
 
@@ -1052,7 +1060,8 @@ lesen — gezählt wird damit, was zur Laufzeit ankommt.
 
 Der hartkodierte Text wird gegen `docs/i18n-bestand.json` gezählt — je Datei, nicht als
 Summe. **Ein Gate, das den ganzen Bestand verbietet, wäre am ersten Tag rot** (Stand
-2026-09-24, nach dem Zusammenführen mit GitHub: 694 Fundstellen in 110 Dateien) und damit binnen einer Woche abgeschaltet. So
+2026-09-24: 694 Fundstellen in 110 Dateien; nach der Übersetzungsrunde am 2026-09-28
+noch 82 in 16 Dateien, alle bewusst einsprachig) und damit binnen einer Woche abgeschaltet. So
 ist nur die Richtung erzwungen: wer eine Datei anfasst, darf ihre Zahl nicht erhöhen.
 
 - `-- --datei <pfad>` listet die Fundstellen einer Datei — der Weg, eine Datei

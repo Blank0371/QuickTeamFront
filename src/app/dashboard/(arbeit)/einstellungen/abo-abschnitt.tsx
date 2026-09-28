@@ -1,4 +1,7 @@
 import { FormMeldung } from "@/components/formular/felder";
+import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
+import { fuelle } from "@/i18n/text";
 import { holeAbo } from "@/lib/abo";
 import { formatiereDatum, preisZeile } from "@/lib/abo-konditionen";
 import { plaene } from "@/lib/site";
@@ -22,22 +25,6 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
  * Kündigungsdatum stehen nur bei Stripe. Scheitert diese Abfrage, fehlen
  * die Zusatzangaben — die Einstellungen darüber und der Knopf bleiben.
  */
-const STATUS: Record<string, string> = {
-  trial: "Testphase",
-  aktiv: "Aktiv",
-  zahlung_ausstehend: "Zahlung ausstehend",
-  pausiert: "Pausiert",
-  gekuendigt: "Gekündigt",
-};
-
-const MELDUNG: Record<string, string> = {
-  "kein-abo":
-    "Zu diesem Betrieb gibt es noch kein Abonnement. Wähle zuerst einen Plan in der Einrichtung.",
-  "portal-fehler":
-    "Das Kundenportal liess sich gerade nicht öffnen. Versuch es in ein paar Minuten noch einmal oder schreib uns an blanktrading@web.de — eine Kündigung per E-Mail ist jederzeit möglich.",
-  verweigert: "Das Abo verwaltet die Betriebsleitung.",
-};
-
 export async function AboAbschnitt({
   supabase,
   betriebId,
@@ -64,20 +51,31 @@ export async function AboAbschnitt({
     console.error(`[abo] Konditionen für ${betriebId} nicht lesbar: ${fehler}`);
   }
 
+  const [alle, locale] = await Promise.all([holeTexte(), leseSprache()]);
+  const t = alle.einstellungen.abo;
+
   const zeilen: string[] = [];
   if (konditionen) {
-    const preis = preisZeile(konditionen);
+    const preis = preisZeile(konditionen, alle.aboKonditionen, locale);
     if (preis) zeilen.push(preis);
     if (konditionen.endetAm) {
-      zeilen.push(`Gekündigt — endet am ${formatiereDatum(konditionen.endetAm)}.`);
+      zeilen.push(fuelle(t.endet, { datum: formatiereDatum(konditionen.endetAm, locale) }));
     } else if (konditionen.testphaseEnde) {
-      zeilen.push(`Testphase bis ${formatiereDatum(konditionen.testphaseEnde)}.`);
+      zeilen.push(
+        fuelle(t.testphaseBis, { datum: formatiereDatum(konditionen.testphaseEnde, locale) }),
+      );
     } else if (konditionen.periodeEnde) {
-      zeilen.push(`Nächste Abbuchung am ${formatiereDatum(konditionen.periodeEnde)}.`);
+      zeilen.push(
+        fuelle(t.naechsteAbbuchung, {
+          datum: formatiereDatum(konditionen.periodeEnde, locale),
+        }),
+      );
     }
   }
 
-  const text = meldung ? MELDUNG[meldung] : undefined;
+  const meldungen: Record<string, string> = t.meldung;
+  const status: Record<string, string> = t.status;
+  const text = meldung ? meldungen[meldung] : undefined;
 
   return (
     <section aria-labelledby="abo-titel" className="mt-12 border-t border-line pt-8">
@@ -85,7 +83,7 @@ export async function AboAbschnitt({
         id="abo-titel"
         className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
       >
-        Abo und Abrechnung
+        {t.titel}
       </h2>
 
       {text ? (
@@ -96,25 +94,22 @@ export async function AboAbschnitt({
 
       {abo ? (
         <p className="mt-3 text-sm leading-relaxed text-text">
-          {planName ? `Plan ${planName}` : "Abonnement"} ·{" "}
-          {STATUS[abo.status] ?? abo.status}
+          {planName ? fuelle(t.plan, { plan: planName }) : t.abonnement} ·{" "}
+          {status[abo.status] ?? abo.status}
           {zeilen.length > 0 ? (
             <span className="text-muted"> · {zeilen.join(" · ")}</span>
           ) : null}
         </p>
       ) : null}
 
-      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-        Im Kundenportal unseres Zahlungsdienstleisters Stripe kündigst du zum Ende des
-        bezahlten Zeitraums, änderst dein Zahlungsmittel und lädst Rechnungen herunter.
-      </p>
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{t.portalText}</p>
 
       <form action={aboVerwalten} className="mt-4">
         <button
           type="submit"
           className="rounded-blk border border-line-strong px-5 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
         >
-          Abo verwalten
+          {t.verwalten}
         </button>
       </form>
     </section>

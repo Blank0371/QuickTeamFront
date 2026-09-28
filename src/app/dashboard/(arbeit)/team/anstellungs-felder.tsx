@@ -1,6 +1,7 @@
 "use client";
 
 import { SelectFeld, TextFeld } from "@/components/formular/felder";
+import type { Dictionary } from "@/i18n/de";
 import type { Anstellung } from "@/lib/dashboard/team";
 import { VERTRAG_TYPEN, wochenstundenAusMonat } from "@/lib/validierung";
 
@@ -31,20 +32,26 @@ export function AnstellungsFelder({
   idPraefix,
   werte,
   fehler,
+  texte: t,
 }: {
   idPraefix: string;
   /** Bestand aus der Datenbank. Fehlt beim Einladen — dort ist alles leer. */
   werte?: Anstellung;
   fehler: Record<string, string>;
+  texte: Dictionary["teamVerwaltung"];
 }) {
   return (
     <div className="flex flex-col gap-4">
+      {/*
+        Die Vertragsarten selbst bleiben unübersetzt: der Anzeigetext ist
+        der gespeicherte Spaltenwert (siehe `VERTRAG_TYPEN`).
+      */}
       <SelectFeld
         id={`${idPraefix}vertrag_typ`}
         name="vertrag_typ"
-        label="Vertragsart"
+        label={t.vertragsart}
         optionen={VERTRAG_TYPEN.map((typ) => ({ code: typ, name: typ }))}
-        leerText="Keine Angabe"
+        leerText={t.keineAngabe}
         defaultValue={werte?.vertragTyp ?? ""}
         fehler={fehler["vertrag_typ"]}
       />
@@ -65,13 +72,13 @@ export function AnstellungsFelder({
         id={`${idPraefix}wochenstunden`}
         name="wochenstunden"
         type="number"
-        label="Sollstunden pro Woche"
+        label={t.sollstunden}
         required={false}
         min={0}
         step="any"
         defaultValue={wochenstundenAusMonat(werte?.sollStunden ?? null)}
         fehler={fehler["soll_stunden"]}
-        hinweis="Gespeichert wird der Monatswert (× 4,33). 40 Std./Woche → 173 Std./Monat. Leer lassen, wenn kein Soll vereinbart ist."
+        hinweis={t.sollstundenHinweis}
       />
 
       {/*
@@ -91,13 +98,13 @@ export function AnstellungsFelder({
         id={`${idPraefix}toleranz_ueberstunden`}
         name="toleranz_ueberstunden"
         type="number"
-        label="Überstunden-Toleranz (Stunden)"
+        label={t.toleranz}
         required={false}
         min={0}
         step="any"
         defaultValue={String(werte?.toleranzUeberstunden ?? 0)}
         fehler={fehler["toleranz_ueberstunden"]}
-        hinweis="Freibetrag für die automatische Planung: bis hierher bleiben Überstunden folgenlos. Darüber wird die Person seltener eingeteilt. Verhindert wird dadurch nichts."
+        hinweis={t.toleranzHinweis}
       />
 
       {/*
@@ -116,25 +123,25 @@ export function AnstellungsFelder({
         id={`${idPraefix}ueberstunden_saldo`}
         name="ueberstunden_saldo"
         type="number"
-        label="Überstunden-Anfangssaldo (Stunden)"
+        label={t.saldo}
         required={false}
         step="any"
         defaultValue={String(werte?.ueberstundenSaldo ?? 0)}
         fehler={fehler["ueberstunden_saldo"]}
-        hinweis="Übertrag aus der Zeit vor QuickTeam — nicht der aktuelle Stand. Den rechnet QuickTeam laufend selbst aus. Minusstunden als negative Zahl."
+        hinweis={t.saldoHinweis}
       />
 
       <TextFeld
         id={`${idPraefix}urlaubsanspruch_tage`}
         name="urlaubsanspruch_tage"
         type="number"
-        label="Urlaubsanspruch (Tage pro Jahr)"
+        label={t.urlaub}
         required={false}
         min={0}
         step={1}
         defaultValue={String(werte?.urlaubsanspruchTage ?? 25)}
         fehler={fehler["urlaubsanspruch_tage"]}
-        hinweis="Gezählt werden Kalendertage, nicht Arbeitstage — Wochenenden zählen mit. Offene Anträge belegen das Kontingent bereits."
+        hinweis={t.urlaubHinweis}
       />
     </div>
   );

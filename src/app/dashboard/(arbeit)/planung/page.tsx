@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/container";
+import { holeTexte } from "@/i18n/server";
 import {
   holeOffeneStellen,
   holeOhneSollstunden,
@@ -17,11 +18,14 @@ import { SollstundenWarnung } from "./sollstunden-warnung";
 import { ZyklusFormular } from "./zyklus-formular";
 import { ZyklusListe } from "./zyklus-liste";
 
-export const metadata: Metadata = {
-  title: "Planung",
-  description: "Planungszeiträume anlegen und den Stand der Dienstpläne verfolgen.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { planung } = await holeTexte();
+  return {
+    title: planung.metaTitel,
+    description: planung.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Planungszeiträume.
@@ -41,12 +45,14 @@ export default async function PlanungSeite() {
 
   if (!istChef(position)) notFound();
 
-  const [zyklen, vorlagen, offeneStellen, ohneSoll] = await Promise.all([
+  const [zyklen, vorlagen, offeneStellen, ohneSoll, texte] = await Promise.all([
     holeZyklen(supabase, position.betriebId),
     holeVorlagen(supabase, position.betriebId),
     holeOffeneStellen(supabase, position.betriebId),
     holeOhneSollstunden(supabase, position.betriebId),
+    holeTexte(),
   ]);
+  const t = texte.planung;
 
   const nutzbare = sichtbareVorlagen(vorlagen).length;
   const vorschlag = naechsterMonat(new Date());
@@ -68,23 +74,21 @@ export default async function PlanungSeite() {
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Planung</h1>
-        <p className="mt-2 text-base leading-relaxed text-muted">
-          Für welchen Zeitraum soll geplant werden? Aus deinen Schichtvorlagen
-          entstehen darin die konkreten Dienste.
-        </p>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t.lead}</p>
 
         {nutzbare === 0 ? (
           <p className="mt-6 rounded-blk border border-dashed border-line-strong bg-surface-sunk px-4 py-3 text-sm leading-relaxed text-muted">
-            Du hast noch keine Schichtvorlage mit Mindestbesetzung. Ohne sie bleibt ein
-            Zeitraum leer — aus einer Vorlage ohne Rollenbedarf entsteht keine Schicht,
-            und in der App wäre sie ohnehin unsichtbar. Anlegen kannst du den Zeitraum
-            trotzdem schon.
+            {t.ohneVorlagen}
           </p>
         ) : null}
 
         <div className="mt-8">
-          <ZyklusFormular vorschlag={vorschlag} hatVorherigenZyklus={zyklen.length > 0} />
+          <ZyklusFormular
+            vorschlag={vorschlag}
+            hatVorherigenZyklus={zyklen.length > 0}
+            texte={t}
+          />
         </div>
 
         {/*
@@ -99,14 +103,14 @@ export default async function PlanungSeite() {
           der Hinweis verschwindet also von selbst, sobald die Werte
           eingetragen sind.
         */}
-        <SollstundenWarnung leute={ohneSoll} />
+        <SollstundenWarnung leute={ohneSoll} texte={t} />
 
         <section aria-labelledby="zeitraeume" className="mt-10">
           <h2
             id="zeitraeume"
             className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
           >
-            Angelegte Zeiträume
+            {t.angelegt}
           </h2>
           <div className="mt-4">
             <ZyklusListe
@@ -118,15 +122,12 @@ export default async function PlanungSeite() {
                 token: session?.access_token ?? "",
                 anonKey,
               }}
+              texte={t}
             />
           </div>
         </section>
 
-        <p className="mt-10 text-sm leading-relaxed text-muted">
-          Verteilt werden die Schichten von einem Rechenverfahren, das Urlaube,
-          Ruhezeiten, gesetzliche Höchstarbeitszeiten und die Wünsche deines Teams
-          berücksichtigt. Es schlägt vor — freigegeben wird von dir.
-        </p>
+        <p className="mt-10 text-sm leading-relaxed text-muted">{t.fuss}</p>
       </div>
     </Container>
   );

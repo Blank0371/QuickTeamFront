@@ -253,22 +253,6 @@ function tagNach(basis: Date, tage: number): Date {
   return new Date(basis.getFullYear(), basis.getMonth(), basis.getDate() + tage);
 }
 
-/**
- * Deutsche Fassungen als Konstanten — **abgeleitet, nicht abgeschrieben**.
- *
- * Sie stehen noch da, weil rund zehn Dateien sie benutzen, die noch nicht
- * übersetzt sind (`docs/i18n-glossar.md`, Reihenfolge der Bereiche). Wer
- * eine davon anfasst, ersetzt den Zugriff durch die Funktion oben und
- * reicht die Locale herein; verschwindet der letzte Aufrufer, können
- * diese drei Zeilen weg.
- *
- * Wichtig ist, was sie **nicht** mehr sind: eine zweite, handgepflegte
- * Liste. Sie kommen aus derselben Quelle wie die englische Fassung und
- * können deshalb nicht mehr von ihr abweichen.
- */
-export const MONATSNAMEN = monatsnamen("de");
-export const WOCHENTAGE = wochentageKurz("de");
-export const WOCHENTAGE_LANG = wochentageLang("de");
 
 /* ------------------------------------------------------------------ */
 /* Laden                                                               */
@@ -293,9 +277,8 @@ export async function holeSchichten(
   /*
    * Die Ladefehler-Meldung reicht der Aufrufer sprachabhängig herein
    * (`t.kalender.ladeFehler`) — so bleibt diese Lib frei von i18n-Importen.
-   * Der Default deckt Aufrufer, die noch keine Übersetzung mitgeben.
    */
-  ladeFehler = "Der Dienstplan liess sich nicht laden. Lad die Seite neu.",
+  ladeFehler: string,
 ): Promise<{ proTag: Map<string, KalenderSchicht[]>; fehler: string | null }> {
   const { data, error } = await supabase.rpc("kalender_schichten", {
     p_betrieb_id: betriebId,
@@ -363,21 +346,6 @@ export function schichtZustand(schicht: KalenderSchicht): SchichtZustand {
   if (schicht.mine) return "meine";
   return "normal";
 }
-
-/**
- * Kurzer Hinweis zum Zustand, oder `null` für den Normalfall.
- *
- * „meine" bekommt bewusst keinen: dass es die eigene Schicht ist, trägt
- * die Hervorhebung. Ein Wort „meine" daneben wäre die dritte Aussage
- * über dieselbe Sache.
- */
-export const ZUSTAND_HINWEIS: Record<SchichtZustand, string | null> = {
-  abgemeldet: "abgemeldet",
-  offen: "frei zu übernehmen",
-  entwurf: "Entwurf",
-  meine: null,
-  normal: null,
-};
 
 /**
  * Läuft die Schicht über Mitternacht?

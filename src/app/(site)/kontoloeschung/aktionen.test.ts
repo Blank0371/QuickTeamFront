@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test, beforeEach } from "node:test";
+import { de } from "@/i18n/de";
 import type { Position } from "@/lib/dashboard/position";
 
 let positionen: Position[] = [];
@@ -58,6 +59,7 @@ mock.module("@/lib/stripe", { namedExports: {
   },
 } });
 mock.module("@/i18n/server", { namedExports: {
+  holeTexte: async () => de,
   holeValidierung: async () => ({}),
   holeAuthTexte: async () => ({ zugangsdaten: "Zugangsdaten stimmen nicht.", unbekannt: "Unbekannt." }),
 } });

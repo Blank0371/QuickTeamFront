@@ -11,12 +11,14 @@ import { feldSchemata } from "@/lib/validierung";
 import { CodeAbschnitt } from "./code-abschnitt";
 import { KontoAbschnitt } from "./konto-abschnitt";
 
-export const metadata: Metadata = {
-  title: "Konto anlegen",
-  description:
-    "Leg dein QuickTeam-Konto an und bestätige deine E-Mail-Adresse mit einem Code — den Betrieb richtest du danach ein.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { registrierung } = await holeTexte();
+  return {
+    title: registrierung.metaTitel,
+    description: registrierung.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 

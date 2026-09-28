@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 import type { OhneSollstunden } from "@/lib/dashboard/planung";
 
 /**
@@ -42,7 +44,13 @@ import type { OhneSollstunden } from "@/lib/dashboard/planung";
  * herauszunehmen wäre eine eigenmächtige Änderung am Verhalten des
  * Solvers, der fremder Code ist.
  */
-export function SollstundenWarnung({ leute }: { leute: readonly OhneSollstunden[] }) {
+export function SollstundenWarnung({
+  leute,
+  texte: t,
+}: {
+  leute: readonly OhneSollstunden[];
+  texte: Dictionary["planung"];
+}) {
   if (leute.length === 0) return null;
 
   const mehrere = leute.length > 1;
@@ -54,9 +62,7 @@ export function SollstundenWarnung({ leute }: { leute: readonly OhneSollstunden[
     >
       <p className="text-sm font-semibold text-text">
         <span aria-hidden="true">⚠ </span>
-        {mehrere
-          ? `${leute.length} Mitarbeitende ohne Sollstunden:`
-          : "Ein Mitarbeitender ohne Sollstunden:"}
+        {mehrere ? fuelle(t.ohneSollMehr, { n: leute.length }) : t.ohneSollEins}
       </p>
 
       <ul className="mt-2 flex flex-wrap gap-x-2 gap-y-1">
@@ -69,7 +75,7 @@ export function SollstundenWarnung({ leute }: { leute: readonly OhneSollstunden[
               wirkt ihr Auftauchen in dieser Liste wie ein Fehler.
             */}
             {person.status === "eingeladen" ? (
-              <span className="text-muted"> (eingeladen)</span>
+              <span className="text-muted">{t.eingeladen}</span>
             ) : null}
             {i < leute.length - 1 ? <span className="text-muted">,</span> : null}
           </li>
@@ -77,16 +83,15 @@ export function SollstundenWarnung({ leute }: { leute: readonly OhneSollstunden[
       </ul>
 
       <p className="mt-3 text-sm leading-relaxed text-muted">
-        {mehrere ? "Sie werden" : "Diese Person wird"} trotzdem eingeplant, aber ohne
-        Ziel für eine gleichmässige Verteilung — sobald ein Abrechnungsstichtag gesetzt
-        ist, kann das ihre Überstunden verfälschen. Bitte{" "}
+        {mehrere ? t.ohneSollTextMehr : t.ohneSollTextEins}
+        {t.ohneSollText}
         <Link
           href="/dashboard/team"
           className="font-semibold text-text underline underline-offset-4 hover:text-signal"
         >
-          im Profil ergänzen
+          {t.imProfil}
         </Link>
-        .
+        {t.ohneSollEnde}
       </p>
     </div>
   );

@@ -23,7 +23,7 @@ import { Balken, LadeAnsage } from "@/components/dashboard/skelett";
 export default function DashboardLaedt() {
   return (
     <div className="flex flex-1 flex-col">
-      <LadeAnsage text="Dashboard wird geladen" />
+      <LadeAnsage art="dashboard" />
 
       <div className="border-b border-line bg-surface">
         <div className="flex w-full items-center justify-between gap-4 px-5 py-3 sm:px-8">

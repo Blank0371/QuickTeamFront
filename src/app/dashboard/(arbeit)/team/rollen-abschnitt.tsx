@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
+import type { Dictionary } from "@/i18n/de";
 import type { Rolle } from "@/lib/dashboard/team";
 import { leererZustand } from "@/lib/formular";
 
@@ -50,7 +51,7 @@ function Knopf({ text, art = "still" }: { text: string; art?: "signal" | "still"
  * Ruhezustand. Rot bleibt damit das, was es sein soll: die Farbe der
  * Absicht, nicht der Dekoration.
  */
-function EntfernenKnopf() {
+function EntfernenKnopf({ text }: { text: string }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -59,7 +60,7 @@ function EntfernenKnopf() {
       aria-disabled={pending}
       className="shrink-0 rounded-blk px-2 py-2 text-sm text-muted underline-offset-4 transition-colors hover:text-stop hover:underline focus-visible:text-stop focus-visible:underline disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "…" : "Entfernen"}
+      {pending ? "…" : text}
     </button>
   );
 }
@@ -99,7 +100,13 @@ function EntfernenKnopf() {
  * Backend nachgezogen wird, funktioniert der Knopf beim nächsten Aufruf
  * wieder, ohne dass hier etwas zurückzunehmen wäre.
  */
-export function RollenAbschnitt({ rollen }: { rollen: readonly Rolle[] }) {
+export function RollenAbschnitt({
+  rollen,
+  texte: t,
+}: {
+  rollen: readonly Rolle[];
+  texte: Dictionary["teamVerwaltung"];
+}) {
   const [anlegen, anlegenAktion] = useActionState(rolleAnlegen, leererZustand);
   const [entfernen, entfernenAktion] = useActionState(rolleEntfernen, leererZustand);
   const [umblenden, umblendenAktion] = useActionState(rolleUmblenden, leererZustand);
@@ -116,12 +123,9 @@ export function RollenAbschnitt({ rollen }: { rollen: readonly Rolle[] }) {
   return (
     <section aria-labelledby="rollen-titel">
       <h2 id="rollen-titel" className="font-display text-lg text-text">
-        Rollen
+        {t.rollen}
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        Womit wird bei dir gearbeitet? Rollen entscheiden, wer für welche Schicht in
-        Frage kommt — und welche Mindestbesetzung eine Vorlage verlangt.
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{t.rollenText}</p>
 
       {[anlegen, entfernen, umblenden].map((zustand, i) =>
         zustand.nachricht ? (
@@ -136,12 +140,12 @@ export function RollenAbschnitt({ rollen }: { rollen: readonly Rolle[] }) {
           <TextFeld
             id="rolle-name"
             name="name"
-            label="Neue Rolle"
+            label={t.neueRolle}
             maxLength={60}
             fehler={anlegen.felder["name"]}
           />
         </div>
-        <Knopf text="Hinzufügen" art="signal" />
+        <Knopf text={t.hinzufuegen} art="signal" />
       </form>
 
       {aktive.length > 0 ? (
@@ -156,47 +160,44 @@ export function RollenAbschnitt({ rollen }: { rollen: readonly Rolle[] }) {
               <form action={umblendenAktion}>
                 <input type="hidden" name="rolle_id" value={rolle.id} />
                 <input type="hidden" name="aktiv" value="false" />
-                <Knopf text="Ausblenden" />
+                <Knopf text={t.ausblenden} />
               </form>
 
               {entfernenGesperrt ? (
                 <span
                   className="flex shrink-0 items-center gap-1.5 px-2 py-2 text-sm text-muted"
-                  title="Die Datenbank lässt das Löschen von Rollen zurzeit nicht zu."
+                  title={t.entfernenGesperrtTitel}
                 >
                   <Lock aria-hidden="true" className="size-3.5" />
-                  Entfernen gesperrt
+                  {t.entfernenGesperrt}
                 </span>
               ) : (
                 <form action={entfernenAktion}>
                   <input type="hidden" name="rolle_id" value={rolle.id} />
-                  <EntfernenKnopf />
+                  <EntfernenKnopf text={t.entfernen} />
                 </form>
               )}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-6 text-sm text-muted">Noch keine Rolle angelegt.</p>
+        <p className="mt-6 text-sm text-muted">{t.keineRolle}</p>
       )}
 
       {entfernenGesperrt ? (
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Das Entfernen ist abgeblendet, weil die Datenbank das Löschen von Rollen
-          zurzeit nicht zulässt — das ist gemeldet. <strong>Ausblenden</strong> wirkt
-          weiterhin: die Rolle wird nicht mehr vergeben, hält ihren Namen aber besetzt.
+          {t.gesperrtVor}
+          <strong>{t.gesperrtAusblenden}</strong>
+          {t.gesperrtNach}
         </p>
       ) : null}
 
       {ausgeblendete.length > 0 ? (
         <div className="mt-6">
           <h3 className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-            Ausgeblendet
+            {t.ausgeblendet}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Diese Rollen werden nicht mehr vergeben, halten ihren Namen aber weiter
-            besetzt — eine neue Rolle kann nicht so heissen.
-          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{t.ausgeblendetText}</p>
           <ul className="mt-3 flex flex-col gap-2">
             {ausgeblendete.map((rolle) => (
               <li
@@ -207,7 +208,7 @@ export function RollenAbschnitt({ rollen }: { rollen: readonly Rolle[] }) {
                 <form action={umblendenAktion}>
                   <input type="hidden" name="rolle_id" value={rolle.id} />
                   <input type="hidden" name="aktiv" value="true" />
-                  <Knopf text="Wieder einblenden" />
+                  <Knopf text={t.einblenden} />
                 </form>
               </li>
             ))}

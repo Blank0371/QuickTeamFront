@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { leseSprache } from "@/i18n/sprache";
 
 import { RechtsDokument } from "@/components/rechtsdokument";
+import { holeTexte } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const englisch = (await leseSprache()) === "en";
+  const { rechtliches } = await holeTexte();
   return {
-    title: englisch ? "Privacy Policy" : "Datenschutzerklärung",
-    description: englisch ? "How QuickTeam processes personal data, your rights, recipients and retention periods." : "Wie QuickTeam personenbezogene Daten verarbeitet: Rollenverteilung zwischen Arbeitgeber und Anbieter, Rechtsgrundlagen, Aufbewahrung und Ihre Betroffenenrechte.",
+    title: rechtliches.datenschutz,
+    description: rechtliches.metaDatenschutz,
     alternates: { canonical: "/datenschutz" },
   };
 }
@@ -37,17 +37,15 @@ export async function generateMetadata(): Promise<Metadata> {
  * aus `cookies()`, und ein Cookie-Zugriff macht die Route ohnehin
  * dynamisch — Next erkennt das selbst.
  */
-export default function DatenschutzSeite() {
+export default async function DatenschutzSeite() {
+  const { rechtliches } = await holeTexte();
   return (
     <RechtsDokument
       dateien={{
         de: "legals/datenschutzerklaerung-de.md",
         en: "legals/privacy-policy-en.md",
       }}
-      titel={{
-        de: "Datenschutzerklärung",
-        en: "Privacy Policy",
-      }}
+      titel={rechtliches.datenschutz}
     />
   );
 }

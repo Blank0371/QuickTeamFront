@@ -19,13 +19,15 @@ import { promoCodeSeiteAktiv } from "@/lib/promo-code-seite";
  * in `authRouten` — die Route soll auch nicht in `robots.txt` auftauchen,
  * wenn die Seite gerade aus ist.
  */
-export const metadata: Metadata = {
-  title: "Promo-Partner",
-  description:
-    "Werde Promo-Partner von QuickTeam: Antragsformular herunterladen, ausfüllen, unterschreiben und einsenden. Für alle, die QuickTeam an Gastronomiebetriebe weiterempfehlen.",
-  alternates: { canonical: "/promocode" },
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { promo } = await holeTexte();
+  return {
+    title: promo.metaTitel,
+    description: promo.metaBeschreibung,
+    alternates: { canonical: "/promocode" },
+    robots: { index: false, follow: false },
+  };
+}
 
 const KONTAKT_EMAIL = "blanktrading@web.de";
 

@@ -51,11 +51,18 @@ const ICONS: Record<Kennzahl["icon"], LucideIcon> = {
   zeit: Clock,
 };
 
-export function StatistikLeiste({ zahlen }: { zahlen: readonly Kennzahl[] }) {
+export function StatistikLeiste({
+  zahlen,
+  beschriftung,
+}: {
+  zahlen: readonly Kennzahl[];
+  /** `aria-label` der Leiste, aus dem Wörterbuch. */
+  beschriftung: string;
+}) {
   if (zahlen.length === 0) return null;
 
   return (
-    <section aria-label="Kennzahlen">
+    <section aria-label={beschriftung}>
       {/*
         Ein Raster, keine Flex-Reihe mit Trennlinien wie im Mockup: die
         Kachelzahl schwankt (Urlaubsanträge gibt es nur für Chefs), und

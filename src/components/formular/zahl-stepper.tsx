@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
+import { useKlientTexte } from "@/i18n/sprach-provider";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Anzahl-Eingabe mit eigenen +/- Knöpfen.
@@ -83,6 +85,7 @@ export function ZahlStepper({
    * zum Neutippen leert, bekäme sonst sofort eine 0 vorgesetzt und
    * müsste sie wieder wegräumen.
    */
+  const { formular } = useKlientTexte();
   const [text, setText] = useState(String(defaultValue));
   const [ansage, setAnsage] = useState<string | null>(null);
 
@@ -107,7 +110,7 @@ export function ZahlStepper({
           className={KNOPF}
           onClick={() => stufe(-1)}
           disabled={aktuell <= min}
-          aria-label={`${label}: einer weniger`}
+          aria-label={fuelle(formular.einerWeniger, { label })}
         >
           <Minus className="size-5" aria-hidden="true" />
         </Button>
@@ -138,7 +141,7 @@ export function ZahlStepper({
           className={KNOPF}
           onClick={() => stufe(1)}
           disabled={aktuell >= max}
-          aria-label={`${label}: einer mehr`}
+          aria-label={fuelle(formular.einerMehr, { label })}
         >
           <Plus className="size-5" aria-hidden="true" />
         </Button>

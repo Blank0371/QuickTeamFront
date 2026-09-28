@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, mock, test } from "node:test";
+import { de } from "@/i18n/de";
 let lesenFehler = false;
 let geschrieben = false;
 let vorhanden = true;
@@ -25,7 +26,7 @@ const client = { from: (tabelle: string) => {
 } };
 mock.module("next/cache", { namedExports: { revalidatePath: () => {} } });
 mock.module("@/lib/dashboard/zugang", { namedExports: { betreteDashboard: async () => ({ supabase: client, position: { rolleTyp: "chef", betriebId: "b" } }) } });
-mock.module("@/i18n/server", { namedExports: { holeValidierung: async () => ({}) } });
+mock.module("@/i18n/server", { namedExports: { holeTexte: async () => de, holeValidierung: async () => ({}) } });
 const { entscheiden } = await import("./aktionen");
 const vorher = { status: "leer" as const, nachricht: null, felder: {} };
 function formular(status = "approved") { const f = new FormData(); f.set("urlaub_id", "u"); f.set("status", status); return f; }

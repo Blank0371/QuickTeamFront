@@ -15,6 +15,22 @@ und das *Vorher*.
 
 ---
 
+## 2026-09-28 — Oberfläche vollständig zweisprachig
+
+**Vorher:** „Offener Rest" — öffentliche Seiten, Stepper, Dashboard-Bereiche und
+`nachricht`-Sätze in `src/lib/` waren hartkodiertes Deutsch (694 Fundstellen in 110
+Dateien); `kalender.ts` exportierte noch `MONATSNAMEN`/`WOCHENTAGE`/`WOCHENTAGE_LANG`,
+weitere Module deutsche Beschriftungstabellen (`ZYKLUS_TEXT`, `STATUS_TEXT`,
+`KATEGORIE_LABEL`, `SCHRITT_TITEL`, `UEBERNAHME_MELDUNG` …). **Jetzt:** alle
+Oberflächentexte aus `de.ts`/`en.ts`, Metadaten je Route über `generateMetadata`,
+Bibliotheksfunktionen bekommen Fallback-Beschriftungen als Parameter, Fehlerklassen
+tragen Codes. Bestand 82 Fundstellen in 16 Dateien, alle bewusst einsprachig (Liste in
+`CLAUDE.md`, „Zweisprachigkeit"). **Warum:** Anweisung des Nutzers, jede Seite solle der
+gewählten Sprache folgen. Die Sprachkontrolle filtert zusätzlich CSS-Werte
+(`var(--`, `color-mix(`, …), die vorher als Text zählten.
+
+---
+
 ## 2026-09-24 — Joseph als Platzhalter hinter zwei Schaltern
 
 **Vorher:** kein Joseph. **Jetzt:** Chef-Bereich `/dashboard/joseph` hinter

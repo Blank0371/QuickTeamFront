@@ -15,7 +15,7 @@ import {
   verknuepfePendingMitBetrieb,
   ZahlungAbgelehnt,
 } from "@/lib/stripe";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 import { schreibePromoCode } from "@/lib/promo-code";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
@@ -32,6 +32,11 @@ import {
   pendingZahlungKontext as pendingKontext,
   protokolliereZahlung as protokolliere,
 } from "@/lib/zahlung-kontext";
+
+/** Die Meldungen dieser Datei in der Sprache der Anfrage. */
+async function texte() {
+  return (await holeTexte()).zahlung;
+}
 
 /**
  * Das Übernehmen einer Zahlungsmethode — geteilt zwischen Schritt 2 und
@@ -81,12 +86,12 @@ async function pruefeSetupIntent(
     case "unbestaetigt":
       return {
         ok: false,
-        nachricht: "Die Zahlungsmethode ist noch nicht bestätigt. Versuch es bitte noch einmal.",
+        nachricht: (await texte()).nichtBestaetigt,
       };
     case "ohne-zahlungsmittel":
       return {
         ok: false,
-        nachricht: "Stripe hat keine Zahlungsmethode zurückgemeldet. Versuch es noch einmal.",
+        nachricht: (await texte()).keineMethode,
       };
   }
 }
@@ -102,8 +107,7 @@ async function rechnungsTor(kundeId: string): Promise<Fehlschlag | null> {
   if (await rechnungVollstaendig(kundeId)) return null;
   return {
     ok: false,
-    nachricht:
-      "Für die Rechnung fehlen noch Angaben. Füll die Felder über dem Zahlungsformular aus und schick das Formular erneut ab.",
+    nachricht: (await texte()).rechnungFehlt,
   };
 }
 
@@ -141,7 +145,7 @@ export async function rechnungSpeichern(
   if (!geprueft.ok) {
     return {
       ok: false,
-      nachricht: "Bitte vervollständige die Rechnungsangaben.",
+      nachricht: (await texte()).rechnungUnvollstaendig,
       felder: geprueft.felder,
     };
   }
@@ -175,8 +179,7 @@ export async function rechnungSpeichern(
     protokolliere("rechnungSpeichern", ursache);
     return {
       ok: false,
-      nachricht:
-        "Die Rechnungsangaben liessen sich nicht speichern. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await texte()).rechnungFehler,
     };
   }
 }
@@ -211,8 +214,7 @@ export async function rabattAnwenden(code: string): Promise<UebernahmeErgebnis> 
     if (!abo) {
       return {
         ok: false,
-        nachricht:
-          "Zu deinem Betrieb ist kein Abonnement hinterlegt. Wähl oben einen Plan aus.",
+        nachricht: (await texte()).keinAbo,
       };
     }
 
@@ -231,8 +233,7 @@ export async function rabattAnwenden(code: string): Promise<UebernahmeErgebnis> 
     protokolliere("rabattAnwenden", ursache);
     return {
       ok: false,
-      nachricht:
-        "Der Rabattcode liess sich nicht anwenden. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await texte()).rabattFehler,
     };
   }
 }
@@ -265,8 +266,7 @@ export async function zahlungsmittelUebernehmen(
     if (!abo) {
       return {
         ok: false,
-        nachricht:
-          "Zu deinem Betrieb ist kein Abonnement hinterlegt. Wähl oben einen Plan aus.",
+        nachricht: (await texte()).keinAbo,
       };
     }
 
@@ -274,7 +274,7 @@ export async function zahlungsmittelUebernehmen(
     const intent = await pruefeSetupIntent(
       setupIntentId,
       kundeId,
-      "Diese Zahlungsmethode gehört nicht zu deinem Betrieb.",
+      (await texte()).fremdBetrieb,
     );
     if (!intent.ok) return intent;
     const { zahlungsmittelId } = intent;
@@ -304,13 +304,12 @@ export async function zahlungsmittelUebernehmen(
      * Kunden gesagt, nicht hinter einer Sammelmeldung versteckt.
      */
     if (ursache instanceof ZahlungAbgelehnt) {
-      return { ok: false, nachricht: ursache.message };
+      return { ok: false, nachricht: (await texte()).ablehnung[ursache.art] };
     }
     protokolliere("zahlungsmittelUebernehmen", ursache);
     return {
       ok: false,
-      nachricht:
-        "Die Zahlungsmethode liess sich nicht übernehmen. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await texte()).uebernahmeFehler,
     };
   }
 }
@@ -333,7 +332,7 @@ export async function rechnungPendingSpeichern(
   if (!geprueft.ok) {
     return {
       ok: false,
-      nachricht: "Bitte vervollständige die Rechnungsangaben.",
+      nachricht: (await texte()).rechnungUnvollstaendig,
       felder: geprueft.felder,
     };
   }
@@ -345,8 +344,7 @@ export async function rechnungPendingSpeichern(
     protokolliere("rechnungPendingSpeichern", ursache);
     return {
       ok: false,
-      nachricht:
-        "Die Rechnungsangaben liessen sich nicht speichern. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await texte()).rechnungFehler,
     };
   }
 }
@@ -375,7 +373,7 @@ export async function betriebAbschliessen(
     const intent = await pruefeSetupIntent(
       setupIntentId,
       kunde.id,
-      "Diese Zahlungsmethode gehört nicht zu deinem Konto.",
+      (await texte()).fremdKonto,
     );
     if (!intent.ok) return intent;
     const { zahlungsmittelId } = intent;
@@ -398,8 +396,7 @@ export async function betriebAbschliessen(
     if (abo.status !== "active" && abo.status !== "trialing") {
       return {
         ok: false,
-        nachricht:
-          "Die Zahlung ist noch nicht bestätigt. Bitte versuch es in einem Moment erneut — bei einer Lastschrift kann das kurz dauern.",
+        nachricht: (await texte()).zahlungOffen,
       };
     }
 
@@ -415,8 +412,7 @@ export async function betriebAbschliessen(
       console.error(`[zahlung] betriebAbschliessen: stelleBetriebSicher = ${ergebnis.art}`);
       return {
         ok: false,
-        nachricht:
-          "Die Zahlung ist eingegangen, aber der Betrieb liess sich nicht anlegen. Lad die Seite neu — bleibt der Fehler, meld dich beim Support.",
+        nachricht: (await texte()).betriebFehler,
       };
     }
 
@@ -446,13 +442,12 @@ export async function betriebAbschliessen(
     return { ok: true };
   } catch (ursache) {
     if (ursache instanceof ZahlungAbgelehnt) {
-      return { ok: false, nachricht: ursache.message };
+      return { ok: false, nachricht: (await texte()).ablehnung[ursache.art] };
     }
     protokolliere("betriebAbschliessen", ursache);
     return {
       ok: false,
-      nachricht:
-        "Der Abschluss ist gerade fehlgeschlagen. Versuch es noch einmal — bleibt der Fehler, meld dich beim Support.",
+      nachricht: (await texte()).abschlussFehler,
     };
   }
 }

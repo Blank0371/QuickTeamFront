@@ -29,7 +29,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
  * bleibt sichtbar — die Information „hier geht es weiter" ist dann
  * immer noch da, nur ohne wiederkehrende Bewegung.
  */
-export function ScrollHinweis() {
+export function ScrollHinweis({ text }: { text: string }) {
   const wurzelRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
@@ -102,7 +102,7 @@ export function ScrollHinweis() {
         className="text-[0.6875rem] font-medium uppercase tracking-[0.26em]"
         style={{ color: "color-mix(in oklab, var(--qt-c-bone) 52%, transparent)" }}
       >
-        Scrollen
+        {text}
       </span>
       <span
         className="relative block h-8 w-px lg:h-12"

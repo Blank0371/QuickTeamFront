@@ -5,11 +5,11 @@ import { useFormStatus } from "react-dom";
 
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import { WahlChip, WahlKnopf } from "@/components/formular/wahl";
+import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 import {
   darfStatusAendern,
   SETZBARE_STATUS,
-  STATUS_ERKLAERUNG,
-  STATUS_TEXT,
   type Rolle,
   type TeamMitglied,
 } from "@/lib/dashboard/team";
@@ -24,6 +24,8 @@ import {
   statusSetzen,
 } from "./aktionen";
 import { AnstellungsFelder } from "./anstellungs-felder";
+
+type Texte = Dictionary["teamVerwaltung"];
 
 function Knopf({
   text,
@@ -72,10 +74,12 @@ export function MitarbeiterAbschnitt({
   team,
   rollen,
   eigeneId,
+  texte: t,
 }: {
   team: readonly TeamMitglied[];
   rollen: readonly Rolle[];
   eigeneId: string;
+  texte: Texte;
 }) {
   const [einladen, einladenAktion] = useActionState(mitarbeiterEinladen, leererZustand);
   const [rolleAktion, rolleAbsenden] = useActionState(rolleUmschalten, leererZustand);
@@ -90,12 +94,10 @@ export function MitarbeiterAbschnitt({
   return (
     <section aria-labelledby="team-titel" className="mt-12">
       <h2 id="team-titel" className="font-display text-lg text-text">
-        Team
+        {t.team}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        {team.length === 1
-          ? "Ausser dir ist noch niemand hier."
-          : `${team.length} Personen, dich eingerechnet.`}
+        {team.length === 1 ? t.alleinDa : fuelle(t.anzahl, { n: team.length })}
       </p>
 
       {[einladen, rolleAktion, status, zurueck, anon].map((zustand, i) =>
@@ -120,6 +122,7 @@ export function MitarbeiterAbschnitt({
             anonAktion={anonAktion}
             anstellungAktion={anstellungAktion}
             anstellungZustand={anstellung}
+            t={t}
           />
         ))}
       </ul>
@@ -128,6 +131,7 @@ export function MitarbeiterAbschnitt({
         aktion={einladenAktion}
         zustand={einladen}
         rollen={aktiveRollen}
+        t={t}
       />
     </section>
   );
@@ -144,6 +148,7 @@ function PersonZeile({
   anonAktion,
   anstellungAktion,
   anstellungZustand,
+  t,
 }: {
   person: TeamMitglied;
   rollen: readonly Rolle[];
@@ -155,6 +160,7 @@ function PersonZeile({
   anonAktion: (formData: FormData) => void;
   anstellungAktion: (formData: FormData) => void;
   anstellungZustand: FormZustand;
+  t: Texte;
 }) {
   const [offen, setOffen] = useState(false);
   const binIch = person.id === eigeneId;
@@ -166,25 +172,25 @@ function PersonZeile({
         <div className="min-w-0">
           <p className="font-semibold text-text">
             {person.vorname} {person.nachname}
-            {binIch ? <span className="font-normal text-muted"> · du</span> : null}
+            {binIch ? <span className="font-normal text-muted">{t.du}</span> : null}
           </p>
           <p className="mt-0.5 truncate text-sm text-muted">
-            {person.email ?? person.telefon ?? "Kein Kontakt hinterlegt"}
+            {person.email ?? person.telefon ?? t.keinKontakt}
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <StatusMerker status={person.status} chef={chef} />
+            <StatusMerker status={person.status} chef={chef} t={t} />
             {person.rollen.length > 0 ? (
               person.rollen.map((rolleId) => (
                 <span
                   key={rolleId}
                   className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted"
                 >
-                  {rollenName.get(rolleId) ?? "Rolle"}
+                  {rollenName.get(rolleId) ?? t.rolleFallback}
                 </span>
               ))
             ) : (
-              <span className="text-xs text-muted">Keine Rolle</span>
+              <span className="text-xs text-muted">{t.ohneRolle}</span>
             )}
           </div>
         </div>
@@ -195,7 +201,7 @@ function PersonZeile({
           aria-expanded={offen}
           className="shrink-0 rounded-blk border border-line px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-surface-sunk"
         >
-          {offen ? "Schliessen" : "Verwalten"}
+          {offen ? t.schliessen : t.verwalten}
         </button>
       </div>
 
@@ -204,7 +210,7 @@ function PersonZeile({
           {rollen.length > 0 ? (
             <fieldset>
               <legend className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                Rollen
+                {t.rollen}
               </legend>
               <div className="mt-3 flex flex-wrap gap-2">
                 {rollen.map((rolle) => {
@@ -233,9 +239,7 @@ function PersonZeile({
               </div>
             </fieldset>
           ) : (
-            <p className="text-sm text-muted">
-              Es gibt noch keine Rolle, die sich zuweisen liesse.
-            </p>
+            <p className="text-sm text-muted">{t.keineZuweisbar}</p>
           )}
 
           {/*
@@ -252,7 +256,7 @@ function PersonZeile({
           <form action={anstellungAktion} className="mt-6 border-t border-line pt-4">
             <input type="hidden" name="mitarbeiter_id" value={person.id} />
             <p className="mb-3 font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-              Anstellung
+              {t.anstellung}
             </p>
 
             <AnstellungsFelder
@@ -263,10 +267,11 @@ function PersonZeile({
                   ? anstellungZustand.felder
                   : {}
               }
+              texte={t}
             />
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Knopf text="Anstellung speichern" art="signal" klein />
+              <Knopf text={t.anstellungSpeichern} art="signal" klein />
               {anstellungZustand.werte?.["mitarbeiter_id"] === person.id &&
               anstellungZustand.nachricht ? (
                 <span
@@ -284,7 +289,7 @@ function PersonZeile({
           {darfStatusAendern(person) ? (
             <fieldset className="mt-6">
               <legend className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                Status
+                {t.statusTitel}
               </legend>
               <div className="mt-3 flex flex-wrap gap-2">
                 {SETZBARE_STATUS.map((ziel) => (
@@ -294,54 +299,44 @@ function PersonZeile({
                     <button
                       type="submit"
                       disabled={person.status === ziel}
-                      title={STATUS_ERKLAERUNG[ziel]}
+                      title={t.statusErklaerung[ziel]}
                       className={`rounded-blk border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-default ${
                         person.status === ziel
                           ? "border-signal/60 bg-signal-weak text-text"
                           : "border-line text-text hover:bg-surface-sunk"
                       }`}
                     >
-                      {STATUS_TEXT[ziel]}
+                      {t.status[ziel]}
                     </button>
                   </form>
                 ))}
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted">
-                {STATUS_ERKLAERUNG[person.status]}
+                {t.statusErklaerung[person.status]}
               </p>
             </fieldset>
           ) : (
-            <p className="mt-6 text-sm leading-relaxed text-muted">
-              Der Status der Betriebsleitung lässt sich hier nicht ändern — sonst
-              könnte ein Betrieb ohne aktive Leitung zurückbleiben und wäre für alle
-              verschlossen.
-            </p>
+            <p className="mt-6 text-sm leading-relaxed text-muted">{t.leitungStatus}</p>
           )}
 
           {person.status === "eingeladen" ? (
             <form action={zurueckAktion} className="mt-6">
               <input type="hidden" name="mitarbeiter_id" value={person.id} />
-              <Knopf text="Einladung zurücknehmen" art="stop" klein />
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                Löscht den Eintrag ganz. Möglich, solange die Einladung nicht
-                angenommen wurde.
-              </p>
+              <Knopf text={t.zuruecknehmen} art="stop" klein />
+              <p className="mt-2 text-xs leading-relaxed text-muted">{t.zuruecknehmenText}</p>
             </form>
           ) : null}
 
           {!chef && person.status !== "eingeladen" ? (
             <details className="mt-6">
               <summary className="cursor-pointer text-xs font-semibold text-muted transition-colors hover:text-text">
-                Daten löschen (DSGVO)
+                {t.dsgvo}
               </summary>
               <form action={anonAktion} className="mt-3">
                 <input type="hidden" name="mitarbeiter_id" value={person.id} />
                 <p className="text-xs leading-relaxed text-muted">
-                  Name, E-Mail-Adresse und die Verknüpfung zur Anmeldung werden
-                  überschrieben. Die Person wird auf inaktiv gesetzt. Vergangene
-                  Dienstpläne bleiben erhalten, aber ohne Namen —{" "}
-                  <strong className="text-text">das lässt sich nicht rückgängig
-                  machen.</strong>
+                  {t.dsgvoText}
+                  <strong className="text-text">{t.nichtRueckgaengig}</strong>
                 </p>
                 <label className="mt-3 flex items-start gap-2 text-xs text-text">
                   <input
@@ -350,10 +345,10 @@ function PersonZeile({
                     value="ja"
                     className="mt-0.5"
                   />
-                  <span>Ja, die Daten dieser Person endgültig löschen.</span>
+                  <span>{t.dsgvoBestaetigen}</span>
                 </label>
                 <div className="mt-3">
-                  <Knopf text="Endgültig löschen" art="stop" klein />
+                  <Knopf text={t.endgueltigLoeschen} art="stop" klein />
                 </div>
               </form>
             </details>
@@ -364,7 +359,15 @@ function PersonZeile({
   );
 }
 
-function StatusMerker({ status, chef }: { status: TeamMitglied["status"]; chef: boolean }) {
+function StatusMerker({
+  status,
+  chef,
+  t,
+}: {
+  status: TeamMitglied["status"];
+  chef: boolean;
+  t: Texte;
+}) {
   const stil = {
     aktiv: "border-signal/50 bg-signal-weak text-text",
     eingeladen: "border-dashed border-line-strong text-muted",
@@ -375,11 +378,11 @@ function StatusMerker({ status, chef }: { status: TeamMitglied["status"]; chef: 
   return (
     <>
       <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${stil}`}>
-        {STATUS_TEXT[status]}
+        {t.status[status]}
       </span>
       {chef ? (
         <span className="rounded-full border border-line-strong px-2.5 py-0.5 text-xs font-semibold text-text">
-          Leitung
+          {t.leitung}
         </span>
       ) : null}
     </>
@@ -390,10 +393,12 @@ function Einladen({
   aktion,
   zustand,
   rollen,
+  t,
 }: {
   aktion: (formData: FormData) => void;
   zustand: FormZustand;
   rollen: readonly Rolle[];
+  t: Texte;
 }) {
   return (
     <section
@@ -401,19 +406,16 @@ function Einladen({
       className="mt-10 rounded-panel border border-line bg-surface p-5 sm:p-6"
     >
       <h3 id="einladen-titel" className="font-display text-base text-text">
-        Jemanden einladen
+        {t.einladenTitel}
       </h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        E-Mail-Adresse oder Telefonnummer genügt — darüber findet die Person ihre
-        Einladung, wenn sie sich anmeldet.
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{t.einladenText}</p>
 
       <form action={aktion} className="mt-5 flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <TextFeld
             id="ein-vorname"
             name="vorname"
-            label="Vorname"
+            label={t.vorname}
             defaultValue={zustand.werte?.["vorname"]}
             fehler={zustand.felder["vorname"]}
             maxLength={60}
@@ -421,7 +423,7 @@ function Einladen({
           <TextFeld
             id="ein-nachname"
             name="nachname"
-            label="Nachname"
+            label={t.nachname}
             defaultValue={zustand.werte?.["nachname"]}
             fehler={zustand.felder["nachname"]}
             maxLength={60}
@@ -433,7 +435,7 @@ function Einladen({
             id="ein-email"
             name="email"
             type="email"
-            label="E-Mail"
+            label={t.email}
             required={false}
             defaultValue={zustand.werte?.["email"]}
             fehler={zustand.felder["email"]}
@@ -442,17 +444,17 @@ function Einladen({
             id="ein-telefon"
             name="telefon"
             type="tel"
-            label="Telefon"
+            label={t.telefon}
             required={false}
             defaultValue={zustand.werte?.["telefon"]}
             fehler={zustand.felder["telefon"]}
-            hinweis="International mit + und Ländervorwahl, sonst kommt die Einladung nicht an."
+            hinweis={t.telefonHinweis}
           />
         </div>
 
         {rollen.length > 0 ? (
           <fieldset>
-            <legend className="text-sm font-medium text-text">Rollen</legend>
+            <legend className="text-sm font-medium text-text">{t.rollen}</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {/*
                 `WahlChip` statt eines eigenen Labels mit sichtbarer
@@ -493,18 +495,16 @@ function Einladen({
         */}
         <details className="rounded-card border border-line bg-surface p-4">
           <summary className="cursor-pointer text-sm font-medium text-text">
-            Anstellungsdaten (optional)
+            {t.anstellungOptional}
           </summary>
-          <p className="mt-2 text-xs leading-relaxed text-muted">
-            Alles hier lässt sich auch später im Profil nachtragen.
-          </p>
+          <p className="mt-2 text-xs leading-relaxed text-muted">{t.anstellungSpaeter}</p>
           <div className="mt-4">
-            <AnstellungsFelder idPraefix="ein-" fehler={zustand.felder} />
+            <AnstellungsFelder idPraefix="ein-" fehler={zustand.felder} texte={t} />
           </div>
         </details>
 
         <div>
-          <Knopf text="Einladen" art="signal" />
+          <Knopf text={t.einladen} art="signal" />
         </div>
       </form>
     </section>

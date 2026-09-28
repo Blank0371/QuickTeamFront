@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { notfallMeldungSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 
 /**
  * Server Actions von Notfall.
@@ -52,7 +52,7 @@ export async function melden(_vorher: FormZustand, formData: FormData): Promise<
      * gemeldet (RPC wirft „Fuer diese Schicht wurde bereits ein Notfall
      * gemeldet") oder liegt nicht mehr in der Zukunft.
      */
-    return fehler("Das hat nicht geklappt — lad die Seite neu und versuch es noch einmal.");
+    return fehler((await holeTexte()).notfall.meldenFehler);
   }
 
   revalidatePath(PFAD);
@@ -66,12 +66,13 @@ export async function melden(_vorher: FormZustand, formData: FormData): Promise<
  */
 export async function ausschreiben(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).notfall;
   if (position.rolleTyp !== "chef") {
-    return fehler("Nur die Betriebsleitung darf eine Vertretung ausschreiben.");
+    return fehler(t.nurChef);
   }
 
   const notfallId = String(formData.get("notfall_id") ?? "");
-  if (!notfallId) return fehler("Dieser Notfall gibt es nicht mehr.");
+  if (!notfallId) return fehler(t.notfallWeg);
 
   const { error } = await supabase.rpc("notfall_vertretung_ausschreiben", {
     p_notfall_id: notfallId,
@@ -79,7 +80,7 @@ export async function ausschreiben(_vorher: FormZustand, formData: FormData): Pr
 
   if (error) {
     console.error(`[dashboard/notfall] ausschreiben: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   revalidatePath(PFAD);
@@ -88,9 +89,10 @@ export async function ausschreiben(_vorher: FormZustand, formData: FormData): Pr
 
 export async function uebernehmen(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).notfall;
 
   const benachrichtigungId = String(formData.get("benachrichtigung_id") ?? "");
-  if (!benachrichtigungId) return fehler("Diese Vertretung ist nicht mehr offen.");
+  if (!benachrichtigungId) return fehler(t.vertretungWeg);
 
   const { data: code, error } = await supabase.rpc("notfall_vertretung_uebernehmen", {
     p_benachrichtigung_id: benachrichtigungId,
@@ -99,18 +101,13 @@ export async function uebernehmen(_vorher: FormZustand, formData: FormData): Pro
 
   if (error) {
     console.error(`[dashboard/notfall] uebernehmen: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
-  const MELDUNG: Record<string, string> = {
-    bereits_besetzt: "Diese Schicht ist schon vergeben.",
-    nicht_qualifiziert: "Dir fehlt die erforderliche Rolle.",
-    schon_zugewiesen: "Du bist für diese Schicht schon eingeteilt.",
-    nicht_moeglich: "Das liess sich nicht zuweisen. Versuch es noch einmal.",
-  };
+  const meldung: Record<string, string> = t.code;
 
   if (code !== "besetzt") {
-    return fehler(MELDUNG[code as string] ?? "Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(meldung[code as string] ?? t.nochmal);
   }
 
   revalidatePath(PFAD);

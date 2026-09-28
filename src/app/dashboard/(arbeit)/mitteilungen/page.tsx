@@ -43,7 +43,7 @@ export default async function MitteilungenSeite() {
 
   const [mitteilungen, ausschreibungen] = await Promise.all([
     holeMitteilungen(supabase, position.betriebId, position.mitarbeiterId),
-    holeOffeneAusschreibungen(supabase, position.betriebId, position.mitarbeiterId),
+    holeOffeneAusschreibungen(supabase, position.betriebId, position.mitarbeiterId, t.ohneRolle),
   ]);
   await markiereAlsGelesen(supabase, mitteilungen);
 

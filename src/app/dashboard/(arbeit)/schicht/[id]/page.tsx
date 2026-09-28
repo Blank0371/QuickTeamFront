@@ -4,14 +4,13 @@ import { notFound } from "next/navigation";
 
 import { Container } from "@/components/container";
 import { Uebernehmen } from "@/components/dashboard/uebernehmen";
-import { getDictionary } from "@/i18n";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/de";
+import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
+import { fuelle } from "@/i18n/text";
 import { leseAusschreibung } from "@/lib/dashboard/ausschreibung";
-import {
-  WOCHENTAGE_LANG,
-  MONATSNAMEN,
-  hhmm,
-} from "@/lib/dashboard/kalender";
+import { hhmm } from "@/lib/dashboard/kalender";
 import { holeNotizen, holeSchicht, holeZuweisbareMitarbeiter } from "@/lib/dashboard/schicht";
 import { holeTeamTagesPraeferenzen, type TeamTagesPraeferenz } from "@/lib/dashboard/verfuegbarkeit";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
@@ -19,11 +18,16 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { RosterEditor } from "./roster-editor";
 import { SchichtFelderFormular, SchichtLoeschenFormular } from "./schicht-formular";
 
-export const metadata: Metadata = {
-  title: "Schicht",
-  description: "Eine Schicht im Detail: Zeiten, Besetzung, Notizen.",
-  robots: { index: false, follow: false },
-};
+type Texte = Dictionary["schicht"];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { schicht } = await holeTexte();
+  return {
+    title: schicht.metaTitel,
+    description: schicht.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Schichtdetail. Besetzung, eigene Felder (Zeiten/Kommentar) und Löschen
@@ -43,7 +47,9 @@ export default async function SchichtSeite({
 }) {
   const { supabase, position } = await betreteDashboard();
   const { id } = await params;
-  const tm = getDictionary(await leseSprache()).mitteilungen;
+  const [alle, locale] = await Promise.all([holeTexte(), leseSprache()]);
+  const tm = alle.mitteilungen;
+  const t = alle.schicht;
 
   const ergebnis = await holeSchicht(supabase, id, position.mitarbeiterId);
 
@@ -79,7 +85,7 @@ export default async function SchichtSeite({
       .eq("betrieb_id", position.betriebId)
       .maybeSingle();
     if (instanz?.schicht_vorlage_id) {
-      teamWuensche = await holeTeamTagesPraeferenzen(supabase, position.betriebId, {
+      teamWuensche = await holeTeamTagesPraeferenzen(supabase, position.betriebId, alle.verfuegbarkeit.ohneNamen, {
         schichtVorlageId: instanz.schicht_vorlage_id,
         datum: schicht.datum,
       });
@@ -93,10 +99,15 @@ export default async function SchichtSeite({
    * Anders als im Kalender, wo `open` die Kapazität nicht prüft, muss
    * hier nichts nachgerechnet werden.
    */
-  const ausschreibung = leseAusschreibung(schicht.claim);
+  const ausschreibung = leseAusschreibung(schicht.claim, t.ohneRolle);
 
   const datum = new Date(`${schicht.datum}T12:00:00`);
-  const wochentag = WOCHENTAGE_LANG[(datum.getDay() + 6) % 7];
+  const datumText = new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(datum);
   const ueberNacht = schicht.end_zeit < schicht.start_zeit;
   const bezeichnung = schicht.label?.trim() ? schicht.label.trim() : null;
 
@@ -107,49 +118,41 @@ export default async function SchichtSeite({
           href={`/dashboard/kalender?monat=${schicht.datum.slice(0, 7)}`}
           className="text-sm font-medium text-muted transition-colors hover:text-text"
         >
-          <span aria-hidden="true">‹</span> Zurück zum Kalender
+          <span aria-hidden="true">‹</span> {t.zurueck}
         </Link>
 
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl leading-tight sm:text-3xl">
-              {bezeichnung ?? "Schicht"}
+              {bezeichnung ?? t.schicht}
             </h1>
             {bearbeitbar ? null : (
               <p className="mt-1 text-base text-muted">
-                <time dateTime={schicht.datum}>
-                  {wochentag}, {datum.getDate()}. {MONATSNAMEN[datum.getMonth()]}{" "}
-                  {datum.getFullYear()}
-                </time>
+                <time dateTime={schicht.datum}>{datumText}</time>
                 {" · "}
                 <span className="font-mono">
                   {hhmm(schicht.start_zeit)}–{hhmm(schicht.end_zeit)}
                 </span>
-                {ueberNacht ? (
-                  <span className="text-muted"> (über Mitternacht)</span>
-                ) : null}
+                {ueberNacht ? <span className="text-muted">{t.ueberMitternacht}</span> : null}
               </p>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {status === "geplant" ? (
-              <Merker art="entwurf">Entwurf</Merker>
-            ) : null}
+            {status === "geplant" ? <Merker art="entwurf">{t.merkerEntwurf}</Merker> : null}
             {schicht.mine && !schicht.canceled ? (
-              <Merker art="mein">Du bist eingeteilt</Merker>
+              <Merker art="mein">{t.merkerMein}</Merker>
             ) : null}
-            {schicht.canceled ? <Merker art="stop">Abgemeldet</Merker> : null}
-            {schicht.open ? <Merker art="offen">Frei zu übernehmen</Merker> : null}
-            {schicht.swap_wanted ? <Merker art="neutral">Tausch gesucht</Merker> : null}
-            {schicht.understaffed ? <Merker art="stop">Unterbesetzt</Merker> : null}
+            {schicht.canceled ? <Merker art="stop">{t.merkerAbgemeldet}</Merker> : null}
+            {schicht.open ? <Merker art="offen">{t.merkerOffen}</Merker> : null}
+            {schicht.swap_wanted ? <Merker art="neutral">{t.merkerTausch}</Merker> : null}
+            {schicht.understaffed ? <Merker art="stop">{t.merkerUnterbesetzt}</Merker> : null}
           </div>
         </div>
 
         {status === "geplant" ? (
           <p className="mt-4 rounded-blk border border-dashed border-line-strong bg-surface-sunk px-4 py-3 text-sm leading-relaxed text-muted">
-            Diese Schicht ist ein Entwurf und für das Team noch nicht sichtbar. Sie
-            wird es erst, wenn der Plan veröffentlicht ist.
+            {t.entwurfText}
           </p>
         ) : null}
 
@@ -171,12 +174,9 @@ export default async function SchichtSeite({
             className="mt-6 rounded-card border border-signal/40 bg-signal-weak p-5"
           >
             <h2 id="uebernehmen-titel" className="font-display text-base font-bold text-text">
-              Diese Schicht ist ausgeschrieben
+              {t.ausgeschrieben}
             </h2>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">
-              Du hast die passende Rolle. Wer zuerst übernimmt, ist eingeteilt — eine
-              Bestätigung durch die Betriebsleitung gibt es nicht.
-            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.ausgeschriebenText}</p>
             <Uebernehmen
               benachrichtigungId={ausschreibung.benachrichtigungId}
               instanzId={id}
@@ -196,7 +196,7 @@ export default async function SchichtSeite({
               id="felder-titel"
               className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
             >
-              Zeiten und Kommentar
+              {t.zeitenTitel}
             </h2>
             <SchichtFelderFormular
               instanzId={id}
@@ -204,6 +204,7 @@ export default async function SchichtSeite({
               startZeit={schicht.start_zeit}
               endZeit={schicht.end_zeit}
               kommentar={schicht.kommentar ?? ""}
+              texte={t}
             />
           </section>
         ) : schicht.kommentar?.trim() ? (
@@ -212,7 +213,7 @@ export default async function SchichtSeite({
               id="kommentar-titel"
               className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
             >
-              Hinweis zur Schicht
+              {t.hinweisTitel}
             </h2>
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-text">
               {schicht.kommentar}
@@ -226,19 +227,24 @@ export default async function SchichtSeite({
               id="besetzung-titel"
               className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
             >
-              Besetzung
+              {t.besetzung}
             </h2>
-            <RosterEditor instanzId={id} teilnehmer={schicht.participants} team={team} />
+            <RosterEditor
+              instanzId={id}
+              teilnehmer={schicht.participants}
+              team={team}
+              texte={t}
+            />
           </section>
         ) : (
-          <Besetzung schicht={schicht} />
+          <Besetzung schicht={schicht} t={t} />
         )}
 
-        {schicht.bedarf !== null ? <Bedarf bedarf={schicht.bedarf} /> : null}
+        {schicht.bedarf !== null ? <Bedarf bedarf={schicht.bedarf} t={t} /> : null}
 
-        {teamWuensche.length > 0 ? <TeamWuensche wuensche={teamWuensche} /> : null}
+        {teamWuensche.length > 0 ? <TeamWuensche wuensche={teamWuensche} t={t} /> : null}
 
-        <Notizen notizen={notizen} />
+        <Notizen notizen={notizen} t={t} locale={locale} />
 
         {bearbeitbar ? (
           <section aria-labelledby="loeschen-titel" className="mt-10">
@@ -246,10 +252,14 @@ export default async function SchichtSeite({
               id="loeschen-titel"
               className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
             >
-              Gefahrenzone
+              {t.gefahrenzone}
             </h2>
             <div className="mt-3">
-              <SchichtLoeschenFormular instanzId={id} monat={schicht.datum.slice(0, 7)} />
+              <SchichtLoeschenFormular
+                instanzId={id}
+                monat={schicht.datum.slice(0, 7)}
+                texte={t}
+              />
             </div>
           </section>
         ) : null}
@@ -272,8 +282,8 @@ export default async function SchichtSeite({
  * beide dieselbe Zone haben. Käme ein Land mit anderer Zone dazu, gehört
  * hier die Zone des Betriebs hin — die Tabelle kennt sie heute nicht.
  */
-function zeitpunkt(iso: string): string {
-  return new Date(iso).toLocaleString("de-AT", {
+function zeitpunkt(iso: string, locale: Locale): string {
+  return new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "de-AT", {
     day: "numeric",
     month: "long",
     hour: "2-digit",
@@ -317,8 +327,10 @@ function Merker({
  */
 function Besetzung({
   schicht,
+  t,
 }: {
   schicht: { participants: { name: string; role_name: string | null; attendet: boolean; is_me: boolean }[]; can_edit: boolean };
+  t: Texte;
 }) {
   return (
     <section aria-labelledby="besetzung-titel" className="mt-8">
@@ -326,14 +338,12 @@ function Besetzung({
         id="besetzung-titel"
         className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
       >
-        Besetzung
+        {t.besetzung}
       </h2>
 
       {schicht.participants.length === 0 ? (
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          {schicht.can_edit
-            ? "Für diese Schicht ist noch niemand eingeteilt."
-            : "Hier steht niemand — entweder ist noch niemand eingeteilt, oder dein Betrieb zeigt die Namen der anderen nicht an."}
+          {schicht.can_edit ? t.niemandChef : t.niemandSonst}
         </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
@@ -348,7 +358,7 @@ function Besetzung({
                 } ${person.is_me ? "font-semibold" : ""}`}
               >
                 {person.name}
-                {person.is_me ? " (du)" : ""}
+                {person.is_me ? t.du : ""}
               </span>
 
               {person.role_name ? (
@@ -356,9 +366,7 @@ function Besetzung({
               ) : null}
 
               {!person.attendet ? (
-                <span className="text-xs font-semibold text-stop">
-                  fällt aus
-                </span>
+                <span className="text-xs font-semibold text-stop">{t.faelltAus}</span>
               ) : null}
             </li>
           ))}
@@ -387,8 +395,10 @@ function Besetzung({
  */
 function Bedarf({
   bedarf,
+  t,
 }: {
   bedarf: { rolle_id: string; role_name: string | null; benoetigt: number; besetzt: number }[];
+  t: Texte;
 }) {
   return (
     <section aria-labelledby="bedarf-titel" className="mt-8">
@@ -396,16 +406,11 @@ function Bedarf({
         id="bedarf-titel"
         className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
       >
-        Mindestbesetzung
+        {t.mindestbesetzung}
       </h2>
 
       {bedarf.length === 0 ? (
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          Für diese Schicht ist keine Mindestbesetzung hinterlegt — üblich bei
-          Schichten, die von Hand angelegt und direkt besetzt wurden. Sie ist
-          normal sichtbar; es fehlt nur der Sollwert, gegen den sich eine
-          Unterbesetzung feststellen liesse.
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">{t.keinBedarf}</p>
       ) : (
         <ul className="mt-3 flex flex-wrap gap-2">
           {bedarf.map((zeile) => {
@@ -417,7 +422,7 @@ function Bedarf({
                   fehlt ? "border-stop/60 bg-stop/10" : "border-line bg-surface"
                 }`}
               >
-                <span className="text-text">{zeile.role_name ?? "Ohne Rolle"}</span>{" "}
+                <span className="text-text">{zeile.role_name ?? t.ohneRolle}</span>{" "}
                 <span
                   className={`font-mono ${fehlt ? "font-semibold text-stop" : "text-muted"}`}
                 >
@@ -437,14 +442,14 @@ function Bedarf({
  * Notiz — nur für Chefs (`tagesvorlieben_select` zeigte sonst nur die
  * eigene Zeile). Web-eigen, die App zeigt das dem Chef nicht.
  */
-function TeamWuensche({ wuensche }: { wuensche: TeamTagesPraeferenz[] }) {
+function TeamWuensche({ wuensche, t }: { wuensche: TeamTagesPraeferenz[]; t: Texte }) {
   return (
     <section aria-labelledby="wuensche-titel" className="mt-8">
       <h2
         id="wuensche-titel"
         className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
       >
-        Wünsche für diesen Tag
+        {t.wuensche}
       </h2>
 
       <ul className="mt-3 flex flex-col gap-2">
@@ -456,7 +461,7 @@ function TeamWuensche({ wuensche }: { wuensche: TeamTagesPraeferenz[] }) {
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <span className="text-text">{w.name}</span>
               <span className={`text-xs font-semibold ${w.praeferenz === "gerne" ? "text-text" : "text-muted"}`}>
-                {w.praeferenz === "gerne" ? "Arbeitet gerne" : "Arbeitet ungerne"}
+                {w.praeferenz === "gerne" ? t.gerne : t.ungerne}
               </span>
             </p>
             {w.notiz ? (
@@ -480,6 +485,8 @@ function TeamWuensche({ wuensche }: { wuensche: TeamTagesPraeferenz[] }) {
  */
 function Notizen({
   notizen,
+  t,
+  locale,
 }: {
   notizen: {
     id: string;
@@ -488,6 +495,8 @@ function Notizen({
     is_me: boolean;
     erstellt_am: string;
   }[];
+  t: Texte;
+  locale: Locale;
 }) {
   if (notizen.length === 0) return null;
 
@@ -497,7 +506,7 @@ function Notizen({
         id="notizen-titel"
         className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted"
       >
-        Notizen
+        {t.notizen}
       </h2>
 
       <ul className="mt-3 flex flex-col gap-3">
@@ -511,12 +520,12 @@ function Notizen({
             </p>
             <p className="mt-2 text-xs text-muted">
               {notiz.is_me
-                ? "von dir"
+                ? t.vonDir
                 : notiz.autor_name
-                  ? `von ${notiz.autor_name}`
-                  : "von jemandem im Team"}
+                  ? fuelle(t.vonName, { name: notiz.autor_name })
+                  : t.vonJemandem}
               {" · "}
-              <time dateTime={notiz.erstellt_am}>{zeitpunkt(notiz.erstellt_am)}</time>
+              <time dateTime={notiz.erstellt_am}>{zeitpunkt(notiz.erstellt_am, locale)}</time>
             </p>
           </li>
         ))}

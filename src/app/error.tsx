@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { Container } from "@/components/container";
 import { useKlientTexte } from "@/i18n/sprach-provider";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Fehlergrenze innerhalb des Root-Layouts — Header und Footer bleiben
@@ -26,14 +27,16 @@ export default function Fehler({
 
   return (
     <Container className="py-20 sm:py-28">
-      <p className="font-mono text-xs uppercase tracking-[0.16em] text-stop">Fehler</p>
+      <p className="font-mono text-xs uppercase tracking-[0.16em] text-stop">{fehler.kicker}</p>
 
       <h1 className="mt-3 text-3xl leading-[1.1] sm:text-4xl">{fehler.fehlerTitel}</h1>
 
       <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">{fehler.fehlerText}</p>
 
       {error.digest ? (
-        <p className="mt-4 font-mono text-xs text-muted">Kennung: {error.digest}</p>
+        <p className="mt-4 font-mono text-xs text-muted">
+          {fuelle(fehler.kennung, { id: error.digest })}
+        </p>
       ) : null}
 
       <div className="mt-9 flex flex-wrap gap-3">

@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import { leseSprache } from "@/i18n/sprache";
 
 import { RechtsDokument } from "@/components/rechtsdokument";
 import { Hinweis } from "@/components/rechtstext";
 import { holeTexte } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const englisch = (await leseSprache()) === "en";
+  const { rechtliches } = await holeTexte();
   return {
-    title: englisch ? "Data Processing Agreement" : "Auftragsverarbeitungsvertrag",
-    description: englisch ? "Agreement between your business and QuickTeam as processor, including instructions, safeguards and subprocessors." : "Auftragsverarbeitungsvertrag nach Art. 28 DSGVO zwischen dem Betrieb als Verantwortlichem und QuickTeam als Auftragsverarbeiter — mit Weisungen, technischen Massnahmen und der Liste der Unterauftragsverarbeiter.",
+    title: rechtliches.avv,
+    description: rechtliches.metaAvv,
     alternates: { canonical: "/avv" },
   };
 }
@@ -65,10 +64,7 @@ export default async function AvvSeite() {
         de: "legals/AVV-QuickTeam-de.md",
         en: "legals/DPA-QuickTeam-en.md",
       }}
-      titel={{
-        de: "Auftragsverarbeitungsvertrag",
-        en: "Data Processing Agreement",
-      }}
+      titel={t.rechtliches.avv}
       hinweis={
         <Hinweis titel={t.rechtliches.mustertextTitel}>
           {t.rechtliches.mustertextHinweis}

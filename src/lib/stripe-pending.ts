@@ -5,7 +5,7 @@ import type { LandCode } from "@/lib/validierung";
 import { verlaufFuerKunde } from "@/lib/stripe-abo";
 import { BETRIEB_SCHLUESSEL, priceIdFuer, stripeKlient } from "@/lib/stripe-konfiguration";
 import { stelleSteuerstandortSicher } from "@/lib/stripe-rechnung";
-import { bezahleOffeneRechnung } from "@/lib/stripe-zahlung";
+import { bezahleOffeneRechnung, type AblehnungsArt } from "@/lib/stripe-zahlung";
 
 /**
  * Schlüssel für einen **noch nicht angelegten** Betrieb.
@@ -249,8 +249,7 @@ export async function schliessePendingAbo({
 }): Promise<Stripe.Subscription> {
   const stripe = stripeKlient();
   const preis = priceIdFuer(plan, intervall);
-  const ablehnung =
-    "Die Zahlung wurde abgelehnt, das Abo ist nicht gestartet. Versuch es mit einer anderen Zahlungsmethode.";
+  const ablehnung: AblehnungsArt = "nicht-gestartet";
 
   await stelleSteuerstandortSicher(kundeId, rechnung);
   await stripe.customers.update(kundeId, {

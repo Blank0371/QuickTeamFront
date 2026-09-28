@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
-import { holeValidierung } from "@/i18n/server";
+import type { Dictionary } from "@/i18n/de";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 import {
   schichtFelderSchema,
   schichtLoeschenSchema,
@@ -34,40 +35,26 @@ function fehler(nachricht: string, felder: Record<string, string> = {}): FormZus
  * Codes (`HC-1`..`HC-5`) stehen wörtlich im Trigger, am 2026-09-01 gegen
  * `pg_proc` nachgesehen.
  */
-function zuweisungsFehlerText(message: string): string {
-  if (message.includes("HC-1") || message.includes("Urlaub")) {
-    return "Diese Person hat an diesem Tag genehmigten Urlaub.";
-  }
-  if (message.includes("HC-2") || message.includes("ueberlappende")) {
-    return "Diese Person ist an diesem Tag schon für eine andere Schicht eingeteilt.";
-  }
-  if (message.includes("HC-4") || message.includes("Ruhezeit")) {
-    return "Das unterschreitet die gesetzliche Mindestruhezeit dieser Person.";
-  }
-  if (message.includes("Tageshoechstarbeitszeit")) {
-    return "Das überschreitet die gesetzliche Tageshöchstarbeitszeit dieser Person.";
-  }
-  if (
-    message.includes("Wochenhoechstarbeitszeit")
-  ) {
-    return "Das überschreitet die Wochenhöchstarbeitszeit dieser Person.";
-  }
-  if (message.includes("HC-5") || message.includes("max_stunden_hart")) {
-    return "Das überschreitet die vereinbarte monatliche Stundenobergrenze dieser Person.";
-  }
-  if (message.includes("HC-3") || message.includes("qualifiziert")) {
-    return "Diese Person ist für diese Rolle nicht qualifiziert.";
-  }
+function zuweisungsFehlerText(message: string, t: Texte): string {
+  if (message.includes("HC-1") || message.includes("Urlaub")) return t.urlaub;
+  if (message.includes("HC-2") || message.includes("ueberlappende")) return t.ueberlappend;
+  if (message.includes("HC-4") || message.includes("Ruhezeit")) return t.ruhezeit;
+  if (message.includes("Tageshoechstarbeitszeit")) return t.tag;
+  if (message.includes("Wochenhoechstarbeitszeit")) return t.woche;
+  if (message.includes("HC-5") || message.includes("max_stunden_hart")) return t.monat;
+  if (message.includes("HC-3") || message.includes("qualifiziert")) return t.qualifikation;
   if (message.includes("deaktiviert") || message.includes("kann nicht eingeplant werden")) {
-    return "Diese Person ist deaktiviert und kann nicht eingeteilt werden.";
+    return t.deaktiviert;
   }
-  if (message.includes("Nur Chef")) {
-    return "Dafür fehlt dir die Berechtigung.";
-  }
-  if (message.includes("nicht gefunden")) {
-    return "Diese Schicht gibt es nicht mehr.";
-  }
-  return "Das hat nicht geklappt. Versuch es noch einmal.";
+  if (message.includes("Nur Chef")) return t.berechtigung;
+  if (message.includes("nicht gefunden")) return t.weg;
+  return t.nochmal;
+}
+
+type Texte = Dictionary["schicht"]["fehler"];
+
+async function texte(): Promise<Dictionary["schicht"]> {
+  return (await holeTexte()).schicht;
 }
 
 export async function mitarbeiterZuweisen(
@@ -75,8 +62,9 @@ export async function mitarbeiterZuweisen(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await texte()).fehler;
   if (!istChef(position)) {
-    return fehler("Dafür fehlt dir die Berechtigung.");
+    return fehler(t.berechtigung);
   }
 
   const geprueft = schichtZuweisenSchema.safeParse({
@@ -97,7 +85,7 @@ export async function mitarbeiterZuweisen(
 
   if (error) {
     console.error(`[dashboard/schicht] zuweisen: ${error.message}`);
-    return fehler(zuweisungsFehlerText(error.message));
+    return fehler(zuweisungsFehlerText(error.message, t));
   }
 
   revalidatePath(`/dashboard/schicht/${instanzId}`);
@@ -109,8 +97,9 @@ export async function zuweisungEntfernen(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await texte()).fehler;
   if (!istChef(position)) {
-    return fehler("Dafür fehlt dir die Berechtigung.");
+    return fehler(t.berechtigung);
   }
 
   const geprueft = schichtZuweisungEntfernenSchema.safeParse({
@@ -129,7 +118,7 @@ export async function zuweisungEntfernen(
 
   if (error) {
     console.error(`[dashboard/schicht] entfernen: ${error.message}`);
-    return fehler("Das hat nicht geklappt. Versuch es noch einmal.");
+    return fehler(t.nochmal);
   }
 
   revalidatePath(`/dashboard/schicht/${instanzId}`);
@@ -149,8 +138,9 @@ export async function schichtFelderSpeichern(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const tx = await texte();
   if (!istChef(position)) {
-    return fehler("Dafür fehlt dir die Berechtigung.");
+    return fehler(tx.fehler.berechtigung);
   }
 
   const roh = {
@@ -187,13 +177,13 @@ export async function schichtFelderSpeichern(
     console.error(`[dashboard/schicht] felder: ${error.message}`);
     return fehler(
       error.message.includes("chk_instanz_zeiten_verschieden")
-        ? "Start und Ende dürfen nicht gleich sein."
-        : "Das hat nicht geklappt. Versuch es noch einmal.",
+        ? tx.fehler.gleich
+        : tx.fehler.nochmal,
     );
   }
 
   revalidatePath(`/dashboard/schicht/${instanzId}`);
-  return { status: "erfolg", nachricht: "Gespeichert.", felder: {} };
+  return { status: "erfolg", nachricht: tx.gespeichert, felder: {} };
 }
 
 /**
@@ -209,8 +199,9 @@ export async function schichtFelderSpeichern(
  */
 export async function schichtLoeschen(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await texte()).fehler;
   if (!istChef(position)) {
-    return fehler("Dafür fehlt dir die Berechtigung.");
+    return fehler(t.berechtigung);
   }
 
   const geprueft = schichtLoeschenSchema.safeParse({
@@ -226,7 +217,7 @@ export async function schichtLoeschen(_vorher: FormZustand, formData: FormData):
 
   if (error) {
     console.error(`[dashboard/schicht] loeschen: ${error.message}`);
-    return fehler("Die Schicht liess sich nicht löschen. Versuch es noch einmal.");
+    return fehler(t.loeschen);
   }
 
   redirect(/^\d{4}-\d{2}$/.test(monat) ? `/dashboard/kalender?monat=${monat}` : "/dashboard/kalender");

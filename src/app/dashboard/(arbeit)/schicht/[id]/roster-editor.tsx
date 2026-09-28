@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { useActionState } from "react";
 
 import { FormMeldung } from "@/components/formular/felder";
+import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 import type { ZuweisbarerMitarbeiter } from "@/lib/dashboard/schicht";
 import { leererZustand } from "@/lib/formular";
 
@@ -44,10 +46,12 @@ export function RosterEditor({
   instanzId,
   teilnehmer,
   team,
+  texte: tx,
 }: {
   instanzId: string;
   teilnehmer: Teilnehmer[];
   team: ZuweisbarerMitarbeiter[];
+  texte: Dictionary["schicht"];
 }) {
   const [zuweisenState, zuweisenAktion] = useActionState(mitarbeiterZuweisen, leererZustand);
   const [entfernenState, entfernenAktion] = useActionState(zuweisungEntfernen, leererZustand);
@@ -90,7 +94,7 @@ export function RosterEditor({
       ) : null}
 
       {teilnehmer.length === 0 ? (
-        <p className="text-sm leading-relaxed text-muted">Für diese Schicht ist noch niemand eingeteilt.</p>
+        <p className="text-sm leading-relaxed text-muted">{tx.niemandChef}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {teilnehmer.map((t) => {
@@ -104,10 +108,12 @@ export function RosterEditor({
                   className={`text-sm ${t.attendet ? "text-text" : "text-muted line-through"} ${t.is_me ? "font-semibold" : ""}`}
                 >
                   {t.name}
-                  {t.is_me ? " (du)" : ""}
+                  {t.is_me ? tx.du : ""}
                 </span>
 
-                {!t.attendet ? <span className="text-xs font-semibold text-stop">fällt aus</span> : null}
+                {!t.attendet ? (
+                  <span className="text-xs font-semibold text-stop">{tx.faelltAus}</span>
+                ) : null}
 
                 {eligibleRollen.length > 1 ? (
                   <div className="flex flex-wrap gap-1.5">
@@ -131,7 +137,7 @@ export function RosterEditor({
                   <input type="hidden" name="mitarbeiter_id" value={t.mitarbeiter_id} />
                   <button
                     type="submit"
-                    aria-label={`${t.name} von der Schicht entfernen`}
+                    aria-label={fuelle(tx.entfernenAria, { name: t.name })}
                     className="rounded-blk p-1.5 text-muted hover:bg-surface-sunk hover:text-stop"
                   >
                     <X className="size-4" aria-hidden="true" />
@@ -144,14 +150,14 @@ export function RosterEditor({
       )}
 
       <div className="mt-4 rounded-panel border border-line-strong bg-surface p-4">
-        <p className="font-display text-sm text-text">Person hinzufügen</p>
+        <p className="font-display text-sm text-text">{tx.hinzufuegen}</p>
 
         <input
           type="search"
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
-          placeholder="Name suchen"
-          aria-label="Person suchen"
+          placeholder={tx.suchen}
+          aria-label={tx.suchenAria}
           className="mt-3 w-full rounded-blk border border-line-strong bg-bg px-3.5 py-2 text-sm text-text"
         />
 
@@ -162,7 +168,7 @@ export function RosterEditor({
               onClick={() => setRollenFilter(null)}
               className={chipKlasse(rollenFilter === null)}
             >
-              Alle Rollen
+              {tx.alleRollen}
             </button>
             {alleRollen.map((r) => (
               <button
@@ -178,7 +184,7 @@ export function RosterEditor({
         ) : null}
 
         {gefiltert.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">Niemand zum Hinzufügen gefunden.</p>
+          <p className="mt-3 text-sm text-muted">{tx.niemandGefunden}</p>
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {gefiltert.map((m) => (

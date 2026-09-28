@@ -59,9 +59,6 @@ export function wochentagAusDatum(datum: Date): number {
   return (datum.getDay() + 6) % 7;
 }
 
-export function wochentagName(wert: number): string {
-  return WOCHENTAGE.find((tag) => tag.wert === wert)?.name ?? `Tag ${wert}`;
-}
 
 export type Bedarf = { rolleId: string; mindestanzahl: number };
 

@@ -10,7 +10,9 @@ import { ZahlStepper } from "@/components/formular/zahl-stepper";
 import { useActionState } from "react";
 import { leererZustand } from "@/lib/formular";
 import type { Betriebseinstellungen } from "@/lib/dashboard/einstellungen";
-import { DEADLINE_MAX, DEADLINE_MIN, SPRACHEN } from "@/lib/validierung";
+import { DEADLINE_MAX, DEADLINE_MIN, SPRACHEN, type SpracheCode } from "@/lib/validierung";
+import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 
 import { einstellungenSpeichern } from "./aktionen";
 
@@ -38,7 +40,16 @@ import { einstellungenSpeichern } from "./aktionen";
  * beide führen ihren Wert intern und schicken ihn über ein eigenes
  * Feld.
  */
-export function EinstellungenFormular({ start }: { start: Betriebseinstellungen }) {
+export function EinstellungenFormular({
+  start,
+  texte: t,
+  sprachNamen,
+}: {
+  start: Betriebseinstellungen;
+  texte: Dictionary["einstellungen"];
+  /** Anzeigenamen der Sprach-Codes (`auswahl.spracheDE/EN`). */
+  sprachNamen: Record<SpracheCode, string>;
+}) {
   const [zustand, aktion] = useActionState(einstellungenSpeichern, leererZustand);
 
   const [sprache, setSprache] = useState(start.sprache_standard);
@@ -57,17 +68,11 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
         <FormMeldung art="fehler">{zustand.nachricht}</FormMeldung>
       ) : null}
       {zustand.status === "erfolg" ? (
-        <FormMeldung art="erfolg">
-          Gespeichert. Die Sichtbarkeits-Einstellungen wirken für dein Team ab der
-          nächsten Seitenansicht — niemand muss sich neu anmelden.
-        </FormMeldung>
+        <FormMeldung art="erfolg">{t.gespeichert}</FormMeldung>
       ) : null}
 
       {/* ── Sichtbarkeit ───────────────────────────────────────────── */}
-      <Gruppe
-        titel="Was dein Team sieht"
-        text="Beide Einstellungen wirken betriebsweit und sofort — sie ändern nicht die Darstellung, sondern welche Daten für Angestellte überhaupt abrufbar sind."
-      >
+      <Gruppe titel={t.sichtTitel} text={t.sichtText}>
         <input
           type="hidden"
           name="mitarbeiter_sehen_andere_schichten"
@@ -76,8 +81,8 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
         <Schalter
           an={sehenSchichten}
           umschalten={() => setSehenSchichten((v) => !v)}
-          titel="Fremde Schichten sichtbar"
-          text="Aus: Angestellte sehen im Kalender ausschliesslich ihre eigenen Dienste. An: sie sehen den ganzen Dienstplan des Betriebs."
+          titel={t.fremdeSchichten}
+          text={t.fremdeSchichtenText}
         />
 
         <input
@@ -88,13 +93,13 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
         <Schalter
           an={sehenMitarbeiter}
           umschalten={() => setSehenMitarbeiter((v) => !v)}
-          titel="Namen der Eingeteilten sichtbar"
-          text="Aus: auf einer Schicht steht nur der eigene Name. An: alle Eingeteilten stehen mit Namen und Rolle da."
+          titel={t.namenSichtbar}
+          text={t.namenSichtbarText}
         />
       </Gruppe>
 
       {/* ── Abläufe ────────────────────────────────────────────────── */}
-      <Gruppe titel="Abläufe">
+      <Gruppe titel={t.ablaeufe}>
         <input
           type="hidden"
           name="ask_chef_for_shift_switch"
@@ -103,8 +108,8 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
         <Schalter
           an={tauschFreigabe}
           umschalten={() => setTauschFreigabe((v) => !v)}
-          titel="Schichttausch muss freigegeben werden"
-          text="An: ein ausgehandelter Tausch wartet auf deine Zustimmung. Aus: die beiden Beteiligten regeln ihn unter sich."
+          titel={t.tauschFreigabe}
+          text={t.tauschFreigabeText}
         />
 
         <input
@@ -115,8 +120,8 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
         <Schalter
           an={notfallStunden}
           umschalten={() => setNotfallStunden((v) => !v)}
-          titel="Notfallstunden anrechnen"
-          text="Zählt Schichten, von denen sich jemand kurzfristig abgemeldet hat, trotzdem zur Arbeitszeit."
+          titel={t.notfallStunden}
+          text={t.notfallStundenText}
         />
 
         <div className="flex flex-wrap items-end justify-between gap-4 py-4">
@@ -133,17 +138,16 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
               htmlFor="verfuegbarkeit_deadline_tag"
               className="text-sm font-medium text-text"
             >
-              Frist für Wünsche
+              {t.frist}
             </label>
             <p className="mt-1 max-w-md text-xs leading-relaxed text-muted">
-              Tag im Monat, bis zu dem dein Team Verfügbarkeiten für den Folgemonat
-              eintragen kann. {DEADLINE_MIN} bis {DEADLINE_MAX}.
+              {fuelle(t.fristText, { min: DEADLINE_MIN, max: DEADLINE_MAX })}
             </p>
           </div>
           <ZahlStepper
             id="verfuegbarkeit_deadline_tag"
             name="verfuegbarkeit_deadline_tag"
-            label="Frist für Wünsche"
+            label={t.frist}
             defaultValue={start.verfuegbarkeit_deadline_tag}
             min={DEADLINE_MIN}
             max={DEADLINE_MAX}
@@ -153,30 +157,26 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
       </Gruppe>
 
       {/* ── Abrechnung und Sprache ─────────────────────────────────── */}
-      <Gruppe titel="Abrechnung und Sprache">
+      <Gruppe titel={t.abrechnungTitel}>
         <div className="py-4">
           <DatumWahl
             name="abrechnung_bis"
-            label="Abrechnung abgeschlossen bis"
-            platzhalter="Kein Stichtag"
+            label={t.abrechnungBis}
+            platzhalter={t.keinStichtag}
             loeschbar
             className="sm:max-w-xs"
             defaultValue={start.abrechnung_bis ?? ""}
-            hinweis="Stichtag für die Stundenauswertung: Zeit davor gilt als abgerechnet. Ohne Angabe wird alles gezählt."
+            hinweis={t.abrechnungHinweis}
             fehler={zustand.felder["abrechnung_bis"]}
           />
         </div>
 
         <div className="py-4">
-          <p className="text-sm font-medium text-text">Sprache des Betriebs</p>
+          <p className="text-sm font-medium text-text">{t.spracheTitel}</p>
           <p className="mt-1 max-w-md text-xs leading-relaxed text-muted">
-            Vorgesehen als Standardsprache für neue Mitglieder.{" "}
-            <strong className="font-medium text-text">
-              Zurzeit ohne Wirkung
-            </strong>{" "}
-            — die App wählt ihre Sprache am Gerät, und die Website gibt bislang nur
-            Deutsch aus. Der Wert wird gespeichert, greift aber erst, wenn die
-            Sprachwahl gebaut ist.
+            {t.spracheVor}
+            <strong className="font-medium text-text">{t.spracheOhneWirkung}</strong>
+            {t.spracheNach}
           </p>
 
           <input type="hidden" name="sprache_standard" value={sprache} />
@@ -195,7 +195,7 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
                       : "border-line text-muted hover:border-line-control hover:text-text"
                   }`}
                 >
-                  {eintrag.name}
+                  {sprachNamen[eintrag.code]}
                 </button>
               );
             })}
@@ -204,7 +204,7 @@ export function EinstellungenFormular({ start }: { start: Betriebseinstellungen 
       </Gruppe>
 
       <div className="sm:max-w-xs">
-        <AbsendenButton laufend="Wird gespeichert …">Speichern</AbsendenButton>
+        <AbsendenButton laufend={t.speichernLaufend}>{t.speichern}</AbsendenButton>
       </div>
     </form>
   );

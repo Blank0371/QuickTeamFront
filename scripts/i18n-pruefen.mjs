@@ -256,6 +256,10 @@ function menschentext(roh) {
   // XML-/HTML-Bausteine (`<font><sz val="11"/>…`) — der Excel-Schreiber
   // besteht fast nur daraus. Ein Satz für Menschen beginnt nie mit `<`.
   if (/^</.test(text)) return false;
+  // CSS-Werte aus `style={{ … }}` — `color-mix(in oklab, …)`, Verläufe,
+  // `var(--…)`. Sie tragen Leerzeichen und sahen deshalb wie Sätze aus;
+  // auf der Landingpage machten sie fast den ganzen Bestand aus.
+  if (/(color-mix|gradient|url)\(|var\(--/.test(text)) return false;
   if (/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/.test(text)) return false;
   if (/^[A-Z][A-Za-z0-9]*$/.test(text)) return false;
   if (istKlassenliste(text)) return false;

@@ -2,8 +2,8 @@
 
 
 
+import { holeTexte } from "@/i18n/server";
 import {
-  UEBERNAHME_MELDUNG,
   istErfolg,
   istUebernahmeCode,
 } from "@/lib/dashboard/ausschreibung";
@@ -61,10 +61,12 @@ export async function schichtUebernehmen(
   const benachrichtigungId = String(formData.get("benachrichtigung_id") ?? "").trim();
   const rolleId = String(formData.get("rolle_id") ?? "").trim();
 
+  const t = (await holeTexte()).mitteilungen;
+
   if (!benachrichtigungId || !rolleId) {
     return {
       status: "fehler",
-      nachricht: "Diese Ausschreibung gibt es nicht mehr.",
+      nachricht: t.ausschreibungWeg,
       felder: {},
       werte: {},
     };
@@ -91,8 +93,7 @@ export async function schichtUebernehmen(
     );
     return {
       status: "fehler",
-      nachricht:
-        "Das hat nicht geklappt. Wahrscheinlich ist die Ausschreibung inzwischen zurückgezogen worden — lad die Seite neu.",
+      nachricht: t.ausschreibungZurueckgezogen,
       felder: {},
       werte: {},
     };
@@ -104,7 +105,7 @@ export async function schichtUebernehmen(
     );
     return {
       status: "fehler",
-      nachricht: "Das hat nicht geklappt. Versuch es noch einmal.",
+      nachricht: t.nochmal,
       felder: {},
       werte: {},
     };
@@ -143,7 +144,7 @@ export async function schichtUebernehmen(
 
   return {
     status: istErfolg(data) ? "erfolg" : "fehler",
-    nachricht: UEBERNAHME_MELDUNG[data],
+    nachricht: t.uebernahme[data],
     felder: {},
     werte: {},
   };

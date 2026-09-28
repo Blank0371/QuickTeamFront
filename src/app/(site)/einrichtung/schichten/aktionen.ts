@@ -8,7 +8,8 @@ import { feldFehler, type FormZustand } from "@/lib/formular";
 import { holeRollen } from "@/lib/team";
 import { createClient } from "@/lib/supabase/server";
 import { mindestanzahlSchema, vorlagenSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
+import { fuelle } from "@/i18n/text";
 
 /**
  * Server Actions von Schritt 4.
@@ -76,6 +77,7 @@ export async function vorlageAnlegen(
    * sehen bekommt. Deshalb ist das hier eine Eingabebedingung und keine
    * Nachbesserung.
    */
+  const m = (await holeTexte()).stepper.schichten.meldung;
   const rollen = await holeRollen(supabase, betriebId);
   const bedarf: { rolle_id: string; mindestanzahl: number }[] = [];
 
@@ -84,8 +86,8 @@ export async function vorlageAnlegen(
     if (eingabe === null) continue;
     const anzahl = mindestanzahlSchema.safeParse(eingabe);
     if (!anzahl.success) {
-      return fehler(`Die Anzahl für „${rolle.name}" ist keine gültige Zahl.`, {
-        [`bedarf_${rolle.id}`]: "Bitte eine Zahl von 0 bis 99.",
+      return fehler(fuelle(m.anzahlUngueltig, { rolle: rolle.name }), {
+        [`bedarf_${rolle.id}`]: m.anzahlFeld,
       });
     }
     if (anzahl.data > 0) {
@@ -96,8 +98,7 @@ export async function vorlageAnlegen(
   if (bedarf.length === 0) {
     return {
       status: "fehler",
-      nachricht:
-        "Trag bei mindestens einer Rolle ein, wie viele Leute gebraucht werden — sonst taucht die Schicht in der App gar nicht auf.",
+      nachricht: m.keinBedarf,
       felder: {},
       werte: roh,
     };
@@ -120,7 +121,7 @@ export async function vorlageAnlegen(
 
   if (error || !vorlage) {
     console.error(`[schichten] vorlageAnlegen: ${error?.message ?? "keine Zeile"}`);
-    return fehler("Die Vorlage liess sich nicht anlegen. Versuch es noch einmal.");
+    return fehler(m.anlegenFehler);
   }
 
   const { error: bedarfFehler } = await supabase
@@ -142,9 +143,7 @@ export async function vorlageAnlegen(
      */
     console.error(`[schichten] mindestbesetzung: ${bedarfFehler.message}`);
     await supabase.from("schicht_vorlagen").delete().eq("id", vorlage.id);
-    return fehler(
-      "Die Mindestbesetzung liess sich nicht speichern, deshalb wurde die Vorlage nicht angelegt. Versuch es noch einmal.",
-    );
+    return fehler(m.bedarfFehler);
   }
 
   revalidatePath(PFAD);
@@ -164,7 +163,8 @@ export async function vorlageEntfernen(
 ): Promise<FormZustand> {
   const { supabase, betriebId } = await kontext();
   const vorlageId = String(formData.get("vorlage_id") ?? "");
-  if (!vorlageId) return fehler("Es wurde keine Vorlage angegeben.");
+  const m = (await holeTexte()).stepper.schichten.meldung;
+  if (!vorlageId) return fehler(m.keineVorlage);
 
   const { error } = await supabase
     .from("schicht_vorlagen")
@@ -174,7 +174,7 @@ export async function vorlageEntfernen(
 
   if (error) {
     console.error(`[schichten] vorlageEntfernen: ${error.message}`);
-    return fehler("Die Vorlage liess sich nicht entfernen. Versuch es noch einmal.");
+    return fehler(m.entfernenFehler);
   }
 
   revalidatePath(PFAD);

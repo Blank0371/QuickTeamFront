@@ -9,12 +9,14 @@ import { LAENDER } from "@/lib/validierung";
 
 import { BetriebFormular } from "./betrieb-formular";
 
-export const metadata: Metadata = {
-  title: "Betrieb einrichten",
-  description:
-    "Leg deinen Betrieb an: Name, Land, dein Name und die Zustimmung zu AGB und AVV.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { betrieb } = await holeTexte();
+  return {
+    title: betrieb.metaTitel,
+    description: betrieb.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 

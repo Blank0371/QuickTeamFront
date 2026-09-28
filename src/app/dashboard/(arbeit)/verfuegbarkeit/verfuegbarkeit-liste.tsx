@@ -6,6 +6,10 @@ import { useFormStatus } from "react-dom";
 
 import { FormMeldung } from "@/components/formular/felder";
 import { DatumWahl } from "@/components/formular/datum-wahl";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/de";
+import { useKlientTexte } from "@/i18n/sprach-provider";
+import { fuelle } from "@/i18n/text";
 import { wochentagVon, type MeineVorlage, type Praeferenz, type TagesPraeferenz } from "@/lib/dashboard/verfuegbarkeit";
 import { leererZustand } from "@/lib/formular";
 import { TAGES_NOTIZ_MAX, tageswuenscheSchema } from "@/lib/validierung";
@@ -17,14 +21,14 @@ import {
   speichereWiederkehrendePraeferenzen,
 } from "./aktionen";
 
-const WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+type Texte = Dictionary["verfuegbarkeit"];
 
 function nameVon(v: MeineVorlage): string {
   return `${v.bezeichnung} · ${v.start_zeit.slice(0, 5)}–${v.end_zeit.slice(0, 5)}`;
 }
 
-function formatiereDatum(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("de-DE", {
+function formatiereDatum(iso: string, locale: Locale): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -46,22 +50,24 @@ function chipKlasse(aktiv: boolean): string {
 function EntwurfsKnoepfe({
   aktuell,
   onWaehlen,
+  t,
 }: {
   aktuell?: Praeferenz;
   onWaehlen: (p: Praeferenz) => void;
+  t: Texte;
 }) {
   return (
     <div className="flex gap-2">
       {(["gerne", "ungerne"] as const).map((p) => (
         <button key={p} type="button" onClick={() => onWaehlen(p)} className={chipKlasse(aktuell === p)}>
-          {p === "gerne" ? "Arbeite gerne" : "Arbeite ungerne"}
+          {p === "gerne" ? t.gerneIch : t.ungerneIch}
         </button>
       ))}
     </div>
   );
 }
 
-function SpeichernKnopf() {
+function SpeichernKnopf({ t }: { t: Texte }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -69,9 +75,14 @@ function SpeichernKnopf() {
       disabled={pending}
       className="rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Speichert …" : "Änderungen speichern"}
+      {pending ? t.speichertLaufend : t.speichern}
     </button>
   );
+}
+
+/** „1 Änderung …" / „3 Änderungen …" noch nicht gespeichert. */
+function offeneAenderungen(n: number, t: Texte): string {
+  return fuelle(n === 1 ? t.aenderungEins : t.aenderungMehr, { n });
 }
 
 /**
@@ -90,9 +101,14 @@ function SpeichernKnopf() {
 export function WiederkehrendeListe({
   vorlagen,
   praeferenzen,
+  texte: t,
+  wochentage,
 }: {
   vorlagen: MeineVorlage[];
   praeferenzen: Record<string, Praeferenz>;
+  texte: Texte;
+  /** Montagsbasierte Wochentagsnamen in der Sprache der Anfrage. */
+  wochentage: readonly string[];
 }) {
   const [zustand, aktion] = useActionState(speichereWiederkehrendePraeferenzen, leererZustand);
   const [entwurf, setEntwurf] = useState<Record<string, Praeferenz | null>>({});
@@ -115,7 +131,7 @@ export function WiederkehrendeListe({
   }, [zustand]);
 
   if (vorlagen.length === 0) {
-    return <p className="mt-3 text-sm text-muted">Keine Schichtvorlagen für deine Rollen.</p>;
+    return <p className="mt-3 text-sm text-muted">{t.keineVorlagen}</p>;
   }
 
   function effektiv(vorlageId: string): Praeferenz | undefined {
@@ -144,7 +160,7 @@ export function WiederkehrendeListe({
 
   return (
     <div className="mt-3 flex flex-col gap-4">
-      {WOCHENTAGE.map((name, wochentag) => {
+      {wochentage.map((name, wochentag) => {
         const vs = vorlagen.filter((v) => v.wochentag === wochentag);
         if (vs.length === 0) return null;
         return (
@@ -157,7 +173,11 @@ export function WiederkehrendeListe({
                   className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface px-4 py-3"
                 >
                   <span className="text-sm text-text">{nameVon(v)}</span>
-                  <EntwurfsKnoepfe aktuell={effektiv(v.id)} onWaehlen={(p) => waehlen(v.id, p)} />
+                  <EntwurfsKnoepfe
+                    aktuell={effektiv(v.id)}
+                    onWaehlen={(p) => waehlen(v.id, p)}
+                    t={t}
+                  />
                 </li>
               ))}
             </ul>
@@ -172,15 +192,15 @@ export function WiederkehrendeListe({
         >
           <input type="hidden" name="aenderungen" value={aenderungenJson} />
           <span className="text-sm text-muted">
-            {geaenderteIds.length} {geaenderteIds.length === 1 ? "Änderung" : "Änderungen"} noch nicht gespeichert
+            {offeneAenderungen(geaenderteIds.length, t)}
           </span>
-          <SpeichernKnopf />
+          <SpeichernKnopf t={t} />
           <button
             type="button"
             onClick={verwerfen}
             className="rounded-blk border border-line px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
           >
-            Verwerfen
+            {t.verwerfen}
           </button>
         </form>
       ) : hinweis ? (
@@ -200,10 +220,12 @@ function TagesNotiz({
   schichtVorlageId,
   datum,
   notiz,
+  t,
 }: {
   schichtVorlageId: string;
   datum: string;
   notiz: string | null;
+  t: Texte;
 }) {
   const [zustand, aktion] = useActionState(speichereTagesNotiz, leererZustand);
   const [offen, setOffen] = useState(false);
@@ -242,7 +264,7 @@ function TagesNotiz({
             className="inline-flex items-center gap-1.5 self-start rounded-blk px-1 py-1 text-xs font-semibold text-muted transition-colors hover:text-text"
           >
             <MessageSquareText className="size-3.5" aria-hidden="true" />
-            {notiz ? "Notiz bearbeiten" : "Notiz hinzufügen"}
+            {notiz ? t.notizBearbeiten : t.notizHinzufuegen}
           </button>
         </div>
         {gespeichert ? <FormMeldung art="erfolg">{gespeichert}</FormMeldung> : null}
@@ -257,10 +279,10 @@ function TagesNotiz({
       <input type="hidden" name="schicht_vorlage_id" value={schichtVorlageId} />
       <input type="hidden" name="datum" value={datum} />
       <label htmlFor={id} className="text-sm font-medium text-text">
-        Notiz für die Betriebsleitung
+        {t.notizLabel}
       </label>
       <p id={`${id}-hinweis`} className="text-xs leading-relaxed text-muted">
-        Optional. Sichtbar für die Betriebsleitung. Leer lassen entfernt die Notiz.
+        {t.notizHinweis}
       </p>
       <textarea
         id={id}
@@ -282,20 +304,20 @@ function TagesNotiz({
         <FormMeldung art="fehler">{zustand.nachricht}</FormMeldung>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <NotizSpeichernKnopf />
+        <NotizSpeichernKnopf t={t} />
         <button
           type="button"
           onClick={() => setOffen(false)}
           className="rounded-blk border border-line px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
         >
-          Abbrechen
+          {t.abbrechen}
         </button>
       </div>
     </form>
   );
 }
 
-function NotizSpeichernKnopf() {
+function NotizSpeichernKnopf({ t }: { t: Texte }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -303,7 +325,7 @@ function NotizSpeichernKnopf() {
       disabled={pending}
       className="rounded-blk bg-signal px-4 py-2 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Speichert …" : "Notiz speichern"}
+      {pending ? t.speichertLaufend : t.notizSpeichern}
     </button>
   );
 }
@@ -327,12 +349,14 @@ export function TagesWunschEditor({
   min,
   max,
   startDatum,
+  texte: t,
 }: {
   vorlagen: MeineVorlage[];
   bestehend: TagesPraeferenz[];
   min: string;
   max: string;
   startDatum: string | null;
+  texte: Texte;
 }) {
   const [zustand, aktion] = useActionState(speichereTageswuensche, leererZustand);
   const [datum, setDatum] = useState<string>(startDatum ?? "");
@@ -382,8 +406,8 @@ export function TagesWunschEditor({
     <div className="mt-3 flex flex-col gap-4">
       <DatumWahl
         name="datum"
-        label="Datum"
-        platzhalter="Tag wählen"
+        label={t.datum}
+        platzhalter={t.tagWaehlen}
         min={min}
         max={max}
         defaultValue={datum}
@@ -395,7 +419,7 @@ export function TagesWunschEditor({
       />
 
       {datum && tagesVorlagen.length === 0 ? (
-        <p className="text-sm text-muted">Keine Schichten für deine Rolle an diesem Tag.</p>
+        <p className="text-sm text-muted">{t.keineSchichtTag}</p>
       ) : null}
 
       {tagesVorlagen.length > 0 ? (
@@ -409,13 +433,12 @@ export function TagesWunschEditor({
                   <EntwurfsKnoepfe
                     aktuell={e.praeferenz ?? undefined}
                     onWaehlen={(p) => aendere(v.id, { praeferenz: e.praeferenz === p ? null : p })}
+                    t={t}
                   />
                 </div>
                 {e.praeferenz ? (
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-xs font-medium text-muted">
-                      Notiz für die Betriebsleitung (optional)
-                    </span>
+                    <span className="text-xs font-medium text-muted">{t.notizOptional}</span>
                     <textarea
                       value={e.notiz}
                       onChange={(ev) => aendere(v.id, { notiz: ev.target.value })}
@@ -437,16 +460,14 @@ export function TagesWunschEditor({
           onSubmit={(ev) => {
             if (!tageswuenscheSchema.safeParse(aenderungen).success) {
               ev.preventDefault();
-              setHinweis({ art: "fehler", text: "Bitte die Eingaben prüfen — eine Notiz ist zu lang." });
+              setHinweis({ art: "fehler", text: t.notizZuLang });
             }
           }}
           className="sticky bottom-4 flex flex-wrap items-center gap-3 self-start rounded-panel border border-line-strong bg-surface px-4 py-3 shadow-lg"
         >
           <input type="hidden" name="aenderungen" value={JSON.stringify(aenderungen)} />
-          <span className="text-sm text-muted">
-            {aenderungen.length} {aenderungen.length === 1 ? "Änderung" : "Änderungen"} noch nicht gespeichert
-          </span>
-          <SpeichernKnopf />
+          <span className="text-sm text-muted">{offeneAenderungen(aenderungen.length, t)}</span>
+          <SpeichernKnopf t={t} />
           <button
             type="button"
             onClick={() => {
@@ -455,7 +476,7 @@ export function TagesWunschEditor({
             }}
             className="rounded-blk border border-line px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
           >
-            Verwerfen
+            {t.verwerfen}
           </button>
         </form>
       ) : null}
@@ -469,14 +490,17 @@ export function TagesWunschEditor({
 export function BestehendeTagesPraeferenzenListe({
   praeferenzen,
   vorlagenNamen,
+  texte: t,
 }: {
   praeferenzen: TagesPraeferenz[];
   vorlagenNamen: Record<string, string>;
+  texte: Texte;
 }) {
+  const { locale } = useKlientTexte();
   const [, aktion] = useActionState(loescheTagesPraeferenz, leererZustand);
 
   if (praeferenzen.length === 0) {
-    return <p className="mt-3 text-sm text-muted">Noch keine speziellen Tage.</p>;
+    return <p className="mt-3 text-sm text-muted">{t.keineTage}</p>;
   }
 
   return (
@@ -487,16 +511,16 @@ export function BestehendeTagesPraeferenzenListe({
           className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface px-4 py-3"
         >
           <div>
-            <p className="text-sm text-text">{formatiereDatum(p.datum)}</p>
+            <p className="text-sm text-text">{formatiereDatum(p.datum, locale)}</p>
             <p className="text-xs text-muted">
-              {vorlagenNamen[p.schichtVorlageId] ?? "Schicht"} ·{" "}
-              {p.praeferenz === "gerne" ? "Arbeite gerne" : "Arbeite ungerne"}
+              {vorlagenNamen[p.schichtVorlageId] ?? t.schicht} ·{" "}
+              {p.praeferenz === "gerne" ? t.gerneIch : t.ungerneIch}
             </p>
           </div>
           <form action={aktion}>
             <input type="hidden" name="schicht_vorlage_id" value={p.schichtVorlageId} />
             <input type="hidden" name="datum" value={p.datum} />
-            <button type="submit" aria-label="Wunsch löschen" className="rounded-blk p-2 text-muted hover:bg-surface-sunk hover:text-stop">
+            <button type="submit" aria-label={t.wunschLoeschen} className="rounded-blk p-2 text-muted hover:bg-surface-sunk hover:text-stop">
               <Trash2 className="size-4" aria-hidden="true" />
             </button>
           </form>
@@ -505,6 +529,7 @@ export function BestehendeTagesPraeferenzenListe({
             schichtVorlageId={p.schichtVorlageId}
             datum={p.datum}
             notiz={p.notiz}
+            t={t}
           />
         </li>
       ))}

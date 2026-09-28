@@ -84,6 +84,8 @@ export type OffeneRolle = UebernehmbareRolle & {
  */
 export function leseAusschreibung(
   claim: unknown,
+  /** Ersatzname für eine Rolle ohne Namen, aus dem Wörterbuch. */
+  ohneRolle: string,
 ): { benachrichtigungId: string; rollen: UebernehmbareRolle[] } | null {
   if (typeof claim !== "object" || claim === null) return null;
   const roh = claim as Record<string, unknown>;
@@ -100,7 +102,7 @@ export function leseAusschreibung(
     if (typeof r["rolle_id"] !== "string") continue;
     rollen.push({
       rolleId: r["rolle_id"],
-      name: typeof r["name"] === "string" && r["name"].trim() ? r["name"] : "Ohne Rolle",
+      name: typeof r["name"] === "string" && r["name"].trim() ? r["name"] : ohneRolle,
     });
   }
 
@@ -138,6 +140,7 @@ export async function holeOffeneAusschreibungen(
   supabase: SupabaseServerClient,
   betriebId: string,
   mitarbeiterId: string,
+  ohneRolle: string,
 ): Promise<OffeneAusschreibung[]> {
   const { data: meldungen, error } = await supabase
     .from("benachrichtigungen")
@@ -236,7 +239,7 @@ export async function holeOffeneAusschreibungen(
       if (frei === 0) continue;
       rollenListe.push({
         rolleId: zeile.rolle_id,
-        name: rollenName.get(zeile.rolle_id) ?? "Ohne Rolle",
+        name: rollenName.get(zeile.rolle_id) ?? ohneRolle,
         benoetigt: zeile.benoetigt,
         besetzt,
         frei,
@@ -291,8 +294,9 @@ export function istUebernahmeCode(wert: unknown): wert is UebernahmeCode {
   return typeof wert === "string" && (UEBERNAHME_CODES as readonly string[]).includes(wert);
 }
 
-/**
- * Was die Person zu sehen bekommt, je Code.
+/*
+ * Was die Person zu sehen bekommt, steht je Code im Wörterbuch
+ * (`mitteilungen.uebernahme`).
  *
  * `nicht_moeglich` ist bewusst vage, und das ist keine Nachlässigkeit:
  * die Funktion fängt den Einfügefehler mit `exception when others` ab und
@@ -302,19 +306,6 @@ export function istUebernahmeCode(wert: unknown): wert is UebernahmeCode {
  * nicht kennen, wäre schlechter als zu sagen, woran es typischerweise
  * liegt.
  */
-export const UEBERNAHME_MELDUNG: Record<UebernahmeCode, string> = {
-  angenommen: "Übernommen — die Schicht steht jetzt in deinem Plan.",
-  schon_zugewiesen: "Du bist auf dieser Schicht schon eingeteilt.",
-  voll:
-    "Zu spät — der letzte Platz für diese Rolle ist gerade vergeben worden. " +
-    "Die Ausschreibung stand noch, weil sie erst der Chef schliesst.",
-  nicht_qualifiziert:
-    "Für diese Rolle bist du nicht eingetragen. Wenn das nicht stimmt, sag es der Betriebsleitung.",
-  nicht_moeglich:
-    "Übernahme aktuell nicht möglich — zum Beispiel wegen Ruhezeit- oder " +
-    "Höchstarbeitszeit-Grenzen. Die Prüfung liegt in der Datenbank und nennt den " +
-    "genauen Grund leider nicht.",
-};
 
 /** Nur `angenommen` ist ein Erfolg; die übrigen vier sind Absagen. */
 export function istErfolg(code: UebernahmeCode): boolean {

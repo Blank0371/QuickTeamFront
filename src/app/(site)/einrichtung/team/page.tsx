@@ -9,12 +9,14 @@ import { holeTexte } from "@/i18n/server";
 
 import { TeamSchritt } from "./team-schritt";
 
-export const metadata: Metadata = {
-  title: "Rollen und Team",
-  description:
-    "Leg die Rollen deines Betriebs an und lade deine Mitarbeiter ein — beides in einem Schritt.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { stepper } = await holeTexte();
+  return {
+    title: stepper.team.metaTitel,
+    description: stepper.team.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 

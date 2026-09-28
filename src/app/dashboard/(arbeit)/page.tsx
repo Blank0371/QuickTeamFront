@@ -132,7 +132,7 @@ export default async function DashboardUebersicht({
    * sie selbst — die Leiste hätte dann genau einen Knopf neben „Alle"
    * und wäre keine Auswahl. Sie erscheint deshalb erst ab zwei Rollen.
    */
-  const eimer = sammleRollen(alleSchichten);
+  const eimer = sammleRollen(alleSchichten, tx.ohneRolle);
   const rolle = leseRolle(rolleParam, eimer);
   const imDienst = zaehleImDienst(alleSchichten);
 
@@ -159,7 +159,7 @@ export default async function DashboardUebersicht({
   const rollenNamen = new Map(rollen.map((r) => [r.id, r.name]));
   const besetzungProTag = new Map<string, Besetzungsstand[]>(
     fenster.tage.map((datum) => {
-      const alle = fasseBesetzung(proTag.get(datum) ?? [], bedarf, rollenNamen);
+      const alle = fasseBesetzung(proTag.get(datum) ?? [], bedarf, rollenNamen, tx.ohneRolle);
       return [datum, rollenName ? alle.filter((b) => b.name === rollenName) : alle];
     }),
   );
@@ -257,7 +257,7 @@ export default async function DashboardUebersicht({
 
       {kennzahlen.length > 0 ? (
         <div className="mt-6">
-          <StatistikLeiste zahlen={kennzahlen} />
+          <StatistikLeiste zahlen={kennzahlen} beschriftung={tx.kennzahlenAria} />
         </div>
       ) : null}
 

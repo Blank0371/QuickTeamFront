@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useKlientTexte } from "@/i18n/sprach-provider";
 
 /**
  * Uhrzeitfeld mit eigenem Raster statt `<input type="time">`.
@@ -80,6 +81,7 @@ export function ZeitWahl({
   fehler?: string;
   hinweis?: string;
 }) {
+  const { formular } = useKlientTexte();
   const start = defaultValue.slice(0, 5);
   const [wert, setWert] = useState(start);
   const [offen, setOffen] = useState(false);
@@ -141,13 +143,13 @@ export function ZeitWahl({
               und wer 17:30 sucht, sucht erst die 17.
             */}
             <Spalte
-              titel="Stunde"
+              titel={formular.stunde}
               werte={STUNDEN}
               aktiv={stunde ?? ""}
               beiWahl={(s) => setzeTeil(s, minute ?? "00")}
             />
             <Spalte
-              titel="Minute"
+              titel={formular.minute}
               werte={MINUTEN}
               aktiv={minute ?? ""}
               beiWahl={(m) => setzeTeil(stunde ?? "00", m)}
@@ -159,7 +161,7 @@ export function ZeitWahl({
               htmlFor={`${id}-frei`}
               className="block text-xs font-medium text-muted"
             >
-              Andere Zeit
+              {formular.andereZeit}
             </label>
             <div className="mt-1.5 flex gap-2">
               <input
@@ -181,7 +183,7 @@ export function ZeitWahl({
                 onClick={uebernimmFreitext}
                 className="rounded-blk bg-signal px-3 py-1.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover"
               >
-                Übernehmen
+                {formular.uebernehmen}
               </button>
             </div>
           </div>

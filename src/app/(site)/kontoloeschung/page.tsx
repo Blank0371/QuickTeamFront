@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Container } from "@/components/container";
+import type { Dictionary } from "@/i18n/de";
+import { holeTexte } from "@/i18n/server";
+import { fuelle } from "@/i18n/text";
 import { holePositionen } from "@/lib/dashboard/position";
 import { bestaetigungswort } from "@/lib/konto-loeschung";
 import { createClientOhneRiegel } from "@/lib/supabase/server";
@@ -10,11 +13,16 @@ import { loeschungAbbrechen } from "./aktionen";
 import { AnmeldeFormular } from "./anmelde-formular";
 import { LoeschFormular } from "./loesch-formular";
 
-export const metadata: Metadata = {
-  title: "Konto und Daten löschen",
-  description: "Dein QuickTeam-Konto endgültig entfernen.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { kontoloeschung } = await holeTexte();
+  return {
+    title: kontoloeschung.metaTitel,
+    description: kontoloeschung.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
+
+type Texte = Dictionary["kontoloeschung"];
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +103,9 @@ export default async function KontoloeschungSeite({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return <StufeAnmelden />;
+  const t = (await holeTexte()).kontoloeschung;
+
+  if (!user) return <StufeAnmelden t={t} />;
 
   /*
    * Der Name kommt aus den Positionen und nicht aus einer eigenen
@@ -110,6 +120,7 @@ export default async function KontoloeschungSeite({
   if (schritt === "endgueltig") {
     return (
       <StufeEndgueltig
+        t={t}
         email={email}
         erwartet={bestaetigungswort(positionen, user.email)}
         leitetBetrieb={leitetBetrieb}
@@ -117,7 +128,7 @@ export default async function KontoloeschungSeite({
     );
   }
 
-  return <StufeFolgen email={email} leitetBetrieb={leitetBetrieb} />;
+  return <StufeFolgen t={t} email={email} leitetBetrieb={leitetBetrieb} />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -125,10 +136,12 @@ export default async function KontoloeschungSeite({
 /* ------------------------------------------------------------------ */
 
 function Rahmen({
+  t,
   stufe,
   titel,
   children,
 }: {
+  t: Texte;
   stufe: 1 | 2 | 3;
   titel: string;
   children: React.ReactNode;
@@ -137,7 +150,7 @@ function Rahmen({
     <Container className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
         <p className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
-          Konto löschen · Schritt {stufe} von 3
+          {fuelle(t.stufe, { n: stufe })}
         </p>
         <h1 className="mt-2 text-3xl leading-[1.1] sm:text-4xl">{titel}</h1>
         {children}
@@ -147,14 +160,14 @@ function Rahmen({
 }
 
 /** „Abbrechen" ist ein echter Form-Post, weil es die Sitzung auflöst. */
-function AbbrechenKnopf() {
+function AbbrechenKnopf({ t }: { t: Texte }) {
   return (
     <form action={loeschungAbbrechen}>
       <button
         type="submit"
         className="text-sm text-muted underline underline-offset-4 hover:text-text"
       >
-        Abbrechen und abmelden
+        {t.abbrechen}
       </button>
     </form>
   );
@@ -164,40 +177,33 @@ function AbbrechenKnopf() {
 /* Stufe 1 — anmelden                                                  */
 /* ------------------------------------------------------------------ */
 
-function StufeAnmelden() {
+function StufeAnmelden({ t }: { t: Texte }) {
+  const a = t.anmelden;
   return (
-    <Rahmen stufe={1} titel="Konto und Daten löschen">
-      <p className="mt-4 text-base leading-relaxed text-muted">
-        Hier entfernst du deinen QuickTeam-Zugang endgültig. Das lässt sich nicht
-        rückgängig machen, und es gibt keine Wiederherstellung — auch nicht durch den
-        Support.
-      </p>
+    <Rahmen t={t} stufe={1} titel={a.titel}>
+      <p className="mt-4 text-base leading-relaxed text-muted">{a.lead}</p>
 
       <section
         aria-labelledby="anmelden"
         className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8"
       >
         <h2 id="anmelden" className="font-display text-lg text-text">
-          Zuerst anmelden
+          {a.zuerst}
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Damit niemand ein fremdes Konto löschen kann, brauchen wir deine
-          E-Mail-Adresse und dein Passwort. Was genau gelöscht wird, steht im nächsten
-          Schritt — gelöscht wird jetzt noch nichts.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{a.zuerstText}</p>
 
-        <AnmeldeFormular />
+        <AnmeldeFormular texte={a} />
       </section>
 
       <p className="mt-8 text-sm text-muted">
-        Passwort vergessen?{" "}
+        {a.vergessenFrage}{" "}
         <Link
           href="/passwort-vergessen"
           className="underline underline-offset-4 hover:text-text"
         >
-          Erst zurücksetzen
+          {a.vergessenLink}
         </Link>
-        , dann hierher zurück.
+        {a.vergessenRest}
       </p>
     </Rahmen>
   );
@@ -207,12 +213,22 @@ function StufeAnmelden() {
 /* Stufe 2 — Folgen                                                    */
 /* ------------------------------------------------------------------ */
 
-function StufeFolgen({ email, leitetBetrieb }: { email: string; leitetBetrieb: boolean }) {
+function StufeFolgen({
+  t,
+  email,
+  leitetBetrieb,
+}: {
+  t: Texte;
+  email: string;
+  leitetBetrieb: boolean;
+}) {
+  const f = t.folgen;
   return (
-    <Rahmen stufe={2} titel="Was passiert, wenn du fortfährst">
+    <Rahmen t={t} stufe={2} titel={f.titel}>
       <p className="mt-4 text-base leading-relaxed text-muted">
-        Du bist angemeldet als <span className="text-text">{email}</span>. Lies das hier
-        bitte zu Ende — danach folgt nur noch eine Bestätigung.
+        {f.angemeldetVor}
+        <span className="text-text">{email}</span>
+        {f.angemeldetNach}
       </p>
 
       <section
@@ -220,58 +236,47 @@ function StufeFolgen({ email, leitetBetrieb }: { email: string; leitetBetrieb: b
         className="mt-8 rounded-panel border border-line bg-surface p-6 shadow-card sm:p-8"
       >
         <h2 id="was-passiert" className="font-display text-lg text-text">
-          Was gelöscht wird
+          {f.geloeschtTitel}
         </h2>
         <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 text-sm leading-relaxed text-muted">
           <li>
-            <span className="text-text">Dein Zugang.</span> Anmeldung, Passwort und die
-            Verknüpfung zu allen Betrieben, in denen du stehst.
+            <span className="text-text">{f.zugang}</span>
+            {f.zugangText}
           </li>
           <li>
-            <span className="text-text">Deine persönlichen Daten.</span> Name,
-            E-Mail-Adresse und Telefonnummer werden aus jeder deiner Anstellungen
-            entfernt, dazu Mitteilungen und Benachrichtigungseinstellungen, die nur dich
-            betreffen.
+            <span className="text-text">{f.daten}</span>
+            {f.datenText}
           </li>
         </ul>
 
-        <h2 className="mt-6 font-display text-lg text-text">Was bleibt</h2>
+        <h2 className="mt-6 font-display text-lg text-text">{f.bleibtTitel}</h2>
         <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 text-sm leading-relaxed text-muted">
           <li>
-            <span className="text-text">Der Betrieb selbst</span> und die Dienstpläne, in
-            denen du eingeteilt warst. Dein Name steht dort nicht mehr — die Einträge
-            bleiben, weil dein Arbeitgeber Arbeitszeiten aufbewahren muss.
+            <span className="text-text">{f.betrieb}</span>
+            {f.betriebText}
           </li>
         </ul>
 
         {leitetBetrieb ? (
           <>
-            <h2 className="mt-6 font-display text-lg text-text">Abo und Abrechnung</h2>
-            <p className="mt-4 text-sm leading-relaxed text-muted">
-              Die Löschung betrifft alle Betriebe, die du leitest. Ihre laufenden
-              Abonnements werden anschließend sofort gekündigt. Bereits abgebuchte
-              Zeiträume werden nicht anteilig erstattet. Falls die Kündigung technisch
-              fehlschlägt, muss der Support sie nachholen.
-            </p>
+            <h2 className="mt-6 font-display text-lg text-text">{f.aboTitel}</h2>
+            <p className="mt-4 text-sm leading-relaxed text-muted">{f.aboText}</p>
 
             <p className="mt-6 rounded-blk border border-line-strong bg-surface-sunk px-4 py-3 text-sm leading-relaxed text-muted">
-              Stehen in einem deiner geleiteten Betriebe noch weitere Personen, lässt sich
-              dein Konto nicht löschen — sonst bliebe ein Betrieb ohne Leitung zurück, und
-              das Abo liefe weiter. Entferne sie zuvor unter{" "}
+              {f.mitgliederVor}
               <Link
                 href="/dashboard/team"
                 className="text-text underline underline-offset-4"
               >
-                Team
-              </Link>{" "}
-              oder übergib die Leitung an jemand anderen.
+                {f.mitgliederLink}
+              </Link>
+              {f.mitgliederNach}
             </p>
           </>
         ) : null}
 
         <p className="mt-6 rounded-blk border border-line-strong bg-surface-sunk px-4 py-3 text-sm leading-relaxed text-muted">
-          Willst du deine Daten vorher mitnehmen, brich hier ab und lade sie im Dashboard
-          unter Einstellungen herunter. Nach der Löschung ist das nicht mehr möglich.
+          {f.export}
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-6">
@@ -279,9 +284,9 @@ function StufeFolgen({ email, leitetBetrieb }: { email: string; leitetBetrieb: b
             href="/kontoloeschung?schritt=endgueltig"
             className="rounded-blk border border-line-strong px-5 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
           >
-            Verstanden — weiter
+            {f.weiter}
           </Link>
-          <AbbrechenKnopf />
+          <AbbrechenKnopf t={t} />
         </div>
       </section>
     </Rahmen>
@@ -293,14 +298,17 @@ function StufeFolgen({ email, leitetBetrieb }: { email: string; leitetBetrieb: b
 /* ------------------------------------------------------------------ */
 
 function StufeEndgueltig({
+  t,
   email,
   erwartet,
   leitetBetrieb,
 }: {
+  t: Texte;
   email: string;
   erwartet: string;
   leitetBetrieb: boolean;
 }) {
+  const e = t.endgueltig;
   /*
    * Ohne Vergleichswert kein Formular. Das kann eintreten, wenn ein
    * Konto weder eine aktive Anstellung noch eine E-Mail-Adresse trägt —
@@ -310,10 +318,11 @@ function StufeEndgueltig({
   const bereit = erwartet.length > 0;
 
   return (
-    <Rahmen stufe={3} titel="Letzte Warnung">
+    <Rahmen t={t} stufe={3} titel={e.titel}>
       <p className="mt-4 text-base leading-relaxed text-muted">
-        Der nächste Klick löscht das Konto <span className="text-text">{email}</span>{" "}
-        sofort und endgültig.
+        {e.leadVor}
+        <span className="text-text">{email}</span>
+        {e.leadNach}
       </p>
 
       <section
@@ -321,25 +330,18 @@ function StufeEndgueltig({
         className="mt-8 rounded-panel border border-stop/60 bg-surface p-6 shadow-card sm:p-8"
       >
         <h2 id="endgueltig" className="font-display text-lg text-stop">
-          Es gibt kein Zurück
+          {e.keinZurueck}
         </h2>
         <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 text-sm leading-relaxed text-muted">
-          <li>Es gibt keine Rückgängig-Funktion und keine Wiederherstellung.</li>
-          <li>Du wirst sofort abgemeldet und kannst dich danach nicht mehr anmelden.</li>
-          <li>
-            {leitetBetrieb
-              ? "Laufende Abonnements deiner Betriebe werden sofort gekündigt, ohne anteilige Erstattung."
-              : "Deine Einträge in vergangenen Dienstplänen bleiben ohne deinen Namen bestehen."}
-          </li>
+          <li>{e.keinRueckgaengig}</li>
+          <li>{e.abgemeldet}</li>
+          <li>{leitetBetrieb ? e.aboChef : e.eintraege}</li>
         </ul>
 
         {bereit ? (
-          <LoeschFormular erwartet={erwartet} />
+          <LoeschFormular erwartet={erwartet} texte={e} />
         ) : (
-          <p className="mt-6 text-sm leading-relaxed text-stop">
-            Zu diesem Konto lässt sich kein Bestätigungswort ermitteln. Meld dich beim
-            Support, statt es hier zu versuchen.
-          </p>
+          <p className="mt-6 text-sm leading-relaxed text-stop">{e.keinWort}</p>
         )}
       </section>
 
@@ -348,9 +350,9 @@ function StufeEndgueltig({
           href="/kontoloeschung?schritt=folgen"
           className="text-sm text-muted underline underline-offset-4 hover:text-text"
         >
-          Zurück zu den Folgen
+          {e.zurueck}
         </Link>
-        <AbbrechenKnopf />
+        <AbbrechenKnopf t={t} />
       </div>
     </Rahmen>
   );

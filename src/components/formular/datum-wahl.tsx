@@ -273,7 +273,7 @@ export function DatumWahl({
                 }}
                 className="rounded-blk px-2 py-1 text-xs font-medium text-muted transition-colors hover:text-text"
               >
-                Heute
+                {ft.heute}
               </button>
             ) : (
               <span />

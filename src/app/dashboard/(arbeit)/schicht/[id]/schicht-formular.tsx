@@ -5,11 +5,14 @@ import { useFormStatus } from "react-dom";
 
 import { FormMeldung } from "@/components/formular/felder";
 import { ZeitWahl } from "@/components/formular/zeit-wahl";
+import type { Dictionary } from "@/i18n/de";
 import { leererZustand } from "@/lib/formular";
 
 import { schichtFelderSpeichern, schichtLoeschen } from "./aktionen";
 
-function SpeichernKnopf() {
+type Texte = Dictionary["schicht"];
+
+function SpeichernKnopf({ texte }: { texte: Texte }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -17,7 +20,7 @@ function SpeichernKnopf() {
       disabled={pending}
       className="rounded-blk bg-signal px-5 py-2.5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Speichert …" : "Speichern"}
+      {pending ? texte.speichertLaufend : texte.speichern}
     </button>
   );
 }
@@ -35,12 +38,14 @@ export function SchichtFelderFormular({
   startZeit,
   endZeit,
   kommentar,
+  texte: t,
 }: {
   instanzId: string;
   datum: string;
   startZeit: string;
   endZeit: string;
   kommentar: string;
+  texte: Texte;
 }) {
   const [zustand, aktion] = useActionState(schichtFelderSpeichern, leererZustand);
 
@@ -68,7 +73,7 @@ export function SchichtFelderFormular({
 
       <div className="flex flex-wrap gap-3">
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-text">Datum</span>
+          <span className="text-sm font-medium text-text">{t.datum}</span>
           <input
             key={datumWert}
             type="date"
@@ -95,7 +100,7 @@ export function SchichtFelderFormular({
           key={`start-${startWert}`}
           id="schicht-start"
           name="start_zeit"
-          label="Start"
+          label={t.start}
           defaultValue={startWert}
           fehler={zustand.felder.startZeit}
         />
@@ -104,14 +109,14 @@ export function SchichtFelderFormular({
           key={`ende-${endWert}`}
           id="schicht-ende"
           name="end_zeit"
-          label="Ende"
+          label={t.ende}
           defaultValue={endWert}
           fehler={zustand.felder.endZeit}
         />
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-text">Hinweis zur Schicht</span>
+        <span className="text-sm font-medium text-text">{t.hinweisTitel}</span>
         <textarea
           key={kommentarWert}
           name="kommentar"
@@ -126,7 +131,7 @@ export function SchichtFelderFormular({
       </label>
 
       <div>
-        <SpeichernKnopf />
+        <SpeichernKnopf texte={t} />
       </div>
     </form>
   );
@@ -138,7 +143,15 @@ export function SchichtFelderFormular({
  * als aufklappbare Bestätigung mit Häkchen, das Muster aus `Freigabe`
  * in `zyklus-liste.tsx` — kein Modal-Dialog eigens dafür.
  */
-export function SchichtLoeschenFormular({ instanzId, monat }: { instanzId: string; monat: string }) {
+export function SchichtLoeschenFormular({
+  instanzId,
+  monat,
+  texte: t,
+}: {
+  instanzId: string;
+  monat: string;
+  texte: Texte;
+}) {
   const [zustand, aktion] = useActionState(schichtLoeschen, leererZustand);
   const [offen, setOffen] = useState(false);
 
@@ -149,7 +162,7 @@ export function SchichtLoeschenFormular({ instanzId, monat }: { instanzId: strin
         onClick={() => setOffen(true)}
         className="rounded-blk border border-stop/50 px-4 py-2 text-sm font-semibold text-stop transition-colors hover:bg-stop/10"
       >
-        Schicht löschen
+        {t.loeschen}
       </button>
     );
   }
@@ -162,26 +175,26 @@ export function SchichtLoeschenFormular({ instanzId, monat }: { instanzId: strin
       {zustand.nachricht ? <FormMeldung art="fehler">{zustand.nachricht}</FormMeldung> : null}
 
       <p className="text-sm leading-relaxed text-text">
-        Diese Schicht wird endgültig gelöscht — mit allen, die dafür eingeteilt sind.{" "}
-        <strong>Das lässt sich nicht rückgängig machen.</strong>
+        {t.loeschenText}
+        <strong>{t.nichtRueckgaengig}</strong>
       </p>
       <label className="flex items-start gap-2 text-sm text-text">
         <input type="checkbox" name="bestaetigt" value="ja" required className="mt-0.5" />
-        <span>Ja, diese Schicht löschen.</span>
+        <span>{t.loeschenBestaetigen}</span>
       </label>
       <div className="flex flex-wrap gap-2">
         <button
           type="submit"
           className="rounded-blk border border-stop/50 px-4 py-2 text-sm font-semibold text-stop transition-colors hover:bg-stop/10"
         >
-          Löschen
+          {t.loeschenKnopf}
         </button>
         <button
           type="button"
           onClick={() => setOffen(false)}
           className="rounded-blk border border-line px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-sunk"
         >
-          Abbrechen
+          {t.abbrechen}
         </button>
       </div>
     </form>

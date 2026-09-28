@@ -11,7 +11,7 @@ import { leseSprache } from "@/i18n/sprache";
 import { betreteDashboard, betreteOhneTore, istChef } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { einstellungenSchema } from "@/lib/validierung";
-import { holeValidierung } from "@/i18n/server";
+import { holeTexte, holeValidierung } from "@/i18n/server";
 
 function fehler(nachricht: string, felder: Record<string, string> = {}): FormZustand {
   return { status: "fehler", nachricht, felder, werte: {} };
@@ -52,9 +52,10 @@ export async function einstellungenSpeichern(
   formData: FormData,
 ): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
+  const t = (await holeTexte()).einstellungen;
 
   if (!istChef(position)) {
-    return fehler("Nur die Betriebsleitung darf die Einstellungen ändern.");
+    return fehler(t.nurChefAendern);
   }
 
   const geprueft = einstellungenSchema.safeParse({
@@ -75,20 +76,13 @@ export async function einstellungenSpeichern(
 
   if (!geprueft.success) {
     const felder = feldFehler(geprueft.error, await holeValidierung());
-    return fehler(
-      Object.values(felder)[0] ?? "Die Eingaben stimmen so nicht.",
-      felder,
-    );
+    return fehler(Object.values(felder)[0] ?? t.eingabenFalsch, felder);
   }
 
   const ergebnis = await speichereEinstellungen(supabase, position.betriebId, geprueft.data);
 
   if (!ergebnis.ok) {
-    return fehler(
-      ergebnis.grund === "rls"
-        ? "Gespeichert wurde nichts — die Berechtigung dafür fehlt inzwischen. Lad die Seite neu."
-        : "Die Einstellungen liessen sich nicht speichern. Versuch es noch einmal.",
-    );
+    return fehler(ergebnis.grund === "rls" ? t.rlsFehler : t.speichernFehler);
   }
 
   /*
@@ -107,7 +101,7 @@ export async function einstellungenSpeichern(
    */
   revalidatePath("/dashboard/einstellungen");
 
-  return { status: "erfolg", nachricht: "Gespeichert.", felder: {}, werte: {} };
+  return { status: "erfolg", nachricht: t.gespeichertKurz, felder: {}, werte: {} };
 }
 
 /**

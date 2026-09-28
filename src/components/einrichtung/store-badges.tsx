@@ -1,3 +1,5 @@
+import { holeTexte } from "@/i18n/server";
+
 /**
  * Store-Badges für den Abschluss-Screen — als Platzhalter.
  *
@@ -14,11 +16,11 @@
  */
 
 const STORES = [
-  { name: "App Store", geraet: "iPhone und iPad" },
-  { name: "Google Play", geraet: "Android" },
+  { name: "App Store", geraet: "geraetIos" },
+  { name: "Google Play", geraet: "geraetAndroid" },
 ] as const;
 
-export function StoreBadges({ verfuegbar = false }: { verfuegbar?: boolean }) {
+export async function StoreBadges({ verfuegbar = false }: { verfuegbar?: boolean }) {
   if (verfuegbar) {
     /*
      * Bewusst nicht vorgebaut: sobald es echte URLs gibt, gehören hier
@@ -31,6 +33,8 @@ export function StoreBadges({ verfuegbar = false }: { verfuegbar?: boolean }) {
     );
   }
 
+  const t = (await holeTexte()).stepper.stores;
+
   return (
     <div>
       <ul className="flex flex-wrap gap-3">
@@ -38,20 +42,16 @@ export function StoreBadges({ verfuegbar = false }: { verfuegbar?: boolean }) {
           <li key={store.name}>
             <div className="flex min-w-[10.5rem] flex-col rounded-blk border border-dashed border-line px-4 py-3 opacity-70">
               <span className="text-sm font-semibold text-text">{store.name}</span>
-              <span className="mt-0.5 text-xs text-muted">{store.geraet}</span>
+              <span className="mt-0.5 text-xs text-muted">{t[store.geraet]}</span>
               <span className="mt-2 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-signal">
-                bald verfügbar
+                {t.bald}
               </span>
             </div>
           </li>
         ))}
       </ul>
 
-      <p className="mt-4 text-sm leading-relaxed text-muted">
-        Die App ist noch nicht in den Stores. Sobald sie da ist, findest du hier die
-        Links und einen QR-Code zum Abscannen. Warten musst du darauf nicht — im
-        Dashboard steht dir schon alles offen.
-      </p>
+      <p className="mt-4 text-sm leading-relaxed text-muted">{t.text}</p>
     </div>
   );
 }

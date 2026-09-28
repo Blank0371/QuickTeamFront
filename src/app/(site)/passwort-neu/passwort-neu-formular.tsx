@@ -7,18 +7,21 @@ import { ErneutSendenButton } from "@/components/formular/erneut-senden";
 import { CodeFeld, FormMeldung, TextFeld } from "@/components/formular/felder";
 import { useFeldPruefung } from "@/components/formular/use-feld-pruefung";
 import type { Dictionary } from "@/i18n/de";
+import { fuelle } from "@/i18n/text";
 import { leererZustand } from "@/lib/formular";
-import { CODE_LAENGE } from "@/lib/validierung";
+import { CODE_LAENGE, PASSWORT_MIN } from "@/lib/validierung";
 
 import { passwortSetzen } from "./aktionen";
 
 export function PasswortNeuFormular({
   email,
   versandTexte,
+  texte,
 }: {
   email: string | null;
   /** „Code erneut senden" in der Sprache der Anfrage, vom Server-Elternteil. */
   versandTexte: Dictionary["codeVersand"];
+  texte: Dictionary["passwort"]["neu"];
 }) {
   const [zustand, aktion] = useActionState(passwortSetzen, leererZustand);
 
@@ -41,43 +44,43 @@ export function PasswortNeuFormular({
       <CodeFeld
         id="code"
         name="code"
-        label={`Code aus der E-Mail (${CODE_LAENGE} Ziffern)`}
+        label={fuelle(texte.codeLabel, { n: CODE_LAENGE })}
         laenge={CODE_LAENGE}
         fehler={fehlerFuer("code", zustand.felder)}
-        hinweis="Der Code gilt 60 Minuten."
+        hinweis={texte.codeHinweis}
       />
 
       <TextFeld
         id="email"
         name="email"
         type="email"
-        label="E-Mail-Adresse"
+        label={texte.emailLabel}
         autoComplete="email"
         defaultValue={zustand.werte?.["email"] ?? email ?? ""}
         fehler={fehlerFuer("email", zustand.felder)}
-        hinweis="Die Adresse, an die wir den Code geschickt haben."
+        hinweis={texte.emailHinweis}
       />
 
       <TextFeld
         id="passwort"
         name="passwort"
         type="password"
-        label="Neues Passwort"
+        label={texte.passwortLabel}
         autoComplete="new-password"
         fehler={fehlerFuer("passwort", zustand.felder)}
-        hinweis="Mindestens 8 Zeichen."
+        hinweis={fuelle(texte.passwortHinweis, { n: PASSWORT_MIN })}
       />
 
       <TextFeld
         id="wiederholung"
         name="wiederholung"
         type="password"
-        label="Passwort wiederholen"
+        label={texte.wiederholungLabel}
         autoComplete="new-password"
         fehler={fehlerFuer("wiederholung", zustand.felder)}
       />
 
-      <AbsendenButton laufend="Wird gespeichert …">Passwort speichern</AbsendenButton>
+      <AbsendenButton laufend={texte.absendenLaufend}>{texte.absenden}</AbsendenButton>
 
       <ErneutSendenButton neuGesendet={zustand.status === "erfolg"} texte={versandTexte} />
     </form>

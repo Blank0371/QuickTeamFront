@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 
-import { holeAuthTexte, holeValidierung } from "@/i18n/server";
+import { holeAuthTexte, holeTexte, holeValidierung } from "@/i18n/server";
+import { fuelle } from "@/i18n/text";
 import { holePositionen, loescheAktivePosition } from "@/lib/dashboard/position";
 import {
   authFehlerText,
@@ -133,7 +134,7 @@ export async function kontoLoeschen(
   if (erwartet.length === 0 || bestaetigung !== erwartet) {
     return {
       status: "fehler",
-      nachricht: `Die Eingabe stimmt nicht. Tipp „${erwartet}" genau so ein, wie es dasteht.`,
+      nachricht: fuelle((await holeTexte()).kontoloeschung.fehler.eingabe, { wort: erwartet }),
       felder: {},
     };
   }
@@ -146,7 +147,11 @@ export async function kontoLoeschen(
   });
 
   if (ergebnis.art !== "erfolg") {
-    return { status: "fehler", nachricht: loeschFehlerText(ergebnis), felder: {} };
+    return {
+      status: "fehler",
+      nachricht: loeschFehlerText(ergebnis, (await holeTexte()).kontoloeschung.fehler),
+      felder: {},
+    };
   }
 
   /*

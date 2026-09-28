@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { locales, SPRACH_COOKIE, type Locale } from "@/i18n/config";
+import { useKlientTexte } from "@/i18n/sprach-provider";
 
 /**
  * Sprachumschalter.
@@ -35,27 +36,11 @@ import { locales, SPRACH_COOKIE, type Locale } from "@/i18n/config";
 
 const EIN_JAHR = 60 * 60 * 24 * 365;
 
-/** sr-only-Texte folgen der aktiven Sprache — kein hartkodiertes Deutsch. */
-function texte(aktiv: Locale) {
-  const en = aktiv === "en";
-  return {
-    gruppe: en ? "Language" : "Sprache",
-    aktuell: en ? " — current language" : " — aktuelle Sprache",
-    wechselZu: (ziel: Locale) =>
-      ziel === "en"
-        ? en
-          ? " — switch to English"
-          : " — auf Englisch wechseln"
-        : en
-          ? " — switch to German"
-          : " — auf Deutsch wechseln",
-  };
-}
-
 export function SprachWahl({ aktiv }: { aktiv: Locale }) {
   const router = useRouter();
   const [wechselt, starteWechsel] = useTransition();
-  const t = texte(aktiv);
+  /* sr-only-Texte aus dem Wörterbuch der aktiven Sprache (`sprachWahl`). */
+  const { sprachWahl: t } = useKlientTexte();
 
   function waehlen(ziel: Locale) {
     if (ziel === aktiv) return;
@@ -86,7 +71,7 @@ export function SprachWahl({ aktiv }: { aktiv: Locale }) {
           >
             {beschriftung}
             <span className="sr-only">
-              {ist ? t.aktuell : t.wechselZu(locale)}
+              {ist ? t.aktuell : locale === "en" ? t.zuEn : t.zuDe}
             </span>
           </button>
         );

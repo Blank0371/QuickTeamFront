@@ -75,7 +75,14 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
  * normaler, ungepinnter Fluss mit vollstaendigem Logo und drei
  * lesbaren Versprechen untereinander.
  */
-export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprechen[] }) {
+export function KalenderBuehne({
+  versprechen,
+  beschriftung,
+}: {
+  versprechen: readonly Versprechen[];
+  /** `aria-label` der Bühne, aus `landing.buehneAria`. */
+  beschriftung: string;
+}) {
   const wurzelRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
@@ -356,7 +363,7 @@ export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprec
       <section
         data-buehne
         data-licht-szene="kalender-eintritt"
-        aria-label="QuickTeam: vom leeren Kalenderrahmen zum vollständigen Plan"
+        aria-label={beschriftung}
         className="relative hidden w-full lg:block"
       >
         {/*
@@ -448,7 +455,7 @@ export function KalenderBuehne({ versprechen }: { versprechen: readonly Versprec
       <section
         data-mobil-buehne
         data-licht-szene="kalender-eintritt"
-        aria-label="QuickTeam: vom leeren Kalenderrahmen zum vollständigen Plan"
+        aria-label={beschriftung}
         className="relative w-full overflow-hidden px-5 pb-14 pt-4 sm:px-8 sm:pb-16 sm:pt-6 lg:hidden"
       >
         {/*

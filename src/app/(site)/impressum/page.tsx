@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import { RechtstextSeite } from "@/components/rechtstext";
 import { holeTexte } from "@/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Impressum",
-  description:
-    "Anbieterkennzeichnung von QuickTeam: Firma, Sitz, Vertretung, Registergericht, Handelsregisternummer und Umsatzsteuer-Identifikationsnummer.",
-  alternates: { canonical: "/impressum" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { rechtliches } = await holeTexte();
+  return {
+    title: rechtliches.impressum,
+    description: rechtliches.metaImpressum,
+    alternates: { canonical: "/impressum" },
+  };
+}
 
 /**
  * Angaben nach § 5 DDG.
@@ -68,12 +70,12 @@ export default async function ImpressumSeite() {
         <br />
         73760 Ostfildern
         <br />
-        Deutschland
+        {t.rechtliches.land}
       </p>
 
       <h2>{t.rechtliches.kontakt}</h2>
       <p>
-        E-Mail: <a href="mailto:blanktrading@web.de">blanktrading@web.de</a>
+        {t.rechtliches.email}: <a href="mailto:blanktrading@web.de">blanktrading@web.de</a>
         <br />
         {t.rechtliches.telefon}: <a href="tel:+436642538798">+43 664 2538798</a>
       </p>

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/container";
+import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
+import { wochentageLang } from "@/lib/dashboard/kalender";
 import {
   holeMeineVorlagen,
   holeTagesPraeferenzen,
@@ -18,11 +21,14 @@ import {
 } from "./verfuegbarkeit-liste";
 import { TeamWuensche } from "./team-wuensche";
 
-export const metadata: Metadata = {
-  title: "Verfügbarkeit",
-  description: "Schichtwünsche festlegen bzw. die Wünsche des Teams im Überblick.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { verfuegbarkeit } = await holeTexte();
+  return {
+    title: verfuegbarkeit.metaTitel,
+    description: verfuegbarkeit.metaBeschreibung,
+    robots: { index: false, follow: false },
+  };
+}
 
 const MONATE_VORAUS = 12;
 const DATUM_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,6 +56,8 @@ export default async function VerfuegbarkeitSeite({
 }) {
   const { supabase, position } = await betreteDashboard();
   const { datum: datumRoh, sortierung } = await searchParams;
+  const [texte, locale] = await Promise.all([holeTexte(), leseSprache()]);
+  const t = texte.verfuegbarkeit;
 
   /*
    * Der Chef gibt hier keine eigenen Wünsche ein — er plant. Statt der
@@ -60,22 +68,22 @@ export default async function VerfuegbarkeitSeite({
    */
   if (istChef(position)) {
     const [wiederkehrend, tageswuensche, vorlagen] = await Promise.all([
-      holeTeamWiederkehrendePraeferenzen(supabase, position.betriebId),
-      holeTeamTagesPraeferenzen(supabase, position.betriebId),
+      holeTeamWiederkehrendePraeferenzen(supabase, position.betriebId, t.ohneNamen),
+      holeTeamTagesPraeferenzen(supabase, position.betriebId, t.ohneNamen),
       holeVorlagen(supabase, position.betriebId),
     ]);
     return (
       <Container className="py-8 sm:py-10">
         <div className="w-full max-w-3xl">
-          <h1 className="text-2xl leading-tight sm:text-3xl">Verfügbarkeit</h1>
-          <p className="mt-2 text-base leading-relaxed text-muted">
-            Die Schichtwünsche deines Teams im Überblick.
-          </p>
+          <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+          <p className="mt-2 text-base leading-relaxed text-muted">{t.leadChef}</p>
           <TeamWuensche
             wiederkehrend={wiederkehrend}
             tageswuensche={tageswuensche}
             vorlagen={vorlagen}
             sortierung={sortierung === "person" ? "person" : "tag"}
+            texte={t}
+            locale={locale}
           />
         </div>
       </Container>
@@ -90,7 +98,7 @@ export default async function VerfuegbarkeitSeite({
     datumRoh && DATUM_REGEX.test(datumRoh) && datumRoh >= heuteIso && datumRoh <= maxDatumIso ? datumRoh : null;
 
   const [vorlagen, wiederkehrend, tagesPraeferenzen] = await Promise.all([
-    holeMeineVorlagen(supabase, position.betriebId, position.mitarbeiterId),
+    holeMeineVorlagen(supabase, position.betriebId, position.mitarbeiterId, t.schicht),
     holeWiederkehrendePraeferenzen(supabase, position.mitarbeiterId),
     holeTagesPraeferenzen(supabase, position.mitarbeiterId),
   ]);
@@ -102,23 +110,23 @@ export default async function VerfuegbarkeitSeite({
   return (
     <Container className="py-8 sm:py-10">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl leading-tight sm:text-3xl">Verfügbarkeit</h1>
-        <p className="mt-2 text-base leading-relaxed text-muted">
-          Je mehr Wünsche du angibst, desto unwahrscheinlicher wird jeder einzelne erfüllt.
-          Tageswünsche überschreiben Vorlagen-Wünsche.
-        </p>
+        <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t.lead}</p>
 
         <section className="mt-8">
-          <h2 className="font-display text-lg text-text">Wiederkehrende Wünsche</h2>
-          <p className="mt-1 text-sm text-muted">Gilt für jedes Vorkommen dieses Wochentags.</p>
-          <WiederkehrendeListe vorlagen={vorlagen} praeferenzen={wiederkehrend} />
+          <h2 className="font-display text-lg text-text">{t.wiederkehrend}</h2>
+          <p className="mt-1 text-sm text-muted">{t.wiederkehrendText}</p>
+          <WiederkehrendeListe
+            vorlagen={vorlagen}
+            praeferenzen={wiederkehrend}
+            texte={t}
+            wochentage={wochentageLang(locale)}
+          />
         </section>
 
         <section className="mt-8">
-          <h2 className="font-display text-lg text-text">Wunsch für einen bestimmten Tag</h2>
-          <p className="mt-1 text-sm text-muted">
-            Wähle ein Datum, dann deinen Wunsch je Schicht — auf Wunsch mit Notiz.
-          </p>
+          <h2 className="font-display text-lg text-text">{t.tagWunsch}</h2>
+          <p className="mt-1 text-sm text-muted">{t.tagWunschText}</p>
 
           <TagesWunschEditor
             vorlagen={vorlagen}
@@ -126,12 +134,17 @@ export default async function VerfuegbarkeitSeite({
             min={heuteIso}
             max={maxDatumIso}
             startDatum={gewaehltesDatum}
+            texte={t}
           />
         </section>
 
         <section className="mt-8">
-          <h2 className="font-display text-lg text-text">Spezielle Tage</h2>
-          <BestehendeTagesPraeferenzenListe praeferenzen={tagesPraeferenzen} vorlagenNamen={vorlagenNamen} />
+          <h2 className="font-display text-lg text-text">{t.spezielleTage}</h2>
+          <BestehendeTagesPraeferenzenListe
+            praeferenzen={tagesPraeferenzen}
+            vorlagenNamen={vorlagenNamen}
+            texte={t}
+          />
         </section>
       </div>
     </Container>

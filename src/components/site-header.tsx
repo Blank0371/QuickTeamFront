@@ -44,7 +44,7 @@ export async function SiteHeader() {
       <Container className="relative flex h-16 items-center justify-between gap-4">
         <Link href="/" className="rounded-blk text-text">
           <Logo />
-          <span className="sr-only">Startseite</span>
+          <span className="sr-only">{t.nav.startseite}</span>
         </Link>
 
         <nav aria-label={t.nav.hauptnavigation} className="hidden md:block">

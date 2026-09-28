@@ -8,13 +8,15 @@ import { feldSchemata } from "@/lib/validierung";
 
 import { PasswortNeuFormular } from "./passwort-neu-formular";
 
-export const metadata: Metadata = {
-  title: "Neues Passwort setzen",
-  description:
-    "Trag den Code aus der E-Mail ein und vergib dein neues Passwort. Der Code ist einmalig und läuft nach 60 Minuten ab.",
-  alternates: { canonical: "/passwort-neu" },
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { passwort } = await holeTexte();
+  return {
+    title: passwort.neu.metaTitel,
+    description: passwort.neu.metaBeschreibung,
+    alternates: { canonical: "/passwort-neu" },
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function PasswortNeuSeite({
   searchParams,
@@ -32,33 +34,29 @@ export default async function PasswortNeuSeite({
   const email = geprueft.success ? geprueft.data : null;
 
   const t = await holeTexte();
+  const neu = t.passwort.neu;
 
   return (
     <AuthRahmen
-      kicker="Passwort zurücksetzen"
-      titel="Neues Passwort vergeben"
-      lead="Trag den Code aus deiner E-Mail ein und vergib gleich dein neues Passwort — danach geht es direkt weiter in die Planung."
+      kicker={t.passwort.kicker}
+      titel={neu.titel}
+      lead={neu.lead}
       fuss={
         <p>
           <Link
             href="/login"
             className="font-medium text-signal underline underline-offset-4 hover:text-signal-hover"
           >
-            Zurück zur Anmeldung
+            {neu.zurueck}
           </Link>
         </p>
       }
     >
-      <PasswortNeuFormular email={email} versandTexte={t.codeVersand} />
+      <PasswortNeuFormular email={email} versandTexte={t.codeVersand} texte={neu} />
 
       <div className="mt-6 rounded-blk border border-line bg-surface-sunk p-5">
-        <h2 className="font-display text-sm font-bold text-text">
-          Du kannst das Gerät wechseln
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          Die E-Mail am Handy öffnen und den Code am Rechner eintippen ist ausdrücklich
-          vorgesehen. Trag dann einfach dieselbe E-Mail-Adresse mit ein.
-        </p>
+        <h2 className="font-display text-sm font-bold text-text">{neu.geraetTitel}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted">{neu.geraetText}</p>
       </div>
     </AuthRahmen>
   );
