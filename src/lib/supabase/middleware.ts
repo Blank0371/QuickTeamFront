@@ -79,9 +79,11 @@ export async function updateSession(request: NextRequest) {
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, { cookies });
 
-  const { data } = await supabase.auth.getUser();
+  // `getClaims()` frischt ein abgelaufenes Token auf wie `getUser()`, prüft
+  // die ES256-Signatur aber lokal — keine GoTrue-Rundreise je Anfrage.
+  const { data } = await supabase.auth.getClaims();
 
-  const ziel = zielFuerAngemeldete(request.nextUrl.pathname, data.user !== null);
+  const ziel = zielFuerAngemeldete(request.nextUrl.pathname, data?.claims != null);
   if (ziel) {
     return NextResponse.redirect(new URL(ziel, request.url), {
       headers: supabaseResponse.headers,

@@ -86,6 +86,18 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
 
+  /*
+   * Einmal besuchte Dashboard-Bereiche bleiben 30 s im Router-Cache des
+   * Browsers — der Rückweg zum vorigen Tab kommt ohne Server-Rundreise.
+   * Veraltete Daten entstehen dadurch nicht aus eigenen Änderungen: jede
+   * Server Action ruft `revalidatePath`/`redirect`, und beides leert den
+   * Cache ebenso wie `router.refresh()` beim Sprachwechsel. Änderungen
+   * anderer Personen erscheinen spätestens nach 30 s.
+   */
+  experimental: {
+    staleTimes: { dynamic: 30 },
+  },
+
   /**
    * Sicherheits-Kopfzeilen für jede Antwort.
    *

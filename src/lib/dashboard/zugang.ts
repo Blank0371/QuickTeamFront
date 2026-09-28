@@ -71,12 +71,19 @@ export const betreteDashboard = cache(betreteDashboardJetzt);
 
 async function betreteDashboardJetzt(): Promise<Zugang> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  /*
+   * `getClaims()` statt `getUser()`: das Projekt signiert mit ES256, die
+   * Signatur wird also lokal gegen den (zwischengespeicherten) JWKS
+   * geprüft — ohne Rundreise zu GoTrue bei jedem Klick. Was dabei fehlt,
+   * ist nur der Blick auf eine anderswo widerrufene Sitzung; den macht
+   * PostgREST ebenso wenig, RLS sah dasselbe Token schon vorher als gültig.
+   */
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
 
-  if (!user) redirect("/login");
+  if (!claims) redirect("/login");
 
+  const user = { id: claims.sub, email: claims.email };
   const alle = await holePositionen(supabase, user.id);
   const position = waehleAktive(alle, await gewuenschtePositionsId());
 
@@ -95,8 +102,17 @@ async function betreteDashboardJetzt(): Promise<Zugang> {
    */
   if (position === null) redirect(wechselAdresse(await angefragterPfad()));
 
-  await pruefeSperre(supabase, position, user.email ?? "");
-  const zustimmung = await pruefeZustimmung(supabase, position, user.id);
+  /*
+   * Beide Tore fragen gleichzeitig, entschieden wird aber in der alten
+   * Reihenfolge: erst die Sperre, dann die Zustimmung (Begründung an
+   * `pruefeZustimmung`). Ein früher geworfener Zustimmungs-Redirect darf
+   * die Sperre nicht überholen — deshalb kein `Promise.all`.
+   */
+  const sperre = pruefeSperre(supabase, position, user.email ?? "");
+  const zustimmungFrage = pruefeZustimmung(supabase, position, user.id);
+  zustimmungFrage.catch(() => {});
+  await sperre;
+  const zustimmung = await zustimmungFrage;
 
   return { supabase, position, alle, zustimmung };
 }
