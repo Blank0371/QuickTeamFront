@@ -10,7 +10,7 @@ import { softLaunchAktiv } from "@/lib/soft-launch";
 export const metadata: Metadata = {
   title: "Preise",
   description:
-    "Low für 39 €, Medium für 69 €, Business für 99 € im Monat — oder jährlich mit zwei Monaten geschenkt (390 / 690 / 990 €). Grössere Betriebe und mehrere Standorte auf Anfrage. Immer mit 14 Tagen Testphase.",
+    "Low für 39 €, Medium für 69 €, Business für 99 € im Monat — oder jährlich mit zwei Monaten geschenkt (390 / 690 / 990 €). Grössere Betriebe und mehrere Standorte auf Anfrage.",
   alternates: { canonical: "/preise" },
 };
 

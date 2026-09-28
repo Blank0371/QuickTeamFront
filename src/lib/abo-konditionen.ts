@@ -74,51 +74,14 @@ const KUENDIGUNG =
 const RECHNUNGSANGABEN =
   "Deine Rechnungsangaben werden an den Zahlungsdienstleister Stripe übermittelt, der daraus die Rechnung erstellt und die Umsatzsteuer berechnet (Datenschutzerklärung, Ziffer 6).";
 
-/** Schritt 2: Zahlungsmittel während oder nach der Testphase hinterlegen. */
-export function zusammenfassungSchritt(k: AboKonditionen): string[] {
-  const preis = preisZeile(k);
-  const zeilen: string[] = [];
-
-  if (k.testphaseEnde) {
-    const ende = formatiereDatum(k.testphaseEnde);
-    zeilen.push(`Kostenlose Testphase bis ${ende} — bis dahin wird nichts abgebucht.`);
-    zeilen.push(
-      preis
-        ? `Erste Abbuchung am ${ende}: ${preis}, danach im Voraus für jeden Zeitraum.`
-        : `Erste Abbuchung am ${ende}, danach im Voraus für jeden Zeitraum.`,
-    );
-  } else if (k.periodeEnde) {
-    zeilen.push(
-      preis
-        ? `Die Testphase ist vorbei, das Abo läuft. Nächste Abbuchung am ${formatiereDatum(k.periodeEnde)}: ${preis}.`
-        : `Die Testphase ist vorbei, das Abo läuft. Nächste Abbuchung am ${formatiereDatum(k.periodeEnde)}.`,
-    );
-  }
-
-  if (k.endetAm) {
-    zeilen.push(`Das Abo ist gekündigt und endet am ${formatiereDatum(k.endetAm)}.`);
-  } else {
-    zeilen.push("Das Abo verlängert sich automatisch um jeweils einen weiteren Zeitraum.");
-    zeilen.push(KUENDIGUNG);
-  }
-
-  zeilen.push(RECHNUNGSANGABEN);
-
-  return zeilen;
-}
-
 /**
  * Schritt 2 ohne Testphase: der Betrieb hatte schon ein Abo, die erste
  * Rechnung des neuen ist sofort fällig (`incomplete`, siehe `erstelleAbo`).
- *
- * Eigene Sätze statt `zusammenfassungSchritt`: dort landete ein solches
- * Abo im Zweig „Die Testphase ist vorbei, das Abo läuft" — beides wäre
- * hier falsch, es hat nie eine Testphase gehabt und läuft noch nicht.
  */
 export function zusammenfassungNeuabschluss(k: AboKonditionen): string[] {
   const preis = preisZeile(k);
   return [
-    "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits.",
+    "Ein Neuabschluss beginnt ohne kostenlose Testphase.",
     preis
       ? `Mit dem Hinterlegen beginnt dein Abo sofort, und ${preis} werden für den ersten Zeitraum abgebucht.`
       : "Mit dem Hinterlegen beginnt dein Abo sofort, und der erste Zeitraum wird abgebucht.",

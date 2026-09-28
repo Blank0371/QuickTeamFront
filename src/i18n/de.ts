@@ -739,11 +739,8 @@ export const de = {
   stepper: {
     zahlung: {
       titelMittel: "Zahlungsmittel hinterlegen",
-      leadTestphase:
-        "Plan {plan}{preis}. Jetzt wird nichts abgebucht — die Testphase läuft bis {datum}.",
       leadSofort:
         "Plan {plan}{preis}. Mit dem Hinterlegen beginnt dein Abo, und der erste Zeitraum wird abgebucht.",
-      leadNur: "Plan {plan}{preis}.",
       leadBezahlt:
         "Wähl deinen Plan und das Abrechnungsintervall. Danach hinterlegst du ein Zahlungsmittel; dein Betrieb wird angelegt, sobald die Zahlung bestätigt ist. Einen Rabattcode kannst du dabei eingeben.",
       planLabel: "Plan",
@@ -751,13 +748,6 @@ export const de = {
       zurueckLink: "Zurück zur Plan-Auswahl",
       zurueckRest: ".",
       titelPlan: "Plan wählen",
-      leadOhneTestphase:
-        "Die kostenlose Testphase gibt es einmal je Betrieb, und dein Betrieb hatte sie bereits. Im nächsten Schritt hinterlegst du ein Zahlungsmittel, und dein Abo beginnt sofort.",
-      leadLebend:
-        "Deine Testphase läuft bereits seit der ersten Planwahl; ein Planwechsel verlängert sie nicht. Das Zahlungsmittel kannst du jetzt hinterlegen oder später nachtragen.",
-      leadNeu:
-        "{tage} Tage kostenlos, danach {intervall}. Das Zahlungsmittel kannst du gleich hinterlegen oder später nachtragen — die Testphase läuft in beiden Fällen.",
-      spaeter: "Später hinterlegen",
       planLegende: "Plan wählen",
       abrechnung: "Abrechnung:",
       intervallLegende: "Abrechnung wählen",
@@ -776,8 +766,6 @@ export const de = {
         "Falls du einen Rabattcode hast, gib ihn hier ein — er wird beim Abschluss verrechnet.",
       weiterLaufend: "Einen Moment …",
       weiterZahlung: "Weiter zur Zahlung",
-      testphasenHinweis:
-        "In beiden Fällen laufen zuerst {tage} Tage kostenlos. Ohne hinterlegtes Zahlungsmittel pausiert dein Betrieb danach, bis du eins nachträgst — deine Daten bleiben dafür 90 Tage erhalten.",
     },
     zahlungsFormular: {
       knopfStandard: "Zahlungsmittel hinterlegen",

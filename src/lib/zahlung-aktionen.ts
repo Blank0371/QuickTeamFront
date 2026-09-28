@@ -2,13 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { holeAbo } from "@/lib/abo";
-import {
-  holeChefBetriebId,
-  holeRechnungsangaben,
-  stelleBetriebSicher,
-  type Rechnungsangaben,
-} from "@/lib/betrieb";
+import { stelleBetriebSicher } from "@/lib/betrieb";
 import {
   holeAboFuerBetrieb,
   holeOderErstelleKunde,
@@ -16,13 +10,11 @@ import {
   pruefePromotionCode,
   rechnungVollstaendig,
   schliessePendingAbo,
-  suchePendingKunde,
   stripeKlient,
   uebernimmZahlungsmittel,
   verknuepfePendingMitBetrieb,
   ZahlungAbgelehnt,
 } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
 import { holeValidierung } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 import { schreibePromoCode } from "@/lib/promo-code";
@@ -34,6 +26,12 @@ import {
 } from "@/lib/zustimmung";
 import { speichereRechnungsangaben } from "@/lib/rechnung";
 import { pruefeRechnung } from "@/lib/rechnung-pruefung";
+import { bewerteSetupIntent } from "@/lib/setup-intent";
+import {
+  betriebZahlungKontext as kontext,
+  pendingZahlungKontext as pendingKontext,
+  protokolliereZahlung as protokolliere,
+} from "@/lib/zahlung-kontext";
 
 /**
  * Das Übernehmen einer Zahlungsmethode — geteilt zwischen Schritt 2 und
@@ -44,51 +42,6 @@ import { pruefeRechnung } from "@/lib/rechnung-pruefung";
  * Gelegenheiten, sich zu widersprechen — und eine davon würde seltener
  * benutzt und damit seltener bemerkt, wenn sie kaputt ist.
  */
-
-function protokolliere(stelle: string, ursache: unknown): void {
-  const text = ursache instanceof Error ? ursache.message : String(ursache);
-  console.error(`[zahlung] ${stelle}: ${text}`);
-}
-
-/**
- * `kundeId` ist `betrieb_abonnements.stripe_customer_id` — seit dem
- * 2026-08-28 der erste Weg, auf dem `sucheKunde()` den Stripe-Kunden
- * findet; die E-Mail-Adresse ist nur noch der Rückfall.
- *
- * Hier wiegt das schwerer als anderswo: der Kunde, den diese Datei
- * ermittelt, ist derselbe, gegen den unten die SetupIntent-Zugehörigkeit
- * geprüft wird. Fände die E-Mail-Suche nach einer Adressänderung den
- * falschen — oder gar keinen — Kunden, liefe die Prüfung gegen die
- * falsche Bezugsgrösse.
- */
-type Kontext = {
-  betriebId: string;
-  email: string;
-  kundeId: string | null;
-  /** Land und Name für Stripe Tax — siehe `stelleSteuerstandortSicher`. */
-  rechnung: Rechnungsangaben | null;
-};
-
-async function kontext(): Promise<Kontext> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  const betriebId = await holeChefBetriebId(supabase);
-  if (betriebId === null) redirect("/einrichtung/betrieb");
-
-  const abo = await holeAbo(supabase, betriebId);
-
-  return {
-    betriebId,
-    email: user.email ?? "",
-    kundeId: abo?.stripe_customer_id ?? null,
-    rechnung: await holeRechnungsangaben(supabase, betriebId),
-  };
-}
 
 /**
  * Übernimmt die im Payment Element bestätigte Zahlungsmethode.
@@ -102,6 +55,57 @@ async function kontext(): Promise<Kontext> {
 export type UebernahmeErgebnis =
   | { ok: true }
   | { ok: false; nachricht: string; felder?: Record<string, string> };
+
+type Fehlschlag = Extract<UebernahmeErgebnis, { ok: false }>;
+
+/**
+ * Schlägt den hereingereichten SetupIntent bei Stripe nach und prüft ihn
+ * gegen den serverseitig ermittelten Kunden (`bewerteSetupIntent`). Eine
+ * Stelle für beide Wege — bestehender Betrieb und Pending-Kunde.
+ */
+async function pruefeSetupIntent(
+  setupIntentId: string,
+  kundeId: string,
+  fremdNachricht: string,
+): Promise<{ ok: true; zahlungsmittelId: string } | Fehlschlag> {
+  const intent = await stripeKlient().setupIntents.retrieve(setupIntentId);
+  const bewertung = bewerteSetupIntent(intent, kundeId);
+  if (bewertung.ok) return bewertung;
+
+  switch (bewertung.grund) {
+    case "fremd":
+      console.error(
+        `[zahlung] SetupIntent ${setupIntentId} gehört zu ${bewertung.intentKunde}, erwartet ${kundeId}`,
+      );
+      return { ok: false, nachricht: fremdNachricht };
+    case "unbestaetigt":
+      return {
+        ok: false,
+        nachricht: "Die Zahlungsmethode ist noch nicht bestätigt. Versuch es bitte noch einmal.",
+      };
+    case "ohne-zahlungsmittel":
+      return {
+        ok: false,
+        nachricht: "Stripe hat keine Zahlungsmethode zurückgemeldet. Versuch es noch einmal.",
+      };
+  }
+}
+
+/**
+ * Das Tor vor der Aktivierung: UID und Anschrift müssen vollständig bei
+ * Stripe stehen, bevor abgebucht wird. Gelesen statt entgegengenommen —
+ * `rechnungVollstaendig()` fragt Stripe. Damit greift das Tor auch auf dem
+ * 3DS-Rückweg, auf dem es kein Formular mehr gibt, und es lässt sich nicht
+ * durch einen direkten Aufruf der Action umgehen.
+ */
+async function rechnungsTor(kundeId: string): Promise<Fehlschlag | null> {
+  if (await rechnungVollstaendig(kundeId)) return null;
+  return {
+    ok: false,
+    nachricht:
+      "Für die Rechnung fehlen noch Angaben. Füll die Felder über dem Zahlungsformular aus und schick das Formular erneut ab.",
+  };
+}
 
 /**
  * Speichert die Rechnungsangaben am Stripe-Kunden — **bevor** das
@@ -267,64 +271,24 @@ export async function zahlungsmittelUebernehmen(
     }
 
     const kundeId = typeof abo.customer === "string" ? abo.customer : abo.customer.id;
-    const intent = await stripeKlient().setupIntents.retrieve(setupIntentId);
-    const intentKunde =
-      typeof intent.customer === "string" ? intent.customer : (intent.customer?.id ?? null);
-
-    if (intentKunde !== kundeId) {
-      console.error(
-        `[zahlung] SetupIntent ${setupIntentId} gehört zu ${intentKunde}, erwartet ${kundeId}`,
-      );
-      return {
-        ok: false,
-        nachricht: "Diese Zahlungsmethode gehört nicht zu deinem Betrieb.",
-      };
-    }
-
-    if (intent.status !== "succeeded") {
-      return {
-        ok: false,
-        nachricht:
-          "Die Zahlungsmethode ist noch nicht bestätigt. Versuch es bitte noch einmal.",
-      };
-    }
-
-    const zahlungsmittelId =
-      typeof intent.payment_method === "string"
-        ? intent.payment_method
-        : (intent.payment_method?.id ?? null);
-
-    if (!zahlungsmittelId) {
-      return {
-        ok: false,
-        nachricht: "Stripe hat keine Zahlungsmethode zurückgemeldet. Versuch es noch einmal.",
-      };
-    }
+    const intent = await pruefeSetupIntent(
+      setupIntentId,
+      kundeId,
+      "Diese Zahlungsmethode gehört nicht zu deinem Betrieb.",
+    );
+    if (!intent.ok) return intent;
+    const { zahlungsmittelId } = intent;
 
     /*
-     * ───────────────────────────────────────────────────────────────
-     *  Das Tor vor der Aktivierung.
-     * ───────────────────────────────────────────────────────────────
-     *
      * Geprüft wird gegen **denselben** Kunden, an dem gleich die
      * Zahlungsmethode hängt: `kundeId` stammt aus dem gefundenen Abo,
      * nicht aus unserer gespeicherten Id und erst recht nicht aus einem
      * Formular. Hätte jemand seine Anmeldeadresse geändert, könnten zwei
      * getrennte Ermittlungen zwei verschiedene Kunden treffen — und die
      * Anschrift stünde am einen, die Karte am anderen.
-     *
-     * Gelesen statt entgegengenommen: `rechnungVollstaendig()` fragt
-     * Stripe. Damit greift das Tor auch auf dem 3DS-Rückweg, auf dem es
-     * kein Formular mehr gibt, und es lässt sich nicht durch einen
-     * direkten Aufruf dieser Action umgehen.
      */
-    if (!(await rechnungVollstaendig(kundeId))) {
-      return {
-        ok: false,
-        nachricht:
-          "Für die Rechnung fehlen noch Angaben. Füll die Felder über dem Zahlungsformular aus und schick das Formular erneut ab.",
-      };
-    }
+    const fehltRechnung = await rechnungsTor(kundeId);
+    if (fehltRechnung) return fehltRechnung;
 
     await uebernimmZahlungsmittel({
       kundeId,
@@ -356,28 +320,6 @@ export async function zahlungsmittelUebernehmen(
 /* ------------------------------------------------------------------ */
 
 /**
- * Kontext des noch nicht angelegten Betriebs: der angemeldete Nutzer und
- * sein Pending-Stripe-Kunde (Betriebsdaten in der Metadata). Ohne
- * Pending-Kunde ist Schritt 1 noch offen — zurück dorthin.
- */
-async function pendingKontext(): Promise<{
-  userId: string;
-  email: string;
-  kunde: Awaited<ReturnType<typeof suchePendingKunde>>;
-}> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/registrieren");
-
-  const kunde = await suchePendingKunde({ userId: user.id, email: user.email ?? "" });
-  if (!kunde) redirect("/einrichtung/betrieb");
-
-  return { userId: user.id, email: user.email ?? "", kunde };
-}
-
-/**
  * Speichert die Rechnungsangaben am **Pending**-Kunden — das Gegenstück zu
  * `rechnungSpeichern` für den noch nicht angelegten Betrieb. Gleiche
  * Reihenfolge, gleicher Grund (siehe dort): erst die Angaben, dann die Karte.
@@ -397,7 +339,7 @@ export async function rechnungPendingSpeichern(
   }
 
   try {
-    await speichereRechnungsangaben(kunde!.id, geprueft.profil);
+    await speichereRechnungsangaben(kunde.id, geprueft.profil);
     return { ok: true };
   } catch (ursache) {
     protokolliere("rechnungPendingSpeichern", ursache);
@@ -422,14 +364,7 @@ export async function rechnungPendingSpeichern(
 export async function betriebAbschliessen(
   setupIntentId: string,
 ): Promise<UebernahmeErgebnis> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/registrieren");
-
-  const kunde = await suchePendingKunde({ userId: user.id, email: user.email ?? "" });
-  if (!kunde) redirect("/einrichtung/betrieb");
+  const { supabase, user, kunde } = await pendingKontext();
 
   const pending = lesePendingBetrieb(kunde);
   if (!pending || !pending.plan || !pending.intervall) {
@@ -437,48 +372,17 @@ export async function betriebAbschliessen(
   }
 
   try {
-    const stripe = stripeKlient();
-    const intent = await stripe.setupIntents.retrieve(setupIntentId);
-    const intentKunde =
-      typeof intent.customer === "string" ? intent.customer : (intent.customer?.id ?? null);
+    const intent = await pruefeSetupIntent(
+      setupIntentId,
+      kunde.id,
+      "Diese Zahlungsmethode gehört nicht zu deinem Konto.",
+    );
+    if (!intent.ok) return intent;
+    const { zahlungsmittelId } = intent;
 
-    if (intentKunde !== kunde.id) {
-      console.error(
-        `[zahlung] SetupIntent ${setupIntentId} gehört zu ${intentKunde}, erwartet ${kunde.id}`,
-      );
-      return { ok: false, nachricht: "Diese Zahlungsmethode gehört nicht zu deinem Konto." };
-    }
-
-    if (intent.status !== "succeeded") {
-      return {
-        ok: false,
-        nachricht: "Die Zahlungsmethode ist noch nicht bestätigt. Versuch es bitte noch einmal.",
-      };
-    }
-
-    const zahlungsmittelId =
-      typeof intent.payment_method === "string"
-        ? intent.payment_method
-        : (intent.payment_method?.id ?? null);
-    if (!zahlungsmittelId) {
-      return {
-        ok: false,
-        nachricht: "Stripe hat keine Zahlungsmethode zurückgemeldet. Versuch es noch einmal.",
-      };
-    }
-
-    /*
-     * Dasselbe Rechnungstor wie beim bestehenden Betrieb: UID und
-     * Anschrift müssen vollständig bei Stripe stehen, bevor abgebucht wird.
-     * Gelesen bei Stripe, damit es auch auf dem 3DS-Rückweg greift.
-     */
-    if (!(await rechnungVollstaendig(kunde.id))) {
-      return {
-        ok: false,
-        nachricht:
-          "Für die Rechnung fehlen noch Angaben. Füll die Felder über dem Zahlungsformular aus und schick das Formular erneut ab.",
-      };
-    }
+    // Dasselbe Rechnungstor wie beim bestehenden Betrieb.
+    const fehltRechnung = await rechnungsTor(kunde.id);
+    if (fehltRechnung) return fehltRechnung;
 
     // Abo anlegen und Erstrechnung sofort bezahlen (100-%-Code ⇒ 0,00).
     const abo = await schliessePendingAbo({

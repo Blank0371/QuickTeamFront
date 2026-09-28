@@ -3,9 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { holeValidierung } from "@/i18n/server";
-import { holeAbo } from "@/lib/abo";
 import { leseAbrechnung, vergissAbrechnung } from "@/lib/abrechnung-merker";
-import { holeChefBetriebId, holeRechnungsangaben, type Rechnungsangaben } from "@/lib/betrieb";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import {
   erstelleAbo,
@@ -15,12 +13,15 @@ import {
   merkePendingWahl,
   pruefePromotionCode,
   setzeUid,
-  suchePendingKunde,
   wechslePlan,
 } from "@/lib/stripe";
 import { ABRECHNUNG_STANDARD, alsAbrechnung } from "@/lib/site";
-import { createClient } from "@/lib/supabase/server";
 import { planOderBasic, uidSchema } from "@/lib/validierung";
+import {
+  betriebZahlungKontext as kontext,
+  pendingZahlungKontext,
+  protokolliereZahlung as protokolliere,
+} from "@/lib/zahlung-kontext";
 
 /**
  * Server Actions von Schritt 2.
@@ -32,70 +33,36 @@ import { planOderBasic, uidSchema } from "@/lib/validierung";
  * `stripe_subscription_id` direkt bei Stripe nach.
  */
 
-type Kontext = {
-  betriebId: string;
-  email: string;
-  /**
-   * `betrieb_abonnements.stripe_customer_id`, oder `null`, solange der
-   * Webhook noch nicht gelaufen ist.
-   *
-   * Steht hier und nicht in den einzelnen Aktionen, weil jede von ihnen
-   * denselben Wert braucht: seit dem 2026-08-28 sucht `sucheKunde()` den
-   * Stripe-Kunden zuerst über diese ID und erst danach über die
-   * E-Mail-Adresse. Wer sie nicht mitgibt, bekommt stillschweigend das
-   * alte Verhalten — und damit das Risiko eines zweiten Abos, wenn
-   * jemand seine Anmelde-Adresse geändert hat.
-   */
-  kundeId: string | null;
-  /**
-   * Name und Land des Betriebs. Stripe Tax braucht das Land als
-   * Steuerstandort; ohne es lehnt Stripe ein Abo mit `automatic_tax` ab.
-   */
-  rechnung: Rechnungsangaben | null;
-};
-
-/** Session und Betrieb — ohne beides gibt es hier nichts zu tun. */
-async function kontext(): Promise<Kontext> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  const betriebId = await holeChefBetriebId(supabase);
-  if (betriebId === null) redirect("/einrichtung/betrieb");
-
-  const abo = await holeAbo(supabase, betriebId);
-
-  return {
-    betriebId,
-    email: user.email ?? "",
-    kundeId: abo?.stripe_customer_id ?? null,
-    rechnung: await holeRechnungsangaben(supabase, betriebId),
-  };
-}
-
 function fehler(nachricht: string): FormZustand {
   return { status: "fehler", nachricht, felder: {} };
 }
 
-function protokolliere(stelle: string, ursache: unknown): void {
-  const text = ursache instanceof Error ? ursache.message : String(ursache);
-  console.error(`[zahlung] ${stelle}: ${text}`);
+/**
+ * Stripe-Rabattcode (echter `promotion_code`, nicht der interne
+ * Partner-Promo-Code). Freiwillig; leer heisst „keiner". Ein nicht leerer,
+ * aber unbekannter/inaktiver Code ist ein Feldfehler — sonst dächte der
+ * Kunde, der Rabatt greife, und zahlte den vollen Preis.
+ */
+async function pruefeCoupon(
+  formData: FormData,
+): Promise<{ ok: true; roh: string; promotionCodeId: string | null } | { ok: false; roh: string; meldung: string }> {
+  const roh = String(formData.get("coupon") ?? "").trim();
+  if (roh.length === 0) return { ok: true, roh, promotionCodeId: null };
+
+  const promotionCodeId = await pruefePromotionCode(roh);
+  if (promotionCodeId !== null) return { ok: true, roh, promotionCodeId };
+
+  const v = await holeValidierung();
+  return { ok: false, roh, meldung: v["v.coupon.unbekannt"] };
 }
 
 /**
  * Legt das Abonnement an — oder passt den Plan eines bestehenden an.
  *
- * Beide Knöpfe des Plan-Formulars landen hier, „Weiter zur Zahlung" und
- * „Später hinterlegen". Der Unterschied ist allein das Ziel danach: das
- * Abonnement entsteht in beiden Fällen, weil es der Träger der Testphase
- * ist und nicht der Beleg einer Zahlung.
- *
- * Seit dem 2026-09-14 gibt es die Testphase nur beim ersten Abo eines
- * Betriebs; wer nach einer Kündigung neu abschliesst, zahlt sofort und
- * kann nicht überspringen (`erstelleAbo`).
+ * Nur für einen **bestehenden** Betrieb (Neuabschluss nach Kündigung);
+ * der noch nicht angelegte Betrieb parkt seine Wahl über `planMerken`.
+ * Seit dem 2026-09-22 gibt es keine Testphase und kein „Später
+ * hinterlegen" mehr: das Abo ist sofort fällig (`erstelleAbo`).
  *
  * Seit dem 2026-09-13 steht der Kunde vor dem Abo fest: erst Land und
  * gegebenenfalls UID-Nummer an den Stripe-Kunden, dann das Abo mit
@@ -144,26 +111,16 @@ export async function planWaehlen(
     uid = geprueft.data.uid || null;
   }
 
-  /*
-   * Stripe-Rabattcode (echter `promotion_code`, nicht der interne
-   * Partner-Promo-Code). Freiwillig; leer heisst „keiner". Ein nicht
-   * leerer, aber unbekannter/inaktiver Code ist ein Feldfehler — sonst
-   * dächte der Kunde, der Rabatt greife, und zahlte den vollen Preis.
-   */
-  const couponRoh = String(formData.get("coupon") ?? "").trim();
-  let promotionCodeId: string | null = null;
-  if (couponRoh.length > 0) {
-    promotionCodeId = await pruefePromotionCode(couponRoh);
-    if (promotionCodeId === null) {
-      const v = await holeValidierung();
-      return {
-        status: "fehler",
-        nachricht: null,
-        felder: { coupon: v["v.coupon.unbekannt"] },
-        werte: { uid: String(formData.get("uid") ?? ""), plan, coupon: couponRoh },
-      };
-    }
+  const coupon = await pruefeCoupon(formData);
+  if (!coupon.ok) {
+    return {
+      status: "fehler",
+      nachricht: null,
+      felder: { coupon: coupon.meldung },
+      werte: { uid: String(formData.get("uid") ?? ""), plan, coupon: coupon.roh },
+    };
   }
+  const { promotionCodeId } = coupon;
 
   try {
     const kunde = await holeOderErstelleKunde({ betriebId, email, kundeId, rechnung });
@@ -222,38 +179,23 @@ export async function planMerken(
   _vorher: FormZustand,
   formData: FormData,
 ): Promise<FormZustand> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/registrieren");
-
-  const kunde = await suchePendingKunde({ userId: user.id, email: user.email ?? "" });
-  if (!kunde) redirect("/einrichtung/betrieb");
+  const { kunde } = await pendingZahlungKontext();
 
   const plan = planOderBasic(formData.get("plan"));
   const ausFormular = formData.get("intervall");
   const intervall = ausFormular != null ? alsAbrechnung(ausFormular) : await leseAbrechnung();
 
-  /*
-   * Stripe-Rabattcode (echter `promotion_code`). Freiwillig; ein nicht
-   * leerer, aber unbekannter Code ist ein Feldfehler. Die geprüfte ID wird
-   * geparkt und beim Abschluss aufs neue Abo gelegt.
-   */
-  const couponRoh = String(formData.get("coupon") ?? "").trim();
-  let promotionCodeId: string | null = null;
-  if (couponRoh.length > 0) {
-    promotionCodeId = await pruefePromotionCode(couponRoh);
-    if (promotionCodeId === null) {
-      const v = await holeValidierung();
-      return {
-        status: "fehler",
-        nachricht: null,
-        felder: { coupon: v["v.coupon.unbekannt"] },
-        werte: { plan, coupon: couponRoh },
-      };
-    }
+  // Die geprüfte ID wird geparkt und beim Abschluss aufs neue Abo gelegt.
+  const coupon = await pruefeCoupon(formData);
+  if (!coupon.ok) {
+    return {
+      status: "fehler",
+      nachricht: null,
+      felder: { coupon: coupon.meldung },
+      werte: { plan, coupon: coupon.roh },
+    };
   }
+  const { promotionCodeId } = coupon;
 
   try {
     await merkePendingWahl({

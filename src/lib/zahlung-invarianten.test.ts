@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 
@@ -70,11 +70,17 @@ describe("Kostenloses Testen bleibt ohne Rechnungsdaten möglich", () => {
   });
 
   it("legt kein Abo mehr mit Testphase an", () => {
-    const stripe = lies("src/lib/stripe.ts");
-    assert.ok(
-      !stripe.includes("trial_period_days:"),
-      "seit dem 2026-09-22 gibt es keine Testphase — kein trial_period_days-Parameter",
+    // Seit 2026-09-28 ist `stripe.ts` ein Sammel-Export über `stripe-*.ts`.
+    const dateien = readdirSync(path.join(WURZEL, "src/lib")).filter((d) =>
+      /^stripe(-[a-z]+)?\.ts$/.test(d),
     );
+    assert.ok(dateien.length > 1, "Stripe-Module nicht gefunden");
+    for (const datei of dateien) {
+      assert.ok(
+        !lies(`src/lib/${datei}`).includes("trial_period_days:"),
+        `${datei}: seit dem 2026-09-22 gibt es keine Testphase — kein trial_period_days-Parameter`,
+      );
+    }
   });
 });
 
@@ -103,8 +109,13 @@ describe("Das Tor vor der Aktivierung liegt im Server, nicht im Formular", () =>
   });
 
   it("prüft den SetupIntent auf Kunde UND Status", () => {
-    assert.ok(aktionen.includes("intentKunde !== kundeId"));
-    assert.ok(aktionen.includes('intent.status !== "succeeded"'));
+    /*
+     * Die Regel selbst (Kunde, Status, Zahlungsmittel) prüft
+     * `setup-intent.test.ts` am Verhalten. Hier nur: die Aktionen laufen
+     * durch genau diese Regel.
+     */
+    assert.ok(aktionen.includes("bewerteSetupIntent(intent, kundeId)"));
+    assert.ok(!aktionen.includes("setupIntents.retrieve(setupIntentId);\n    const intentKunde"));
   });
 
   it("führt die Sicherheitsprüfungen vor der Rechnungsprüfung aus", () => {
@@ -112,15 +123,18 @@ describe("Das Tor vor der Aktivierung liegt im Server, nicht im Formular", () =>
      * Reihenfolge ist hier eine Sicherheitsaussage: eine vollständige
      * Rechnungsanschrift darf die Zugehörigkeitsprüfung nicht ersetzen,
      * sondern nur ergänzen. Stünde sie davor, wäre sie das erste, was
-     * über die Aktivierung entscheidet.
+     * über die Aktivierung entscheidet. Geprüft an **jeder** Stelle, an
+     * der das Rechnungstor steht (bestehender Betrieb und Pending-Weg).
      */
-    const iKunde = aktionen.indexOf("intentKunde !== kundeId");
-    const iStatus = aktionen.indexOf('intent.status !== "succeeded"');
-    const iRechnung = aktionen.indexOf("rechnungVollstaendig(kundeId)");
-
-    assert.ok(iKunde > 0 && iStatus > 0 && iRechnung > 0);
-    assert.ok(iKunde < iRechnung, "Kundenprüfung vor Rechnungsprüfung");
-    assert.ok(iStatus < iRechnung, "Statusprüfung vor Rechnungsprüfung");
+    const tore = [...aktionen.matchAll(/await rechnungsTor\(/g)].map((m) => m.index ?? -1);
+    assert.equal(tore.length, 2, "Rechnungstor an beiden Übernahmestellen");
+    let vorher = 0;
+    for (const iTor of tore) {
+      const iIntent = aktionen.indexOf("await pruefeSetupIntent(", vorher);
+      assert.ok(iIntent > 0 && iIntent < iTor, "SetupIntent-Prüfung vor dem Rechnungstor");
+      vorher = iTor + 1;
+    }
+    assert.ok(aktionen.includes("rechnungVollstaendig(kundeId)"));
   });
 });
 

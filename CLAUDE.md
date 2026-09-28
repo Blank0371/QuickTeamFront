@@ -629,7 +629,7 @@ die Karte nach, läuft dasselbe Abo per `resume` weiter. **`resume` allein reich
 — er erzeugt eine offene Rechnung (`auto_advance: false`), das Abo bleibt `paused` bis
 zur Zahlung; `nimmAboWiederAuf()` bezahlt sie sofort mit `invoices.pay()`. Bei abgelehnter
 Karte bleibt das Abo pausiert und der Grund wird angezeigt (`ZahlungAbgelehnt` in
-`src/lib/stripe.ts`).
+`src/lib/stripe-zahlung.ts`).
 
 **`pausiert`/`gekuendigt` wird bei Stripe gegengefragt.** Stepper (`ermittleStandFuer`)
 und Dashboard-Tor (`pruefeSperre`) fragen `aboLageBeiStripe()` **nur** bei
@@ -642,6 +642,18 @@ Funktionen** `mussStripeFragen()` / `aboSperre()` (`src/lib/abo.ts`, getestet in
 Unterschied steht als Argument da (`auchOhneSubscription`: Stepper ja, Dashboard nein —
 sonst sperrte das Tor jeden ohne Stripe entstandenen Betrieb). `betreteDashboard()` ist in
 React `cache()` gehüllt: Layout und Seite teilen sich einen Durchlauf je Anfrage.
+
+**Die Pausen-Kette bleibt vorerst.** Neue Abos erreichen `paused` nicht mehr, aber am
+2026-09-28 standen noch drei `trial`-Zeilen **mit** Stripe-Subscription in der DB
+(Testphasen von vor dem 22.09.). Für sie tragen Sperrseite, `nimmAboWiederAuf` und der
+Cron weiter. Rückbau erst, wenn keine solche Zeile mehr existiert.
+
+**Aufbau der Stripe-Anbindung (seit 2026-09-28).** `src/lib/stripe.ts` ist nur noch der
+Sammel-Export; die Umsetzung liegt in `stripe-konfiguration.ts` (Price-IDs, Klient,
+Riegel), `stripe-kunde.ts`, `stripe-pending.ts`, `stripe-rechnung.ts`, `stripe-abo.ts`,
+`stripe-zahlung.ts`. Aufrufer importieren weiter von `@/lib/stripe`. Die
+SetupIntent-Prüfung beider Zahlungswege ist `bewerteSetupIntent()` (`setup-intent.ts`),
+Session/Betrieb bzw. Pending-Kunde für beide Aktionsdateien kommt aus `zahlung-kontext.ts`.
 
 **Gescheiterte Erst-Lastschrift kündigt das Abo.** Der Webhook behandelt
 `invoice.payment_failed` **nur** für die Erstrechnung (`billing_reason =
@@ -957,7 +969,7 @@ sind (nicht: vollständig).
 1. `src/middleware.ts` leitet jede Adresse unter `GESPERRTE_PRAEFIXE` auf `/` um (307 für
    GET, 303 sonst), ohne die Sitzung anzufassen.
 2. `createClient()` (`src/lib/supabase/server.ts`) und `stripeKlient()`
-   (`src/lib/stripe.ts`) rufen `verlangeSoftLaunchFrei()` — schliesst die Lücke, dass
+   (`src/lib/stripe-konfiguration.ts`) rufen `verlangeSoftLaunchFrei()` — schliesst die Lücke, dass
    eine Server Action von jeder Route aus adressierbar ist.
 
 **Sichtbarkeit hängt an denselben `softLaunchAktiv()`** — wer einen weiteren Weg nach

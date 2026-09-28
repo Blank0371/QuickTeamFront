@@ -694,11 +694,8 @@ export const en: Dictionary = {
   stepper: {
     zahlung: {
       titelMittel: "Add a payment method",
-      leadTestphase:
-        "{plan} plan{preis}. Nothing is charged now — your trial runs until {datum}.",
       leadSofort:
         "{plan} plan{preis}. Adding a payment method starts your subscription, and the first period is charged.",
-      leadNur: "{plan} plan{preis}.",
       leadBezahlt:
         "Choose your plan and billing interval. Then you add a payment method; your business is created as soon as the payment is confirmed. You can enter a discount code along the way.",
       planLabel: "Plan",
@@ -706,13 +703,6 @@ export const en: Dictionary = {
       zurueckLink: "Back to plan selection",
       zurueckRest: ".",
       titelPlan: "Choose a plan",
-      leadOhneTestphase:
-        "The free trial is available once per business, and yours has already used it. In the next step you add a payment method, and your subscription starts right away.",
-      leadLebend:
-        "Your trial has been running since you first chose a plan; changing plans doesn't extend it. You can add a payment method now or later.",
-      leadNeu:
-        "{tage} days free, then billed {intervall}. You can add a payment method now or later — the trial runs either way.",
-      spaeter: "Add it later",
       planLegende: "Choose a plan",
       abrechnung: "Billing:",
       intervallLegende: "Choose billing",
@@ -731,8 +721,6 @@ export const en: Dictionary = {
         "If you have a discount code, enter it here — it's applied at checkout.",
       weiterLaufend: "One moment …",
       weiterZahlung: "Continue to payment",
-      testphasenHinweis:
-        "Either way, the first {tage} days are free. Without a payment method your business is then paused until you add one — your data is kept for 90 days.",
     },
     zahlungsFormular: {
       knopfStandard: "Add a payment method",

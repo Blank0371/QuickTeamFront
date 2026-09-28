@@ -89,7 +89,7 @@
   "src/components/preise/abrechnung-umschalter.tsx": 3,
   "src/components/preise/preis-liste.tsx": 2,
   "src/components/sprach-wahl.tsx": 3,
-  "src/lib/abo-konditionen.ts": 8,
+  "src/lib/abo-konditionen.ts": 7,
   "src/lib/dashboard/ausschreibung-aktionen.ts": 3,
   "src/lib/dashboard/ausschreibung.ts": 8,
   "src/lib/dashboard/kalender.ts": 1,
@@ -101,8 +101,10 @@
   "src/lib/export/tabellen.ts": 46,
   "src/lib/formular.ts": 3,
   "src/lib/konto-loeschung.ts": 7,
-  "src/lib/stripe.ts": 4,
+  "src/lib/stripe-konfiguration.ts": 1,
+  "src/lib/stripe-pending.ts": 1,
+  "src/lib/stripe-zahlung.ts": 2,
   "src/lib/supabase/env.ts": 2,
   "src/lib/validierung.ts": 1,
-  "src/lib/zahlung-aktionen.ts": 19
+  "src/lib/zahlung-aktionen.ts": 16
 }
