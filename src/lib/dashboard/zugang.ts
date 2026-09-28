@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
-import { aboGekuendigt, holeAbo, testphaseAbgelaufen } from "@/lib/abo";
+import { aboSperre, holeAbo, mussStripeFragen } from "@/lib/abo";
 import { wechselAdresse, zustimmungAdresse } from "@/lib/dashboard/pfad";
 import {
   angefragterPfad,
@@ -58,7 +59,17 @@ export type Zugang = {
   zustimmung: ZustimmungBefund | null;
 };
 
-export async function betreteDashboard(): Promise<Zugang> {
+/**
+ * Einmal je Anfrage: Layout und Seite rufen das Tor beide auf, und ohne
+ * `cache()` liefen Positionen, Abo-Zeile, Zustimmung — und bei `pausiert`/
+ * `gekuendigt` die Stripe-Frage — zweimal. Ein `redirect` wird dabei
+ * mitgemerkt und beim zweiten Aufruf ebenso geworfen. Ausserhalb eines
+ * Renderdurchgangs (Server Actions) memoisiert `cache()` nicht; jede
+ * Aktion prüft also weiterhin selbst.
+ */
+export const betreteDashboard = cache(betreteDashboardJetzt);
+
+async function betreteDashboardJetzt(): Promise<Zugang> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -168,7 +179,8 @@ export async function betreteOhneTore(): Promise<Omit<Zugang, "zustimmung">> {
  * durchgelassen (Stripe: `active`) und von hier zurückgeschickt (Zeile
  * noch alt), und zwar im Kreis, bis der Webhook ankam. Zwei Tore auf
  * demselben Zustand müssen dieselbe Frage stellen, und sie müssen sie
- * gleich beantworten — die Lagen stehen bei `aboLageBeiStripe`.
+ * gleich beantworten — deshalb entscheiden beide über `aboSperre()`
+ * (`src/lib/abo.ts`), die Lagen stehen bei `aboLageBeiStripe`.
  */
 async function pruefeSperre(
   supabase: SupabaseServerClient,
@@ -178,18 +190,17 @@ async function pruefeSperre(
   if (position.rolleTyp !== "chef") return pruefeVertragsende(supabase, position);
 
   const abo = await holeAbo(supabase, position.betriebId);
-  if (!testphaseAbgelaufen(abo) && !aboGekuendigt(abo)) return;
+  if (!mussStripeFragen(abo, { auchOhneSubscription: false })) return;
 
   const lage = await aboLageBeiStripe({
     betriebId: position.betriebId,
     email,
     kundeId: abo?.stripe_customer_id ?? null,
   });
-  if (lage === "laeuft") return;
+  const sperre = aboSperre(abo, lage);
+  if (sperre === "frei") return;
 
-  if (lage === "pausiert" || (lage === "unbekannt" && testphaseAbgelaufen(abo))) {
-    redirect("/einrichtung/testphase-abgelaufen");
-  }
+  if (sperre === "sperrseite") redirect("/einrichtung/testphase-abgelaufen");
 
   /*
    * Gekündigt führt zurück in den Zahlungsschritt, nicht auf die

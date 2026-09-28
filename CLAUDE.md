@@ -636,7 +636,12 @@ und Dashboard-Tor (`pruefeSperre`) fragen `aboLageBeiStripe()` **nur** bei
 `pausiert`/`gekuendigt` (bzw. im Stepper noch fehlender Subscription-ID). Stripe kann die
 Sperre aufheben, nicht erfinden; ist Stripe nicht erreichbar, bleibt sie. Beide Tore
 müssen dieselbe Frage stellen, sonst schicken sie den Kunden im Kreis. Gelesen wird bei
-Stripe, geschrieben nichts.
+Stripe, geschrieben nichts. **Seit 2026-09-28 entscheiden beide über dieselben reinen
+Funktionen** `mussStripeFragen()` / `aboSperre()` (`src/lib/abo.ts`, getestet in
+`abo.test.ts`) — vorher war die Bedingung in beide Dateien kopiert. Der einzige
+Unterschied steht als Argument da (`auchOhneSubscription`: Stepper ja, Dashboard nein —
+sonst sperrte das Tor jeden ohne Stripe entstandenen Betrieb). `betreteDashboard()` ist in
+React `cache()` gehüllt: Layout und Seite teilen sich einen Durchlauf je Anfrage.
 
 **Gescheiterte Erst-Lastschrift kündigt das Abo.** Der Webhook behandelt
 `invoice.payment_failed` **nur** für die Erstrechnung (`billing_reason =

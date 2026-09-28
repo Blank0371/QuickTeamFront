@@ -1,3 +1,4 @@
+import type { AboLage } from "@/lib/stripe";
 import type { createClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -82,6 +83,48 @@ export function testphaseAbgelaufen(abo: Abo | null): boolean {
  */
 export function aboGekuendigt(abo: Abo | null): boolean {
   return abo?.status === "gekuendigt";
+}
+
+/**
+ * Was die Abo-Lage für den Zugang heisst — die eine Entscheidung, die
+ * Stepper (`ermittleStandFuer`) und Dashboard-Tor (`pruefeSperre`)
+ * gemeinsam haben. Beide übersetzen nur noch das Ergebnis: der Stepper
+ * in einen `Stand`, das Tor in einen `redirect`. Vorher stand dieselbe
+ * Bedingung in beiden Dateien wörtlich kopiert.
+ *
+ * - `frei`       — Stripe sagt, das Abo läuft
+ * - `sperrseite` — bei Stripe pausiert, oder Stripe antwortet nicht und
+ *                  unsere Zeile sagt `pausiert` (gesperrt bleibt gesperrt)
+ * - `zahlung`    — alles andere: kein, ein unbezahltes oder ein
+ *                  gekündigtes Abo, auch bei Funkstille von Stripe
+ */
+export type AboSperre = "frei" | "zahlung" | "sperrseite";
+
+export function aboSperre(abo: Abo | null, lage: AboLage): AboSperre {
+  if (lage === "laeuft") return "frei";
+  if (lage === "pausiert" || (lage === "unbekannt" && testphaseAbgelaufen(abo))) {
+    return "sperrseite";
+  }
+  return "zahlung";
+}
+
+/**
+ * Ob die eigene Zeile Anlass gibt, Stripe zu fragen. Nur dann entsteht
+ * ein Stripe-Aufruf — bei einem laufenden Abo kostet das Tor nichts.
+ *
+ * `auchOhneSubscription` ist der eine Unterschied zwischen den Toren, und
+ * er steht hier als Argument, damit er an der Aufrufstelle sichtbar ist:
+ * der Stepper fragt auch, wenn die Zeile noch keine Subscription-ID trägt
+ * (vor dem ersten Abschluss, oder der Webhook ist unterwegs); das
+ * Dashboard-Tor nicht — sonst sperrte es jeden Betrieb, der ohne Stripe
+ * entstanden ist (etwa über die App), bei jedem Seitenaufruf aus.
+ */
+export function mussStripeFragen(
+  abo: Abo | null,
+  { auchOhneSubscription }: { auchOhneSubscription: boolean },
+): boolean {
+  if (aboGekuendigt(abo) || testphaseAbgelaufen(abo)) return true;
+  return auchOhneSubscription && !abo?.stripe_subscription_id;
 }
 
 /*

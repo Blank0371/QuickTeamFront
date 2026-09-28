@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { aboGekuendigt, holeAbo, testphaseAbgelaufen } from "@/lib/abo";
+import { aboSperre, holeAbo, mussStripeFragen } from "@/lib/abo";
 import { holeChefBetriebId } from "@/lib/betrieb";
 import { holeEinladungen } from "@/lib/dashboard/position";
 import { zustimmungAdresse } from "@/lib/dashboard/pfad";
@@ -131,17 +131,15 @@ export async function ermittleStandFuer(
    */
   const abo = await holeAbo(supabase, betriebId);
 
-  if (!abo?.stripe_subscription_id || aboGekuendigt(abo) || testphaseAbgelaufen(abo)) {
+  if (mussStripeFragen(abo, { auchOhneSubscription: true })) {
     const lage = await aboLageBeiStripe({
       betriebId,
       email,
       kundeId: abo?.stripe_customer_id ?? null,
     });
-    if (lage === "pausiert" || (lage === "unbekannt" && testphaseAbgelaufen(abo))) {
-      return { offen: "zahlung", gesperrt: true, betriebId };
-    }
-    if (lage !== "laeuft") {
-      return { offen: "zahlung", gesperrt: false, betriebId };
+    const sperre = aboSperre(abo, lage);
+    if (sperre !== "frei") {
+      return { offen: "zahlung", gesperrt: sperre === "sperrseite", betriebId };
     }
   }
 

@@ -197,51 +197,26 @@ describe("3DS kehrt zu der Seite zurück, auf der das Formular stand", () => {
   });
 });
 
-const ZEILENUMBRUCH = String.fromCharCode(10);
-
 describe("Die Sperre wird gegen Stripe gegengeprüft", () => {
-  const einrichtung = lies("src/lib/einrichtung.ts");
-
-  it("verlässt sich nicht allein auf die eigene Zeile", () => {
-    /*
-     * `betrieb_abonnements.status` schreibt allein der Webhook. Wer sein
-     * pausiertes Abo gerade fortgesetzt hat, darf nicht vom nächsten
-     * Seitenaufruf zurück auf die Sperrseite geworfen werden, nur weil
-     * die Zustellung noch unterwegs ist.
-     */
-    const iAbfrage = einrichtung.indexOf("const abo = await holeAbo(supabase, betriebId);");
-    assert.ok(iAbfrage > 0, "Abo-Abfrage nicht gefunden");
-    const block = einrichtung.slice(iAbfrage, iAbfrage + 900);
-
-    assert.ok(
-      block.includes("aboLageBeiStripe"),
-      "im Sperrfall muss Stripe gefragt werden",
-    );
-    /*
-     * Zeilenweise statt per Regex: die Bedingung enthält verschachtelte
-     * Klammern (`aboGekuendigt(abo)`), an denen ein Muster mit `[^)]*`
-     * scheitert — und ein Test, der an seiner eigenen Regex scheitert,
-     * behauptet einen Fehler, den es nicht gibt.
-     */
-    const zeilen = block.split(ZEILENUMBRUCH);
-    const iBedingung = zeilen.findIndex(
-      (z) => z.trimStart().startsWith("if (") && z.includes("testphaseAbgelaufen(abo)"),
-    );
-    assert.ok(iBedingung >= 0, "keine Bedingung, die `pausiert` einschliesst");
-    assert.ok(
-      zeilen.slice(iBedingung, iBedingung + 6).some((z) => z.includes("aboLageBeiStripe")),
-      "auch `pausiert` muss die Stripe-Abfrage auslösen — sonst wirft der " +
-        "nächste Seitenaufruf einen gerade zahlenden Kunden zurück auf die Sperrseite",
-    );
-    assert.ok(
-      block.includes('lage === "pausiert"'),
-      "gesperrt bleibt, wer bei Stripe wirklich pausiert ist",
-    );
-    assert.ok(
-      block.includes('lage === "unbekannt"'),
-      "antwortet Stripe nicht, darf die Sperre nicht aufgehen",
-    );
-  });
+  /*
+   * Das Verhalten (pausiert → Sperrseite, Funkstille öffnet nichts, …)
+   * prüft `abo.test.ts` an `aboSperre()`/`mussStripeFragen()` selbst.
+   * Hier steht nur die Kopplung: beide Tore müssen durch genau diese
+   * Entscheidung laufen, statt wieder eine eigene Bedingung zu tragen —
+   * so ist die Stelle, an der sie früher auseinanderliefen, verschwunden.
+   */
+  for (const datei of ["src/lib/einrichtung.ts", "src/lib/dashboard/zugang.ts"]) {
+    it(`${datei} entscheidet über aboSperre()`, () => {
+      const quelle = lies(datei);
+      for (const name of ["mussStripeFragen(", "aboLageBeiStripe(", "aboSperre("]) {
+        assert.ok(quelle.includes(name), `${datei} ruft ${name}) nicht auf`);
+      }
+      assert.ok(
+        !quelle.includes('lage === "pausiert"'),
+        `${datei} trägt wieder eine eigene Sperr-Bedingung`,
+      );
+    });
+  }
 });
 
 describe("Rechnungsland ändert das Betriebsland nicht", () => {
