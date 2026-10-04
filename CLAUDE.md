@@ -46,7 +46,8 @@ Der Solver ist fremder Code: `plan-generieren` ist eine Supabase Edge Function u
 - Tailwind CSS v4
 - `@supabase/ssr` für Auth — **nicht** `@supabase/auth-helpers-nextjs` (deprecated)
 - Deployment: Vercel
-- Sprache: Deutsch und Englisch, `lang` aus dem Cookie — siehe „Zweisprachigkeit"
+- Sprache: acht Oberflächensprachen (de, en, es, fr, ru, sq, tr, uk), `lang` aus dem
+  Cookie — siehe „Zweisprachigkeit"
 
 ## Datenbank
 
@@ -985,14 +986,24 @@ Index?", nicht „darf ausgeliefert werden?"). Webhook und Cron sind ausgenommen
 
 ## Zweisprachigkeit
 
-Die Seite liefert `de`, `en` und seit 2026-10-04 `sq` (Albanisch, auf Anweisung des
-Nutzers, kein Expo-Gegenstück); Umschalter oben rechts (öffentliche Kopfzeile und
-Dashboard-Topbar). Sprachpakete als getippte Objekte, kein next-intl.
+Die Seite liefert acht Sprachen (`locales` in `src/i18n/config.ts`): `de`, `en`, seit
+2026-10-04 `sq` (Albanisch, kein Expo-Gegenstück) und — am selben Tag, beides auf
+Anweisung des Nutzers — die übrigen Sprachen der Expo-App `es`, `fr`, `ru`, `tr`, `uk`.
+Umschalter oben rechts (öffentliche Kopfzeile und Dashboard-Topbar), seit 2026-10-04 ein
+natives `<select>` mit den Eigennamen (`SPRACH_NAMEN`, nie übersetzt). Sprachpakete als
+getippte Objekte, kein next-intl. **Fachbegriffe der neuen Sprachen kommen aus
+`../QuickTeamMobile/src/i18n/locales/<code>.json`**, Anrede wie dort (es/tr du, fr/ru/uk
+Sie). Russisch/Ukrainisch: Sätze mit Zahl als „Голосов: {n}" gebaut (drei Pluralformen,
+das Wörterbuch kennt zwei).
 
-**Albanisch hat keine Rechtstexte.** Bei `sq` zeigen `/agb`, `/avv`, `/datenschutz` die
-englische Fassung, und `rechtliche_zustimmungen.sprache` erhält `en` — festgehalten wird
-die gelesene Fassung, nicht die Oberfläche (`rechtstextSprache()` in
-`src/lib/rechtstexte.ts`). Stripe Elements und Kundenportal bekommen bei `sq` `auto`.
+**Rechtstexte gibt es nur de/en.** Bei jeder anderen Sprache zeigen `/agb`, `/avv`,
+`/datenschutz` die englische Fassung, und `rechtliche_zustimmungen.sprache` erhält `en` —
+festgehalten wird die gelesene Fassung, nicht die Oberfläche (`rechtstextSprache()` in
+`src/lib/rechtstexte.ts`). Stripe Elements und Kundenportal kennen `sq` und `uk` nicht und
+bekommen `auto` (`stripeSprache()` in `src/lib/stripe-sprache.ts`). Die Überschriftenschrift
+Archivo hat kein Kyrillisch — auf ru/uk greift dort die Ersatzschrift; Inter (Fliesstext)
+liefert Kyrillisch und Latin-Ext mit (`next/font` hostet alle Teilmengen, `subsets` steuert
+nur das Preloading).
 
 - `src/i18n/de.ts` — Leitsprache, `Dictionary = typeof de` **ohne `as const`** (sonst
   müsste `en` wörtlich dieselben Sätze tragen)
@@ -1033,7 +1044,7 @@ speichert den Anzeigetext selbst (`mitarbeiter.vertrag_typ` ist `text` ohne CHEC
 App gibt ihn ungeprüft aus) — bleibt unübersetzt. Web-eigen (kein App-Gegenstück):
 `tausch`, `verfuegbarkeit`, `uebersicht`.
 
-**`?lang=de|en`** geht dem Cookie vor, nur für diese eine GET/HEAD-Anfrage (Middleware →
+**`?lang=<code>`** (jede Sprache aus `locales`) geht dem Cookie vor, nur für diese eine GET/HEAD-Anfrage (Middleware →
 Kopfzeile `x-qt-sprache` → `leseSprache()`, `src/i18n/sprach-parameter.ts`), ohne etwas
 zu speichern — für Links aus dem In-App-Browser der Expo-App. Eine vom Client
 mitgeschickte `x-qt-sprache` wird verworfen.

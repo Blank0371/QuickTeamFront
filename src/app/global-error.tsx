@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { istLocale, type Locale } from "@/i18n/config";
+
 import "./globals.css";
 
 /**
@@ -68,14 +70,54 @@ const TEXTE = {
     erneut: "Provo sërish",
     start: "Shko te kryefaqja",
   },
-} as const;
+  es: {
+    kennzeichen: "Error grave",
+    titel: "No se pudo cargar la página",
+    text: "Algo salió mal de raíz al montar esta página. Recárgala — si el error persiste, ponte en contacto con el soporte e indica la referencia de abajo.",
+    kennung: "Referencia",
+    erneut: "Reintentar",
+    start: "Ir a la página de inicio",
+  },
+  fr: {
+    kennzeichen: "Erreur grave",
+    titel: "La page n'a pas pu être chargée",
+    text: "Une erreur fondamentale s'est produite lors de la construction de cette page. Rechargez-la — si l'erreur persiste, contactez le support en indiquant la référence ci-dessous.",
+    kennung: "Référence",
+    erneut: "Réessayer",
+    start: "Aller à l'accueil",
+  },
+  ru: {
+    kennzeichen: "Критическая ошибка",
+    titel: "Не удалось загрузить страницу",
+    text: "При построении страницы что-то пошло совсем не так. Перезагрузите её — если ошибка повторяется, обратитесь в поддержку и укажите код ниже.",
+    kennung: "Код",
+    erneut: "Повторить",
+    start: "На главную",
+  },
+  tr: {
+    kennzeichen: "Ciddi hata",
+    titel: "Sayfa yüklenemedi",
+    text: "Sayfa oluşturulurken temelden bir şey ters gitti. Sayfayı yenile — hata devam ederse destekle iletişime geç ve aşağıdaki referansı belirt.",
+    kennung: "Referans",
+    erneut: "Tekrar dene",
+    start: "Ana sayfaya git",
+  },
+  uk: {
+    kennzeichen: "Критична помилка",
+    titel: "Не вдалося завантажити сторінку",
+    text: "Під час побудови сторінки щось пішло зовсім не так. Перезавантажте її — якщо помилка повторюється, зверніться до підтримки та вкажіть код нижче.",
+    kennung: "Код",
+    erneut: "Спробувати ще раз",
+    start: "На головну",
+  },
+} satisfies Record<Locale, Record<string, string>>;
 
 type Sprache = keyof typeof TEXTE;
 
 function spracheAusCookie(): Sprache {
-  const treffer = /(?:^|;\s*)qt_sprache=(de|en|sq)(?:;|$)/u.exec(document.cookie);
+  const treffer = /(?:^|;\s*)qt_sprache=([a-z]{2})(?:;|$)/u.exec(document.cookie);
   const wert = treffer?.[1];
-  return wert === "en" || wert === "sq" ? wert : "de";
+  return wert && istLocale(wert) ? wert : "de";
 }
 
 export default function GlobalError({

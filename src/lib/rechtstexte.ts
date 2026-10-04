@@ -97,10 +97,11 @@ export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
  * Die Sprachen, in denen es Rechtstexte gibt — weniger als Oberflächen-
  * sprachen.
  *
- * Seit dem 2026-10-04 ist Albanisch eine Oberflächensprache, aber AGB,
- * AVV und Datenschutzerklärung gibt es nur deutsch (verbindlich) und
- * englisch (Übersetzung); einen albanischen Rechtstext zu erfinden kommt
- * nicht in Frage. Wer Albanisch gewählt hat, liest die englische
+ * Seit dem 2026-10-04 gibt es acht Oberflächensprachen, aber AGB,
+ * AVV und Datenschutzerklärung nur deutsch (verbindlich) und
+ * englisch (Übersetzung); einen Rechtstext in einer weiteren Sprache zu
+ * erfinden kommt nicht in Frage. Wer eine andere Sprache als Deutsch
+ * gewählt hat, liest die englische
  * Fassung — und genau die steht dann auch als `sprache` im
  * Zustimmungsnachweis, denn der hält fest, welche Fassung gelesen wurde,
  * nicht welche Oberfläche eingestellt war.

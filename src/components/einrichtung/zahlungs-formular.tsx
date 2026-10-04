@@ -15,6 +15,7 @@ import type { Dictionary } from "@/i18n/de";
 import type { Locale } from "@/i18n/config";
 import { rechnungSchema } from "@/lib/validierung";
 import { feldFehler } from "@/lib/formular";
+import { stripeSprache } from "@/lib/stripe-sprache";
 
 import {
   rabattAnwenden,
@@ -433,8 +434,7 @@ export function ZahlungsFormular({
   return (
     <Elements
       stripe={stripePromise}
-      // Stripe Elements kennt kein Albanisch; `auto` nimmt die Browsersprache.
-      options={{ clientSecret, appearance: aussehen, locale: locale === "sq" ? "auto" : locale }}
+      options={{ clientSecret, appearance: aussehen, locale: stripeSprache(locale) }}
     >
       <Formular
         zusammenfassung={zusammenfassung}

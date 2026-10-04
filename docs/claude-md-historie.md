@@ -15,6 +15,22 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-04 — Alle Sprachen der Expo-App auf der Website
+
+**Vorher:** die Seite lieferte `de`, `en`, `sq`; Umschalter als Reihe von drei Knöpfen.
+**Jetzt:** zusätzlich `es`, `fr`, `ru`, `tr`, `uk` (Wörterbücher `src/i18n/<code>.ts`, aus
+`en.ts` übersetzt, Fachbegriffe aus `../QuickTeamMobile/src/i18n/locales/<code>.json`).
+Der Umschalter ist ein `<select>` mit den Eigennamen der Sprachen — acht Kürzel hätten
+Kopfzeile und Konto-Blatt auf 375 px gesprengt, und „UK" liest jeder als Grossbritannien;
+die sr-only-Schlüssel `sprachWahl.aktuell/zuDe/zuEn/zuSq` entfallen. Rechtstexte bleiben
+de/en (alle anderen lesen und protokollieren `en`), Stripe bekommt für `sq`/`uk` `auto`
+(`stripeSprache()`), `i18n:pruefen` prüft jede Sprache aus `locales` automatisch.
+**Begründung:** Anweisung des Nutzers („die Sprachen der Mobile-Version sollen alle auf
+die Website"). **Korrektur zum Eintrag darunter:** die App kennt de, en, es, fr, ru, tr,
+uk (`I18nProvider.tsx`, `SUPPORTED`) — `it` und `pt` gibt es dort nicht.
+
+---
+
 ## 2026-10-04 — Albanisch als dritte Oberflächensprache
 
 **Vorher:** die Seite lieferte `de` und `en`; Umschalter mit zwei Knöpfen.

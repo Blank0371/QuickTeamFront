@@ -1070,10 +1070,6 @@ export const en: Dictionary = {
 
   sprachWahl: {
     gruppe: "Language",
-    aktuell: " — current language",
-    zuDe: " — switch to German",
-    zuEn: " — switch to English",
-    zuSq: " — switch to Albanian",
   },
 
   auswahl: {

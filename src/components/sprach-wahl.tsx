@@ -1,9 +1,10 @@
 "use client";
 
+import { Languages } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useId, useTransition } from "react";
 
-import { locales, SPRACH_COOKIE, type Locale } from "@/i18n/config";
+import { locales, SPRACH_COOKIE, SPRACH_NAMEN, istLocale, type Locale } from "@/i18n/config";
 import { useKlientTexte } from "@/i18n/sprach-provider";
 
 /**
@@ -21,17 +22,23 @@ import { useKlientTexte } from "@/i18n/sprach-provider";
  * Genau derselbe Aussetzer, der schon die Darstellungswahl (`ThemaWahl`)
  * betraf.
  *
- * Jetzt setzt der Klick das Cookie **sofort** im Browser (es ist bewusst
+ * Jetzt setzt die Auswahl das Cookie **sofort** im Browser (es ist bewusst
  * nicht `httpOnly`, nur eine Anzeigevorliebe — Begründung an
  * `leseSprache()`) und stösst mit `router.refresh()` ein Neurendern der
  * Server Components an. Die Texte stehen serverseitig, deshalb braucht es
- * den Refresh — anders als beim Thema, das rein per CSS umschaltet. Der
- * Unterschied zum alten Weg: kein `<form>`-Post, der unter der Hand
- * verworfen wird, und die aktive Sprache steht sofort.
+ * den Refresh — anders als beim Thema, das rein per CSS umschaltet.
  *
- * Ein `<select>` bräuchte ohnehin JavaScript; bei drei Sprachen sind drei
- * Knöpfe noch klarer. Die aktive Sprache ist ein gedrückter Knopf ohne
- * Wirkung, die anderen schalten um.
+ * ─────────────────────────────────────────────────────────────────────
+ *  Warum ein `<select>` und keine Knopfreihe mehr
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Bis zum 2026-10-04 stand hier je Sprache ein Knopf („DE EN SQ"). Mit
+ * den Sprachen der Expo-App sind es acht — eine Reihe von acht Kürzeln
+ * sprengt die Kopfzeile neben Anmelden/Registrieren und das Konto-Blatt
+ * auf 375 px, und „UK" liest jeder als Grossbritannien. Ein natives
+ * `<select>` ist schmal, zeigt jede Sprache in ihrem eigenen Namen
+ * (`SPRACH_NAMEN`) und bringt auf dem Handy die Auswahl des Systems mit.
+ * `lang` an jeder Option lässt Vorleser „Русский" russisch aussprechen.
  */
 
 const EIN_JAHR = 60 * 60 * 24 * 365;
@@ -39,44 +46,36 @@ const EIN_JAHR = 60 * 60 * 24 * 365;
 export function SprachWahl({ aktiv }: { aktiv: Locale }) {
   const router = useRouter();
   const [wechselt, starteWechsel] = useTransition();
-  /* sr-only-Texte aus dem Wörterbuch der aktiven Sprache (`sprachWahl`). */
+  const id = useId();
+  /* Beschriftung aus dem Wörterbuch der aktiven Sprache (`sprachWahl`). */
   const { sprachWahl: t } = useKlientTexte();
-  const wechselText: Record<Locale, string> = { de: t.zuDe, en: t.zuEn, sq: t.zuSq };
 
-  function waehlen(ziel: Locale) {
-    if (ziel === aktiv) return;
+  function waehlen(ziel: string) {
+    if (ziel === aktiv || !istLocale(ziel)) return;
     const secure = location.protocol === "https:" ? "; secure" : "";
     document.cookie = `${SPRACH_COOKIE}=${ziel}; path=/; max-age=${EIN_JAHR}; samesite=lax${secure}`;
     starteWechsel(() => router.refresh());
   }
 
   return (
-    <div className="flex items-center gap-0.5" role="group" aria-label={t.gruppe}>
-      {locales.map((locale) => {
-        const ist = locale === aktiv;
-        const beschriftung = locale.toUpperCase();
-
-        return (
-          <button
-            key={locale}
-            type="button"
-            aria-current={ist ? "true" : undefined}
-            aria-pressed={ist}
-            disabled={ist || wechselt}
-            onClick={() => waehlen(locale)}
-            className={
-              ist
-                ? "rounded-blk bg-signal-weak px-2 py-1 text-xs font-semibold text-text"
-                : "rounded-blk px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-surface-sunk hover:text-text disabled:opacity-60"
-            }
-          >
-            {beschriftung}
-            <span className="sr-only">
-              {ist ? t.aktuell : wechselText[locale]}
-            </span>
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-1.5">
+      <label htmlFor={id} className="text-muted">
+        <Languages aria-hidden="true" className="h-4 w-4" />
+        <span className="sr-only">{t.gruppe}</span>
+      </label>
+      <select
+        id={id}
+        value={aktiv}
+        disabled={wechselt}
+        onChange={(e) => waehlen(e.target.value)}
+        className="rounded-blk border border-line-strong bg-surface py-1 pl-2 pr-1 text-xs font-semibold text-text transition-colors hover:bg-surface-sunk disabled:opacity-60"
+      >
+        {locales.map((locale) => (
+          <option key={locale} value={locale} lang={locale}>
+            {SPRACH_NAMEN[locale]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

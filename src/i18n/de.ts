@@ -1152,13 +1152,9 @@ export const de = {
       "Ohne E-Mail-Adresse lässt sich nichts erneut verschicken. Geh zurück zur Registrierung.",
   },
 
-  /* sr-only-Beschriftungen des Sprachumschalters (`SprachWahl`). */
+  /* Beschriftung des Sprachumschalters (`SprachWahl`, nur für Vorleser). */
   sprachWahl: {
     gruppe: "Sprache",
-    aktuell: " — aktuelle Sprache",
-    zuDe: " — auf Deutsch wechseln",
-    zuEn: " — auf Englisch wechseln",
-    zuSq: " — auf Albanisch wechseln",
   },
 
   auswahl: {

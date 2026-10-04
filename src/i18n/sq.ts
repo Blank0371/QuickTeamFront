@@ -984,10 +984,6 @@ export const sq: Dictionary = {
 
   sprachWahl: {
     gruppe: "Gjuha",
-    aktuell: " — gjuha aktuale",
-    zuDe: " — kalo në gjermanisht",
-    zuEn: " — kalo në anglisht",
-    zuSq: " — kalo në shqip",
   },
 
   auswahl: {
