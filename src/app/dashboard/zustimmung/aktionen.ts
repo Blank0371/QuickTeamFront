@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { zustimmungSchema } from "@/lib/validierung";
 import { holeTexte, holeValidierung } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
+import { rechtstextSprache } from "@/lib/rechtstexte";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import { aktuelleZustimmungVersionen, schreibeZustimmungen } from "@/lib/zustimmung";
 
@@ -86,7 +87,7 @@ export async function zustimmen(
     position.betriebId,
     user.id,
     aktuelleZustimmungVersionen(),
-    { sprache: await leseSprache(), hashes: await zustimmungHashes() },
+    { sprache: rechtstextSprache(await leseSprache()), hashes: await zustimmungHashes() },
   );
 
   if (ergebnis.art === "fehler") {

@@ -1158,6 +1158,7 @@ export const de = {
     aktuell: " — aktuelle Sprache",
     zuDe: " — auf Deutsch wechseln",
     zuEn: " — auf Englisch wechseln",
+    zuSq: " — auf Albanisch wechseln",
   },
 
   auswahl: {

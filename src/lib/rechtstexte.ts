@@ -7,6 +7,8 @@
  * Der Zusatz -draft kennzeichnet den noch nicht anwaltlich geprüften Stand.
  */
 
+import type { Locale } from "@/i18n/config";
+
 /** Die Dokumente, denen bei der Registrierung zugestimmt wird. */
 export const ZUSTIMMUNG_DOKUMENTE = ["agb", "avv", "datenschutz"] as const;
 
@@ -92,6 +94,24 @@ export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
 };
 
 /**
+ * Die Sprachen, in denen es Rechtstexte gibt — weniger als Oberflächen-
+ * sprachen.
+ *
+ * Seit dem 2026-10-04 ist Albanisch eine Oberflächensprache, aber AGB,
+ * AVV und Datenschutzerklärung gibt es nur deutsch (verbindlich) und
+ * englisch (Übersetzung); einen albanischen Rechtstext zu erfinden kommt
+ * nicht in Frage. Wer Albanisch gewählt hat, liest die englische
+ * Fassung — und genau die steht dann auch als `sprache` im
+ * Zustimmungsnachweis, denn der hält fest, welche Fassung gelesen wurde,
+ * nicht welche Oberfläche eingestellt war.
+ */
+export type RechtstextSprache = "de" | "en";
+
+export function rechtstextSprache(locale: Locale): RechtstextSprache {
+  return locale === "de" ? "de" : "en";
+}
+
+/**
  * Welche Datei trägt welches Dokument, je Sprache — relativ zu
  * `docs/rechtliches/`.
  *
@@ -107,7 +127,7 @@ export const RECHTSTEXT_VERSIONEN: Record<ZustimmungDokument, string> = {
  */
 export const ZUSTIMMUNG_DATEIEN: Record<
   ZustimmungDokument,
-  { de: string; en: string }
+  Record<RechtstextSprache, string>
 > = {
   agb: { de: "legals/AGB-QuickTeam-de.md", en: "legals/Terms-QuickTeam-en.md" },
   avv: { de: "legals/AVV-QuickTeam-de.md", en: "legals/DPA-QuickTeam-en.md" },

@@ -283,7 +283,7 @@ export default async function SchichtSeite({
  * hier die Zone des Betriebs hin — die Tabelle kennt sie heute nicht.
  */
 function zeitpunkt(iso: string, locale: Locale): string {
-  return new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "de-AT", {
+  return new Date(iso).toLocaleString({ de: "de-AT", en: "en-GB", sq: "sq-AL" }[locale], {
     day: "numeric",
     month: "long",
     hour: "2-digit",

@@ -18,6 +18,7 @@ import {
 import { holeTexte, holeValidierung } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 import { schreibePromoCode } from "@/lib/promo-code";
+import { rechtstextSprache } from "@/lib/rechtstexte";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import {
   schreibeZustimmungen,
@@ -432,7 +433,7 @@ export async function betriebAbschliessen(
       betriebId,
       user.id,
       zustimmungFuerBetrieb(user.user_metadata),
-      { sprache: await leseSprache(), hashes },
+      { sprache: rechtstextSprache(await leseSprache()), hashes },
     );
 
     if (pending.promoCode) {

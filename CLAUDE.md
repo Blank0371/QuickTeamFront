@@ -985,8 +985,14 @@ Index?", nicht „darf ausgeliefert werden?"). Webhook und Cron sind ausgenommen
 
 ## Zweisprachigkeit
 
-Die Seite liefert `de` und `en`; Umschalter oben rechts (öffentliche Kopfzeile und
+Die Seite liefert `de`, `en` und seit 2026-10-04 `sq` (Albanisch, auf Anweisung des
+Nutzers, kein Expo-Gegenstück); Umschalter oben rechts (öffentliche Kopfzeile und
 Dashboard-Topbar). Sprachpakete als getippte Objekte, kein next-intl.
+
+**Albanisch hat keine Rechtstexte.** Bei `sq` zeigen `/agb`, `/avv`, `/datenschutz` die
+englische Fassung, und `rechtliche_zustimmungen.sprache` erhält `en` — festgehalten wird
+die gelesene Fassung, nicht die Oberfläche (`rechtstextSprache()` in
+`src/lib/rechtstexte.ts`). Stripe Elements und Kundenportal bekommen bei `sq` `auto`.
 
 - `src/i18n/de.ts` — Leitsprache, `Dictionary = typeof de` **ohne `as const`** (sonst
   müsste `en` wörtlich dieselben Sätze tragen)

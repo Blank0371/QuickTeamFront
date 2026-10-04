@@ -17,6 +17,7 @@
 import { redirect } from "next/navigation";
 
 import { leseSprache } from "@/i18n/sprache";
+import { rechtstextSprache } from "@/lib/rechtstexte";
 import { zustimmungHashes } from "@/lib/rechtstexte-inhalt";
 import {
   datenschutzSignupVersionen,
@@ -196,7 +197,7 @@ export async function registrieren(
       data: {
         [ZUSTIMMUNG_METADATEN_SCHLUESSEL]: datenschutzSignupVersionen(),
         [ZUSTIMMUNG_NACHWEIS_SCHLUESSEL]: {
-          sprache: await leseSprache(),
+          sprache: rechtstextSprache(await leseSprache()),
           hashes: datenschutzHash ? { datenschutz: datenschutzHash } : {},
         },
       },

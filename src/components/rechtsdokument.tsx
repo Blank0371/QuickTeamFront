@@ -7,7 +7,7 @@ import { Container } from "@/components/container";
 import { MarkdownText } from "@/components/markdown-text";
 import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
-import type { Locale } from "@/i18n";
+import { rechtstextSprache, type RechtstextSprache } from "@/lib/rechtstexte";
 
 /**
  * Ein Rechtstext aus `docs/rechtliches/`, in der aktiven Sprache.
@@ -50,7 +50,7 @@ export async function RechtsDokument({
   hinweis,
 }: {
   /** Dateiname je Sprache, relativ zu `docs/rechtliches/`. */
-  dateien: Record<Locale, string>;
+  dateien: Record<RechtstextSprache, string>;
   /** Überschrift aus dem Wörterbuch. Steht nicht im Dokument, damit `<h1>` uns gehört. */
   titel: string;
   /**
@@ -64,7 +64,9 @@ export async function RechtsDokument({
    */
   hinweis?: ReactNode;
 }) {
-  const sprache = await leseSprache();
+  // Albanisch hat keine eigene Fassung und liest die englische
+  // (`rechtstextSprache()`); `lang` am Textblock sagt das dem Vorleser.
+  const sprache = rechtstextSprache(await leseSprache());
   const t = await holeTexte();
 
   /*
@@ -93,7 +95,7 @@ export async function RechtsDokument({
 
         {hinweis}
 
-        <div className="mt-8">
+        <div className="mt-8" lang={sprache}>
           {quelle === null ? (
             <p className="text-sm leading-relaxed text-stop">{t.rechtliches.nichtAbrufbar}</p>
           ) : (

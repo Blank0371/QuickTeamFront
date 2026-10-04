@@ -1073,6 +1073,7 @@ export const en: Dictionary = {
     aktuell: " — current language",
     zuDe: " — switch to German",
     zuEn: " — switch to English",
+    zuSq: " — switch to Albanian",
   },
 
   auswahl: {

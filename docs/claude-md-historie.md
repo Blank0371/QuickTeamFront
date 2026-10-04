@@ -15,6 +15,20 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-04 — Albanisch als dritte Oberflächensprache
+
+**Vorher:** die Seite lieferte `de` und `en`; Umschalter mit zwei Knöpfen.
+**Jetzt:** zusätzlich `sq` (Albanisch), dritter Knopf „SQ", Wörterbuch `src/i18n/sq.ts`.
+**Begründung:** Anweisung des Nutzers. Neue Produktentscheidung ohne Expo-Gegenstück
+(die App kennt de, en, es, fr, it, pt, ru, tr, uk — kein Albanisch). Rechtstexte gibt es
+weiterhin nur deutsch und englisch; bei `sq` zeigen die Rechtsseiten die englische
+Fassung, und der Zustimmungsnachweis hält `en` als gelesene Sprache fest
+(`rechtstextSprache()`). Stripe Elements und Kundenportal kennen kein Albanisch und
+bekommen `auto`. `betriebs_einstellungen.sprache_standard` (CHECK `de`/`en`) bleibt
+unberührt — das ist die Betriebs-Vorgabe der App, nicht die Oberflächensprache.
+
+---
+
 ## 2026-09-28 — Oberfläche vollständig zweisprachig
 
 **Vorher:** „Offener Rest" — öffentliche Seiten, Stepper, Dashboard-Bereiche und

@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import type { Locale } from "@/i18n/config";
 import type { Rechnungsangaben } from "@/lib/betrieb";
 import { stripeKlient } from "@/lib/stripe-konfiguration";
 import { stelleSteuerstandortSicher } from "@/lib/stripe-rechnung";
@@ -25,12 +26,13 @@ export async function erstelleKundenportal({
 }: {
   kundeId: string;
   rueckkehrUrl: string;
-  sprache: "de" | "en";
+  sprache: Locale;
 }): Promise<string> {
   const sitzung = await stripeKlient().billingPortal.sessions.create({
     customer: kundeId,
     return_url: rueckkehrUrl,
-    locale: sprache,
+    // Das Kundenportal kennt kein Albanisch; `auto` nimmt die Browsersprache.
+    locale: sprache === "sq" ? "auto" : sprache,
   });
   return sitzung.url;
 }

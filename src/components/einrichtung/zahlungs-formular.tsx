@@ -431,7 +431,11 @@ export function ZahlungsFormular({
   }
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret, appearance: aussehen, locale }}>
+    <Elements
+      stripe={stripePromise}
+      // Stripe Elements kennt kein Albanisch; `auto` nimmt die Browsersprache.
+      options={{ clientSecret, appearance: aussehen, locale: locale === "sq" ? "auto" : locale }}
+    >
       <Formular
         zusammenfassung={zusammenfassung}
         knopfText={knopfText}

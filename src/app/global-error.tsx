@@ -60,13 +60,22 @@ const TEXTE = {
     erneut: "Try again",
     start: "Go to home page",
   },
+  sq: {
+    kennzeichen: "Gabim i rëndë",
+    titel: "Faqja nuk u ngarkua dot",
+    text: "Gjatë ndërtimit të faqes diçka shkoi rrënjësisht keq. Ringarko faqen — nëse gabimi vazhdon, kontakto mbështetjen dhe jep referencën më poshtë.",
+    kennung: "Referenca",
+    erneut: "Provo sërish",
+    start: "Shko te kryefaqja",
+  },
 } as const;
 
 type Sprache = keyof typeof TEXTE;
 
 function spracheAusCookie(): Sprache {
-  const treffer = /(?:^|;\s*)qt_sprache=(de|en)(?:;|$)/u.exec(document.cookie);
-  return treffer?.[1] === "en" ? "en" : "de";
+  const treffer = /(?:^|;\s*)qt_sprache=(de|en|sq)(?:;|$)/u.exec(document.cookie);
+  const wert = treffer?.[1];
+  return wert === "en" || wert === "sq" ? wert : "de";
 }
 
 export default function GlobalError({

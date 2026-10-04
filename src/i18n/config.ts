@@ -1,7 +1,9 @@
 /**
  * Verfügbare Sprachen.
  *
- * Seit dem 2026-09-09 sind es zwei. Routen bleiben dabei **ohne
+ * Seit dem 2026-09-09 Deutsch und Englisch, seit dem 2026-10-04 auch
+ * Albanisch (`sq`, auf Anweisung des Nutzers; die Expo-App kennt es
+ * nicht). Routen bleiben dabei **ohne
  * Locale-Präfix** — die Sprache steht in einem Cookie, nicht im Pfad.
  * Die Abwägung dahinter steht an `leseSprache()` in `sprache.ts`.
  *
@@ -10,7 +12,7 @@
  * dastehen.
  */
 
-export const locales = ["de", "en"] as const;
+export const locales = ["de", "en", "sq"] as const;
 
 export type Locale = (typeof locales)[number];
 

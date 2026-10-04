@@ -4,7 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 /**
- * Sprachkontrolle: hält `de.ts` und `en.ts` deckungsgleich und zählt,
+ * Sprachkontrolle: hält `de.ts`, `en.ts` und `sq.ts` deckungsgleich und zählt,
  * wie viel Text noch am Wörterbuch vorbei in der Oberfläche steht.
  *
  * ─────────────────────────────────────────────────────────────────────
@@ -51,6 +51,7 @@ const nurDatei = process.argv.includes("--datei")
 // Unter Windows ist ein absoluter Pfad kein gültiger ESM-Spezifizierer.
 const { de } = await import(pathToFileURL(path.join(wurzel, "src/i18n/de.ts")).href);
 const { en } = await import(pathToFileURL(path.join(wurzel, "src/i18n/en.ts")).href);
+const { sq } = await import(pathToFileURL(path.join(wurzel, "src/i18n/sq.ts")).href);
 
 /** Verschachteltes Objekt zu `pfad.zum.schluessel` → Wert. */
 function flach(objekt, praefix = "") {
@@ -71,6 +72,9 @@ const enFlach = flach(en);
 
 const fehltInEn = [...deFlach.keys()].filter((k) => !enFlach.has(k));
 const fehltInDe = [...enFlach.keys()].filter((k) => !deFlach.has(k));
+const sqFlach = flach(sq);
+const fehltInSq = [...deFlach.keys()].filter((k) => !sqFlach.has(k));
+const zuVielInSq = [...sqFlach.keys()].filter((k) => !deFlach.has(k));
 
 /*
  * Gleicher Wert in beiden Sprachen ist ein Verdacht, kein Fehler: „QuickTeam",
@@ -438,13 +442,17 @@ const G = (s) => `[32m${s}[0m`;
 const grau = (s) => `[90m${s}[0m`;
 const kurz = (text) => (text.length > 72 ? `${text.slice(0, 69)}…` : text);
 
-const zeilen = ["", `  Sprachkontrolle  ${grau(`${deFlach.size} Schlüssel · de/en`)}`, ""];
+const zeilen = ["", `  Sprachkontrolle  ${grau(`${deFlach.size} Schlüssel · de/en/sq`)}`, ""];
 
-if (fehltInEn.length === 0 && fehltInDe.length === 0) {
+const schluesselFehler = [fehltInEn, fehltInDe, fehltInSq, zuVielInSq].some((l) => l.length > 0);
+
+if (!schluesselFehler) {
   zeilen.push(`  ${G("✓")} Schlüssel deckungsgleich`);
 } else {
   for (const k of fehltInEn) zeilen.push(`  ${F("✗")} fehlt in en.ts   ${k}`);
   for (const k of fehltInDe) zeilen.push(`  ${F("✗")} fehlt in de.ts   ${k}`);
+  for (const k of fehltInSq) zeilen.push(`  ${F("✗")} fehlt in sq.ts   ${k}`);
+  for (const k of zuVielInSq) zeilen.push(`  ${F("✗")} fehlt in de.ts   ${k} (nur in sq.ts)`);
 }
 
 if (unuebersetzt.length > 0) {
@@ -496,4 +504,4 @@ if (gewachsen.length === 0) {
 zeilen.push("");
 console.log(zeilen.join("\n"));
 
-process.exit(fehltInEn.length > 0 || fehltInDe.length > 0 || gewachsen.length > 0 ? 1 : 0);
+process.exit(schluesselFehler || gewachsen.length > 0 ? 1 : 0);

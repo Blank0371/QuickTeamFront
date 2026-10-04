@@ -29,9 +29,9 @@ import { useKlientTexte } from "@/i18n/sprach-provider";
  * Unterschied zum alten Weg: kein `<form>`-Post, der unter der Hand
  * verworfen wird, und die aktive Sprache steht sofort.
  *
- * Ein `<select>` bräuchte ohnehin JavaScript; bei zwei Sprachen sind zwei
- * Knöpfe klarer. Die aktive Sprache ist ein gedrückter Knopf ohne
- * Wirkung, die andere schaltet um.
+ * Ein `<select>` bräuchte ohnehin JavaScript; bei drei Sprachen sind drei
+ * Knöpfe noch klarer. Die aktive Sprache ist ein gedrückter Knopf ohne
+ * Wirkung, die anderen schalten um.
  */
 
 const EIN_JAHR = 60 * 60 * 24 * 365;
@@ -41,6 +41,7 @@ export function SprachWahl({ aktiv }: { aktiv: Locale }) {
   const [wechselt, starteWechsel] = useTransition();
   /* sr-only-Texte aus dem Wörterbuch der aktiven Sprache (`sprachWahl`). */
   const { sprachWahl: t } = useKlientTexte();
+  const wechselText: Record<Locale, string> = { de: t.zuDe, en: t.zuEn, sq: t.zuSq };
 
   function waehlen(ziel: Locale) {
     if (ziel === aktiv) return;
@@ -71,7 +72,7 @@ export function SprachWahl({ aktiv }: { aktiv: Locale }) {
           >
             {beschriftung}
             <span className="sr-only">
-              {ist ? t.aktuell : locale === "en" ? t.zuEn : t.zuDe}
+              {ist ? t.aktuell : wechselText[locale]}
             </span>
           </button>
         );
