@@ -5,18 +5,24 @@ let lesenFehler = false;
 let geschrieben = false;
 let vorhanden = true;
 let weitereTage = false;
-const antrag = { id: "u", mitarbeiter_id: "m", von: "2026-12-31", bis: "2027-01-01" };
+let vorabZeilen: { mitarbeiter_id: string; jahr: number; tage: number }[] = [];
+let vorabFehler = false;
+let antrag = { id: "u", mitarbeiter_id: "m", von: "2026-12-31", bis: "2027-01-01" };
 const client = { from: (tabelle: string) => {
   let spalten = "";
   let aenderung = false;
   const query = {
     select: (s: string) => { spalten = s; return query; },
     eq: () => query,
+    in: () => query,
     update: () => { aenderung = true; geschrieben = true; return query; },
     single: async () => tabelle === "mitarbeiter"
       ? { data: lesenFehler ? null : { urlaubsanspruch_tage: 1 }, error: lesenFehler ? { message: "unavailable" } : null }
       : { data: antrag, error: null },
-    then: (resolve: (value: unknown) => unknown) => resolve({
+    then: (resolve: (value: unknown) => unknown) => resolve(tabelle === "urlaub_vorab" ? {
+      data: vorabFehler ? null : vorabZeilen,
+      error: vorabFehler ? { message: "unavailable" } : null,
+    } : {
       data: aenderung ? (vorhanden ? [{ id: "u" }] : []) :
         spalten.includes("status") && weitereTage ? [{ id: "alt", mitarbeiter_id: "m", von: "2027-02-01", bis: "2027-02-01", status: "approved" }] : [],
       error: null,
@@ -30,7 +36,11 @@ mock.module("@/i18n/server", { namedExports: { holeTexte: async () => de, holeVa
 const { entscheiden } = await import("./aktionen");
 const vorher = { status: "leer" as const, nachricht: null, felder: {} };
 function formular(status = "approved") { const f = new FormData(); f.set("urlaub_id", "u"); f.set("status", status); return f; }
-beforeEach(() => { lesenFehler = false; geschrieben = false; vorhanden = true; weitereTage = false; });
+beforeEach(() => {
+  lesenFehler = false; geschrieben = false; vorhanden = true; weitereTage = false;
+  vorabZeilen = []; vorabFehler = false;
+  antrag = { id: "u", mitarbeiter_id: "m", von: "2026-12-31", bis: "2027-01-01" };
+});
 test("Jahreswechsel verteilt den Antrag auf beide Jahreskontingente", async () => {
   assert.equal((await entscheiden(vorher, formular())).status, "erfolg");
   assert.equal(geschrieben, true);
@@ -48,4 +58,20 @@ test("Lesefehler ist kein freies Kontingent", async () => {
 test("Zwischenzeitlich entfernter Antrag meldet keinen falschen Erfolg", async () => {
   vorhanden = false;
   assert.equal((await entscheiden(vorher, formular("denied"))).status, "fehler");
+});
+test("Vorab-Tage belegen das Kontingent ihres Jahres", async () => {
+  antrag = { id: "u", mitarbeiter_id: "m", von: "2026-06-01", bis: "2026-06-01" };
+  vorabZeilen = [{ mitarbeiter_id: "m", jahr: 2026, tage: 1 }];
+  assert.match((await entscheiden(vorher, formular())).nachricht ?? "", /2026/);
+  assert.equal(geschrieben, false);
+});
+test("Vorab-Tage eines anderen Jahres belegen nichts", async () => {
+  antrag = { id: "u", mitarbeiter_id: "m", von: "2026-06-01", bis: "2026-06-01" };
+  vorabZeilen = [{ mitarbeiter_id: "m", jahr: 2025, tage: 1 }];
+  assert.equal((await entscheiden(vorher, formular())).status, "erfolg");
+});
+test("Nicht lesbare Vorab-Tage sind kein freies Kontingent", async () => {
+  vorabFehler = true;
+  assert.equal((await entscheiden(vorher, formular())).status, "fehler");
+  assert.equal(geschrieben, false);
 });

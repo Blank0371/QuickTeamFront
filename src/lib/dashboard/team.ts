@@ -1,3 +1,5 @@
+import { holeErfassteTage, holeVorab, vorabFuer } from "@/lib/dashboard/urlaub";
+import { jahrImBetrieb } from "@/lib/datum";
 import type { createClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -62,6 +64,13 @@ export type Anstellung = {
   toleranzUeberstunden: number;
   ueberstundenSaldo: number;
   urlaubsanspruchTage: number;
+  /**
+   * Genommener Urlaub im laufenden Jahr, **gesamt**: `urlaub_vorab` +
+   * offene + genehmigte Anträge (`genommeneTage()`). `null`, wenn eine der
+   * Quellen nicht lesbar war — dann wird das Feld nicht angeboten, statt
+   * eine zu kleine Zahl zum Überschreiben vorzulegen.
+   */
+  urlaubGenommenTage: number | null;
 };
 
 export type Rolle = { id: string; name: string; aktiv: boolean };
@@ -82,7 +91,8 @@ export async function holeTeam(
   supabase: SupabaseServerClient,
   betriebId: string,
 ): Promise<TeamMitglied[]> {
-  const [leute, verknuepfungen] = await Promise.all([
+  const jahr = jahrImBetrieb();
+  const [leute, verknuepfungen, erfasst, vorab] = await Promise.all([
     supabase
       .from("mitarbeiter")
       /*
@@ -100,6 +110,8 @@ export async function holeTeam(
       .from("mitarbeiter_rollen")
       .select("mitarbeiter_id, rolle_id")
       .eq("betrieb_id", betriebId),
+    holeErfassteTage(supabase, betriebId, jahr),
+    holeVorab(supabase, betriebId, [jahr]),
   ]);
 
   if (leute.error) {
@@ -139,6 +151,8 @@ export async function holeTeam(
       toleranzUeberstunden: Number(person.toleranz_ueberstunden ?? 0),
       ueberstundenSaldo: Number(person.ueberstunden_saldo ?? 0),
       urlaubsanspruchTage: Number(person.urlaubsanspruch_tage ?? 25),
+      urlaubGenommenTage:
+        erfasst && vorab ? vorabFuer(vorab, person.id, jahr) + (erfasst.get(person.id) ?? 0) : null,
     },
   }));
 }

@@ -36,6 +36,11 @@ export function heuteImBetrieb(jetzt: Date = new Date()): string {
   }).format(jetzt);
 }
 
+/** Das laufende Kalenderjahr in Betriebszeit — am 1. Januar ab 0 Uhr Wien, nicht ab 1 Uhr. */
+export function jahrImBetrieb(jetzt: Date = new Date()): number {
+  return Number(heuteImBetrieb(jetzt).slice(0, 4));
+}
+
 /** Kalendertage addieren, in UTC gerechnet — kein Sommerzeit-Versatz. */
 export function tagPlus(datum: string, tage: number): string {
   const [jahr, monat, tag] = datum.split("-").map(Number);

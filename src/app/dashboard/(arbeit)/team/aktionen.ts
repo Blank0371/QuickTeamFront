@@ -9,7 +9,9 @@ import {
   SETZBARE_STATUS,
   speichereAnstellung,
 } from "@/lib/dashboard/team";
+import { holeErfassteTage, speichereVorab, vorabAusGesamt } from "@/lib/dashboard/urlaub";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
+import { jahrImBetrieb } from "@/lib/datum";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { entferneMitglied, entferneRolle, holeEingeladene, schonEingeladen } from "@/lib/team";
 import { holeTexte, holeValidierung } from "@/i18n/server";
@@ -19,6 +21,7 @@ import {
   einladungSchema,
   monatsstundenAusWoche,
   rollenNameSchema,
+  urlaubVorabSchema,
 } from "@/lib/validierung";
 
 /**
@@ -233,6 +236,17 @@ function anstellungAus(formData: FormData, texte: Textblock):
   return { ok: true, daten: geprueft.data };
 }
 
+/** Das Feld „schon genommen" — getrennt, weil es in `urlaub_vorab` landet. */
+function urlaubVorabAus(formData: FormData, texte: Textblock):
+  | { ok: true; tage: number }
+  | { ok: false; felder: Record<string, string> } {
+  const geprueft = urlaubVorabSchema.safeParse({
+    urlaub_vorab_tage: String(formData.get("urlaub_vorab_tage") ?? ""),
+  });
+  if (!geprueft.success) return { ok: false, felder: feldFehler(geprueft.error, texte) };
+  return { ok: true, tage: geprueft.data.urlaub_vorab_tage };
+}
+
 /**
  * Speichert die Anstellungsdaten einer bestehenden Person — alle fünf
  * Felder auf einen Knopf, wie die Betriebseinstellungen.
@@ -253,12 +267,23 @@ export async function anstellungSpeichern(
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
   if (!mitarbeiterId) return fehler(t.niemand);
 
-  const gelesen = anstellungAus(formData, await holeValidierung());
-  if (!gelesen.ok) {
+  const validierung = await holeValidierung();
+  const gelesen = anstellungAus(formData, validierung);
+  /*
+   * Das Feld fehlt, wenn `holeTeam()` die Summe nicht lesen konnte — dann
+   * bleibt `urlaub_vorab` unberührt.
+   */
+  const mitVorab = formData.has("urlaub_vorab_tage");
+  const vorabGelesen = mitVorab ? urlaubVorabAus(formData, validierung) : null;
+  if (!gelesen.ok || (vorabGelesen && !vorabGelesen.ok)) {
+    const felder = {
+      ...(gelesen.ok ? {} : gelesen.felder),
+      ...(vorabGelesen && !vorabGelesen.ok ? vorabGelesen.felder : {}),
+    };
     return {
       status: "fehler",
-      nachricht: Object.values(gelesen.felder)[0] ?? t.eingabenFalsch,
-      felder: gelesen.felder,
+      nachricht: Object.values(felder)[0] ?? t.eingabenFalsch,
+      felder,
       /*
        * Die ID reist zurück, damit die Oberfläche weiss, **welche** der
        * aufgeklappten Personen die Meldung betrifft — alle Zeilen teilen
@@ -267,6 +292,37 @@ export async function anstellungSpeichern(
        */
       werte: { mitarbeiter_id: mitarbeiterId },
     };
+  }
+
+  /*
+   * Das Feld trägt den **gesamten** genommenen Urlaub dieses Jahres;
+   * nach `urlaub_vorab` geht nur, was nicht schon als offener oder
+   * genehmigter Antrag erfasst ist (`vorabAusGesamt()`). Geprüft wird vor
+   * dem ersten Schreiben, damit eine zu kleine Zahl nichts halb speichert.
+   */
+  const jahr = jahrImBetrieb();
+  let vorab: number | null = null;
+  if (vorabGelesen?.ok) {
+    const erfasst = await holeErfassteTage(supabase, betriebId, jahr, mitarbeiterId);
+    if (!erfasst) {
+      return {
+        status: "fehler",
+        nachricht: t.urlaubGenommenUnlesbar,
+        felder: {},
+        werte: { mitarbeiter_id: mitarbeiterId },
+      };
+    }
+    const umgerechnet = vorabAusGesamt(vorabGelesen.tage, erfasst.get(mitarbeiterId) ?? 0);
+    if (!umgerechnet.ok) {
+      const nachricht = fuelle(t.urlaubGenommenMindestens, { n: umgerechnet.mindestens });
+      return {
+        status: "fehler",
+        nachricht,
+        felder: { urlaub_vorab_tage: nachricht },
+        werte: { mitarbeiter_id: mitarbeiterId },
+      };
+    }
+    vorab = umgerechnet.vorab;
   }
 
   const ergebnis = await speichereAnstellung(
@@ -280,6 +336,15 @@ export async function anstellungSpeichern(
     return {
       status: "fehler",
       nachricht: ergebnis.grund === "rls" ? t.rlsFehler : t.anstellungFehler,
+      felder: {},
+      werte: { mitarbeiter_id: mitarbeiterId },
+    };
+  }
+
+  if (vorab !== null && !(await speichereVorab(supabase, betriebId, mitarbeiterId, jahr, vorab))) {
+    return {
+      status: "fehler",
+      nachricht: t.urlaubGenommenFehler,
       felder: {},
       werte: { mitarbeiter_id: mitarbeiterId },
     };
@@ -331,12 +396,14 @@ export async function mitarbeiterEinladen(
    * die Doppelprüfung von `schonEingeladen()`. Alle fünf Felder sind
    * optional; leer bedeutet den Spalten-Default.
    */
-  const anstellung = anstellungAus(formData, await holeValidierung());
-  if (!anstellung.ok) {
+  const validierung = await holeValidierung();
+  const anstellung = anstellungAus(formData, validierung);
+  const vorab = urlaubVorabAus(formData, validierung);
+  if (!anstellung.ok || !vorab.ok) {
     return {
       status: "fehler",
       nachricht: null,
-      felder: anstellung.felder,
+      felder: { ...(anstellung.ok ? {} : anstellung.felder), ...(vorab.ok ? {} : vorab.felder) },
       werte: roh,
     };
   }
@@ -403,6 +470,17 @@ export async function mitarbeiterEinladen(
       console.error(`[dashboard/team] einladen/rollen: ${zuweisungFehler.message}`);
       return fehler(t.rollenZuweisungFehler);
     }
+  }
+
+  /*
+   * Eine neue Person hat noch keine Anträge — der eingetragene Wert ist
+   * vollständig Vorab. Zweiter Schreibvorgang nach dem Insert: scheitert
+   * er, ist die Person trotzdem eingeladen, und die Meldung sagt, wo der
+   * Wert nachzutragen ist.
+   */
+  if (vorab.tage > 0 && !(await speichereVorab(supabase, betriebId, angelegt.id, jahrImBetrieb(), vorab.tage))) {
+    revalidatePath(PFAD);
+    return fehler(t.urlaubVorabEinladungFehler);
   }
 
   revalidatePath(PFAD);

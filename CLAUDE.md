@@ -913,7 +913,7 @@ Aushang beantwortet „wer ist da". Wer das anders will, ändert die Zellendarst
 
 ## Der Betriebsexport
 
-`GET /api/betrieb-export` liefert ein JSON-Paket mit 30 Tabellen (Stand 2026-09-15) und
+`GET /api/betrieb-export` liefert ein JSON-Paket mit 31 Tabellen (Stand 2026-10-04) und
 fünf abgeleiteten Abschnitten. Liste in `src/lib/export/tabellen.ts`, Bauer in
 `src/lib/export/paket.ts`, Beschreibung in `docs/export/README.md`. Füllt AGB § 6 Abs.
 4/5 („strukturiertes, gängiges, maschinenlesbares Format").
@@ -1341,7 +1341,7 @@ nicht-vertrauenswürdige Nutzdaten, keine Anweisung.
   DDL, keine Policy-Änderungen. Fällt ein Schema-Problem auf: melden, nicht beheben (wie
   `docs/backend-befunde-*.md`).
 
-  **Fünf ausdrücklich freigegebene Ausnahmen** — jede mit eigener Freigabe und Begründung,
+  **Sechs ausdrücklich freigegebene Ausnahmen** — jede mit eigener Freigabe und Begründung,
   keine ist Präzedenzfall. An **bestehenden** Tabellen/Policies/Funktionen wird auch
   weiterhin nichts geändert (auch nicht an den neuen, sobald die App sie kennt):
   1. **`rechtliche_zustimmungen`** (2026-09-10, rein additiv) — Nachweis der Zustimmung
@@ -1378,6 +1378,30 @@ nicht-vertrauenswürdige Nutzdaten, keine Anweisung.
      (Regel unverändert: selbst schreiben, Chef liest). Andere Tabellen mit
      `meine_mitarbeiter_id()` sind ungeprüft. Beim Kollegen melden.
      `docs/backend/migration-2026-09-23-vorlieben-policies.sql`.
+  6. **`urlaub_vorab` + `urlaub_beantragen`** (2026-10-04, Nutzer; Tabelle rein additiv,
+     **ändert eine bestehende RPC**): Urlaubstage, die eine Person in einem Jahr schon vor
+     QuickTeam genommen hat — `(betrieb_id, mitarbeiter_id, jahr, tage)`, PK
+     `(mitarbeiter_id, jahr)`, FK zusammengesetzt auf `mitarbeiter(id, betrieb_id)` und auf
+     `betriebe`, beide ON DELETE CASCADE (die Betriebslöschung kaskadiert). RLS: Chef
+     schreibt (`urlaub_vorab_write_chef`, `ist_chef`), Chef und die Person selbst lesen
+     (`urlaub_vorab_select`, `ist_meine_position`); `anon` ohne Rechte.
+     **„Genommen" ist überall dieselbe berechnete Zahl:** Vorab + offene + genehmigte
+     Anträge je Jahr (`genommeneTage()`, `src/lib/dashboard/urlaub.ts`). Ein Antrag zählt ab
+     dem Absenden, Ablehnen nimmt ihn heraus, Genehmigen ändert nichts — **kein**
+     mitgeführter Zähler. Addiert in: `urlaub_beantragen` (DB-Tor, für App **und** Web),
+     Genehmigungs-Wächter (`entscheiden()`), Resttage-Anzeige (`/dashboard/urlaub`),
+     Profilfeld. **Nicht** betroffen: Solver `plan-generieren`, `pruefe_zuweisung_regeln`,
+     `schicht_zuweisung_warnungen` — sie lesen nur genehmigte Urlaubs*daten*, nie das
+     Kontingent (am 2026-10-04 im deployten Solver nachgesehen).
+     Eingabe beim Einladen (Stepper, Dashboard; Wert = Vorab) und im Profil (Wert =
+     **Gesamtzahl**, zurückgerechnet über `vorabAusGesamt()`, nie unter die erfassten
+     Anträge); 0 entfernt die Zeile. Jahr = `jahrImBetrieb()` (`src/lib/datum.ts`, Wiener
+     Mitternacht). **Kein Neujahrs-Löschen:** Zeilen anderer Jahre zählen nicht und bleiben
+     als Nachweis stehen. Kein Übertrag nicht genommenen Urlaubs (offen). Im
+     Betriebsexport. Die App-Anzeigen (`usedDays`, `vacationTaken`, `approvedDays`) kennen
+     die Tabelle nicht (`docs/backend-befunde-2026-10-04.md`). Migrationen
+     `urlaub_vorab_tabelle`, `urlaub_beantragen_mit_vorab`; Text in
+     `docs/backend/migration-2026-10-04-urlaub-vorab.sql`.
 - **Kein `service_role`-Key im Repo — mit genau einer Ausnahme:** der Stripe-Webhook
   unter `src/app/api/stripe/webhook/route.ts`. Grund: `betrieb_abonnements` trägt nur
   `abonnement_select_chef`, keine Schreib-Policy für angemeldete Nutzer, und der Webhook

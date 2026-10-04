@@ -15,6 +15,37 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-04 — Vor QuickTeam genommener Urlaub (sechste Schema-Ausnahme)
+
+**Vorher:** Verbrauchter Urlaub war ausschliesslich die Summe der `urlaub`-Zeilen im
+laufenden Jahr (wie `approvedDays`/`usedDays` in der App). Wer mitten im Jahr umstellte,
+konnte schon genommenen Urlaub nur über einen gekürzten `urlaubsanspruch_tage` abbilden.
+
+**Jetzt:** Tabelle `urlaub_vorab` (eine Zeile je Person und Jahr); „genommen" = Vorab +
+offene + genehmigte Anträge, überall berechnet, auch in `urlaub_beantragen`. Stand und
+Einzelheiten in `CLAUDE.md`, Ausnahme 6.
+
+**Wie es dazu kam (alles am selben Tag, auf Anweisung des Nutzers):**
+
+1. Zuerst eine Spalte `mitarbeiter.urlaub_bereits_genommen_tage` (verworfen: gekürzter
+   Anspruch — verliert den echten Wert; erfundene `urlaub`-Zeile — stünde im Kalender).
+2. Anträge sollen in „genommen" eingehen (ab Absenden, Ablehnen nimmt heraus, Genehmigen
+   ändert nichts). Verworfen: ein per Trigger mitgeführter Zähler — hätte den
+   Spaltenschutz umgehen müssen, läuft auseinander, und die App ändert Anträge ohne ihn
+   zu kennen. Gewählt: **berechnete** Summe.
+3. Bezugsjahr `urlaub_bereits_genommen_jahr`, damit der Wert am 1. Januar verfällt statt
+   von Hand zurückgesetzt zu werden.
+4. Statt der zwei Spalten eine **eigene Tabelle** (Vorschlag des Nutzers): `mitarbeiter`
+   bleibt unberührt, eigene RLS, mehrere Jahre, Platz für einen späteren Übertrag. Die
+   Spalten wurden in die Tabelle übernommen (ein Wert) und entfernt. Aus dem Vorschlag
+   abgewichen, mit Zustimmung: **Tage statt Stunden** (alles andere rechnet in
+   Kalendertagen) und **kein Löschen zum Jahreswechsel** (das Jahr in der Zeile genügt;
+   Löschen bräuchte einen Job und vernichtete den Nachweis). Zugleich `urlaub_beantragen`
+   um den Vorab-Wert ergänzt — damit prüft die DB auch Anträge aus der App, und die
+   Web-eigene Vorprüfung aus Schritt 2 entfiel.
+
+---
+
 ## 2026-10-04 — Albanisch als dritte Oberflächensprache
 
 **Vorher:** die Seite lieferte `de` und `en`; Umschalter mit zwei Knöpfen.

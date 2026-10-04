@@ -143,6 +143,28 @@ export function AnstellungsFelder({
         fehler={fehler["urlaubsanspruch_tage"]}
         hinweis={t.urlaubHinweis}
       />
+
+      {/*
+        Beim Einladen der Vorab-Wert, im Profil die **Gesamtzahl**
+        (`urlaub_vorab` + offene und genehmigte Anträge) — zurückgerechnet
+        in `anstellungSpeichern()`. War eine Quelle nicht lesbar (`null`),
+        fehlt das Feld: eine zu kleine Zahl zum Überschreiben vorzulegen
+        hiesse, den Vorab-Wert zu verfälschen.
+      */}
+      {werte?.urlaubGenommenTage === null ? null : (
+        <TextFeld
+          id={`${idPraefix}urlaub_vorab_tage`}
+          name="urlaub_vorab_tage"
+          type="number"
+          label={t.urlaubGenommen}
+          required={false}
+          min={0}
+          step={1}
+          defaultValue={String(werte?.urlaubGenommenTage ?? 0)}
+          fehler={fehler["urlaub_vorab_tage"]}
+          hinweis={t.urlaubGenommenHinweis}
+        />
+      )}
     </div>
   );
 }

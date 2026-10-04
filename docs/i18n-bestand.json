@@ -9,7 +9,7 @@
   "src/lib/dashboard/position.ts": 1,
   "src/lib/datum.ts": 2,
   "src/lib/export/paket.ts": 6,
-  "src/lib/export/tabellen.ts": 46,
+  "src/lib/export/tabellen.ts": 47,
   "src/lib/formular.ts": 3,
   "src/lib/konto-loeschung.ts": 1,
   "src/lib/stripe-konfiguration.ts": 1,

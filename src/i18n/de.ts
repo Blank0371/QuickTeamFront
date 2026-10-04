@@ -966,6 +966,8 @@ export const de = {
         einladungFehler: "Die Einladung liess sich nicht anlegen. Versuch es noch einmal.",
         rollenZuweisungFehler:
           "Die Person ist angelegt, aber die Rollen konnten nicht zugewiesen werden. Setz sie unten in der Liste.",
+        urlaubVorabFehler:
+          "Die Person ist eingeladen, aber die schon genommenen Urlaubstage liessen sich nicht speichern. Bitte im Dashboard unter Team nachtragen.",
         niemand: "Es wurde niemand angegeben.",
         entfernenFehler: "Die Einladung liess sich nicht entfernen. Versuch es noch einmal.",
         unvollstaendig: "Angaben unvollständig.",
@@ -1004,6 +1006,9 @@ export const de = {
       urlaubstage: "Urlaubsanspruch (Tage pro Jahr)",
       urlaubstageHinweis:
         "Gezählt werden Kalendertage, nicht Arbeitstage — Wochenenden zählen mit.",
+      urlaubGenommen: "Schon genommen (Tage, dieses Jahr)",
+      urlaubGenommenHinweis:
+        "Urlaub, den die Person dieses Jahr schon hatte. Wird vom Anspruch abgezogen; spätere Anträge in QuickTeam zählen automatisch dazu.",
       einladen: "Einladen",
       niemand: "Noch niemand eingeladen.",
       einladungOffen: " · Einladung offen",
@@ -1392,7 +1397,18 @@ export const de = {
     urlaub: "Urlaubsanspruch (Tage pro Jahr)",
     urlaubHinweis:
       "Gezählt werden Kalendertage, nicht Arbeitstage — Wochenenden zählen mit. Offene Anträge belegen das Kontingent bereits.",
+    urlaubGenommen: "Schon genommen (Tage, dieses Jahr)",
+    urlaubGenommenHinweis:
+      "Gesamt für das laufende Jahr. Anträge in QuickTeam zählen ab dem Absenden automatisch dazu, abgelehnte fallen wieder heraus.",
     /* Server Actions */
+    /* {n} = Zahl. */
+    urlaubGenommenMindestens:
+      "Mindestens {n} — so viele Tage sind in QuickTeam schon beantragt oder genehmigt. Weniger geht nur, indem Anträge abgelehnt werden.",
+    urlaubGenommenUnlesbar: "Die Urlaubsanträge liessen sich nicht lesen. Versuch es noch einmal.",
+    urlaubGenommenFehler:
+      "Die Anstellungsdaten sind gespeichert, die schon genommenen Urlaubstage nicht. Versuch es noch einmal.",
+    urlaubVorabEinladungFehler:
+      "Die Person ist eingeladen, aber die schon genommenen Urlaubstage liessen sich nicht speichern. Bitte im Profil nachtragen.",
     nurChef: "Nur die Betriebsleitung darf das Team verwalten.",
     rollennameFalsch: "Der Rollenname passt nicht.",
     /* {name} = Rollenname. */
