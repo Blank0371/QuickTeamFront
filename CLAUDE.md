@@ -46,7 +46,7 @@ Der Solver ist fremder Code: `plan-generieren` ist eine Supabase Edge Function u
 - Tailwind CSS v4
 - `@supabase/ssr` für Auth — **nicht** `@supabase/auth-helpers-nextjs` (deprecated)
 - Deployment: Vercel
-- Sprache: acht Oberflächensprachen (de, en, es, fr, ru, sq, tr, uk), `lang` aus dem
+- Sprache: zehn Oberflächensprachen (de, en, es, fr, it, pt, ru, sq, tr, uk), `lang` aus dem
   Cookie — siehe „Zweisprachigkeit"
 
 ## Datenbank
@@ -986,14 +986,15 @@ Index?", nicht „darf ausgeliefert werden?"). Webhook und Cron sind ausgenommen
 
 ## Zweisprachigkeit
 
-Die Seite liefert acht Sprachen (`locales` in `src/i18n/config.ts`): `de`, `en`, seit
-2026-10-04 `sq` (Albanisch, kein Expo-Gegenstück) und — am selben Tag, beides auf
-Anweisung des Nutzers — die übrigen Sprachen der Expo-App `es`, `fr`, `ru`, `tr`, `uk`.
+Die Seite liefert zehn Sprachen (`locales` in `src/i18n/config.ts`): `de`, `en`, seit
+2026-10-04 `sq` (Albanisch, kein Expo-Gegenstück) und — auf Anweisung des Nutzers — alle
+übrigen Sprachen der Expo-App (`SUPPORTED` in `I18nProvider.tsx`): `es`, `fr`, `ru`, `tr`,
+`uk` seit 2026-10-04, `it`, `pt` seit 2026-10-05.
 Umschalter oben rechts (öffentliche Kopfzeile und Dashboard-Topbar), seit 2026-10-04 ein
 natives `<select>` mit den Eigennamen (`SPRACH_NAMEN`, nie übersetzt). Sprachpakete als
 getippte Objekte, kein next-intl. **Fachbegriffe der neuen Sprachen kommen aus
-`../QuickTeamMobile/src/i18n/locales/<code>.json`**, Anrede wie dort (es/tr du, fr/ru/uk
-Sie). Russisch/Ukrainisch: Sätze mit Zahl als „Голосов: {n}" gebaut (drei Pluralformen,
+`../QuickTeamMobile/src/i18n/locales/<code>.json`**, Anrede wie dort (es/it/tr du,
+fr/pt/ru/uk Sie; Portugiesisch europäisch wie die App). Russisch/Ukrainisch: Sätze mit Zahl als „Голосов: {n}" gebaut (drei Pluralformen,
 das Wörterbuch kennt zwei).
 
 **Rechtstexte gibt es nur de/en.** Bei jeder anderen Sprache zeigen `/agb`, `/avv`,
@@ -1052,8 +1053,8 @@ mitgeschickte `x-qt-sprache` wird verworfen.
 **Stand 2026-09-28: die Oberfläche ist vollständig zweisprachig** — öffentliche Seiten,
 Auth, Stepper, alle Dashboard-Bereiche, Metadaten (`generateMetadata`) und die
 `nachricht`-Sätze der Server Actions. **Bewusst einsprachig** (steht im Bestand, s. u.):
-Registerangaben im Impressum, `VERTRAG_TYPEN`, `global-error.tsx` (zweisprachig in einer
-Fassung, weil dort kein Wörterbuch lädt), das OG-Bild (Crawler schicken kein
+Registerangaben im Impressum, `VERTRAG_TYPEN`, `global-error.tsx` (eigene kurze Texte je
+Sprache inline, weil dort kein Wörterbuch lädt), das OG-Bild (Crawler schicken kein
 Sprach-Cookie), Protokoll-/Konfigurationsmeldungen, Webhook-/Cron-Antworten,
 DB-Fehlermuster und das **JSON-Paket des Betriebsexports** (`lib/export/`, festes Format,
 von `paket.test.ts` geprüft — ob es übersetzt wird, ist offen beim Nutzer). Noch zu

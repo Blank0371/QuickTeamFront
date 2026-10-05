@@ -1187,7 +1187,7 @@ export const es: Dictionary = {
       "Al menos {n}: son los días ya solicitados o aprobados en QuickTeam. Solo se puede bajar rechazando solicitudes.",
     urlaubGenommenUnlesbar: "No se pudieron leer las solicitudes de vacaciones. Inténtalo de nuevo.",
     urlaubGenommenFehler:
-      "Los datos del empleo se han guardado, pero los días de vacaciones ya disfrutados no. Inténtalo de nuevo.",
+      "Los datos del contrato se han guardado, pero los días de vacaciones ya disfrutados no. Inténtalo de nuevo.",
     urlaubVorabEinladungFehler:
       "La persona está invitada, pero no se pudieron guardar los días de vacaciones ya disfrutados. Añádelos en su perfil.",
     nurChef: "Solo la dirección puede gestionar el equipo.",

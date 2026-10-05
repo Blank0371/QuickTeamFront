@@ -3,12 +3,14 @@ import { de, type Dictionary } from "./de";
 import { en } from "./en";
 import { es } from "./es";
 import { fr } from "./fr";
+import { it } from "./it";
+import { pt } from "./pt";
 import { ru } from "./ru";
 import { sq } from "./sq";
 import { tr } from "./tr";
 import { uk } from "./uk";
 
-const dictionaries: Record<Locale, Dictionary> = { de, en, es, fr, ru, sq, tr, uk };
+const dictionaries: Record<Locale, Dictionary> = { de, en, es, fr, it, pt, ru, sq, tr, uk };
 
 export function getDictionary(locale: Locale = defaultLocale): Dictionary {
   return dictionaries[locale];

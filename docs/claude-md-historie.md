@@ -15,6 +15,17 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-05 — Italienisch und Portugiesisch nachgezogen
+
+**Vorher:** acht Sprachen; der Eintrag vom 2026-10-04 hielt fest, die App kenne kein `it`/`pt`.
+**Jetzt:** zehn — `it` und `pt` (europäisches Portugiesisch, Anrede formell wie die App)
+mit Wörterbüchern `src/i18n/{it,pt}.ts`; Stripe kennt beide (`stripeSprache()`).
+**Begründung:** die Aussage war falsch. `I18nProvider.tsx` führt `it` und `pt` seit dem
+2026-09-03 (Commit `1ab4726` im App-Repo) in `SUPPORTED`; die Anweisung „alle Sprachen der
+Mobile-Version" schliesst sie ein. Beim Prüfen des Branches `i18n/app-sprachen` aufgefallen.
+
+---
+
 ## 2026-10-04 — Alle Sprachen der Expo-App auf der Website
 
 **Vorher:** die Seite lieferte `de`, `en`, `sq`; Umschalter als Reihe von drei Knöpfen.
@@ -27,7 +38,8 @@ de/en (alle anderen lesen und protokollieren `en`), Stripe bekommt für `sq`/`uk
 (`stripeSprache()`), `i18n:pruefen` prüft jede Sprache aus `locales` automatisch.
 **Begründung:** Anweisung des Nutzers („die Sprachen der Mobile-Version sollen alle auf
 die Website"). **Korrektur zum Eintrag „Albanisch als dritte Oberflächensprache":** die App kennt de, en, es, fr, ru, tr,
-uk (`I18nProvider.tsx`, `SUPPORTED`) — `it` und `pt` gibt es dort nicht.
+uk (`I18nProvider.tsx`, `SUPPORTED`) — `it` und `pt` gibt es dort nicht. *(Falsch, siehe
+2026-10-05.)*
 
 ---
 

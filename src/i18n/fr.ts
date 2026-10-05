@@ -1188,7 +1188,7 @@ export const fr: Dictionary = {
       "Au moins {n} — c'est le nombre de jours déjà demandés ou approuvés dans QuickTeam. Pour descendre en dessous, il faut refuser des demandes.",
     urlaubGenommenUnlesbar: "Les demandes de congés n'ont pas pu être lues. Réessayez.",
     urlaubGenommenFehler:
-      "Les données d'emploi sont enregistrées, mais pas les jours de congé déjà pris. Réessayez.",
+      "Les informations sur le contrat sont enregistrées, mais pas les jours de congé déjà pris. Réessayez.",
     urlaubVorabEinladungFehler:
       "La personne est invitée, mais les jours de congé déjà pris n'ont pas pu être enregistrés. Ajoutez-les dans son profil.",
     nurChef: "Seule la direction peut gérer l'équipe.",

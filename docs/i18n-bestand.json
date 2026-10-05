@@ -3,7 +3,7 @@
   "src/app/api/cron/testphasen-beenden/route.ts": 2,
   "src/app/api/stripe/webhook/route.ts": 6,
   "src/app/dashboard/(arbeit)/schicht/[id]/aktionen.ts": 1,
-  "src/app/global-error.tsx": 16,
+  "src/app/global-error.tsx": 22,
   "src/app/opengraph-image.tsx": 3,
   "src/components/einrichtung/store-badges.tsx": 1,
   "src/lib/dashboard/position.ts": 1,

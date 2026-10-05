@@ -86,6 +86,22 @@ const TEXTE = {
     erneut: "Réessayer",
     start: "Aller à l'accueil",
   },
+  it: {
+    kennzeichen: "Errore grave",
+    titel: "Impossibile caricare la pagina",
+    text: "Qualcosa è andato storto alla base durante la costruzione di questa pagina. Ricaricala — se l'errore persiste, contatta l'assistenza indicando il riferimento qui sotto.",
+    kennung: "Riferimento",
+    erneut: "Riprova",
+    start: "Vai alla pagina iniziale",
+  },
+  pt: {
+    kennzeichen: "Erro grave",
+    titel: "Não foi possível carregar a página",
+    text: "Algo correu mal de raiz ao construir esta página. Recarregue-a — se o erro persistir, contacte o suporte e indique a referência abaixo.",
+    kennung: "Referência",
+    erneut: "Tentar novamente",
+    start: "Ir para a página inicial",
+  },
   ru: {
     kennzeichen: "Критическая ошибка",
     titel: "Не удалось загрузить страницу",

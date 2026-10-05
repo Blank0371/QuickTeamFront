@@ -12,7 +12,7 @@ import type { Locale } from "@/i18n/config";
  *
  * Client-sicher (kein Server-Import), weil `ZahlungsFormular` es braucht.
  */
-const STRIPE_SPRACHEN = ["de", "en", "es", "fr", "ru", "tr"] as const;
+const STRIPE_SPRACHEN = ["de", "en", "es", "fr", "it", "pt", "ru", "tr"] as const;
 
 export type StripeSprache = (typeof STRIPE_SPRACHEN)[number] | "auto";
 

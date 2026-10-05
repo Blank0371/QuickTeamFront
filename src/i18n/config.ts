@@ -5,7 +5,8 @@
  * Albanisch (`sq`, auf Anweisung des Nutzers; die Expo-App kennt es
  * nicht) und — am selben Tag, ebenfalls auf Anweisung — die übrigen
  * Sprachen der Expo-App: Spanisch, Französisch, Russisch, Türkisch,
- * Ukrainisch (`../QuickTeamMobile/src/i18n/I18nProvider.tsx`). Routen
+ * Ukrainisch, seit dem 2026-10-05 auch Italienisch und Portugiesisch
+ * (`../QuickTeamMobile/src/i18n/I18nProvider.tsx`, `SUPPORTED`). Routen
  * bleiben dabei **ohne Locale-Präfix** — die Sprache steht in einem
  * Cookie, nicht im Pfad. Die Abwägung dahinter steht an `leseSprache()`
  * in `sprache.ts`.
@@ -15,7 +16,7 @@
  * dastehen.
  */
 
-export const locales = ["de", "en", "es", "fr", "ru", "sq", "tr", "uk"] as const;
+export const locales = ["de", "en", "es", "fr", "it", "pt", "ru", "sq", "tr", "uk"] as const;
 
 export type Locale = (typeof locales)[number];
 
@@ -33,6 +34,8 @@ export const SPRACH_NAMEN: Record<Locale, string> = {
   en: "English",
   es: "Español",
   fr: "Français",
+  it: "Italiano",
+  pt: "Português",
   ru: "Русский",
   sq: "Shqip",
   tr: "Türkçe",
@@ -49,6 +52,8 @@ export const INTL_LOCALE: Record<Locale, string> = {
   en: "en-GB",
   es: "es-ES",
   fr: "fr-FR",
+  it: "it-IT",
+  pt: "pt-PT",
   ru: "ru-RU",
   sq: "sq-AL",
   tr: "tr-TR",
