@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { genehmigteTageOhne, tageImJahr } from "@/lib/dashboard/urlaub";
+import { genehmigteTageOhne, holeVorab, tageImJahr, vorabFuer } from "@/lib/dashboard/urlaub";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { urlaubAntragSchema, urlaubEntscheidungSchema } from "@/lib/validierung";
@@ -25,6 +25,9 @@ import { fuelle } from "@/i18n/text";
  * Rechnung in der Server Action statt im Browser — das ist eine
  * Verlagerung an denselben Vertrauensrang (die Aktion läuft ohnehin unter
  * der Sitzung des Chefs), keine neue Prüfung.
+ *
+ * Beide Kontingent-Prüfungen zählen seit 2026-10-04 die Vorab-Tage aus
+ * `urlaub_vorab` mit (`urlaub_beantragen` in der DB, der Wächter hier).
  */
 
 const PFAD = "/dashboard/urlaub";
@@ -106,26 +109,30 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
       return fehler(t.antragWeg);
     }
 
-    const [{ data: mitarbeiterZeile, error: mitarbeiterFehler }, { data: genehmigt, error: urlaubFehler }] = await Promise.all([
+    const ersteJahr = Number(antrag.von.slice(0, 4));
+    const letzteJahr = Number(antrag.bis.slice(0, 4));
+    const jahre = Array.from({ length: letzteJahr - ersteJahr + 1 }, (_, i) => ersteJahr + i);
+    const [{ data: mitarbeiterZeile, error: mitarbeiterFehler }, { data: genehmigt, error: urlaubFehler }, vorab] = await Promise.all([
       supabase.from("mitarbeiter").select("urlaubsanspruch_tage").eq("id", antrag.mitarbeiter_id).single(),
       supabase
         .from("urlaub")
         .select("id, mitarbeiter_id, von, bis, status")
         .eq("mitarbeiter_id", antrag.mitarbeiter_id)
         .eq("status", "approved"),
+      holeVorab(supabase, position.betriebId, jahre, antrag.mitarbeiter_id),
     ]);
 
-    if (mitarbeiterFehler || urlaubFehler || !mitarbeiterZeile || !genehmigt) {
+    if (mitarbeiterFehler || urlaubFehler || !mitarbeiterZeile || !genehmigt || !vorab) {
       return fehler(t.anspruchUnlesbar);
     }
     const anspruch = mitarbeiterZeile.urlaubsanspruch_tage ?? 0;
-    for (let jahr = Number(antrag.von.slice(0, 4)); jahr <= Number(antrag.bis.slice(0, 4)); jahr++) {
+    for (const jahr of jahre) {
       const bereits = genehmigteTageOhne(
         genehmigt.map((g) => ({ id: g.id, mitarbeiterId: g.mitarbeiter_id, von: g.von, bis: g.bis, status: "approved" as const })),
         antrag.mitarbeiter_id,
         antrag.id,
         jahr,
-      );
+      ) + vorabFuer(vorab, antrag.mitarbeiter_id, jahr);
       const beantragt = tageImJahr(antrag.von, antrag.bis, jahr);
       if (bereits + beantragt > anspruch) {
         const rest = Math.max(0, anspruch - bereits);

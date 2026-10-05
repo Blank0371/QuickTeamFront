@@ -900,6 +900,8 @@ export const en: Dictionary = {
         einladungFehler: "The invitation could not be created. Try again.",
         rollenZuweisungFehler:
           "The person has been created, but the roles could not be assigned. Set them in the list below.",
+        urlaubVorabFehler:
+          "The person is invited, but the vacation days already taken couldn't be saved. Please add them in the dashboard under Team.",
         niemand: "Nobody was specified.",
         entfernenFehler: "The invitation could not be removed. Try again.",
         unvollstaendig: "Details incomplete.",
@@ -938,6 +940,9 @@ export const en: Dictionary = {
       urlaubstage: "Vacation allowance (days per year)",
       urlaubstageHinweis:
         "Counted in calendar days, not working days — weekends count too.",
+      urlaubGenommen: "Already taken (days, this year)",
+      urlaubGenommenHinweis:
+        "Vacation the person has already taken this year. Deducted from the allowance; later requests in QuickTeam are added automatically.",
       einladen: "Invite",
       niemand: "No one invited yet.",
       einladungOffen: " · invitation pending",
@@ -1270,6 +1275,17 @@ export const en: Dictionary = {
     urlaub: "Leave entitlement (days per year)",
     urlaubHinweis:
       "Calendar days are counted, not working days — weekends count too. Open requests already use up the allowance.",
+    urlaubGenommen: "Already taken (days, this year)",
+    urlaubGenommenHinweis:
+      "Total for the current year. Requests in QuickTeam count automatically from the moment they're sent; denied ones drop out again.",
+    /* {n} = number. */
+    urlaubGenommenMindestens:
+      "At least {n} — that many days are already requested or approved in QuickTeam. Going lower only works by denying requests.",
+    urlaubGenommenUnlesbar: "The vacation requests couldn't be read. Please try again.",
+    urlaubGenommenFehler:
+      "The employment details are saved, the vacation days already taken are not. Please try again.",
+    urlaubVorabEinladungFehler:
+      "The person is invited, but the vacation days already taken couldn't be saved. Please add them in their profile.",
     nurChef: "Only the management may manage the team.",
     rollennameFalsch: "The role name is not valid.",
     rolleDoppelt: "The role “{name}” already exists.",

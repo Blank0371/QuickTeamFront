@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { einrichtungAnstellungSchema, monatsstundenAusWoche } from "./validierung";
+import { einrichtungAnstellungSchema, monatsstundenAusWoche, urlaubVorabSchema } from "./validierung";
 
 function pruefe(wochenstunden: string, toleranz: string, urlaub: string) {
   return einrichtungAnstellungSchema.safeParse({
@@ -37,4 +37,13 @@ test("Negative Werte werden abgewiesen", () => {
   assert.equal(pruefe("-1", "0", "25").success, false);
   assert.equal(pruefe("40", "-1", "25").success, false);
   assert.equal(pruefe("40", "0", "-1").success, false);
+});
+
+test("Schon genommene Urlaubstage: leer ist 0, nur ganze, nicht negative Tage", () => {
+  const pruefeVorab = (wert: string) => urlaubVorabSchema.safeParse({ urlaub_vorab_tage: wert });
+  assert.equal(pruefeVorab("").data?.urlaub_vorab_tage, 0);
+  assert.equal(pruefeVorab("12").data?.urlaub_vorab_tage, 12);
+  assert.equal(pruefeVorab("-1").success, false);
+  assert.equal(pruefeVorab("1.5").success, false);
+  assert.equal(pruefeVorab("366").success, false);
 });

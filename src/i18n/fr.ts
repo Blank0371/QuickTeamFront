@@ -818,6 +818,8 @@ export const fr: Dictionary = {
         einladungFehler: "L'invitation n'a pas pu être créée. Réessayez.",
         rollenZuweisungFehler:
           "La personne a été créée, mais les rôles n'ont pas pu être attribués. Définissez-les dans la liste ci-dessous.",
+        urlaubVorabFehler:
+          "La personne est invitée, mais les jours de congé déjà pris n'ont pas pu être enregistrés. Ajoutez-les dans le tableau de bord, sous Équipe.",
         niemand: "Personne n'a été indiqué.",
         entfernenFehler: "L'invitation n'a pas pu être supprimée. Réessayez.",
         unvollstaendig: "Informations incomplètes.",
@@ -856,6 +858,9 @@ export const fr: Dictionary = {
       urlaubstage: "Droit aux congés (jours par an)",
       urlaubstageHinweis:
         "Comptés en jours calendaires, pas en jours ouvrés — les week-ends comptent aussi.",
+      urlaubGenommen: "Déjà pris (jours, cette année)",
+      urlaubGenommenHinweis:
+        "Congés que la personne a déjà pris cette année. Déduits du droit aux congés ; les demandes ultérieures dans QuickTeam s'ajoutent automatiquement.",
       einladen: "Inviter",
       niemand: "Personne n'a encore été invité.",
       einladungOffen: " · invitation en attente",
@@ -1175,6 +1180,17 @@ export const fr: Dictionary = {
     urlaub: "Droit aux congés (jours par an)",
     urlaubHinweis:
       "On compte les jours calendaires, pas les jours ouvrés — les week-ends comptent aussi. Les demandes en attente consomment déjà le solde.",
+    urlaubGenommen: "Déjà pris (jours, cette année)",
+    urlaubGenommenHinweis:
+      "Total pour l'année en cours. Les demandes dans QuickTeam s'ajoutent automatiquement dès leur envoi ; celles refusées sont retirées.",
+    /* {n} = Zahl. */
+    urlaubGenommenMindestens:
+      "Au moins {n} — c'est le nombre de jours déjà demandés ou approuvés dans QuickTeam. Pour descendre en dessous, il faut refuser des demandes.",
+    urlaubGenommenUnlesbar: "Les demandes de congés n'ont pas pu être lues. Réessayez.",
+    urlaubGenommenFehler:
+      "Les données d'emploi sont enregistrées, mais pas les jours de congé déjà pris. Réessayez.",
+    urlaubVorabEinladungFehler:
+      "La personne est invitée, mais les jours de congé déjà pris n'ont pas pu être enregistrés. Ajoutez-les dans son profil.",
     nurChef: "Seule la direction peut gérer l'équipe.",
     rollennameFalsch: "Le nom du rôle n'est pas valide.",
     rolleDoppelt: "Le rôle « {name} » existe déjà.",

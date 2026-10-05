@@ -817,6 +817,8 @@ export const tr: Dictionary = {
         einladungFehler: "Davet oluşturulamadı. Tekrar dene.",
         rollenZuweisungFehler:
           "Kişi oluşturuldu ama roller atanamadı. Aşağıdaki listeden ayarla.",
+        urlaubVorabFehler:
+          "Kişi davet edildi ama daha önce kullanılan izin günleri kaydedilemedi. Lütfen panelde Ekip bölümünden ekle.",
         niemand: "Kimse belirtilmedi.",
         entfernenFehler: "Davet kaldırılamadı. Tekrar dene.",
         unvollstaendig: "Bilgiler eksik.",
@@ -855,6 +857,9 @@ export const tr: Dictionary = {
       urlaubstage: "İzin hakkı (yılda gün)",
       urlaubstageHinweis:
         "İş günü değil takvim günü sayılır — hafta sonları da sayılır.",
+      urlaubGenommen: "Kullanılmış (gün, bu yıl)",
+      urlaubGenommenHinweis:
+        "Kişinin bu yıl zaten kullandığı izin. İzin hakkından düşülür; QuickTeam'deki sonraki talepler otomatik olarak eklenir.",
       einladen: "Davet et",
       niemand: "Henüz kimse davet edilmedi.",
       einladungOffen: " · davet bekliyor",
@@ -1174,6 +1179,17 @@ export const tr: Dictionary = {
     urlaub: "İzin hakkı (yılda gün)",
     urlaubHinweis:
       "İş günü değil takvim günü sayılır — hafta sonları da sayılır. Bekleyen talepler hakkı şimdiden kullanır.",
+    urlaubGenommen: "Kullanılmış (gün, bu yıl)",
+    urlaubGenommenHinweis:
+      "Bu yılın toplamı. QuickTeam'deki talepler gönderildikleri andan itibaren otomatik olarak eklenir, reddedilenler yeniden düşülür.",
+    /* {n} = Zahl. */
+    urlaubGenommenMindestens:
+      "En az {n} — QuickTeam'de bu kadar gün zaten talep edildi veya onaylandı. Daha azı ancak talepleri reddederek mümkün.",
+    urlaubGenommenUnlesbar: "İzin talepleri okunamadı. Tekrar dene.",
+    urlaubGenommenFehler:
+      "İstihdam bilgileri kaydedildi, daha önce kullanılan izin günleri kaydedilemedi. Tekrar dene.",
+    urlaubVorabEinladungFehler:
+      "Kişi davet edildi ama daha önce kullanılan izin günleri kaydedilemedi. Lütfen profilinden ekle.",
     nurChef: "Ekibi yalnızca yönetim yönetebilir.",
     rollennameFalsch: "Rol adı geçerli değil.",
     rolleDoppelt: "“{name}” rolü zaten var.",

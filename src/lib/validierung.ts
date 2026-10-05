@@ -709,6 +709,24 @@ export const anstellungSchema = z.object({
 export type AnstellungEingabe = z.infer<typeof anstellungSchema>;
 
 /**
+ * Urlaub, der dieses Jahr schon genommen wurde (Nutzerentscheidung
+ * 2026-10-04). **Nicht** Teil von `anstellungSchema`: der Wert landet in
+ * `urlaub_vorab`, nicht in `mitarbeiter`. Beim Einladen ist er der
+ * Vorab-Wert, im Profil die Gesamtzahl (`vorabAusGesamt()`). Leer heisst 0;
+ * die Tabelle prüft `0..365` noch einmal.
+ */
+export const urlaubVorabSchema = z.object({
+  urlaub_vorab_tage: z.preprocess(
+    zahlOderDefault(0),
+    z.coerce
+      .number({ error: vm("v.urlaubstage.zahl") })
+      .int(vm("v.tage.ganz"))
+      .min(0, vm("v.urlaubstage.negativ"))
+      .max(URLAUB_TAGE_MAX, vm("v.urlaubstage.max", { max: URLAUB_TAGE_MAX })),
+  ),
+});
+
+/**
  * Die drei Anstellungsfelder beim Einladen im Einrichtungs-Stepper
  * (Schritt 3) — Sollstunden, Überstunden-Toleranz, Urlaubsanspruch.
  *

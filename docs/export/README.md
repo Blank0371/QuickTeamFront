@@ -47,7 +47,7 @@ und nicht über `betreteDashboard()`.
 
 ## Inhalt
 
-30 Tabellen (Stand 2026-09-15, zuletzt dazugekommen: `betrieb_promo_codes`),
+31 Tabellen (Stand 2026-10-04, zuletzt dazugekommen: `urlaub_vorab`),
 dazu fünf abgeleitete Abschnitte. Die maßgebliche Liste
 steht in `src/lib/export/tabellen.ts` und wird nicht aus dem Schema
 erraten — eine neue Tabelle fehlt im Export, bis jemand sie einträgt,

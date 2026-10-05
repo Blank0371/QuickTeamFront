@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { holeChefBetriebId } from "@/lib/betrieb";
+import { speichereVorab } from "@/lib/dashboard/urlaub";
+import { jahrImBetrieb } from "@/lib/datum";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import {
   entferneRolle,
@@ -18,6 +20,7 @@ import {
   einrichtungAnstellungSchema,
   monatsstundenAusWoche,
   rollenNameSchema,
+  urlaubVorabSchema,
 } from "@/lib/validierung";
 import { holeTexte, holeValidierung } from "@/i18n/server";
 import { fuelle } from "@/i18n/text";
@@ -167,6 +170,7 @@ export async function mitarbeiterEinladen(
     wochenstunden: String(formData.get("wochenstunden") ?? ""),
     toleranz_ueberstunden: String(formData.get("toleranz_ueberstunden") ?? ""),
     urlaubsanspruch_tage: String(formData.get("urlaubsanspruch_tage") ?? ""),
+    urlaub_vorab_tage: String(formData.get("urlaub_vorab_tage") ?? ""),
   };
 
   /*
@@ -182,7 +186,8 @@ export async function mitarbeiterEinladen(
     toleranz_ueberstunden: roh.toleranz_ueberstunden,
     urlaubsanspruch_tage: roh.urlaubsanspruch_tage,
   });
-  if (!geprueft.success || !anstellung.success) {
+  const vorab = urlaubVorabSchema.safeParse({ urlaub_vorab_tage: roh.urlaub_vorab_tage });
+  if (!geprueft.success || !anstellung.success || !vorab.success) {
     const texte = await holeValidierung();
     return {
       status: "fehler",
@@ -190,6 +195,7 @@ export async function mitarbeiterEinladen(
       felder: {
         ...(geprueft.success ? {} : feldFehler(geprueft.error, texte)),
         ...(anstellung.success ? {} : feldFehler(anstellung.error, texte)),
+        ...(vorab.success ? {} : feldFehler(vorab.error, texte)),
       },
       werte: roh,
     };
@@ -278,6 +284,13 @@ export async function mitarbeiterEinladen(
         felder: {},
       };
     }
+  }
+
+  /* Neue Person, noch keine Anträge: der Wert ist vollständig Vorab (`urlaub_vorab`). */
+  const vorabTage = vorab.data.urlaub_vorab_tage;
+  if (vorabTage > 0 && !(await speichereVorab(supabase, betriebId, angelegt.id, jahrImBetrieb(), vorabTage))) {
+    revalidatePath(PFAD);
+    return { status: "fehler", nachricht: m.urlaubVorabFehler, felder: {} };
   }
 
   revalidatePath(PFAD);

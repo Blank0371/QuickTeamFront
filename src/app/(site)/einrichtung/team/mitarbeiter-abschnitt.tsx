@@ -148,7 +148,7 @@ export function MitarbeiterAbschnitt({
           und Toleranz). Eingetragen werden Wochenstunden, gespeichert der
           Monatswert — die Umrechnung macht die Server Action.
         */}
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2">
           <TextFeld
             id="einladung-wochenstunden"
             name="wochenstunden"
@@ -181,6 +181,17 @@ export function MitarbeiterAbschnitt({
             defaultValue={werte["urlaubsanspruch_tage"] ?? "25"}
             fehler={einladen.felder["urlaubsanspruch_tage"]}
             hinweis={texte.urlaubstageHinweis}
+          />
+          <TextFeld
+            id="einladung-urlaub-vorab"
+            name="urlaub_vorab_tage"
+            type="number"
+            label={texte.urlaubGenommen}
+            min={0}
+            step={1}
+            defaultValue={werte["urlaub_vorab_tage"] ?? "0"}
+            fehler={einladen.felder["urlaub_vorab_tage"]}
+            hinweis={texte.urlaubGenommenHinweis}
           />
         </div>
 

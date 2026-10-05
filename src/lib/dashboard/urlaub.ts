@@ -49,7 +49,7 @@ export function tageImJahr(von: string, bis: string, jahr: number): number {
  * Bei Genehmigungen zählt nur `approved`; die Jahresgrenzen sind gleich.
  */
 export function verbrauchteTage(
-  urlaube: readonly MeinUrlaub[],
+  urlaube: readonly Pick<MeinUrlaub, "von" | "bis" | "status">[],
   jahr: number = new Date().getFullYear(),
 ): number {
   return urlaube
@@ -77,6 +77,138 @@ export function genehmigteTageOhne(
         a.status === "approved",
     )
     .reduce((summe, a) => summe + tageImJahr(a.von, a.bis, jahr), 0);
+}
+
+/**
+ * „Genommener Urlaub" — überall dieselbe Rechnung (Nutzerentscheidung
+ * 2026-10-04):
+ *
+ *     genommen = Vorab (`urlaub_vorab`) + offene + genehmigte Anträge, je Jahr
+ *
+ * Ein Antrag zählt ab dem Absenden, Ablehnen nimmt ihn heraus, Genehmigen
+ * ändert nichts. **Berechnet, nicht mitgeführt** — `urlaub_vorab` trägt
+ * nur, was vor QuickTeam lag, eine Zeile je Person und Jahr. Zeilen
+ * anderer Jahre zählen nicht und werden nicht gelöscht. Dieselbe Summe
+ * bildet `urlaub_beantragen` in der Datenbank.
+ */
+export function genommeneTage(
+  vorab: number,
+  urlaube: readonly Pick<MeinUrlaub, "von" | "bis" | "status">[],
+  jahr: number,
+): number {
+  return vorab + verbrauchteTage(urlaube, jahr);
+}
+
+/**
+ * Umkehrung fürs Profilfeld: der Chef trägt die **Gesamtzahl** ein,
+ * gespeichert wird nur, was nicht schon als Antrag erfasst ist. Weniger
+ * als die erfassten Anträge geht nicht — die nimmt nur ein Ablehnen heraus.
+ */
+export function vorabAusGesamt(
+  gesamt: number,
+  erfasst: number,
+): { ok: true; vorab: number } | { ok: false; mindestens: number } {
+  return gesamt < erfasst ? { ok: false, mindestens: erfasst } : { ok: true, vorab: gesamt - erfasst };
+}
+
+export type VorabZeile = { mitarbeiter_id: string; jahr: number; tage: number };
+
+export function vorabFuer(zeilen: readonly VorabZeile[], mitarbeiterId: string, jahr: number): number {
+  return zeilen.find((z) => z.mitarbeiter_id === mitarbeiterId && z.jahr === jahr)?.tage ?? 0;
+}
+
+/**
+ * `urlaub_vorab` eines Betriebs für die genannten Jahre, optional nur eine
+ * Person. Eingegrenzt auf den Betrieb, nicht nur über RLS (ein Konto mit
+ * zwei Anstellungen sähe sonst beide). `null` bei Lesefehler — „nicht
+ * lesbar" ist nicht „nichts vorab".
+ */
+export async function holeVorab(
+  supabase: SupabaseServerClient,
+  betriebId: string,
+  jahre: readonly number[],
+  mitarbeiterId?: string,
+): Promise<VorabZeile[] | null> {
+  let abfrage = supabase
+    .from("urlaub_vorab")
+    .select("mitarbeiter_id, jahr, tage")
+    .eq("betrieb_id", betriebId)
+    .in("jahr", [...jahre]);
+  if (mitarbeiterId) abfrage = abfrage.eq("mitarbeiter_id", mitarbeiterId);
+  const { data, error } = await abfrage;
+  if (error) {
+    console.error(`[dashboard/urlaub] vorab: ${error.message}`);
+    return null;
+  }
+  return data ?? [];
+}
+
+/**
+ * Schreibt die Vorab-Tage einer Person für ein Jahr (eine Zeile je Person
+ * und Jahr, `upsert`); 0 entfernt die Zeile, statt für jedes gespeicherte
+ * Profil eine Null-Zeile anzulegen. Nur der Chef kommt durch
+ * (`urlaub_vorab_write_chef`); `.select()` macht ein von RLS geschlucktes
+ * Schreiben sichtbar.
+ */
+export async function speichereVorab(
+  supabase: SupabaseServerClient,
+  betriebId: string,
+  mitarbeiterId: string,
+  jahr: number,
+  tage: number,
+): Promise<boolean> {
+  if (tage === 0) {
+    const { error } = await supabase
+      .from("urlaub_vorab")
+      .delete()
+      .eq("betrieb_id", betriebId)
+      .eq("mitarbeiter_id", mitarbeiterId)
+      .eq("jahr", jahr);
+    if (error) console.error(`[dashboard/urlaub] vorab entfernen: ${error.message}`);
+    return !error;
+  }
+  const { data, error } = await supabase
+    .from("urlaub_vorab")
+    .upsert(
+      { betrieb_id: betriebId, mitarbeiter_id: mitarbeiterId, jahr, tage, geaendert_am: new Date().toISOString() },
+      { onConflict: "mitarbeiter_id,jahr" },
+    )
+    .select("mitarbeiter_id");
+  if (error || !data?.length) {
+    console.error(`[dashboard/urlaub] vorab speichern: ${error?.message ?? "0 Zeilen"}`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Offene und genehmigte Urlaubstage je Person in einem Jahr — der Teil von
+ * „genommen", der aus `urlaub` kommt. `null` bei Lesefehler.
+ */
+export async function holeErfassteTage(
+  supabase: SupabaseServerClient,
+  betriebId: string,
+  jahr: number,
+  mitarbeiterId?: string,
+): Promise<Map<string, number> | null> {
+  let abfrage = supabase
+    .from("urlaub")
+    .select("mitarbeiter_id, von, bis, status")
+    .eq("betrieb_id", betriebId)
+    .in("status", ["approved", "requested"])
+    .lte("von", `${jahr}-12-31`)
+    .gte("bis", `${jahr}-01-01`);
+  if (mitarbeiterId) abfrage = abfrage.eq("mitarbeiter_id", mitarbeiterId);
+  const { data, error } = await abfrage;
+  if (error) {
+    console.error(`[dashboard/urlaub] erfasste tage: ${error.message}`);
+    return null;
+  }
+  const jePerson = new Map<string, number>();
+  for (const z of data ?? []) {
+    jePerson.set(z.mitarbeiter_id, (jePerson.get(z.mitarbeiter_id) ?? 0) + tageImJahr(z.von, z.bis, jahr));
+  }
+  return jePerson;
 }
 
 export async function holeMeineUrlaube(

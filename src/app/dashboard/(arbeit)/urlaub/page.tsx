@@ -3,11 +3,14 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { getDictionary } from "@/i18n";
 import { leseSprache } from "@/i18n/sprache";
+import { jahrImBetrieb } from "@/lib/datum";
 import {
+  genommeneTage,
   holeChefUrlaubsantraege,
   holeMeineUrlaube,
   holeUrlaubsanspruch,
-  verbrauchteTage,
+  holeVorab,
+  vorabFuer,
 } from "@/lib/dashboard/urlaub";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 
@@ -44,15 +47,22 @@ export default async function UrlaubSeite() {
   const sprache = await leseSprache();
   const t = getDictionary(sprache).urlaub;
 
-  const [meineUrlaube, anspruch, chefAntraege] = await Promise.all([
+  const jahr = jahrImBetrieb();
+  const [meineUrlaube, anspruch, chefAntraege, vorab] = await Promise.all([
     holeMeineUrlaube(supabase, position.mitarbeiterId),
     holeUrlaubsanspruch(supabase, position.mitarbeiterId),
     chef ? holeChefUrlaubsantraege(supabase, position.betriebId) : Promise.resolve([]),
+    holeVorab(supabase, position.betriebId, [jahr], position.mitarbeiterId),
   ]);
 
   const heute = new Date();
   const maxDatum = new Date(heute.getFullYear(), heute.getMonth() + MONATE_VORAUS, heute.getDate());
-  const verbraucht = verbrauchteTage(meineUrlaube, heute.getFullYear());
+  /*
+   * Nur Anzeige — das Tor ist `urlaub_beantragen`, das dieselbe Summe
+   * bildet. Ist `urlaub_vorab` nicht lesbar, fehlt hier der Vorab-Anteil
+   * (protokolliert), der Antrag wird trotzdem richtig geprüft.
+   */
+  const verbraucht = genommeneTage(vorabFuer(vorab ?? [], position.mitarbeiterId, jahr), meineUrlaube, jahr);
 
   return (
     <Container className="py-8 sm:py-10">

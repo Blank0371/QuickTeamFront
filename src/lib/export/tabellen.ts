@@ -197,6 +197,15 @@ export const EXPORT_TABELLEN: readonly TabellenSpec[] = [
     sicht: "voll",
   },
   {
+    name: "urlaub_vorab",
+    beschreibung:
+      "Urlaubstage je Person und Jahr, die vor QuickTeam schon genommen wurden. Zählen in ihrem Jahr wie genehmigter Urlaub.",
+    schluessel: "betrieb_id",
+    ordnung: ["mitarbeiter_id", "jahr"],
+    eindeutig: true,
+    sicht: "voll",
+  },
+  {
     name: "abwesenheit",
     beschreibung: "Abwesenheiten ausserhalb des Urlaubs.",
     schluessel: "betrieb_id",

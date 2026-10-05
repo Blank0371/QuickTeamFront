@@ -817,6 +817,8 @@ export const es: Dictionary = {
         einladungFehler: "No se pudo crear la invitación. Inténtalo de nuevo.",
         rollenZuweisungFehler:
           "La persona se ha creado, pero no se pudieron asignar los roles. Asígnalos en la lista de abajo.",
+        urlaubVorabFehler:
+          "La persona está invitada, pero no se pudieron guardar los días de vacaciones ya disfrutados. Añádelos en el panel, en Equipo.",
         niemand: "No se indicó a nadie.",
         entfernenFehler: "No se pudo eliminar la invitación. Inténtalo de nuevo.",
         unvollstaendig: "Datos incompletos.",
@@ -855,6 +857,9 @@ export const es: Dictionary = {
       urlaubstage: "Días de vacaciones (por año)",
       urlaubstageHinweis:
         "Se cuentan días naturales, no laborables — los fines de semana también cuentan.",
+      urlaubGenommen: "Ya disfrutados (días, este año)",
+      urlaubGenommenHinweis:
+        "Vacaciones que la persona ya ha tenido este año. Se descuentan del derecho; las solicitudes posteriores en QuickTeam se suman automáticamente.",
       einladen: "Invitar",
       niemand: "Aún no hay nadie invitado.",
       einladungOffen: " · invitación pendiente",
@@ -1174,6 +1179,17 @@ export const es: Dictionary = {
     urlaub: "Derecho a vacaciones (días por año)",
     urlaubHinweis:
       "Se cuentan días naturales, no laborables — los fines de semana también cuentan. Las solicitudes pendientes ya consumen el cupo.",
+    urlaubGenommen: "Ya disfrutados (días, este año)",
+    urlaubGenommenHinweis:
+      "Total del año en curso. Las solicitudes en QuickTeam se suman automáticamente desde el envío; las rechazadas vuelven a salir.",
+    /* {n} = Zahl. */
+    urlaubGenommenMindestens:
+      "Al menos {n}: son los días ya solicitados o aprobados en QuickTeam. Solo se puede bajar rechazando solicitudes.",
+    urlaubGenommenUnlesbar: "No se pudieron leer las solicitudes de vacaciones. Inténtalo de nuevo.",
+    urlaubGenommenFehler:
+      "Los datos del empleo se han guardado, pero los días de vacaciones ya disfrutados no. Inténtalo de nuevo.",
+    urlaubVorabEinladungFehler:
+      "La persona está invitada, pero no se pudieron guardar los días de vacaciones ya disfrutados. Añádelos en su perfil.",
     nurChef: "Solo la dirección puede gestionar el equipo.",
     rollennameFalsch: "El nombre del rol no es válido.",
     rolleDoppelt: "El rol «{name}» ya existe.",

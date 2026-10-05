@@ -817,6 +817,8 @@ export const sq: Dictionary = {
         einladungFehler: "Ftesa nuk u krijua dot. Provo sërish.",
         rollenZuweisungFehler:
           "Personi u krijua, por rolet nuk u caktuan dot. Caktoji në listën më poshtë.",
+        urlaubVorabFehler:
+          "Personi u ftua, por ditët e pushimit të marra tashmë nuk u ruajtën dot. Shtoji te Paneli, nën Ekipi.",
         niemand: "Nuk u specifikua askush.",
         entfernenFehler: "Ftesa nuk u hoq dot. Provo sërish.",
         unvollstaendig: "Të dhëna të paplota.",
@@ -855,6 +857,9 @@ export const sq: Dictionary = {
       urlaubstage: "E drejta për pushime (ditë në vit)",
       urlaubstageHinweis:
         "Numërohen ditë kalendarike, jo ditë pune — edhe fundjavat llogariten.",
+      urlaubGenommen: "Të marra tashmë (ditë, këtë vit)",
+      urlaubGenommenHinweis:
+        "Pushimet që personi ka marrë tashmë këtë vit. Zbriten nga e drejta për pushime; kërkesat e mëvonshme në QuickTeam shtohen automatikisht.",
       einladen: "Fto",
       niemand: "Ende askush i ftuar.",
       einladungOffen: " · ftesa në pritje",
@@ -1174,6 +1179,17 @@ export const sq: Dictionary = {
     urlaub: "E drejta për pushime (ditë në vit)",
     urlaubHinweis:
       "Numërohen ditë kalendarike, jo ditë pune — edhe fundjavat llogariten. Kërkesat e hapura e konsumojnë tashmë kuotën.",
+    urlaubGenommen: "Të marra tashmë (ditë, këtë vit)",
+    urlaubGenommenHinweis:
+      "Totali për vitin aktual. Kërkesat në QuickTeam llogariten automatikisht sapo dërgohen; ato të refuzuara hiqen sërish.",
+    /* {n} = numër. */
+    urlaubGenommenMindestens:
+      "Të paktën {n} — kaq ditë janë kërkuar ose miratuar tashmë në QuickTeam. Më pak është e mundur vetëm duke refuzuar kërkesa.",
+    urlaubGenommenUnlesbar: "Kërkesat për pushime nuk u lexuan dot. Provo sërish.",
+    urlaubGenommenFehler:
+      "Të dhënat e punësimit u ruajtën, por ditët e pushimit të marra tashmë jo. Provo sërish.",
+    urlaubVorabEinladungFehler:
+      "Personi u ftua, por ditët e pushimit të marra tashmë nuk u ruajtën dot. Shtoji te profili i tij.",
     nurChef: "Vetëm drejtuesit mund ta menaxhojnë ekipin.",
     rollennameFalsch: "Emri i rolit nuk është i vlefshëm.",
     rolleDoppelt: "Roli “{name}” ekziston tashmë.",
