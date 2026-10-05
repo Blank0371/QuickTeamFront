@@ -91,6 +91,7 @@ export async function SiteHeader() {
           registrieren={authOffen ? t.nav.registrieren : undefined}
           oeffnenLabel={t.nav.menueOeffnen}
           schliessenLabel={t.nav.menueSchliessen}
+          sprache={sprache}
         />
       </Container>
     </header>

@@ -43,7 +43,21 @@ import { useKlientTexte } from "@/i18n/sprach-provider";
 
 const EIN_JAHR = 60 * 60 * 24 * 365;
 
-export function SprachWahl({ aktiv }: { aktiv: Locale }) {
+/*
+ * `aufDunkel`: für die Leiste der Landingpage, die unabhängig vom Thema
+ * immer auf Carbon steht (`landing-navigation.tsx`) — dort wären die
+ * Thema-Tokens im hellen Modus heller Grund auf dunkler Leiste. Dieselben
+ * Ebene-1-Werte wie die Leiste selbst; `color-scheme: dark` färbt auch die
+ * native Auswahlliste dunkel.
+ */
+const DUNKEL_STIL = {
+  colorScheme: "dark",
+  background: "var(--qt-c-carbon)",
+  color: "var(--qt-c-bone)",
+  borderColor: "var(--qt-border-control)",
+} as const;
+
+export function SprachWahl({ aktiv, aufDunkel = false }: { aktiv: Locale; aufDunkel?: boolean }) {
   const router = useRouter();
   const [wechselt, starteWechsel] = useTransition();
   const id = useId();
@@ -59,7 +73,11 @@ export function SprachWahl({ aktiv }: { aktiv: Locale }) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <label htmlFor={id} className="text-muted">
+      <label
+        htmlFor={id}
+        className={aufDunkel ? undefined : "text-muted"}
+        style={aufDunkel ? { color: "var(--qt-c-bone)" } : undefined}
+      >
         <Languages aria-hidden="true" className="h-4 w-4" />
         <span className="sr-only">{t.gruppe}</span>
       </label>
@@ -68,7 +86,13 @@ export function SprachWahl({ aktiv }: { aktiv: Locale }) {
         value={aktiv}
         disabled={wechselt}
         onChange={(e) => waehlen(e.target.value)}
-        className="rounded-blk border border-line-strong bg-surface py-1 pl-2 pr-1 text-xs font-semibold text-text transition-colors hover:bg-surface-sunk disabled:opacity-60"
+        /* Auf dem Handy 16 px: darunter zoomt iOS Safari beim Antippen die Seite heran. */
+        className={
+          aufDunkel
+            ? "rounded-blk border py-1 pl-2 pr-1 text-base font-semibold md:text-xs disabled:opacity-60"
+            : "rounded-blk border border-line-strong bg-surface py-1 pl-2 pr-1 text-base font-semibold text-text transition-colors hover:bg-surface-sunk md:text-xs disabled:opacity-60"
+        }
+        style={aufDunkel ? DUNKEL_STIL : undefined}
       >
         {locales.map((locale) => (
           <option key={locale} value={locale} lang={locale}>

@@ -15,6 +15,16 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-05 — Sprachumschalter auf dem Handy
+
+**Vorher:** auf öffentlichen Seiten war der Umschalter unter 768 px ausgeblendet und fehlte
+im Handy-Menü; die Landingpage hatte gar keinen. **Jetzt:** er steht im Handy-Menü
+(`MobileMenu`) und im Klappmenü der Landingpage (dunkle Variante `aufDunkel`). Die
+Desktop-Leiste der Landingpage bleibt ohne Umschalter. **Begründung:** Anweisung des
+Nutzers; mit zehn Sprachen war die Wahl auf dem Handy nur über `?lang=` erreichbar.
+
+---
+
 ## 2026-10-05 — Italienisch und Portugiesisch nachgezogen
 
 **Vorher:** acht Sprachen; der Eintrag vom 2026-10-04 hielt fest, die App kenne kein `it`/`pt`.

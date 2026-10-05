@@ -5,6 +5,7 @@ import { LandingNavigation } from "@/components/landing/landing-navigation";
 import { LichtEbene } from "@/components/landing/licht-ebene";
 import { gabarito } from "@/components/schriften";
 import { holeTexte } from "@/i18n/server";
+import { leseSprache } from "@/i18n/sprache";
 import { promoCodeSeiteAktiv, PROMO_CODE_PRAEFIX } from "@/lib/promo-code-seite";
 import { softLaunchAktiv } from "@/lib/soft-launch";
 
@@ -68,6 +69,7 @@ const SCHRIFT_REGEL = `.qt-landing,.qt-landing h1,.qt-landing h2,.qt-landing h3,
 
 export default async function LandingLayout({ children }: { children: ReactNode }) {
   const t = await holeTexte();
+  const sprache = await leseSprache();
   // Beides oder nichts: steht der Schalter aus, reist auch die
   // Beschriftung nicht mit — sonst stünde „Promo-Partner" als toter
   // Prop-Wert in der RSC-Nutzlast der Startseite.
@@ -122,6 +124,7 @@ export default async function LandingLayout({ children }: { children: ReactNode 
       */}
       <LandingNavigation
         authOffen={!softLaunchAktiv()}
+        sprache={sprache}
         promoHref={promoAktiv ? PROMO_CODE_PRAEFIX : undefined}
         promoLabel={promoAktiv ? t.nav.promoPartner : undefined}
         texte={{

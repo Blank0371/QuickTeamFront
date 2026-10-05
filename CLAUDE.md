@@ -990,8 +990,10 @@ Die Seite liefert zehn Sprachen (`locales` in `src/i18n/config.ts`): `de`, `en`,
 2026-10-04 `sq` (Albanisch, kein Expo-Gegenstück) und — auf Anweisung des Nutzers — alle
 übrigen Sprachen der Expo-App (`SUPPORTED` in `I18nProvider.tsx`): `es`, `fr`, `ru`, `tr`,
 `uk` seit 2026-10-04, `it`, `pt` seit 2026-10-05.
-Umschalter oben rechts (öffentliche Kopfzeile und Dashboard-Topbar), seit 2026-10-04 ein
-natives `<select>` mit den Eigennamen (`SPRACH_NAMEN`, nie übersetzt). Sprachpakete als
+Umschalter oben rechts (öffentliche Kopfzeile und Dashboard-Topbar), auf dem Handy im
+Menü (`MobileMenu`, Klappmenü der Landingpage — dort `aufDunkel`, die Leiste ist immer
+Carbon) bzw. im Konto-Blatt; seit 2026-10-04 ein natives `<select>`, unter `md` 16 px (iOS
+zoomt sonst beim Antippen) mit den Eigennamen (`SPRACH_NAMEN`, nie übersetzt). Sprachpakete als
 getippte Objekte, kein next-intl. **Fachbegriffe der neuen Sprachen kommen aus
 `../QuickTeamMobile/src/i18n/locales/<code>.json`**, Anrede wie dort (es/it/tr du,
 fr/pt/ru/uk Sie; Portugiesisch europäisch wie die App). Russisch/Ukrainisch: Sätze mit Zahl als „Голосов: {n}" gebaut (drei Pluralformen,
