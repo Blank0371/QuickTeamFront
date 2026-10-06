@@ -121,6 +121,7 @@ export const pt: Dictionary = {
     urlaub: "Férias",
     verfuegbarkeit: "Disponibilidade",
     notfall: "Emergência",
+    schichtvorlagen: "Modelos de turno",
     einstellungen: "Definições",
     joseph: "Joseph",
     gruppeArbeitsplatz: "Área de trabalho",
@@ -1097,6 +1098,16 @@ export const pt: Dictionary = {
     wunschWeg: "Esta preferência já não existe.",
     notizGespeichert: "Nota guardada.",
     notizEntfernt: "Nota removida.",
+  },
+
+  schichtvorlagen: {
+    metaTitel: "Modelos de turno",
+    metaBeschreibung: "Crie e remova modelos de turno por dia da semana, com a equipa mínima.",
+    titel: "Modelos de turno",
+    lead: "A semana padrão do seu negócio: os turnos de cada dia e quantas pessoas de cada função têm de estar presentes no mínimo. Os novos modelos aplicam-se aos próximos períodos de planeamento; os turnos já criados ficam como estão.",
+    keineRollen: "Crie primeiro pelo menos uma função — sem função não é possível indicar a equipa mínima.",
+    zumTeam: "Ir para a equipa",
+    nurChef: "Só a direção do negócio pode editar os modelos de turno.",
   },
 
   teamVerwaltung: {

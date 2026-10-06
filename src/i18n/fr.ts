@@ -118,6 +118,7 @@ export const fr: Dictionary = {
     urlaub: "Congés",
     verfuegbarkeit: "Disponibilités",
     notfall: "Urgence",
+    schichtvorlagen: "Modèles de service",
     einstellungen: "Paramètres",
     joseph: "Joseph",
     gruppeArbeitsplatz: "Espace de travail",
@@ -1094,6 +1095,16 @@ export const fr: Dictionary = {
     wunschWeg: "Cette préférence n'existe plus.",
     notizGespeichert: "Note enregistrée.",
     notizEntfernt: "Note supprimée.",
+  },
+
+  schichtvorlagen: {
+    metaTitel: "Modèles de service",
+    metaBeschreibung: "Créez et supprimez des modèles de service par jour de la semaine, avec l’effectif minimum.",
+    titel: "Modèles de service",
+    lead: "La semaine type de votre établissement : les services de chaque jour et le nombre minimum de personnes par rôle. Les nouveaux modèles s’appliquent aux prochaines périodes de planification ; les services déjà créés restent inchangés.",
+    keineRollen: "Créez d’abord au moins un rôle — sans rôle, aucun effectif minimum ne peut être indiqué.",
+    zumTeam: "Vers l’équipe",
+    nurChef: "Seule la direction de l’établissement peut modifier les modèles de service.",
   },
 
   teamVerwaltung: {

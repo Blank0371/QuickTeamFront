@@ -117,6 +117,7 @@ export const es: Dictionary = {
     urlaub: "Vacaciones",
     verfuegbarkeit: "Disponibilidad",
     notfall: "Emergencia",
+    schichtvorlagen: "Plantillas de turno",
     einstellungen: "Ajustes",
     joseph: "Joseph",
     gruppeArbeitsplatz: "Lugar de trabajo",
@@ -1093,6 +1094,16 @@ export const es: Dictionary = {
     wunschWeg: "Esta preferencia ya no existe.",
     notizGespeichert: "Nota guardada.",
     notizEntfernt: "Nota eliminada.",
+  },
+
+  schichtvorlagen: {
+    metaTitel: "Plantillas de turno",
+    metaBeschreibung: "Crea y elimina plantillas de turno por día de la semana, con la dotación mínima.",
+    titel: "Plantillas de turno",
+    lead: "La semana estándar de tu negocio: los turnos de cada día y cuántas personas de cada rol deben estar como mínimo. Las plantillas nuevas se aplican a los próximos periodos de planificación; los turnos ya creados se quedan como están.",
+    keineRollen: "Crea primero al menos un rol: sin rol no se puede indicar una dotación mínima.",
+    zumTeam: "Ir al equipo",
+    nurChef: "Solo la dirección del negocio puede editar las plantillas de turno.",
   },
 
   teamVerwaltung: {

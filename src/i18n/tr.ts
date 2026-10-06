@@ -117,6 +117,7 @@ export const tr: Dictionary = {
     urlaub: "İzin",
     verfuegbarkeit: "Uygunluk",
     notfall: "Acil",
+    schichtvorlagen: "Vardiya şablonları",
     einstellungen: "Ayarlar",
     joseph: "Joseph",
     gruppeArbeitsplatz: "Çalışma alanı",
@@ -1093,6 +1094,16 @@ export const tr: Dictionary = {
     wunschWeg: "Bu tercih artık yok.",
     notizGespeichert: "Not kaydedildi.",
     notizEntfernt: "Not kaldırıldı.",
+  },
+
+  schichtvorlagen: {
+    metaTitel: "Vardiya şablonları",
+    metaBeschreibung: "Haftanın her günü için asgari kadroyla vardiya şablonları oluşturun ve kaldırın.",
+    titel: "Vardiya şablonları",
+    lead: "İşletmenizin standart haftası: her günün vardiyaları ve her rolden en az kaç kişinin bulunması gerektiği. Yeni şablonlar gelecek planlama dönemleri için geçerlidir; önceden oluşturulmuş vardiyalar olduğu gibi kalır.",
+    keineRollen: "Önce en az bir rol oluşturun — rol olmadan asgari kadro belirlenemez.",
+    zumTeam: "Ekibe git",
+    nurChef: "Vardiya şablonlarını yalnızca işletme yöneticisi düzenleyebilir.",
   },
 
   teamVerwaltung: {
