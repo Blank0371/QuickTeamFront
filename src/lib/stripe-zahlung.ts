@@ -3,6 +3,7 @@ import type { Locale } from "@/i18n/config";
 import type { Rechnungsangaben } from "@/lib/betrieb";
 import { stripeKlient } from "@/lib/stripe-konfiguration";
 import { stelleSteuerstandortSicher } from "@/lib/stripe-rechnung";
+import { stripeSprache } from "@/lib/stripe-sprache";
 
 /**
  * Öffnet das Stripe-Kundenportal für einen Kunden.
@@ -31,8 +32,7 @@ export async function erstelleKundenportal({
   const sitzung = await stripeKlient().billingPortal.sessions.create({
     customer: kundeId,
     return_url: rueckkehrUrl,
-    // Das Kundenportal kennt kein Albanisch; `auto` nimmt die Browsersprache.
-    locale: sprache === "sq" ? "auto" : sprache,
+    locale: stripeSprache(sprache),
   });
   return sitzung.url;
 }

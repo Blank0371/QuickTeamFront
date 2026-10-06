@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { Container } from "@/components/container";
 import { Uebernehmen } from "@/components/dashboard/uebernehmen";
-import type { Locale } from "@/i18n/config";
+import { INTL_LOCALE, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/de";
 import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
@@ -283,7 +283,7 @@ export default async function SchichtSeite({
  * hier die Zone des Betriebs hin — die Tabelle kennt sie heute nicht.
  */
 function zeitpunkt(iso: string, locale: Locale): string {
-  return new Date(iso).toLocaleString({ de: "de-AT", en: "en-GB", sq: "sq-AL" }[locale], {
+  return new Date(iso).toLocaleString(INTL_LOCALE[locale], {
     day: "numeric",
     month: "long",
     hour: "2-digit",

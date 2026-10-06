@@ -41,10 +41,15 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteUrl),
     title: {
       default: meta.titel,
-      template: "%s · QuickTeam",
+      template: "%s | QuickTeam",
     },
     description: meta.beschreibung,
-    alternates: { canonical: "/" },
+    /*
+     * Kein `alternates.canonical` hier: ein Wert im Root-Layout erbt jede
+     * Seite ohne eigenen — `/registrieren` oder `/dashboard/team` hätten
+     * dann `/` als kanonische Adresse gemeldet. Die Kanonische steht je
+     * öffentlicher Seite in deren `generateMetadata`.
+     */
     applicationName: siteName,
     authors: [{ name: siteName }],
     creator: siteName,
@@ -93,6 +98,8 @@ function jsonLd(sprache: Locale, t: Dictionary) {
         "@type": "Organization",
         "@id": `${siteUrl}/#organization`,
         name: siteName,
+        // Die Firma laut Impressum, mit Rechtsformzusatz (Teil der Firma).
+        legalName: "BlankTrading UG (haftungsbeschränkt)",
         url: siteUrl,
         // Zeigt auf die Datei, die `src/app/icon.png` unter dieser
         // Adresse ausliefert. Seit dem Wechsel auf das echte Logo gibt

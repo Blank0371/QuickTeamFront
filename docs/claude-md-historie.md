@@ -15,6 +15,44 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-05 — Sprachumschalter auf dem Handy
+
+**Vorher:** auf öffentlichen Seiten war der Umschalter unter 768 px ausgeblendet und fehlte
+im Handy-Menü; die Landingpage hatte gar keinen. **Jetzt:** er steht im Handy-Menü
+(`MobileMenu`) und im Klappmenü der Landingpage (dunkle Variante `aufDunkel`). Die
+Desktop-Leiste der Landingpage bleibt ohne Umschalter. **Begründung:** Anweisung des
+Nutzers; mit zehn Sprachen war die Wahl auf dem Handy nur über `?lang=` erreichbar.
+
+---
+
+## 2026-10-05 — Italienisch und Portugiesisch nachgezogen
+
+**Vorher:** acht Sprachen; der Eintrag vom 2026-10-04 hielt fest, die App kenne kein `it`/`pt`.
+**Jetzt:** zehn — `it` und `pt` (europäisches Portugiesisch, Anrede formell wie die App)
+mit Wörterbüchern `src/i18n/{it,pt}.ts`; Stripe kennt beide (`stripeSprache()`).
+**Begründung:** die Aussage war falsch. `I18nProvider.tsx` führt `it` und `pt` seit dem
+2026-09-03 (Commit `1ab4726` im App-Repo) in `SUPPORTED`; die Anweisung „alle Sprachen der
+Mobile-Version" schliesst sie ein. Beim Prüfen des Branches `i18n/app-sprachen` aufgefallen.
+
+---
+
+## 2026-10-04 — Alle Sprachen der Expo-App auf der Website
+
+**Vorher:** die Seite lieferte `de`, `en`, `sq`; Umschalter als Reihe von drei Knöpfen.
+**Jetzt:** zusätzlich `es`, `fr`, `ru`, `tr`, `uk` (Wörterbücher `src/i18n/<code>.ts`, aus
+`en.ts` übersetzt, Fachbegriffe aus `../QuickTeamMobile/src/i18n/locales/<code>.json`).
+Der Umschalter ist ein `<select>` mit den Eigennamen der Sprachen — acht Kürzel hätten
+Kopfzeile und Konto-Blatt auf 375 px gesprengt, und „UK" liest jeder als Grossbritannien;
+die sr-only-Schlüssel `sprachWahl.aktuell/zuDe/zuEn/zuSq` entfallen. Rechtstexte bleiben
+de/en (alle anderen lesen und protokollieren `en`), Stripe bekommt für `sq`/`uk` `auto`
+(`stripeSprache()`), `i18n:pruefen` prüft jede Sprache aus `locales` automatisch.
+**Begründung:** Anweisung des Nutzers („die Sprachen der Mobile-Version sollen alle auf
+die Website"). **Korrektur zum Eintrag „Albanisch als dritte Oberflächensprache":** die App kennt de, en, es, fr, ru, tr,
+uk (`I18nProvider.tsx`, `SUPPORTED`) — `it` und `pt` gibt es dort nicht. *(Falsch, siehe
+2026-10-05.)*
+
+---
+
 ## 2026-10-04 — Vor QuickTeam genommener Urlaub (sechste Schema-Ausnahme)
 
 **Vorher:** Verbrauchter Urlaub war ausschliesslich die Summe der `urlaub`-Zeilen im

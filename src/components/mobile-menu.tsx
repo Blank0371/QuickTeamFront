@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { SprachWahl } from "@/components/sprach-wahl";
+import type { Locale } from "@/i18n/config";
+
 type NavLink = { href: string; label: string };
 
 /**
@@ -16,6 +19,7 @@ export function MobileMenu({
   registrieren,
   oeffnenLabel,
   schliessenLabel,
+  sprache,
 }: {
   links: readonly NavLink[];
   /**
@@ -33,6 +37,8 @@ export function MobileMenu({
   registrieren?: string;
   oeffnenLabel: string;
   schliessenLabel: string;
+  /** Aktive Sprache — der Umschalter der Kopfzeile ist unter `md` ausgeblendet und steht dann hier. */
+  sprache: Locale;
 }) {
   const [offen, setOffen] = useState(false);
   const panelId = useId();
@@ -111,6 +117,10 @@ export function MobileMenu({
                 </Link>
               </li>
             ))}
+
+            <li className="mt-2 border-t border-line px-3 pt-3 pb-1">
+              <SprachWahl aktiv={sprache} />
+            </li>
 
             {login && registrieren ? (
               <>

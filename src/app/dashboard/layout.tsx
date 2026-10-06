@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { gabarito } from "@/components/schriften";
@@ -72,6 +73,15 @@ const SCHRIFT_REGEL =
   `--font-display:var(--font-gabarito),ui-sans-serif,system-ui,sans-serif;` +
   `--font-sans:var(--font-gabarito),ui-sans-serif,system-ui,sans-serif;` +
   `font-family:var(--font-gabarito),ui-sans-serif,system-ui,sans-serif}`;
+
+/**
+ * Rückfallebene für den ganzen Teilbaum: jede Dashboard-Seite setzt
+ * `robots` ohnehin selbst, eine neue ohne den Eintrag bleibt hier trotzdem
+ * aus dem Index. `robots.txt` sperrt `/dashboard` zusätzlich.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function DashboardSchriftLayout({
   children,

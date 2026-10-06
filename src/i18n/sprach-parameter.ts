@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { istLocale } from "./config";
 
 /**
- * `?lang=de` / `?lang=en` — die Sprache für genau diese Anfrage.
+ * `?lang=de`, `?lang=en`, … (jede Sprache aus `locales`) — die Sprache für genau diese Anfrage.
  *
  * ─────────────────────────────────────────────────────────────────────
  *  Wofür

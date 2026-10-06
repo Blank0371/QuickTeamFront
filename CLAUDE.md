@@ -46,7 +46,8 @@ Der Solver ist fremder Code: `plan-generieren` ist eine Supabase Edge Function u
 - Tailwind CSS v4
 - `@supabase/ssr` für Auth — **nicht** `@supabase/auth-helpers-nextjs` (deprecated)
 - Deployment: Vercel
-- Sprache: Deutsch und Englisch, `lang` aus dem Cookie — siehe „Zweisprachigkeit"
+- Sprache: zehn Oberflächensprachen (de, en, es, fr, it, pt, ru, sq, tr, uk), `lang` aus dem
+  Cookie — siehe „Zweisprachigkeit"
 
 ## Datenbank
 
@@ -985,14 +986,27 @@ Index?", nicht „darf ausgeliefert werden?"). Webhook und Cron sind ausgenommen
 
 ## Zweisprachigkeit
 
-Die Seite liefert `de`, `en` und seit 2026-10-04 `sq` (Albanisch, auf Anweisung des
-Nutzers, kein Expo-Gegenstück); Umschalter oben rechts (öffentliche Kopfzeile und
-Dashboard-Topbar). Sprachpakete als getippte Objekte, kein next-intl.
+Die Seite liefert zehn Sprachen (`locales` in `src/i18n/config.ts`): `de`, `en`, seit
+2026-10-04 `sq` (Albanisch, kein Expo-Gegenstück) und — auf Anweisung des Nutzers — alle
+übrigen Sprachen der Expo-App (`SUPPORTED` in `I18nProvider.tsx`): `es`, `fr`, `ru`, `tr`,
+`uk` seit 2026-10-04, `it`, `pt` seit 2026-10-05.
+Umschalter oben rechts (öffentliche Kopfzeile und Dashboard-Topbar), auf dem Handy im
+Menü (`MobileMenu`, Klappmenü der Landingpage — dort `aufDunkel`, die Leiste ist immer
+Carbon) bzw. im Konto-Blatt; seit 2026-10-04 ein natives `<select>`, unter `md` 16 px (iOS
+zoomt sonst beim Antippen) mit den Eigennamen (`SPRACH_NAMEN`, nie übersetzt). Sprachpakete als
+getippte Objekte, kein next-intl. **Fachbegriffe der neuen Sprachen kommen aus
+`../QuickTeamMobile/src/i18n/locales/<code>.json`**, Anrede wie dort (es/it/tr du,
+fr/pt/ru/uk Sie; Portugiesisch europäisch wie die App). Russisch/Ukrainisch: Sätze mit Zahl als „Голосов: {n}" gebaut (drei Pluralformen,
+das Wörterbuch kennt zwei).
 
-**Albanisch hat keine Rechtstexte.** Bei `sq` zeigen `/agb`, `/avv`, `/datenschutz` die
-englische Fassung, und `rechtliche_zustimmungen.sprache` erhält `en` — festgehalten wird
-die gelesene Fassung, nicht die Oberfläche (`rechtstextSprache()` in
-`src/lib/rechtstexte.ts`). Stripe Elements und Kundenportal bekommen bei `sq` `auto`.
+**Rechtstexte gibt es nur de/en.** Bei jeder anderen Sprache zeigen `/agb`, `/avv`,
+`/datenschutz` die englische Fassung, und `rechtliche_zustimmungen.sprache` erhält `en` —
+festgehalten wird die gelesene Fassung, nicht die Oberfläche (`rechtstextSprache()` in
+`src/lib/rechtstexte.ts`). Stripe Elements und Kundenportal kennen `sq` und `uk` nicht und
+bekommen `auto` (`stripeSprache()` in `src/lib/stripe-sprache.ts`). Die Überschriftenschrift
+Archivo hat kein Kyrillisch — auf ru/uk greift dort die Ersatzschrift; Inter (Fliesstext)
+liefert Kyrillisch und Latin-Ext mit (`next/font` hostet alle Teilmengen, `subsets` steuert
+nur das Preloading).
 
 - `src/i18n/de.ts` — Leitsprache, `Dictionary = typeof de` **ohne `as const`** (sonst
   müsste `en` wörtlich dieselben Sätze tragen)
@@ -1033,7 +1047,7 @@ speichert den Anzeigetext selbst (`mitarbeiter.vertrag_typ` ist `text` ohne CHEC
 App gibt ihn ungeprüft aus) — bleibt unübersetzt. Web-eigen (kein App-Gegenstück):
 `tausch`, `verfuegbarkeit`, `uebersicht`.
 
-**`?lang=de|en`** geht dem Cookie vor, nur für diese eine GET/HEAD-Anfrage (Middleware →
+**`?lang=<code>`** (jede Sprache aus `locales`) geht dem Cookie vor, nur für diese eine GET/HEAD-Anfrage (Middleware →
 Kopfzeile `x-qt-sprache` → `leseSprache()`, `src/i18n/sprach-parameter.ts`), ohne etwas
 zu speichern — für Links aus dem In-App-Browser der Expo-App. Eine vom Client
 mitgeschickte `x-qt-sprache` wird verworfen.
@@ -1041,8 +1055,8 @@ mitgeschickte `x-qt-sprache` wird verworfen.
 **Stand 2026-09-28: die Oberfläche ist vollständig zweisprachig** — öffentliche Seiten,
 Auth, Stepper, alle Dashboard-Bereiche, Metadaten (`generateMetadata`) und die
 `nachricht`-Sätze der Server Actions. **Bewusst einsprachig** (steht im Bestand, s. u.):
-Registerangaben im Impressum, `VERTRAG_TYPEN`, `global-error.tsx` (zweisprachig in einer
-Fassung, weil dort kein Wörterbuch lädt), das OG-Bild (Crawler schicken kein
+Registerangaben im Impressum, `VERTRAG_TYPEN`, `global-error.tsx` (eigene kurze Texte je
+Sprache inline, weil dort kein Wörterbuch lädt), das OG-Bild (Crawler schicken kein
 Sprach-Cookie), Protokoll-/Konfigurationsmeldungen, Webhook-/Cron-Antworten,
 DB-Fehlermuster und das **JSON-Paket des Betriebsexports** (`lib/export/`, festes Format,
 von `paket.test.ts` geprüft — ob es übersetzt wird, ist offen beim Nutzer). Noch zu

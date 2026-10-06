@@ -4,6 +4,8 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { SprachWahl } from "@/components/sprach-wahl";
+import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/de";
 
 /**
@@ -78,11 +80,14 @@ export type LandingNavTexte = Pick<
  */
 export function LandingNavigation({
   authOffen,
+  sprache,
   promoHref,
   promoLabel,
   texte,
 }: {
   authOffen: boolean;
+  /** Aktive Sprache für den Umschalter im Klappmenü. */
+  sprache: Locale;
   promoHref?: string;
   promoLabel?: string;
   texte: LandingNavTexte;
@@ -327,6 +332,13 @@ export function LandingNavigation({
               </Link>
             </li>
           ) : null}
+
+          <li
+            className="mt-2 px-2 pt-3"
+            style={{ borderTop: "1px solid color-mix(in oklab, var(--qt-c-bone) 8%, transparent)" }}
+          >
+            <SprachWahl aktiv={sprache} aufDunkel />
+          </li>
 
           {authOffen ? (
             <li

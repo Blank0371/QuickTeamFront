@@ -64,7 +64,7 @@ export async function RechtsDokument({
    */
   hinweis?: ReactNode;
 }) {
-  // Albanisch hat keine eigene Fassung und liest die englische
+  // Nur de/en haben eine eigene Fassung, alle anderen lesen die englische
   // (`rechtstextSprache()`); `lang` am Textblock sagt das dem Vorleser.
   const sprache = rechtstextSprache(await leseSprache());
   const t = await holeTexte();

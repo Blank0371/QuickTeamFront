@@ -4,7 +4,8 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 /**
- * Sprachkontrolle: hält `de.ts`, `en.ts` und `sq.ts` deckungsgleich und zählt,
+ * Sprachkontrolle: hält alle Wörterbücher in `src/i18n/` deckungsgleich mit
+ * `de.ts` und zählt,
  * wie viel Text noch am Wörterbuch vorbei in der Oberfläche steht.
  *
  * ─────────────────────────────────────────────────────────────────────
@@ -49,9 +50,16 @@ const nurDatei = process.argv.includes("--datei")
 /* ------------------------------------------------------------------ */
 
 // Unter Windows ist ein absoluter Pfad kein gültiger ESM-Spezifizierer.
-const { de } = await import(pathToFileURL(path.join(wurzel, "src/i18n/de.ts")).href);
-const { en } = await import(pathToFileURL(path.join(wurzel, "src/i18n/en.ts")).href);
-const { sq } = await import(pathToFileURL(path.join(wurzel, "src/i18n/sq.ts")).href);
+const laden = async (code) =>
+  (await import(pathToFileURL(path.join(wurzel, `src/i18n/${code}.ts`)).href))[code];
+const { locales } = await import(pathToFileURL(path.join(wurzel, "src/i18n/config.ts")).href);
+const de = await laden("de");
+const en = await laden("en");
+/* Jede Sprache aus `config.ts` ausser der Leitsprache — eine neue Sprache ist damit
+ * automatisch geprüft, ohne dass hier jemand nachzieht. */
+const weitere = await Promise.all(
+  locales.filter((code) => code !== "de").map(async (code) => [code, await laden(code)]),
+);
 
 /** Verschachteltes Objekt zu `pfad.zum.schluessel` → Wert. */
 function flach(objekt, praefix = "") {
@@ -70,11 +78,15 @@ function flach(objekt, praefix = "") {
 const deFlach = flach(de);
 const enFlach = flach(en);
 
-const fehltInEn = [...deFlach.keys()].filter((k) => !enFlach.has(k));
-const fehltInDe = [...enFlach.keys()].filter((k) => !deFlach.has(k));
-const sqFlach = flach(sq);
-const fehltInSq = [...deFlach.keys()].filter((k) => !sqFlach.has(k));
-const zuVielInSq = [...sqFlach.keys()].filter((k) => !deFlach.has(k));
+/** Je Sprache: was gegenüber `de.ts` fehlt und was nur dort steht. */
+const abweichungen = weitere.map(([code, woerterbuch]) => {
+  const f = flach(woerterbuch);
+  return {
+    code,
+    fehlt: [...deFlach.keys()].filter((k) => !f.has(k)),
+    zuViel: [...f.keys()].filter((k) => !deFlach.has(k)),
+  };
+});
 
 /*
  * Gleicher Wert in beiden Sprachen ist ein Verdacht, kein Fehler: „QuickTeam",
@@ -442,17 +454,17 @@ const G = (s) => `[32m${s}[0m`;
 const grau = (s) => `[90m${s}[0m`;
 const kurz = (text) => (text.length > 72 ? `${text.slice(0, 69)}…` : text);
 
-const zeilen = ["", `  Sprachkontrolle  ${grau(`${deFlach.size} Schlüssel · de/en/sq`)}`, ""];
+const zeilen = ["", `  Sprachkontrolle  ${grau(`${deFlach.size} Schlüssel · ${locales.join("/")}`)}`, ""];
 
-const schluesselFehler = [fehltInEn, fehltInDe, fehltInSq, zuVielInSq].some((l) => l.length > 0);
+const schluesselFehler = abweichungen.some((a) => a.fehlt.length > 0 || a.zuViel.length > 0);
 
 if (!schluesselFehler) {
   zeilen.push(`  ${G("✓")} Schlüssel deckungsgleich`);
 } else {
-  for (const k of fehltInEn) zeilen.push(`  ${F("✗")} fehlt in en.ts   ${k}`);
-  for (const k of fehltInDe) zeilen.push(`  ${F("✗")} fehlt in de.ts   ${k}`);
-  for (const k of fehltInSq) zeilen.push(`  ${F("✗")} fehlt in sq.ts   ${k}`);
-  for (const k of zuVielInSq) zeilen.push(`  ${F("✗")} fehlt in de.ts   ${k} (nur in sq.ts)`);
+  for (const { code, fehlt, zuViel } of abweichungen) {
+    for (const k of fehlt) zeilen.push(`  ${F("✗")} fehlt in ${code}.ts   ${k}`);
+    for (const k of zuViel) zeilen.push(`  ${F("✗")} fehlt in de.ts   ${k} (nur in ${code}.ts)`);
+  }
 }
 
 if (unuebersetzt.length > 0) {
