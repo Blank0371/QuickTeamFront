@@ -93,9 +93,9 @@ export const en: Dictionary = {
   meta: {
     titel: "QuickTeam — Staff scheduling for restaurants",
     beschreibung:
-      "QuickTeam schedules shifts for restaurants, cafés and bars in Austria and Germany. Build the rota, keep the team informed, keep an eye on the hours.",
+      "QuickTeam is a staff rota, shift planner and team planner for restaurants, cafés and bars in Austria and Germany. Assign staff, keep the team informed.",
     ogBeschreibung:
-      "Shift planning for hospitality in Austria and Germany. Planned in minutes instead of hours.",
+      "Staff rota and team planner for hospitality in Austria and Germany. Planned in minutes instead of hours.",
     ogLocale: "en_GB",
   },
   promo: {
@@ -589,7 +589,7 @@ export const en: Dictionary = {
    */
   landing: {
     heroSub:
-      "QuickTeam is staff scheduling for hospitality. One place for shifts, team and swaps — clear to everyone.",
+      "QuickTeam is the staff rota and team planner for hospitality. One place for shifts, team and swaps — clear to everyone.",
     heroTesten: "Register",
     heroAnmelden: "Sign in",
     heroFunktionen: "Explore the features",
@@ -632,7 +632,7 @@ export const en: Dictionary = {
 
     metaTitel: "QuickTeam — staff scheduling for hospitality",
     metaText:
-      "The weekly plan for your venue: assign shifts, notify the team, let the hours add themselves up. For restaurants, cafés and bars in Austria and Germany.",
+      "Staff scheduling and team planner for hospitality: build the rota, assign staff, track hours. For restaurants, cafés and bars in Austria and Germany.",
   },
 
   /* Headcount per plan. Keys are the plan IDs from `site.ts`. */

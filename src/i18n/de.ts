@@ -91,9 +91,9 @@ export const de = {
   meta: {
     titel: "QuickTeam — Dienstplanung für Gastronomiebetriebe",
     beschreibung:
-      "QuickTeam plant Schichten für Restaurants, Cafés und Bars in Österreich und Deutschland. Dienstplan erstellen, Team informieren, Stunden im Blick behalten.",
+      "QuickTeam ist Dienstplan, Schichtplaner und Teamplaner für Restaurants, Cafés und Bars in Österreich und Deutschland. Personal einteilen, Team informieren.",
     ogBeschreibung:
-      "Schichtplanung für Gastronomie in Österreich und Deutschland. In Minuten geplant statt in Stunden.",
+      "Dienstplan und Teamplaner für die Gastronomie in Österreich und Deutschland. In Minuten geplant statt in Stunden.",
     ogLocale: "de_AT",
   },
   promo: {
@@ -621,7 +621,7 @@ export const de = {
    */
   landing: {
     heroSub:
-      "QuickTeam ist die Dienstplanung für Gastrobetriebe. Ein Ort für Schichten, Team und Tausch, klar für alle.",
+      "QuickTeam ist der Dienstplan und Teamplaner für die Gastronomie. Ein Ort für Schichten, Team und Tausch, klar für alle.",
     heroTesten: "Registrieren",
     heroAnmelden: "Anmelden",
     heroFunktionen: "Funktionen entdecken",
@@ -673,7 +673,7 @@ export const de = {
 
     metaTitel: "QuickTeam — Dienstplanung für Gastronomiebetriebe",
     metaText:
-      "Der Wochenplan fürs Lokal: Schichten verteilen, Team benachrichtigen, Stunden zählen lassen. Für Restaurants, Cafés und Bars in Österreich und Deutschland.",
+      "Dienstplan und Teamplaner für die Gastronomie in Österreich und Deutschland: Schichtplan erstellen, Personal einteilen, Stunden zählen.",
   },
 
   /** Die Seite `/preise` (Rahmen und `PreisListe`). */
