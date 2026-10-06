@@ -117,6 +117,7 @@ export const sq: Dictionary = {
     urlaub: "Pushime",
     verfuegbarkeit: "Disponueshmëria",
     notfall: "Emergjenca",
+    schichtvorlagen: "Shabllonet e turneve",
     einstellungen: "Cilësimet",
     joseph: "Joseph",
     gruppeArbeitsplatz: "Vendi i punës",
@@ -1097,6 +1098,17 @@ export const sq: Dictionary = {
     wunschWeg: "Kjo preferencë nuk ekziston më.",
     notizGespeichert: "Shënimi u ruajt.",
     notizEntfernt: "Shënimi u hoq.",
+  },
+
+  schichtvorlagen: {
+    metaTitel: "Shabllonet e turneve",
+    metaBeschreibung:
+      "Krijo dhe hiq shabllone turnesh për çdo ditë të javës, me stafin minimal.",
+    titel: "Shabllonet e turneve",
+    lead: "Java standarde e biznesit tënd: turnet e çdo dite dhe sa njerëz të secilit rol duhet të jenë të paktën të pranishëm. Shabllonet e reja vlejnë për periudhat e ardhshme të planifikimit; turnet ekzistuese mbeten siç janë.",
+    keineRollen: "Krijo së pari të paktën një rol — pa rol nuk mund të caktohet stafi minimal.",
+    zumTeam: "Te ekipi",
+    nurChef: "Vetëm drejtuesi i biznesit mund t'i ndryshojë shabllonet e turneve.",
   },
 
   teamVerwaltung: {

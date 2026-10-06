@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { SchrittRahmen } from "@/components/einrichtung/schritt-rahmen";
+import { VorlagenAbschnitt } from "@/components/schichten/vorlagen-abschnitt";
 import { betreteSchritt } from "@/lib/einrichtung";
 import { holeVorlagen, sichtbareVorlagen } from "@/lib/schichten";
 import { holeRollen } from "@/lib/team";
@@ -10,8 +11,7 @@ import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 import { wochentageKurz, wochentageLang } from "@/lib/dashboard/kalender";
 
-import { zumAbschluss } from "./aktionen";
-import { VorlagenAbschnitt } from "./vorlagen-abschnitt";
+import { vorlageAnlegen, vorlageEntfernen, zumAbschluss } from "./aktionen";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { stepper } = await holeTexte();
@@ -73,6 +73,8 @@ export default async function SchichtenSeite() {
         texte={st}
         tagKurz={tagKurz}
         tagLang={tagLang}
+        anlegen={vorlageAnlegen}
+        entfernen={vorlageEntfernen}
       />
 
       <form action={zumAbschluss} className="mt-10 border-t border-line pt-6">

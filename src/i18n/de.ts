@@ -126,6 +126,7 @@ export const de = {
     urlaub: "Urlaub",
     verfuegbarkeit: "Verfügbarkeit",
     notfall: "Notfall",
+    schichtvorlagen: "Schichtvorlagen",
     einstellungen: "Einstellungen",
     joseph: "Joseph",
     /* Gruppentitel der Sidebar. Zwei, nicht fünf: die Gliederung soll
@@ -1304,6 +1305,18 @@ export const de = {
     wunschWeg: "Diesen Wunsch gibt es nicht mehr.",
     notizGespeichert: "Notiz gespeichert.",
     notizEntfernt: "Notiz entfernt.",
+  },
+
+  /** `/dashboard/schichtvorlagen` — Vorlagenpflege im Dauerbetrieb. */
+  schichtvorlagen: {
+    metaTitel: "Schichtvorlagen",
+    metaBeschreibung:
+      "Schichtvorlagen je Wochentag samt Mindestbesetzung anlegen und entfernen.",
+    titel: "Schichtvorlagen",
+    lead: "Die Grundwoche deines Betriebs: je Wochentag die Schichten und wie viele Leute welcher Rolle mindestens da sein müssen. Neue Vorlagen gelten für künftige Planungszeiträume; schon erzeugte Schichten bleiben, wie sie sind.",
+    keineRollen: "Leg zuerst mindestens eine Rolle an — ohne Rolle lässt sich keine Mindestbesetzung angeben.",
+    zumTeam: "Zum Team",
+    nurChef: "Schichtvorlagen kann nur die Betriebsleitung bearbeiten.",
   },
 
   /** `/dashboard/team` — Rollen, Team-Liste, Einladen, Anstellung, Aktionen. */

@@ -111,6 +111,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     {
       titel: t.dashboard.gruppeOrganisation,
       bereiche: [
+        /* Vorlagen pflegt nur die Betriebsleitung — in der App liegen
+           sie im Manager-Tab (`manager.tsx`, `ShiftsSection`). */
+        ...(chef
+          ? ([
+              {
+                href: "/dashboard/schichtvorlagen",
+                label: t.dashboard.schichtvorlagen,
+                icon: "schichtvorlagen",
+              },
+            ] as const)
+          : []),
         {
           href: "/dashboard/urlaub",
           label: t.dashboard.urlaub,

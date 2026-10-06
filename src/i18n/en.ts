@@ -165,6 +165,7 @@ export const en: Dictionary = {
     urlaub: "Vacation",
     verfuegbarkeit: "Availability",
     notfall: "Emergency",
+    schichtvorlagen: "Shift templates",
     einstellungen: "Settings",
     joseph: "Joseph",
     gruppeArbeitsplatz: "Workspace",
@@ -1193,6 +1194,17 @@ export const en: Dictionary = {
     wunschWeg: "This preference no longer exists.",
     notizGespeichert: "Note saved.",
     notizEntfernt: "Note removed.",
+  },
+
+  schichtvorlagen: {
+    metaTitel: "Shift templates",
+    metaBeschreibung:
+      "Create and remove shift templates per weekday, including minimum staffing.",
+    titel: "Shift templates",
+    lead: "Your business's standard week: the shifts on each weekday and how many people of each role must be there at minimum. New templates apply to future planning periods; shifts that already exist stay as they are.",
+    keineRollen: "Create at least one role first — without a role there is no minimum staffing to set.",
+    zumTeam: "Go to team",
+    nurChef: "Only the business owner can edit shift templates.",
   },
 
   teamVerwaltung: {

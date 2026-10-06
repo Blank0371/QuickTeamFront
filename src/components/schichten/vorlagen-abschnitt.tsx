@@ -5,13 +5,14 @@ import { useActionState } from "react";
 import { AbsendenButton } from "@/components/formular/absenden-button";
 import { FormMeldung, TextFeld } from "@/components/formular/felder";
 import { ZahlStepper } from "@/components/formular/zahl-stepper";
-import { leererZustand } from "@/lib/formular";
+import { leererZustand, type FormZustand } from "@/lib/formular";
 import { WOCHENTAGE, type Vorlage } from "@/lib/schichten";
 import type { Rolle } from "@/lib/team";
 import type { Dictionary } from "@/i18n/de";
 
-import { vorlageAnlegen, vorlageEntfernen } from "./aktionen";
 import { WochenRaster } from "./wochen-raster";
+
+type Aktion = (vorher: FormZustand, formData: FormData) => Promise<FormZustand>;
 
 /**
  * Schichtvorlagen anlegen und die Woche im Überblick.
@@ -20,6 +21,11 @@ import { WochenRaster } from "./wochen-raster";
  * die montagsbasierte Zählung (0 = Montag) gar nicht erst in die Nähe von
  * `Date.getDay()` kommt. Die Werte stammen aus `WOCHENTAGE`, dort steht
  * auch die Begründung.
+ *
+ * Getragen von Schritt 4 des Steppers und von `/dashboard/schichtvorlagen`.
+ * Die Server Actions kommen als Prop herein — jede Oberfläche leitet
+ * Session und Betrieb selbst ab, der Schreibweg darunter ist derselbe
+ * (`src/lib/schichten-schreiben.ts`).
  */
 export function VorlagenAbschnitt({
   rollen,
@@ -27,6 +33,8 @@ export function VorlagenAbschnitt({
   texte,
   tagKurz,
   tagLang,
+  anlegen: anlegenServer,
+  entfernen: entfernenServer,
 }: {
   rollen: readonly Rolle[];
   vorlagen: readonly Vorlage[];
@@ -34,9 +42,11 @@ export function VorlagenAbschnitt({
   /** Wochentagsnamen, montagsbasiert (Index = `wochentag`-Wert). */
   tagKurz: readonly string[];
   tagLang: readonly string[];
+  anlegen: Aktion;
+  entfernen: Aktion;
 }) {
-  const [anlegen, anlegenAktion] = useActionState(vorlageAnlegen, leererZustand);
-  const [entfernen, entfernenAktion] = useActionState(vorlageEntfernen, leererZustand);
+  const [anlegen, anlegenAktion] = useActionState(anlegenServer, leererZustand);
+  const [entfernen, entfernenAktion] = useActionState(entfernenServer, leererZustand);
 
   const werte = anlegen.werte ?? {};
   const rollenName = (id: string) => rollen.find((r) => r.id === id)?.name ?? texte.unbekannteRolle;

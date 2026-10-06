@@ -4,6 +4,7 @@ import {
   BotMessageSquare,
   CalendarClock,
   CalendarDays,
+  CalendarRange,
   ChevronRight,
   LayoutDashboard,
   Megaphone,
@@ -39,6 +40,7 @@ export const ICONS = {
   urlaub: TreePalm,
   verfuegbarkeit: CalendarClock,
   notfall: TriangleAlert,
+  schichtvorlagen: CalendarRange,
   einstellungen: Settings,
   joseph: BotMessageSquare,
 } as const;
