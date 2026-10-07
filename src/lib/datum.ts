@@ -46,3 +46,21 @@ export function tagPlus(datum: string, tage: number): string {
   const [jahr, monat, tag] = datum.split("-").map(Number);
   return new Date(Date.UTC(jahr ?? 1970, (monat ?? 1) - 1, (tag ?? 1) + tage)).toISOString().slice(0, 10);
 }
+
+/** Die Uhrzeit `HH:MM` in Betriebszeit — Gegenstück zu `heuteImBetrieb()`. */
+export function uhrzeitImBetrieb(jetzt: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(jetzt);
+}
+
+/**
+ * Hat eine Schicht, die am `datum` um `start` (Betriebszeit) beginnt, schon
+ * begonnen? Ein vergangener Tag immer, heute ab der Startminute. Wer eine
+ * einzelne Schicht anlegt, plant voraus — die RPC selbst prüft das nicht.
+ */
+export function beginnVorbei(datum: string, start: string, jetzt: Date = new Date()): boolean {
+  const heute = heuteImBetrieb(jetzt);
+  if (datum !== heute) return datum < heute;
+  return start.slice(0, 5) <= uhrzeitImBetrieb(jetzt);
+}

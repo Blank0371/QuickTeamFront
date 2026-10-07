@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import Link from "next/link";
 
 import { Besetzung, FortsetzungsChip } from "@/components/dashboard/schicht-chip";
@@ -50,12 +51,18 @@ export function MonatsRaster({
   proTag,
   fortsetzungen,
   locale,
+  neuAb = null,
 }: {
   raster: Monatsraster;
   proTag: Map<string, KalenderSchicht[]>;
   /** Nachtschichten des Vortags, die in diesen Tag hineinragen. */
   fortsetzungen: Map<string, Fortsetzung[]>;
   locale: Locale;
+  /**
+   * `YYYY-MM-DD` (Betriebszeit), ab dem ein Tag das Plus für „Schicht
+   * erstellen" trägt — `null` für alle, die keine Schichten anlegen dürfen.
+   */
+  neuAb?: string | null;
 }) {
   const t = getDictionary(locale).kalender;
   const monate = monatsnamen(locale);
@@ -73,6 +80,7 @@ export function MonatsRaster({
           monate={monate}
           wochenKurz={wochenKurz}
           wochenLang={wochenLang}
+          neuAb={neuAb}
         />
       </div>
       <div className="sm:hidden">
@@ -82,6 +90,7 @@ export function MonatsRaster({
           fortsetzungen={fortsetzungen}
           t={t}
           wochenLang={wochenLang}
+          neuAb={neuAb}
         />
       </div>
     </>
@@ -114,6 +123,24 @@ function langesDatum(
  */
 function istKernTag(spalte: number): boolean {
   return spalte >= 5;
+}
+
+/**
+ * Das Plus einer Zelle — Spiegel des Plus-Kalender-Knopfs in
+ * `calendar.tsx`, nur dass hier der Tag gleich mitkommt. Ein gewöhnlicher
+ * Link: die Seite `/dashboard/kalender/neu` liest `?datum=` selbst.
+ */
+function NeueSchichtLink({ datum, label }: { datum: string; label: string }) {
+  return (
+    <Link
+      href={`/dashboard/kalender/neu?datum=${datum}`}
+      title={label}
+      aria-label={label}
+      className="inline-flex size-6 items-center justify-center rounded-blk text-muted transition-colors hover:bg-signal-weak hover:text-signal"
+    >
+      <Plus className="size-3.5" aria-hidden="true" />
+    </Link>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -214,6 +241,7 @@ function Raster({
   monate,
   wochenKurz,
   wochenLang,
+  neuAb,
 }: {
   raster: Monatsraster;
   proTag: Map<string, KalenderSchicht[]>;
@@ -222,6 +250,7 @@ function Raster({
   monate: string[];
   wochenKurz: string[];
   wochenLang: string[];
+  neuAb: string | null;
 }) {
   return (
     <table className="w-full table-fixed border-separate border-spacing-1.5">
@@ -380,7 +409,15 @@ function Raster({
                           </p>
                         )}
 
-                        <LageMarker lage={lage} t={t} />
+                        <span className="flex items-center gap-1">
+                          <LageMarker lage={lage} t={t} />
+                          {neuAb && zelle.datum >= neuAb ? (
+                            <NeueSchichtLink
+                              datum={zelle.datum}
+                              label={t.neueSchichtAm.replace("{titel}", titel)}
+                            />
+                          ) : null}
+                        </span>
                       </div>
 
                       {/*
@@ -459,12 +496,14 @@ function TagesListe({
   fortsetzungen,
   t,
   wochenLang,
+  neuAb,
 }: {
   raster: Monatsraster;
   proTag: Map<string, KalenderSchicht[]>;
   fortsetzungen: Map<string, Fortsetzung[]>;
   t: KalenderTexte;
   wochenLang: string[];
+  neuAb: string | null;
 }) {
   /*
    * Ein Tag, der **nur** eine Fortsetzung trägt, kommt hier ebenfalls
@@ -511,6 +550,17 @@ function TagesListe({
                 {wochenLang[wochentagIndex]}, {zelle.tag}.
               </time>
               <LageMarker lage={tagesLage(schichten)} t={t} />
+              {neuAb && zelle.datum >= neuAb ? (
+                <span className="ml-auto">
+                  <NeueSchichtLink
+                    datum={zelle.datum}
+                    label={t.neueSchichtAm.replace(
+                      "{titel}",
+                      `${wochenLang[wochentagIndex]}, ${zelle.tag}.`,
+                    )}
+                  />
+                </span>
+              ) : null}
             </h3>
 
             <div className="mt-2 flex flex-col gap-2">

@@ -29,8 +29,7 @@ export function DashboardKontoInhalt({
 }: {
   sprache: Locale;
   thema: Thema | null;
-  /** `null`, wenn es nur eine Anstellung gibt — dann kein Verbindungs-Link. */
-  wechselHref: string | null;
+  wechselHref: string;
   texte: {
     spracheLabel: string;
     themaLabel: string;
@@ -61,16 +60,14 @@ export function DashboardKontoInhalt({
       </section>
 
       <div className="flex flex-col border-t border-line pt-2">
-        {wechselHref !== null ? (
-          <Link
-            href={wechselHref}
-            className="flex items-center gap-3 rounded-blk px-3 py-3 text-sm font-medium text-muted transition-colors hover:bg-surface-sunk hover:text-text"
-          >
-            <Users className="size-5 shrink-0" aria-hidden="true" />
-            <span className="grow">{texte.verbindungen}</span>
-            <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
-          </Link>
-        ) : null}
+        <Link
+          href={wechselHref}
+          className="flex items-center gap-3 rounded-blk px-3 py-3 text-sm font-medium text-muted transition-colors hover:bg-surface-sunk hover:text-text"
+        >
+          <Users className="size-5 shrink-0" aria-hidden="true" />
+          <span className="grow">{texte.verbindungen}</span>
+          <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
 
         <form action={abmelden}>
           <button

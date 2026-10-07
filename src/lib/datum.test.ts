@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { betriebsZeitpunkt, heuteImBetrieb, istKalendertag, tagPlus } from "./datum";
+import { beginnVorbei, betriebsZeitpunkt, heuteImBetrieb, istKalendertag, tagPlus } from "./datum";
 import { fristNochOffen } from "./dashboard/planung";
 
 test("Kalendertage prüfen Monatslängen und Schaltjahre", () => {
@@ -38,4 +38,16 @@ test("tagPlus zählt Kalendertage über Monats-, Jahres- und Umstellungsgrenzen"
   assert.equal(tagPlus("2026-03-28", 1), "2026-03-29");
   assert.equal(tagPlus("2026-03-29", 1), "2026-03-30");
   assert.equal(tagPlus("2026-03-01", -1), "2026-02-28");
+});
+
+test("Eine Schicht beginnt in der Zukunft erst nach der jetzigen Minute in Betriebszeit", () => {
+  // 2026-07-15 10:00 in Wien (Sommerzeit, UTC+2).
+  const jetzt = new Date("2026-07-15T08:00:00Z");
+  assert.equal(beginnVorbei("2026-07-14", "23:00", jetzt), true);
+  assert.equal(beginnVorbei("2026-07-15", "09:59", jetzt), true);
+  assert.equal(beginnVorbei("2026-07-15", "10:00", jetzt), true);
+  assert.equal(beginnVorbei("2026-07-15", "10:01", jetzt), false);
+  assert.equal(beginnVorbei("2026-07-16", "00:00", jetzt), false);
+  // 00:30 Wien ist in UTC noch der Vortag — „heute" ist trotzdem der 15.
+  assert.equal(beginnVorbei("2026-07-15", "06:00", new Date("2026-07-14T22:30:00Z")), false);
 });

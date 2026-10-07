@@ -53,12 +53,11 @@ import { leseThema } from "@/lib/thema";
  * zwei Gelegenheiten, sich zu widersprechen.
  */
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const { position, alle, zustimmung } = await betreteDashboard();
+  const { position, zustimmung } = await betreteDashboard();
   const sprache = await leseSprache();
   const thema = await leseThema();
   const t = getDictionary(sprache);
   const chef = istChef(position);
-  const mehrfachAnstellung = alle.length > 1;
   /* Joseph nur für Chefs und nur, wenn einer der Schalter an ist
      (`src/lib/joseph.ts`) — derselbe Wert steuert die Route. */
   const joseph = chef && josephZustand() !== "aus";
@@ -213,7 +212,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           betriebName={position.betriebName}
           personName={position.name}
           rolleText={t.dashboard.rolle[position.rolleTyp]}
-          wechselHref={mehrfachAnstellung ? "/dashboard/wechseln" : null}
+          wechselHref="/dashboard/wechseln"
         />
 
         {/*
@@ -275,7 +274,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <DashboardKontoInhalt
             sprache={sprache}
             thema={thema}
-            wechselHref={mehrfachAnstellung ? "/dashboard/wechseln" : null}
+            wechselHref="/dashboard/wechseln"
             texte={{
               spracheLabel: t.dashboard.spracheLabel,
               themaLabel: t.dashboard.themaLabel,

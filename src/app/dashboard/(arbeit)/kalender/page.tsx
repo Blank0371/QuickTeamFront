@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Printer } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -17,6 +17,7 @@ import {
   verschiebeMonat,
 } from "@/lib/dashboard/kalender";
 import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
+import { heuteImBetrieb } from "@/lib/datum";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = getDictionary(await leseSprache());
@@ -61,6 +62,8 @@ export default async function KalenderSeite({
   );
 
   const chef = istChef(position);
+  /* Ab hier trägt eine Zelle das Plus für „Schicht erstellen" — nur Chefs, nie rückwirkend. */
+  const neuAb = chef ? heuteImBetrieb() : null;
   const anzahl = [...proTag.values()].reduce((summe, liste) => summe + liste.length, 0);
   const laufenderMonat =
     jahr === heute.getFullYear() && monat === heute.getMonth() + 1;
@@ -149,6 +152,21 @@ export default async function KalenderSeite({
             <Printer className="size-5 sm:size-4" aria-hidden="true" />
             <span className="sr-only sm:not-sr-only">{t.planExport.drucken}</span>
           </Link>
+
+          {/*
+            Spiegel des Plus-Kalender-Knopfs in `calendar.tsx`. Auf dem
+            Handy der einzige Weg dorthin — die Tagesliste zeigt nur Tage,
+            an denen schon etwas liegt.
+          */}
+          {chef ? (
+            <Link
+              href={`/dashboard/kalender/neu${laufenderMonat ? "" : `?datum=${jahr}-${String(monat).padStart(2, "0")}-01`}`}
+              className="flex h-11 items-center gap-1.5 rounded-blk bg-signal px-3 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hover sm:h-9 sm:px-2.5"
+            >
+              <Plus className="size-5 sm:size-4" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only">{t.kalender.neueSchicht}</span>
+            </Link>
+          ) : null}
         </nav>
       </div>
 
@@ -164,6 +182,7 @@ export default async function KalenderSeite({
           proTag={proTag}
           fortsetzungen={sammleFortsetzungen(proTag)}
           locale={sprache}
+          neuAb={neuAb}
         />
       </div>
 

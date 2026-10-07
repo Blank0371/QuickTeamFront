@@ -118,8 +118,8 @@ export function DashboardSidebar({
   betriebName: string;
   personName: string;
   rolleText: string;
-  /** `null`, wenn es nur eine Anstellung gibt — dann ist die Karte kein Link. */
-  wechselHref: string | null;
+  /** Immer gesetzt: die Übersicht trägt auch bei einer Anstellung Einladungen und „Betrieb einrichten". */
+  wechselHref: string;
 }) {
   const pathname = usePathname();
 
@@ -210,11 +210,10 @@ export function DashboardSidebar({
       </div>
 
       {/*
-        Die Personenkarte steht am Fuss und ist der Weg zum
-        Positionswechsel — aber nur, wenn es etwas zu wechseln gibt. Bei
-        einer einzigen Anstellung bleibt sie eine Auskunft ohne Ziel;
-        ein Link führte dort auf eine Seite, die eine Auswahl zwischen
-        einer Möglichkeit anböte.
+        Die Personenkarte steht am Fuss und ist der Weg zur Übersicht
+        (`/dashboard/wechseln`) — seit 2026-10-07 immer, nicht nur bei
+        mehreren Anstellungen: dort liegen auch offene Einladungen und
+        „Betrieb einrichten", die eine einzelne Anstellung nicht ausschliesst.
       */}
       <div className="hidden lg:block lg:border-t lg:border-line lg:p-3">
         <PersonenKarte
@@ -249,10 +248,13 @@ function PersonenKarte({
 }: {
   personName: string;
   rolleText: string;
-  wechselHref: string | null;
+  wechselHref: string;
 }) {
-  const inhalt = (
-    <>
+  return (
+    <Link
+      href={wechselHref}
+      className="flex items-center gap-3 rounded-card px-2 py-2 transition-colors hover:bg-surface-sunk"
+    >
       <span
         aria-hidden="true"
         className="flex size-9 shrink-0 items-center justify-center rounded-full bg-signal-weak font-display text-xs font-semibold text-text"
@@ -265,22 +267,7 @@ function PersonenKarte({
         </span>
         <span className="block truncate text-xs text-muted">{rolleText}</span>
       </span>
-      {wechselHref ? (
-        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted" />
-      ) : null}
-    </>
-  );
-
-  if (wechselHref === null) {
-    return <div className="flex items-center gap-3 rounded-card px-2 py-2">{inhalt}</div>;
-  }
-
-  return (
-    <Link
-      href={wechselHref}
-      className="flex items-center gap-3 rounded-card px-2 py-2 transition-colors hover:bg-surface-sunk"
-    >
-      {inhalt}
+      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted" />
     </Link>
   );
 }

@@ -1169,6 +1169,73 @@ export const schichtLoeschenSchema = z.object({
 
 export type SchichtLoeschenEingabe = z.infer<typeof schichtLoeschenSchema>;
 
+/**
+ * Spiegel von `CreateShiftModal` in `calendar.tsx` — eine einzelne Schicht
+ * über `benutzerdefinierte_schicht_erstellen`. Zwei Modi wie in der App:
+ * Personen direkt einteilen (mindestens eine) oder offen ausschreiben
+ * (mindestens eine Rolle mit Bedarf). Dass der Beginn in der Zukunft liegt,
+ * prüft `beginnVorbei()` (`src/lib/datum.ts`) daneben — es braucht die Uhr,
+ * und ein Schema im Modul-Scope hat keine.
+ */
+export const schichtErstellenSchema = z
+  .object({
+    datum: z.string().refine(istKalendertag, vm("v.datum.ungueltig")),
+    startZeit: z.string().regex(ZEIT_REGEX, vm("v.uhrzeit.ungueltig")),
+    endZeit: z.string().regex(ZEIT_REGEX, vm("v.uhrzeit.ungueltig")),
+    kommentar: z
+      .string()
+      .trim()
+      .max(SCHICHT_KOMMENTAR_LIMIT, vm("v.zeichen.max", { max: SCHICHT_KOMMENTAR_LIMIT })),
+    modus: z.enum(["zuweisung", "ausschreibung"], { message: vm("v.schicht.modus") }),
+    zuweisungen: z
+      .array(z.object({ mitarbeiterId: z.string().min(1), rolleId: z.string().min(1) }))
+      .max(200),
+    bedarf: z
+      .array(z.object({ rolleId: z.string().min(1), benoetigt: z.number().int().min(0).max(99) }))
+      .max(100),
+  })
+  .superRefine((daten, ctx) => {
+    if (daten.startZeit === daten.endZeit) {
+      ctx.addIssue({ code: "custom", message: vm("v.zeiten.startEnde"), path: ["endZeit"] });
+    }
+    if (daten.modus === "zuweisung" && daten.zuweisungen.length === 0) {
+      ctx.addIssue({ code: "custom", message: vm("v.schicht.niemand"), path: ["zuweisungen"] });
+    }
+    if (daten.modus === "ausschreibung" && !daten.bedarf.some((b) => b.benoetigt > 0)) {
+      ctx.addIssue({ code: "custom", message: vm("v.schicht.keinBedarf"), path: ["bedarf"] });
+    }
+  });
+
+export type SchichtErstellenEingabe = z.infer<typeof schichtErstellenSchema>;
+
+/**
+ * Formular → Rohwerte für `schichtErstellenSchema`. Im Browser und in der
+ * Server Action dieselbe Lesart: `zuweisung` trägt `mitarbeiter:rolle`, je
+ * Rolle ein Feld `bedarf_<rolle_id>`.
+ */
+export function leseSchichtErstellen(formData: FormData) {
+  const zuweisungen = formData
+    .getAll("zuweisung")
+    .map((wert) => String(wert).split(":"))
+    .filter((teile) => teile.length === 2)
+    .map(([mitarbeiterId = "", rolleId = ""]) => ({ mitarbeiterId, rolleId }));
+  const bedarf: { rolleId: string; benoetigt: number }[] = [];
+  for (const [schluessel, wert] of formData.entries()) {
+    if (!schluessel.startsWith("bedarf_")) continue;
+    const anzahl = Number(wert);
+    bedarf.push({ rolleId: schluessel.slice(7), benoetigt: Number.isInteger(anzahl) ? anzahl : -1 });
+  }
+  return {
+    datum: String(formData.get("datum") ?? ""),
+    startZeit: String(formData.get("start_zeit") ?? ""),
+    endZeit: String(formData.get("end_zeit") ?? ""),
+    kommentar: String(formData.get("kommentar") ?? ""),
+    modus: String(formData.get("modus") ?? ""),
+    zuweisungen,
+    bedarf,
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /* Betriebseinstellungen                                               */
 /* ------------------------------------------------------------------ */

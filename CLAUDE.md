@@ -464,6 +464,24 @@ lässt aber die wirtschaftlichen Tore weg. Genau zwei Aufrufer: `aboVerwalten()`
 (Kündigung) und `/api/betrieb-export`. Gesperrt wird die Verwaltung, nicht der Ausgang
 aus dem Vertrag.
 
+### Einzelne Schicht anlegen (`/dashboard/kalender/neu`)
+
+Spiegel von `CreateShiftModal` in `calendar.tsx` (seit 2026-10-07): Plus im Kalender
+(Kopfzeile und je Zelle ab heute, nur Chefs) → eigene Seite mit `?datum=`. Ruft
+`benutzerdefinierte_schicht_erstellen` — Modus `zuweisung` (Personen + Rolle, vorher
+`schicht_zuweisung_warnungen` mit „Trotzdem zuweisen") oder `ausschreibung` (Bedarf je
+Rolle, legt die Ausschreibungs-Benachrichtigung an). Zwei Fallen:
+
+- **Die RPC nimmt jedes Datum.** „Nicht in der Vergangenheit" prüft allein die Action
+  (`beginnVorbei()`, Betriebszeit, heute ab der Startminute).
+- **Sofort veröffentlicht — Abweichung von der App** (Nutzerentscheidung 2026-10-07).
+  Die RPC legt immer `status = 'geplant'` an, die App lässt es dabei. Das Web setzt
+  danach genau diese Instanz auf `veroeffentlicht` (`instanzen_update_chef`), **nicht**
+  über `geplante_schichten_veroeffentlichen` — die gäbe alle Entwürfe des Betriebs frei,
+  auch einen offenen Solver-Vorschlag. Ein reiner Statuswechsel löst keinen
+  UPDATE-Trigger aus ausser dem Audit-Log. Scheitert er, bleibt ein Entwurf stehen
+  (`[kalender/neu] veroeffentlichen` im Protokoll).
+
 ### Joseph — experimentell, noch nicht umgesetzt
 
 **Neue Produktentscheidung vom 2026-09-24 (auf Anweisung des Nutzers), kein

@@ -15,6 +15,19 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-07 — Einzelne Schicht: sofort veröffentlicht statt Entwurf
+
+**Vorher (erste Fassung desselben Tages, wie die Expo-App):** eine über
+`/dashboard/kalender/neu` angelegte Schicht blieb, was `benutzerdefinierte_schicht_erstellen`
+anlegt — ein Entwurf (`geplant`), sichtbar erst nach der Freigabe unter „Planung". **Jetzt:**
+die Action setzt genau diese Instanz direkt danach auf `veroeffentlicht`. **Begründung:**
+Anweisung des Nutzers — eine einzelne Schicht hat kaum Abstimmungsaufwand und soll ohne
+Umweg erscheinen. Bewusst nicht über `geplante_schichten_veroeffentlichen`, das alle
+Entwürfe des Betriebs freigäbe. Kein Schema-Eingriff (`instanzen_update_chef` erlaubt es).
+Die App bleibt beim Entwurf — eine Abweichung, die beim Kollegen zu erwähnen ist.
+
+---
+
 ## 2026-10-07 — Angerechnete Urlaubstage (Ausnahme 8)
 
 **Vorher:** ein Urlaubsantrag belastete das Kontingent immer mit allen Kalendertagen
