@@ -18,10 +18,11 @@ import { WeiterFormular } from "./weiter-formular";
  * ─────────────────────────────────────────────────────────────────────
  *
  * Entscheidung vom 2026-09-07, Begründung an `schreibeRollen()` in
- * `src/lib/team.ts`: `rollen` hat keine DELETE-Policy, eine einmal
- * geschriebene Rolle ist nicht mehr wegzubekommen — und „anlegen,
- * vertippt, weg damit" ist der häufigste Handgriff dieses Schritts.
- * Solange nichts geschrieben ist, gibt es nichts zu löschen.
+ * `src/lib/team.ts`: `rollen` hatte damals keine DELETE-Policy, eine einmal
+ * geschriebene Rolle war nicht mehr wegzubekommen — und „anlegen,
+ * vertippt, weg damit" ist der häufigste Handgriff dieses Schritts. Seit
+ * 2026-10-06 gibt es die Policy; das Sammeln bleibt, weil es dem Schritt
+ * Anfragen erspart und nichts Halbfertiges in die Tabelle schreibt.
  *
  * Deshalb liegt der Zustand hier oben und nicht in `RollenAbschnitt`:
  * drei Stellen brauchen dieselbe Liste — der Editor selbst, die

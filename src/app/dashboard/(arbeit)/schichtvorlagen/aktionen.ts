@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import type { FormZustand } from "@/lib/formular";
-import { entferneVorlage, legeVorlageAn } from "@/lib/schichten-schreiben";
+import { bearbeiteVorlage, entferneVorlage, legeVorlageAn } from "@/lib/schichten-schreiben";
 import { holeTexte } from "@/i18n/server";
 
 /**
@@ -36,6 +36,17 @@ export async function vorlageAnlegen(
   const { supabase, betriebId, chef } = await alsChef();
   if (!chef) return nurChef();
   const ergebnis = await legeVorlageAn(supabase, betriebId, formData);
+  if (ergebnis.status === "erfolg") revalidatePath(PFAD);
+  return ergebnis;
+}
+
+export async function vorlageBearbeiten(
+  _vorher: FormZustand,
+  formData: FormData,
+): Promise<FormZustand> {
+  const { supabase, betriebId, chef } = await alsChef();
+  if (!chef) return nurChef();
+  const ergebnis = await bearbeiteVorlage(supabase, betriebId, formData);
   if (ergebnis.status === "erfolg") revalidatePath(PFAD);
   return ergebnis;
 }

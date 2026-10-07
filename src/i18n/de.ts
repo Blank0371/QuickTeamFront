@@ -400,6 +400,14 @@ export const de = {
     anspruchUeberschritten:
       "Das übersteigt den Urlaubsanspruch für {jahr}: noch {rest} von {anspruch} Tagen übrig, dieser Antrag braucht {beantragt}.",
     antragWegNeuLaden: "Diesen Antrag gibt es nicht mehr. Lad die Seite neu.",
+    /* {n} = Anzahl Tage. Angerechnete Tage: Nutzerentscheidung 2026-10-07. */
+    tagEins: "1 Tag",
+    tageAnzahl: "{n} Tage",
+    angerechnetKurz: "{n} angerechnet",
+    kalendertageBeantragt: "Beantragte Tage: {n}",
+    angerechnetLabel: "Davon zählen als Urlaub",
+    angerechnetHinweis: "Nicht jeder Tag muss zählen, z. B. Wochenenden.",
+    angerechnetZuViel: "Höchstens {max} — so viele Tage umfasst der Antrag.",
   },
   mitteilungen: {
     metaTitel: "Mitteilungen",
@@ -954,10 +962,11 @@ export const de = {
       /* Meldungen der Server Actions von Schritt 3. */
       meldung: {
         keineRolle: "Es wurde keine Rolle angegeben.",
+        rolleZugewiesen: "Du kannst die Rolle nicht löschen, weil sie noch einer Person zugewiesen ist.",
         rolleBelegt:
           "Diese Rolle wird bereits von einer Schichtvorlage gebraucht. Entfern sie zuerst dort.",
         rolleGesperrt:
-          "Rollen lassen sich derzeit nicht entfernen — die Datenbank lässt das Löschen noch nicht zu. Das ist gemeldet. Deine Rollenzuweisungen sind unverändert.",
+          "Die Rolle liess sich nicht entfernen — es gibt sie nicht mehr, oder du darfst sie nicht ändern. Lad die Seite neu.",
         rolleEntfernenFehler: "Die Rolle liess sich nicht entfernen. Versuch es noch einmal.",
         rollenAnlegenEinladung:
           "Die Rollen liessen sich nicht anlegen — deshalb wurde auch niemand eingeladen. Versuch es noch einmal.",
@@ -1034,6 +1043,10 @@ export const de = {
           "Die Mindestbesetzung liess sich nicht speichern, deshalb wurde die Vorlage nicht angelegt. Versuch es noch einmal.",
         keineVorlage: "Es wurde keine Vorlage angegeben.",
         entfernenFehler: "Die Vorlage liess sich nicht entfernen. Versuch es noch einmal.",
+        einTag: "Wähl genau einen Wochentag.",
+        bearbeitenFehler: "Die Änderungen liessen sich nicht speichern. Versuch es noch einmal.",
+        bearbeitenBedarfFehler: "Die Schicht ist gespeichert, die Mindestbesetzung nicht vollständig. Versuch es noch einmal.",
+        nichtGefunden: "Diese Vorlage gibt es nicht mehr. Lade die Seite neu.",
       },
       titel: "Wie sieht eure Woche aus",
       lead: "Für jeden Wochentag die Schichten, die es bei dir gibt — und je Schicht, wie viele Leute welcher Rolle mindestens da sein müssen.",
@@ -1044,7 +1057,8 @@ export const de = {
         "Eine Vorlage je Schicht und Wochentag. Nachtschichten über Mitternacht sind in Ordnung — trag einfach 22:00 bis 06:00 ein.",
       bezeichnung: "Bezeichnung",
       bezeichnungHinweis: "Zum Beispiel Frühdienst, Abenddienst oder Küche spät.",
-      wochentag: "Wochentag",
+      wochentag: "Wochentage",
+      wochentagHinweis: "Mehrere Tage möglich, mindestens einer. Je Tag entsteht eine eigene Vorlage mit derselben Zeit und Mindestbesetzung.",
       beginn: "Beginn",
       ende: "Ende",
       mindestbesetzung: "Mindestbesetzung",
@@ -1060,6 +1074,13 @@ export const de = {
       bisZeit: " bis {zeit}",
       folgetag: ", endet am Folgetag",
       blockEntfernen: "{bezeichnung} am {tag}, {zeit}, entfernen",
+      blockBearbeiten: "{bezeichnung} am {tag}, {zeit}, bearbeiten",
+      wochentagEinzeln: "Wochentag",
+      bearbeitenTitel: "Schicht bearbeiten",
+      bearbeitenText: "Änderungen gelten für künftige Planungen; schon erzeugte Schichten bleiben, wie sie sind. Für weitere Tage leg eine neue Schicht an.",
+      speichern: "Änderungen speichern",
+      speichernLaufend: "Wird gespeichert …",
+      abbrechen: "Abbrechen",
     },
     sperre: {
       metaTitel: "Testphase abgelaufen",
@@ -1341,13 +1362,7 @@ export const de = {
     hinzufuegen: "Hinzufügen",
     ausblenden: "Ausblenden",
     entfernen: "Entfernen",
-    entfernenGesperrtTitel: "Die Datenbank lässt das Löschen von Rollen zurzeit nicht zu.",
-    entfernenGesperrt: "Entfernen gesperrt",
     keineRolle: "Noch keine Rolle angelegt.",
-    gesperrtVor:
-      "Das Entfernen ist abgeblendet, weil die Datenbank das Löschen von Rollen zurzeit nicht zulässt — das ist gemeldet. ",
-    gesperrtAusblenden: "Ausblenden",
-    gesperrtNach: " wirkt weiterhin: die Rolle wird nicht mehr vergeben, hält ihren Namen aber besetzt.",
     ausgeblendet: "Ausgeblendet",
     ausgeblendetText:
       "Diese Rollen werden nicht mehr vergeben, halten ihren Namen aber weiter besetzt — eine neue Rolle kann nicht so heissen.",
@@ -1427,10 +1442,11 @@ export const de = {
     nameDoppeltFeld: "Diesen Namen gibt es schon.",
     rolleAnlegenFehler: "Die Rolle liess sich nicht anlegen. Versuch es noch einmal.",
     keineRolleAngegeben: "Es wurde keine Rolle angegeben.",
+    rolleZugewiesen: "Du kannst die Rolle nicht löschen, weil sie noch einer Person zugewiesen ist.",
     rolleBelegt:
       "Diese Rolle hängt noch an einer Schichtvorlage oder an geplanten Schichten. Entfern sie zuerst dort.",
     rolleGesperrt:
-      "Rollen lassen sich derzeit nicht entfernen — die Datenbank lässt das Löschen noch nicht zu. Das ist gemeldet. Deine Rollenzuweisungen sind unverändert.",
+      "Die Rolle liess sich nicht entfernen — es gibt sie nicht mehr, oder du darfst sie nicht ändern. Lad die Seite neu.",
     rolleEntfernenFehler: "Die Rolle liess sich nicht entfernen. Versuch es noch einmal.",
     nochmal: "Das hat nicht geklappt. Versuch es noch einmal.",
     rolleWeg: "Diese Rolle gibt es nicht mehr. Lad die Seite neu.",
@@ -2138,7 +2154,7 @@ export const de = {
 
     "v.uhrzeit.form": "Uhrzeit im Format HH:MM, z. B. 17:00.",
     "v.uhrzeit.ungueltig": "Ungültige Uhrzeit.",
-    "v.wochentag.wahl": "Wähl einen Wochentag.",
+    "v.wochentag.wahl": "Wähl mindestens einen Wochentag.",
     "v.zeiten.beginnEnde": "Beginn und Ende dürfen nicht gleich sein.",
     "v.zeiten.startEnde": "Start und Ende dürfen nicht gleich sein.",
 

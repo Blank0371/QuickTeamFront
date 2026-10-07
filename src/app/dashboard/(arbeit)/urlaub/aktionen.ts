@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { genehmigteTageOhne, holeVorab, tageImJahr, vorabFuer } from "@/lib/dashboard/urlaub";
+import { angerechneteTageImJahr, genehmigteTageOhne, holeVorab, tageDiff, vorabFuer } from "@/lib/dashboard/urlaub";
 import { betreteDashboard } from "@/lib/dashboard/zugang";
 import { feldFehler, type FormZustand } from "@/lib/formular";
 import { urlaubAntragSchema, urlaubEntscheidungSchema } from "@/lib/validierung";
@@ -28,6 +28,11 @@ import { fuelle } from "@/i18n/text";
  *
  * Beide Kontingent-Prüfungen zählen seit 2026-10-04 die Vorab-Tage aus
  * `urlaub_vorab` mit (`urlaub_beantragen` in der DB, der Wächter hier).
+ *
+ * Seit 2026-10-07 trägt der Chef beim Genehmigen ein, wie viele der
+ * beantragten Kalendertage als Urlaub zählen (`urlaub.angerechnete_tage`,
+ * kein App-Gegenstück). Das ändert nur das Kontingent — gesperrt für die
+ * Planung bleibt der ganze Zeitraum `von..bis`.
  */
 
 const PFAD = "/dashboard/urlaub";
@@ -90,24 +95,38 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
     urlaubId: String(formData.get("urlaub_id") ?? ""),
     status: String(formData.get("status") ?? ""),
     begruendung: String(formData.get("begruendung") ?? ""),
+    angerechneteTage: String(formData.get("angerechnete_tage") ?? ""),
   };
+  /* `urlaub_id` reist im Fehler mit: alle Zeilen teilen sich einen Zustand. */
+  const werte = { urlaub_id: roh.urlaubId };
   const geprueft = urlaubEntscheidungSchema.safeParse(roh);
   if (!geprueft.success) {
-    return { status: "fehler", nachricht: null, felder: feldFehler(geprueft.error, await holeValidierung()) };
+    return { status: "fehler", nachricht: null, felder: feldFehler(geprueft.error, await holeValidierung()), werte };
   }
   const daten = geprueft.data;
 
   if (daten.status === "approved") {
     const { data: antrag, error: antragFehler } = await supabase
       .from("urlaub")
-      .select("id, mitarbeiter_id, von, bis")
+      .select("id, mitarbeiter_id, von, bis, angerechnete_tage")
       .eq("id", daten.urlaubId)
       .eq("betrieb_id", position.betriebId)
       .single();
 
     if (antragFehler || !antrag) {
-      return fehler(t.antragWeg);
+      return fehler(t.antragWeg, {}, werte);
     }
+
+    const kalendertage = tageDiff(antrag.von, antrag.bis);
+    if (daten.angerechneteTage !== undefined && daten.angerechneteTage > kalendertage) {
+      return {
+        status: "fehler",
+        nachricht: null,
+        felder: { angerechneteTage: fuelle(t.angerechnetZuViel, { max: kalendertage }) },
+        werte,
+      };
+    }
+    const angerechnet: number | null = daten.angerechneteTage ?? antrag.angerechnete_tage ?? null;
 
     const ersteJahr = Number(antrag.von.slice(0, 4));
     const letzteJahr = Number(antrag.bis.slice(0, 4));
@@ -116,44 +135,56 @@ export async function entscheiden(_vorher: FormZustand, formData: FormData): Pro
       supabase.from("mitarbeiter").select("urlaubsanspruch_tage").eq("id", antrag.mitarbeiter_id).single(),
       supabase
         .from("urlaub")
-        .select("id, mitarbeiter_id, von, bis, status")
+        .select("id, mitarbeiter_id, von, bis, status, angerechnete_tage")
         .eq("mitarbeiter_id", antrag.mitarbeiter_id)
         .eq("status", "approved"),
       holeVorab(supabase, position.betriebId, jahre, antrag.mitarbeiter_id),
     ]);
 
     if (mitarbeiterFehler || urlaubFehler || !mitarbeiterZeile || !genehmigt || !vorab) {
-      return fehler(t.anspruchUnlesbar);
+      return fehler(t.anspruchUnlesbar, {}, werte);
     }
     const anspruch = mitarbeiterZeile.urlaubsanspruch_tage ?? 0;
     for (const jahr of jahre) {
       const bereits = genehmigteTageOhne(
-        genehmigt.map((g) => ({ id: g.id, mitarbeiterId: g.mitarbeiter_id, von: g.von, bis: g.bis, status: "approved" as const })),
+        genehmigt.map((g) => ({
+          id: g.id,
+          mitarbeiterId: g.mitarbeiter_id,
+          von: g.von,
+          bis: g.bis,
+          status: "approved" as const,
+          angerechneteTage: g.angerechnete_tage ?? null,
+        })),
         antrag.mitarbeiter_id,
         antrag.id,
         jahr,
       ) + vorabFuer(vorab, antrag.mitarbeiter_id, jahr);
-      const beantragt = tageImJahr(antrag.von, antrag.bis, jahr);
+      const beantragt = angerechneteTageImJahr({ von: antrag.von, bis: antrag.bis, angerechneteTage: angerechnet }, jahr);
       if (bereits + beantragt > anspruch) {
         const rest = Math.max(0, anspruch - bereits);
-        return fehler(fuelle(t.anspruchUeberschritten, { jahr, rest, anspruch, beantragt }));
+        return fehler(fuelle(t.anspruchUeberschritten, { jahr, rest, anspruch, beantragt }), {}, werte);
       }
     }
   }
 
+  /* Ablehnen lässt `angerechnete_tage` stehen — es zählt dann ohnehin nicht. */
+  const aenderung =
+    daten.status === "approved" && daten.angerechneteTage !== undefined
+      ? { status: daten.status, begruendung: daten.begruendung, angerechnete_tage: daten.angerechneteTage }
+      : { status: daten.status, begruendung: daten.begruendung };
   const { data: aktualisiert, error } = await supabase
     .from("urlaub")
-    .update({ status: daten.status, begruendung: daten.begruendung })
+    .update(aenderung)
     .eq("id", daten.urlaubId)
     .eq("betrieb_id", position.betriebId)
     .select("id");
 
   if (error) {
     console.error(`[dashboard/urlaub] entscheiden: ${error.message}`);
-    return fehler(t.nochmal);
+    return fehler(t.nochmal, {}, werte);
   }
 
-  if (!aktualisiert?.length) return fehler(t.antragWegNeuLaden);
+  if (!aktualisiert?.length) return fehler(t.antragWegNeuLaden, {}, werte);
 
   revalidatePath(PFAD);
   return { status: "erfolg", nachricht: null, felder: {} };

@@ -199,17 +199,17 @@ export function schonEingeladen(
  *
  * Entscheidung vom 2026-09-07. Bis dahin ging jede Rolle beim Klick auf
  * „Hinzufügen" unmittelbar in die Tabelle — und war damit **nicht mehr
- * wegzubekommen**: `rollen` hat keine DELETE-Policy, RLS filtert das
- * DELETE still heraus, betroffen sind null Zeilen (siehe
- * `entferneRolle()` unten). Ausgerechnet der häufigste Handgriff der
+ * wegzubekommen**: `rollen` hatte keine DELETE-Policy, RLS filterte das
+ * DELETE still heraus, betroffen waren null Zeilen (siehe
+ * `entferneRolle()` unten; die Policy gibt es seit 2026-10-06). Ausgerechnet der häufigste Handgriff der
  * Einrichtung — anlegen, vertippt, weg damit, neu anlegen — endete
  * deshalb in einer Rolle, die für immer in der Liste stand, und beim
  * zweiten Anlauf zusätzlich am UNIQUE-Constraint über den Namen.
  *
  * Solange nichts geschrieben ist, gibt es nichts zu löschen. Der Schritt
  * hält die Rollen deshalb im Zustand des Formulars und schreibt sie
- * gebündelt — die Kompensation für eine fehlende Policy, die von hier
- * aus nicht angelegt werden darf.
+ * gebündelt — ursprünglich die Kompensation für die fehlende Policy,
+ * heute einfach der sparsamere Weg.
  *
  * **Geschrieben wird beim Weitergehen oder beim ersten Einladen — was
  * zuerst kommt.** Das Weitergehen ist der eigentliche Abschluss; die
@@ -261,76 +261,84 @@ export async function schreibeRollen(
 /** Was beim Entfernen einer Rolle herauskommen kann. */
 export type RollenEntfernung =
   | { art: "ok" }
-  /** RLS hat das DELETE verschluckt — `rollen` hat keine DELETE-Policy. */
+  /** Mindestens eine Person trägt die Rolle noch (`mitarbeiter_rollen`). */
+  | { art: "zugewiesen" }
+  /**
+   * RLS hat das DELETE verschluckt: null Zeilen, kein Fehler. Seit
+   * `rollen_delete_chef` (2026-10-06) heisst das „nicht Chef" oder „schon
+   * weg" — vorher war es jeder Klick.
+   */
   | { art: "gesperrt" }
   /** Eine Schichtvorlage oder Zuweisung hängt noch daran (FK RESTRICT). */
   | { art: "belegt" }
   | { art: "fehler" };
 
 /**
- * Entfernt eine Rolle hart, samt ihrer Zuweisungen — und macht die
- * Zuweisungen wieder, wenn die Rolle nicht weggeht.
+ * Entfernt eine Rolle hart — aber nur, wenn niemand sie mehr trägt.
+ *
+ * **Kursänderung 2026-10-06 (auf Anweisung des Nutzers).** *Vorher*
+ * löschte diese Funktion erst alle `mitarbeiter_rollen` der Rolle und
+ * dann die Rolle, und schrieb die Zuweisungen zurück, wenn die Rolle
+ * nicht wegging. *Jetzt* wird eine noch zugewiesene Rolle gar nicht
+ * angefasst (`zugewiesen`): wer sie entfernen will, nimmt sie zuerst den
+ * Personen weg. Damit entfällt auch die Kompensation — es wird nichts
+ * gelöscht, was zurückgeschrieben werden müsste.
  *
  * Hart und nicht über `aktiv = false`, weil `UNIQUE (betrieb_id, name)`
  * das Flag nicht kennt: eine weich gelöschte „Küche" blockiert ihren
- * Namen für immer, und der naheliegendste Handgriff — anlegen,
- * vertippt, weg damit, neu anlegen — liefe in eine Fehlermeldung über
- * einen Datensatz, den man gar nicht mehr sieht.
+ * Namen für immer. Der weiche Weg der App bleibt im Dashboard als
+ * „ausblenden" daneben stehen.
  *
- * **Stand 2026-08-24: das harte Löschen kommt nicht durch.** `rollen`
- * trägt nur INSERT-, SELECT- und UPDATE-Policies; RLS filtert die Zeile
- * still aus dem DELETE, `error` bleibt `null`, betroffen sind null
- * Zeilen. Deshalb das angehängte `.select("id")` — ohne RETURNING wäre
- * der Fehlschlag von einem Erfolg nicht zu unterscheiden.
+ * Die Prüfung vorab ist eine Anzeigefrage, keine Sperre: zwischen Lesen
+ * und Löschen kann jemand die Rolle zuweisen. Dann hält der FK
+ * (`mitarbeiter_rollen` → `rollen`, ON DELETE RESTRICT) das Löschen auf,
+ * und ein zweiter Blick entscheidet, welche Meldung stimmt. Dieselbe
+ * RESTRICT-Regel gilt für Schichtvorlagen, geplante Schichten und
+ * Zuweisungen (`belegt`).
  *
- * Und deshalb die Kompensation: die Zuweisungen müssen vor der Rolle
- * weg (FK ON DELETE RESTRICT), aber die beiden Löschungen teilen sich
- * keine Transaktion — PostgREST schickt pro Aufruf eine eigene.
- * Scheitert die zweite, wären ohne Rückschreiben die Zuweisungen fort
- * und die Rolle noch da. Solange die Policy fehlt, ist das nicht der
- * Randfall, sondern jeder einzelne Klick.
- *
- * Die Policy selbst entsteht nicht hier: von diesem Repo aus werden
- * keine Schemata geändert.
+ * **Seit 2026-10-06 gibt es `rollen_delete_chef`** (`ist_chef(betrieb_id)`,
+ * freigegebene Schema-Ausnahme, siehe `CLAUDE.md`). Vorher filterte RLS
+ * jedes DELETE still heraus. `.select("id")` bleibt: null Zeilen ohne
+ * Fehler heisst jetzt „nicht Chef" oder „schon weg" (`gesperrt`).
  */
 export async function entferneRolle(
   supabase: SupabaseServerClient,
   betriebId: string,
   rolleId: string,
 ): Promise<RollenEntfernung> {
-  const { data: bisher, error: leseFehler } = await supabase
-    .from("mitarbeiter_rollen")
-    .select("mitarbeiter_id")
-    .eq("betrieb_id", betriebId)
-    .eq("rolle_id", rolleId);
-
-  if (leseFehler) {
-    console.error(`[team] entferneRolle/lesen: ${leseFehler.message}`);
-    return { art: "fehler" };
-  }
-
-  const zurueck = async () => {
-    if (bisher.length === 0) return;
-    const { error } = await supabase.from("mitarbeiter_rollen").insert(
-      bisher.map((zeile) => ({
-        betrieb_id: betriebId,
-        mitarbeiter_id: zeile.mitarbeiter_id,
-        rolle_id: rolleId,
-      })),
-    );
-    if (error) console.error(`[team] entferneRolle/zurueck: ${error.message}`);
+  const zugewiesen = async (): Promise<boolean | null> => {
+    const { count, error } = await supabase
+      .from("mitarbeiter_rollen")
+      .select("mitarbeiter_id", { count: "exact", head: true })
+      .eq("betrieb_id", betriebId)
+      .eq("rolle_id", rolleId);
+    if (error) {
+      console.error(`[team] entferneRolle/lesen: ${error.message}`);
+      return null;
+    }
+    return (count ?? 0) > 0;
   };
 
-  const { error: verknuepfungFehler } = await supabase
-    .from("mitarbeiter_rollen")
-    .delete()
+  const vorher = await zugewiesen();
+  if (vorher === null) return { art: "fehler" };
+  if (vorher) return { art: "zugewiesen" };
+
+  /*
+   * `schicht_ausschreibung_bedarf` ist die eine Stelle, die **nicht** auf
+   * RESTRICT steht, sondern ON DELETE CASCADE: das Löschen ginge durch und
+   * nähme einer laufenden Ausschreibung still ihre Zeile für diese Rolle.
+   * Deshalb hier von Hand dieselbe Absage wie beim FK.
+   */
+  const { count: ausgeschrieben, error: ausschreibungFehler } = await supabase
+    .from("schicht_ausschreibung_bedarf")
+    .select("id", { count: "exact", head: true })
     .eq("betrieb_id", betriebId)
     .eq("rolle_id", rolleId);
-
-  if (verknuepfungFehler) {
-    console.error(`[team] entferneRolle/verknuepfungen: ${verknuepfungFehler.message}`);
+  if (ausschreibungFehler) {
+    console.error(`[team] entferneRolle/ausschreibung: ${ausschreibungFehler.message}`);
     return { art: "fehler" };
   }
+  if ((ausgeschrieben ?? 0) > 0) return { art: "belegt" };
 
   const { data: geloescht, error } = await supabase
     .from("rollen")
@@ -341,15 +349,13 @@ export async function entferneRolle(
 
   if (error) {
     console.error(`[team] entferneRolle: ${error.message}`);
-    await zurueck();
-    return { art: "belegt" };
+    return (await zugewiesen()) ? { art: "zugewiesen" } : { art: "belegt" };
   }
 
   if (geloescht.length === 0) {
     console.error(
-      `[team] entferneRolle: 0 Zeilen für ${rolleId} — DELETE-Policy auf "rollen" fehlt`,
+      `[team] entferneRolle: 0 Zeilen für ${rolleId} — nicht Chef oder schon entfernt`,
     );
-    await zurueck();
     return { art: "gesperrt" };
   }
 

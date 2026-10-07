@@ -115,13 +115,9 @@ async function rollenSicherstellen(
  * schon etwas daran hängen, verhindert der FK das Löschen — dann bleibt
  * die Meldung sichtbar, statt still weich zu löschen.
  *
- * **Stand 2026-08-24: das harte Löschen kommt nicht durch.** `rollen`
- * hat keine DELETE-Policy, also filtert RLS die Zeile aus dem DELETE
- * heraus — ohne Fehler, mit null betroffenen Zeilen. Die Absicht oben
- * bleibt richtig und beschreibt, was passieren soll, sobald die Policy
- * existiert; bis dahin sagt die Funktion den Fehlschlag an, statt ihn
- * als Erfolg auszugeben. Beheben lässt es sich nur ausserhalb dieses
- * Repos — hier werden keine Policies geändert.
+ * Seit 2026-10-06 trägt `rollen` eine DELETE-Policy
+ * (`rollen_delete_chef`); bis dahin filterte RLS jedes Löschen still
+ * heraus. Noch zugewiesene Rollen lehnt `entferneRolle()` ab.
  */
 export async function rolleEntfernen(
   _vorher: FormZustand,
@@ -134,6 +130,7 @@ export async function rolleEntfernen(
 
   const ergebnis = await entferneRolle(supabase, betriebId, rolleId);
 
+  if (ergebnis.art === "zugewiesen") return fehler(m.rolleZugewiesen);
   if (ergebnis.art === "belegt") return fehler(m.rolleBelegt);
   if (ergebnis.art === "gesperrt") return fehler(m.rolleGesperrt);
   if (ergebnis.art === "fehler") return fehler(m.rolleEntfernenFehler);

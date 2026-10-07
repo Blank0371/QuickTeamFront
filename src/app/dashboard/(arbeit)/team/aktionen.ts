@@ -130,24 +130,16 @@ export async function rolleEntfernen(
 
   const ergebnis = await entferneRolle(supabase, betriebId, rolleId);
 
+  if (ergebnis.art === "zugewiesen") {
+    return fehler(t.rolleZugewiesen);
+  }
+
   if (ergebnis.art === "belegt") {
     return fehler(t.rolleBelegt);
   }
 
   if (ergebnis.art === "gesperrt") {
-    /*
-     * `werte` trägt hier den Wert des abgeschickten Feldes `rolle_id`
-     * zurück — genau das, wofür `werte` da ist. Die Oberfläche braucht
-     * ihn, um das Ergebnis überhaupt anzeigen zu können: alle
-     * Rollenzeilen teilen sich **eine** `useActionState`-Instanz, der
-     * Zustand allein sagt also nicht, welcher Knopf ihn ausgelöst hat.
-     */
-    return {
-      status: "fehler",
-      nachricht: t.rolleGesperrt,
-      felder: {},
-      werte: { rolle_id: rolleId },
-    };
+    return fehler(t.rolleGesperrt);
   }
 
   if (ergebnis.art === "fehler") {
@@ -165,8 +157,7 @@ export async function rolleEntfernen(
  * vergangenen Zuweisungen hängen und ein hartes Löschen Geschichte
  * zerstören würde. Im Dashboard steht beides nebeneinander: ausblenden
  * für Rollen, die es einmal gab, hartes Entfernen für einen Vertipper
- * von vorhin. Solange die DELETE-Policy fehlt, ist Ausblenden ohnehin
- * der einzige Weg, der ankommt.
+ * von vorhin, solange sie noch niemandem zugewiesen ist.
  */
 export async function rolleUmblenden(
   _vorher: FormZustand,

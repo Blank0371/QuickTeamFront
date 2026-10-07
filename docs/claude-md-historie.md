@@ -15,6 +15,42 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-07 — Angerechnete Urlaubstage (Ausnahme 8)
+
+**Vorher:** ein Urlaubsantrag belastete das Kontingent immer mit allen Kalendertagen
+`von..bis` — zwei Wochen kosteten 14 Tage, auch wer am Wochenende nie arbeitet. Wie die
+Expo-App. **Jetzt:** der Chef sieht beim Genehmigen die beantragten Kalendertage und trägt
+ein, wie viele davon als Urlaub zählen (vorbelegt mit allen); gespeichert in der neuen
+Spalte `urlaub.angerechnete_tage`, `urlaub_beantragen` zählt sie. Gesperrt für die Planung
+bleibt der ganze Zeitraum. **Begründung:** Anweisung des Nutzers; Wochenenden und freie
+Tage sollen nicht vom Anspruch abgehen. Bewusst keine automatische Werktagsrechnung — der
+Nutzer wollte die Kalendertage als Vorbelegung und einen klaren Hinweis, dass nicht alle
+zählen müssen.
+
+---
+
+## 2026-10-06 — Rollen nur löschen, wenn niemand sie trägt
+
+**Vorher:** `entferneRolle()` löschte erst alle `mitarbeiter_rollen` der Rolle, dann die
+Rolle, und schrieb die Zuweisungen zurück, wenn die Rolle nicht wegging (Kompensation, weil
+PostgREST beide Löschungen in getrennten Transaktionen schickt). **Jetzt:** ist die Rolle
+noch einer Person zugewiesen, wird nichts gelöscht und die Oberfläche sagt „Du kannst die
+Rolle nicht löschen, weil sie noch einer Person zugewiesen ist." (`art: "zugewiesen"`).
+**Begründung:** Anweisung des Nutzers; eine Rolle still jemandem wegzunehmen ist eine
+Personalentscheidung, die man bewusst treffen soll. Nebenbei entfällt die Kompensation.
+
+**Am selben Tag nachgezogen — DELETE-Policy auf `rollen` (Schema-Ausnahme 7).** *Vorher:*
+`rollen` trug nur INSERT/SELECT/UPDATE-Policies, RLS filterte jedes DELETE still heraus;
+auch eine unzugewiesene, schon geschriebene Rolle war nicht zu entfernen, und die
+Team-Verwaltung sperrte nach dem ersten Versuch den Entfernen-Knopf für **alle** Rollen.
+*Jetzt:* `rollen_delete_chef` (`ist_chef(betrieb_id)`), vom Nutzer im SQL-Editor
+eingespielt; die Listensperre ist entfernt, `gesperrt` ist ein Einzelfall. Weil
+`schicht_ausschreibung_bedarf` als einziger FK auf `rollen` CASCADE statt RESTRICT trägt,
+prüft `entferneRolle()` laufende Ausschreibungen vorher selbst. *Begründung:* Anweisung des
+Nutzers — Rollen ohne Zuweisung sollen löschbar sein.
+
+---
+
 ## 2026-10-05 — Sprachumschalter auf dem Handy
 
 **Vorher:** auf öffentlichen Seiten war der Umschalter unter 768 px ausgeblendet und fehlte

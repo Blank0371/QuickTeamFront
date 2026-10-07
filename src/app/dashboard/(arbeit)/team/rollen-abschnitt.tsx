@@ -1,7 +1,5 @@
 "use client";
 
-import { Lock } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -79,26 +77,13 @@ function EntfernenKnopf({ text }: { text: string }) {
  * `aktiv`-Flag nicht kennt: eine ausgeblendete „Küche" blockiert ihren
  * Namen für immer.
  *
- * ─────────────────────────────────────────────────────────────────────
- *  Ein abgewiesenes Entfernen sperrt den Knopf — für alle Rollen
- * ─────────────────────────────────────────────────────────────────────
+ * Entfernen geht nur, solange niemand die Rolle trägt (`entferneRolle()`
+ * in `src/lib/team.ts`); sonst steht die Absage über der Liste.
  *
- * `entferneRolle()` erkennt am leeren RETURNING, dass RLS das DELETE
- * verschluckt hat, und meldet `art: "gesperrt"`. Bisher endete diese
- * Erkenntnis in einer Fehlermeldung, und der Knopf stand unverändert
- * weiter da — anklickbar, rot, und bei jedem Versuch aufs Neue
- * wirkungslos.
- *
- * Gesperrt wird deshalb **die ganze Liste** und nicht nur die eine
- * Zeile. Der Grund liegt nicht an der Rolle, sondern an der Tabelle:
- * `rollen` trägt keine DELETE-Policy, also trifft es jede Rolle gleich.
- * Nur die angeklickte zu sperren hiesse, die restlichen drei nacheinander
- * dieselbe Absage einsammeln zu lassen.
- *
- * Der Zustand lebt bewusst nur in dieser Sitzung. Er ist eine
- * Beobachtung, keine Konfiguration: sobald die Policy im geteilten
- * Backend nachgezogen wird, funktioniert der Knopf beim nächsten Aufruf
- * wieder, ohne dass hier etwas zurückzunehmen wäre.
+ * Bis 2026-10-06 sperrte ein einziges `gesperrt` den Knopf für **alle**
+ * Rollen, weil `rollen` keine DELETE-Policy hatte und es damit jede Rolle
+ * gleich traf. Seit `rollen_delete_chef` ist `gesperrt` ein Einzelfall
+ * (Rolle schon weg) — die ganze Liste dafür zu sperren wäre falsch.
  */
 export function RollenAbschnitt({
   rollen,
@@ -110,12 +95,6 @@ export function RollenAbschnitt({
   const [anlegen, anlegenAktion] = useActionState(rolleAnlegen, leererZustand);
   const [entfernen, entfernenAktion] = useActionState(rolleEntfernen, leererZustand);
   const [umblenden, umblendenAktion] = useActionState(rolleUmblenden, leererZustand);
-
-  const [entfernenGesperrt, setEntfernenGesperrt] = useState(false);
-  const abgewiesen = entfernen.werte?.rolle_id;
-  useEffect(() => {
-    if (abgewiesen) setEntfernenGesperrt(true);
-  }, [abgewiesen]);
 
   const aktive = rollen.filter((rolle) => rolle.aktiv);
   const ausgeblendete = rollen.filter((rolle) => !rolle.aktiv);
@@ -163,34 +142,16 @@ export function RollenAbschnitt({
                 <Knopf text={t.ausblenden} />
               </form>
 
-              {entfernenGesperrt ? (
-                <span
-                  className="flex shrink-0 items-center gap-1.5 px-2 py-2 text-sm text-muted"
-                  title={t.entfernenGesperrtTitel}
-                >
-                  <Lock aria-hidden="true" className="size-3.5" />
-                  {t.entfernenGesperrt}
-                </span>
-              ) : (
-                <form action={entfernenAktion}>
-                  <input type="hidden" name="rolle_id" value={rolle.id} />
-                  <EntfernenKnopf text={t.entfernen} />
-                </form>
-              )}
+              <form action={entfernenAktion}>
+                <input type="hidden" name="rolle_id" value={rolle.id} />
+                <EntfernenKnopf text={t.entfernen} />
+              </form>
             </li>
           ))}
         </ul>
       ) : (
         <p className="mt-6 text-sm text-muted">{t.keineRolle}</p>
       )}
-
-      {entfernenGesperrt ? (
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          {t.gesperrtVor}
-          <strong>{t.gesperrtAusblenden}</strong>
-          {t.gesperrtNach}
-        </p>
-      ) : null}
 
       {ausgeblendete.length > 0 ? (
         <div className="mt-6">

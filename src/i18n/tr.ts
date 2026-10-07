@@ -347,6 +347,13 @@ export const tr: Dictionary = {
     anspruchUeberschritten:
       "Bu, {jahr} yılı izin hakkını aşıyor: {anspruch} günden {rest} gün kaldı, bu talep {beantragt} gün gerektiriyor.",
     antragWegNeuLaden: "Bu talep artık yok. Sayfayı yenile.",
+    tagEins: "1 gün",
+    tageAnzahl: "{n} gün",
+    angerechnetKurz: "{n} sayıldı",
+    kalendertageBeantragt: "Talep edilen gün: {n}",
+    angerechnetLabel: "Bunlardan izin sayılan",
+    angerechnetHinweis: "Her gün sayılmak zorunda değil, ör. hafta sonları.",
+    angerechnetZuViel: "En fazla {max} — talep bu kadar günü kapsıyor.",
   },
   mitteilungen: {
     metaTitel: "Mesajlar",
@@ -807,9 +814,10 @@ export const tr: Dictionary = {
         "İşletmenin rollerini oluştur ve personelini davet et — ikisi tek adımda.",
       meldung: {
         keineRolle: "Bir rol belirtilmedi.",
+        rolleZugewiesen: "Rol hâlâ bir kişiye atanmış olduğu için silinemez.",
         rolleBelegt: "Bu rol zaten bir vardiya şablonunda kullanılıyor. Önce oradan kaldır.",
         rolleGesperrt:
-          "Roller şu anda kaldırılamıyor — veritabanı henüz silmeye izin vermiyor. Bu bildirildi. Rol atamaların değişmedi.",
+          "Rol kaldırılamadı — artık mevcut değil ya da değiştirme yetkiniz yok. Sayfayı yenileyin.",
         rolleEntfernenFehler: "Rol kaldırılamadı. Tekrar dene.",
         rollenAnlegenEinladung:
           "Roller oluşturulamadı — bu yüzden kimse de davet edilmedi. Tekrar dene.",
@@ -883,6 +891,10 @@ export const tr: Dictionary = {
           "Asgari kadro kaydedilemedi, bu yüzden şablon oluşturulmadı. Tekrar dene.",
         keineVorlage: "Bir şablon belirtilmedi.",
         entfernenFehler: "Şablon kaldırılamadı. Tekrar dene.",
+        einTag: "Tam olarak bir gün seçin.",
+        bearbeitenFehler: "Değişiklikler kaydedilemedi. Tekrar deneyin.",
+        bearbeitenBedarfFehler: "Vardiya kaydedildi, ancak asgari kadro tam olarak kaydedilemedi. Tekrar deneyin.",
+        nichtGefunden: "Bu şablon artık yok. Sayfayı yenileyin.",
       },
       titel: "Haftan nasıl görünüyor",
       lead: "Haftanın her günü için sahip olduğun vardiyalar — ve her vardiya için hangi rolden en az kaç kişinin bulunması gerektiği.",
@@ -893,7 +905,8 @@ export const tr: Dictionary = {
         "Vardiya ve haftanın günü başına bir şablon. Gece yarısını aşan gece vardiyaları sorun değil — 22:00 ile 06:00 arası gir yeter.",
       bezeichnung: "Ad",
       bezeichnungHinweis: "Örneğin sabah vardiyası, akşam vardiyası veya geç mutfak.",
-      wochentag: "Haftanın günü",
+      wochentag: "Haftanın günleri",
+      wochentagHinweis: "Birden fazla gün seçilebilir, en az bir tane. Her gün için aynı saat ve asgari kadroyla ayrı bir şablon oluşturulur.",
       beginn: "Başlangıç",
       ende: "Bitiş",
       mindestbesetzung: "Asgari kadro",
@@ -909,6 +922,13 @@ export const tr: Dictionary = {
       bisZeit: " – {zeit}",
       folgetag: ", ertesi gün biter",
       blockEntfernen: "{bezeichnung} kaldır: {tag}, {zeit}",
+      blockBearbeiten: "{bezeichnung} düzenle, {tag}, {zeit}",
+      wochentagEinzeln: "Haftanın günü",
+      bearbeitenTitel: "Vardiyayı düzenle",
+      bearbeitenText: "Değişiklikler gelecek planlamalar için geçerlidir; önceden oluşturulmuş vardiyalar olduğu gibi kalır. Başka günler için yeni bir vardiya ekleyin.",
+      speichern: "Değişiklikleri kaydet",
+      speichernLaufend: "Kaydediliyor …",
+      abbrechen: "İptal",
     },
     sperre: {
       metaTitel: "Deneme süresi doldu",
@@ -1130,13 +1150,7 @@ export const tr: Dictionary = {
     hinzufuegen: "Ekle",
     ausblenden: "Gizle",
     entfernen: "Kaldır",
-    entfernenGesperrtTitel: "Veritabanı şu anda rol silmeye izin vermiyor.",
-    entfernenGesperrt: "Kaldırma kilitli",
     keineRolle: "Henüz rol oluşturulmadı.",
-    gesperrtVor:
-      "Kaldırma devre dışı, çünkü veritabanı şu anda rol silmeye izin vermiyor — bu bildirildi. ",
-    gesperrtAusblenden: "Gizle",
-    gesperrtNach: " hâlâ çalışıyor: rol artık atanmaz ama adı ayrılmış kalır.",
     ausgeblendet: "Gizli",
     ausgeblendetText:
       "Bu roller artık atanmaz ama adları ayrılmış kalır — yeni bir rol aynı adı kullanamaz.",
@@ -1209,10 +1223,11 @@ export const tr: Dictionary = {
     nameDoppeltFeld: "Bu ad zaten var.",
     rolleAnlegenFehler: "Rol oluşturulamadı. Tekrar dene.",
     keineRolleAngegeben: "Bir rol belirtilmedi.",
+    rolleZugewiesen: "Rol hâlâ bir kişiye atanmış olduğu için silinemez.",
     rolleBelegt:
       "Bu rol hâlâ bir vardiya şablonuna veya planlanmış vardiyalara bağlı. Önce oradan kaldır.",
     rolleGesperrt:
-      "Roller şu anda kaldırılamıyor — veritabanı henüz silmeye izin vermiyor. Bu bildirildi. Rol atamaların değişmedi.",
+      "Rol kaldırılamadı — artık mevcut değil ya da değiştirme yetkiniz yok. Sayfayı yenileyin.",
     rolleEntfernenFehler: "Rol kaldırılamadı. Tekrar dene.",
     nochmal: "Olmadı. Tekrar dene.",
     rolleWeg: "Bu rol artık yok. Sayfayı yenile.",

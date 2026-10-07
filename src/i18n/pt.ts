@@ -351,6 +351,13 @@ export const pt: Dictionary = {
     anspruchUeberschritten:
       "Isto excede o direito a férias de {jahr}: restam {rest} de {anspruch} dias, este pedido precisa de {beantragt}.",
     antragWegNeuLaden: "Este pedido já não existe. Recarregue a página.",
+    tagEins: "1 dia",
+    tageAnzahl: "{n} dias",
+    angerechnetKurz: "{n} contabilizados",
+    kalendertageBeantragt: "Dias pedidos: {n}",
+    angerechnetLabel: "Destes, contam como férias",
+    angerechnetHinweis: "Nem todos os dias têm de contar, p. ex. fins de semana.",
+    angerechnetZuViel: "No máximo {max} — são os dias abrangidos pelo pedido.",
   },
   mitteilungen: {
     metaTitel: "Mensagens",
@@ -811,9 +818,10 @@ export const pt: Dictionary = {
         "Crie as funções da sua empresa e convide o seu pessoal — ambos num só passo.",
       meldung: {
         keineRolle: "Não foi indicada nenhuma função.",
+        rolleZugewiesen: "Não pode eliminar a função, porque ainda está atribuída a uma pessoa.",
         rolleBelegt: "Esta função já é usada por um modelo de turno. Remova-a primeiro aí.",
         rolleGesperrt:
-          "De momento não é possível remover funções — a base de dados ainda não permite eliminá-las. Isto foi comunicado. As atribuições de funções não foram alteradas.",
+          "Não foi possível remover a função: já não existe ou não tem permissão para a alterar. Recarregue a página.",
         rolleEntfernenFehler: "Não foi possível remover a função. Tente novamente.",
         rollenAnlegenEinladung:
           "Não foi possível criar as funções — por isso também ninguém foi convidado. Tente novamente.",
@@ -887,6 +895,10 @@ export const pt: Dictionary = {
           "Não foi possível guardar a dotação mínima, por isso o modelo não foi criado. Tente novamente.",
         keineVorlage: "Não foi indicado nenhum modelo.",
         entfernenFehler: "Não foi possível remover o modelo. Tente novamente.",
+        einTag: "Escolha exatamente um dia da semana.",
+        bearbeitenFehler: "Não foi possível guardar as alterações. Tente novamente.",
+        bearbeitenBedarfFehler: "O turno foi guardado, mas a equipa mínima não ficou completa. Tente novamente.",
+        nichtGefunden: "Este modelo já não existe. Recarregue a página.",
       },
       titel: "Como é a sua semana",
       lead: "Para cada dia da semana, os turnos que tem — e, por turno, quantas pessoas de que função têm de estar presentes no mínimo.",
@@ -897,7 +909,8 @@ export const pt: Dictionary = {
         "Um modelo por turno e dia da semana. Turnos noturnos que passam a meia-noite não são problema — basta introduzir 22:00 a 06:00.",
       bezeichnung: "Designação",
       bezeichnungHinweis: "Por exemplo turno da manhã, turno da noite ou cozinha tarde.",
-      wochentag: "Dia da semana",
+      wochentag: "Dias da semana",
+      wochentagHinweis: "Pode escolher vários dias, pelo menos um. Cada dia recebe o seu próprio modelo com o mesmo horário e a mesma equipa mínima.",
       beginn: "Início",
       ende: "Fim",
       mindestbesetzung: "Dotação mínima",
@@ -913,6 +926,13 @@ export const pt: Dictionary = {
       bisZeit: " até às {zeit}",
       folgetag: ", termina no dia seguinte",
       blockEntfernen: "Remover {bezeichnung} ({tag}, {zeit})",
+      blockBearbeiten: "Editar {bezeichnung} ({tag}, {zeit})",
+      wochentagEinzeln: "Dia da semana",
+      bearbeitenTitel: "Editar turno",
+      bearbeitenText: "As alterações aplicam-se ao planeamento futuro; os turnos já criados ficam como estão. Para mais dias, adicione um novo turno.",
+      speichern: "Guardar alterações",
+      speichernLaufend: "A guardar …",
+      abbrechen: "Cancelar",
     },
     sperre: {
       metaTitel: "Período experimental expirado",
@@ -1134,13 +1154,7 @@ export const pt: Dictionary = {
     hinzufuegen: "Adicionar",
     ausblenden: "Ocultar",
     entfernen: "Remover",
-    entfernenGesperrtTitel: "De momento, a base de dados não permite eliminar funções.",
-    entfernenGesperrt: "Remoção bloqueada",
     keineRolle: "Ainda não há funções.",
-    gesperrtVor:
-      "A remoção está desativada porque, de momento, a base de dados não permite eliminar funções — isto foi comunicado. ",
-    gesperrtAusblenden: "Ocultar",
-    gesperrtNach: " continua a funcionar: a função deixa de ser atribuída, mas mantém o nome reservado.",
     ausgeblendet: "Ocultas",
     ausgeblendetText:
       "Estas funções já não são atribuídas, mas mantêm os nomes reservados — uma nova função não pode usar o mesmo nome.",
@@ -1213,10 +1227,11 @@ export const pt: Dictionary = {
     nameDoppeltFeld: "Este nome já existe.",
     rolleAnlegenFehler: "Não foi possível criar a função. Tente novamente.",
     keineRolleAngegeben: "Não foi indicada nenhuma função.",
+    rolleZugewiesen: "Não pode eliminar a função, porque ainda está atribuída a uma pessoa.",
     rolleBelegt:
       "Esta função ainda está associada a um modelo de turno ou a turnos planeados. Remova-a primeiro aí.",
     rolleGesperrt:
-      "De momento não é possível remover funções — a base de dados ainda não permite eliminá-las. Isto foi comunicado. As atribuições de funções não foram alteradas.",
+      "Não foi possível remover a função: já não existe ou não tem permissão para a alterar. Recarregue a página.",
     rolleEntfernenFehler: "Não foi possível remover a função. Tente novamente.",
     nochmal: "Não funcionou. Tente novamente.",
     rolleWeg: "Esta função já não existe. Recarregue a página.",

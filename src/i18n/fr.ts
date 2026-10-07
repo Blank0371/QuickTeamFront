@@ -348,6 +348,13 @@ export const fr: Dictionary = {
     anspruchUeberschritten:
       "Cela dépasse le droit aux congés de {jahr} : il reste {rest} jours sur {anspruch}, cette demande en nécessite {beantragt}.",
     antragWegNeuLaden: "Cette demande n'existe plus. Rechargez la page.",
+    tagEins: "1 jour",
+    tageAnzahl: "{n} jours",
+    angerechnetKurz: "{n} décomptés",
+    kalendertageBeantragt: "Jours demandés : {n}",
+    angerechnetLabel: "Dont comptés comme congés",
+    angerechnetHinweis: "Tous les jours ne comptent pas forcément, p. ex. les week-ends.",
+    angerechnetZuViel: "Au maximum {max} — c'est le nombre de jours couverts par la demande.",
   },
   mitteilungen: {
     metaTitel: "Messages",
@@ -808,9 +815,10 @@ export const fr: Dictionary = {
         "Créez les rôles de votre entreprise et invitez votre personnel — les deux en une étape.",
       meldung: {
         keineRolle: "Aucun rôle indiqué.",
+        rolleZugewiesen: "Vous ne pouvez pas supprimer ce rôle, car il est encore attribué à une personne.",
         rolleBelegt: "Ce rôle est déjà utilisé par un modèle de service. Retirez-le d'abord là-bas.",
         rolleGesperrt:
-          "Les rôles ne peuvent pas être supprimés pour le moment — la base de données ne le permet pas encore. C'est signalé. Vos attributions de rôles restent inchangées.",
+          "Le rôle n’a pas pu être supprimé : il n’existe plus, ou vous n’avez pas le droit de le modifier. Rechargez la page.",
         rolleEntfernenFehler: "Le rôle n'a pas pu être supprimé. Réessayez.",
         rollenAnlegenEinladung:
           "Les rôles n'ont pas pu être créés — personne n'a donc été invité non plus. Réessayez.",
@@ -884,6 +892,10 @@ export const fr: Dictionary = {
           "L'effectif minimum n'a pas pu être enregistré, le modèle n'a donc pas été créé. Réessayez.",
         keineVorlage: "Aucun modèle indiqué.",
         entfernenFehler: "Le modèle n'a pas pu être supprimé. Réessayez.",
+        einTag: "Choisissez exactement un jour de la semaine.",
+        bearbeitenFehler: "Les modifications n’ont pas pu être enregistrées. Réessayez.",
+        bearbeitenBedarfFehler: "Le service est enregistré, mais l’effectif minimum ne l’est pas entièrement. Réessayez.",
+        nichtGefunden: "Ce modèle n’existe plus. Rechargez la page.",
       },
       titel: "À quoi ressemble votre semaine",
       lead: "Pour chaque jour de la semaine, les postes que vous avez — et pour chaque poste, combien de personnes de quel rôle doivent être présentes au minimum.",
@@ -894,7 +906,8 @@ export const fr: Dictionary = {
         "Un modèle par poste et par jour de la semaine. Les postes de nuit après minuit sont possibles — saisissez simplement 22:00 à 06:00.",
       bezeichnung: "Libellé",
       bezeichnungHinweis: "Par exemple poste du matin, poste du soir ou cuisine tard.",
-      wochentag: "Jour de la semaine",
+      wochentag: "Jours de la semaine",
+      wochentagHinweis: "Plusieurs jours possibles, au moins un. Chaque jour reçoit son propre modèle avec les mêmes horaires et le même effectif minimum.",
       beginn: "Début",
       ende: "Fin",
       mindestbesetzung: "Effectif minimum",
@@ -910,6 +923,13 @@ export const fr: Dictionary = {
       bisZeit: " à {zeit}",
       folgetag: ", se termine le lendemain",
       blockEntfernen: "Supprimer {bezeichnung} le {tag}, {zeit}",
+      blockBearbeiten: "Modifier {bezeichnung} le {tag}, {zeit}",
+      wochentagEinzeln: "Jour de la semaine",
+      bearbeitenTitel: "Modifier le service",
+      bearbeitenText: "Les modifications s’appliquent aux plannings futurs ; les services déjà créés restent inchangés. Pour d’autres jours, ajoutez un nouveau service.",
+      speichern: "Enregistrer",
+      speichernLaufend: "Enregistrement …",
+      abbrechen: "Annuler",
     },
     sperre: {
       metaTitel: "Période d'essai terminée",
@@ -1131,13 +1151,7 @@ export const fr: Dictionary = {
     hinzufuegen: "Ajouter",
     ausblenden: "Masquer",
     entfernen: "Supprimer",
-    entfernenGesperrtTitel: "La base de données ne permet pas encore de supprimer des rôles.",
-    entfernenGesperrt: "Suppression bloquée",
     keineRolle: "Aucun rôle créé pour l'instant.",
-    gesperrtVor:
-      "La suppression est désactivée car la base de données ne permet pas encore de supprimer des rôles — c'est signalé. ",
-    gesperrtAusblenden: "Masquer",
-    gesperrtNach: " fonctionne toujours : le rôle n'est plus attribué mais garde son nom réservé.",
     ausgeblendet: "Masqués",
     ausgeblendetText:
       "Ces rôles ne sont plus attribués mais gardent leur nom réservé — un nouveau rôle ne peut pas utiliser le même nom.",
@@ -1210,10 +1224,11 @@ export const fr: Dictionary = {
     nameDoppeltFeld: "Ce nom existe déjà.",
     rolleAnlegenFehler: "Le rôle n'a pas pu être créé. Réessayez.",
     keineRolleAngegeben: "Aucun rôle indiqué.",
+    rolleZugewiesen: "Vous ne pouvez pas supprimer ce rôle, car il est encore attribué à une personne.",
     rolleBelegt:
       "Ce rôle est encore lié à un modèle de service ou à des postes planifiés. Retirez-le d'abord là-bas.",
     rolleGesperrt:
-      "Les rôles ne peuvent pas être supprimés pour le moment — la base de données ne le permet pas encore. C'est signalé. Vos attributions de rôles restent inchangées.",
+      "Le rôle n’a pas pu être supprimé : il n’existe plus, ou vous n’avez pas le droit de le modifier. Rechargez la page.",
     rolleEntfernenFehler: "Le rôle n'a pas pu être supprimé. Réessayez.",
     nochmal: "Cela n'a pas fonctionné. Réessayez.",
     rolleWeg: "Ce rôle n'existe plus. Rechargez la page.",

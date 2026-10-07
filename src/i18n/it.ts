@@ -348,6 +348,13 @@ export const it: Dictionary = {
     anspruchUeberschritten:
       "Questo supera le ferie spettanti per il {jahr}: restano {rest} di {anspruch} giorni, questa richiesta ne richiede {beantragt}.",
     antragWegNeuLaden: "Questa richiesta non esiste più. Ricarica la pagina.",
+    tagEins: "1 giorno",
+    tageAnzahl: "{n} giorni",
+    angerechnetKurz: "{n} conteggiati",
+    kalendertageBeantragt: "Giorni richiesti: {n}",
+    angerechnetLabel: "Di cui contano come ferie",
+    angerechnetHinweis: "Non tutti i giorni devono contare, ad es. i fine settimana.",
+    angerechnetZuViel: "Al massimo {max}: sono i giorni coperti dalla richiesta.",
   },
   mitteilungen: {
     metaTitel: "Messaggi",
@@ -808,9 +815,10 @@ export const it: Dictionary = {
         "Crea i ruoli della tua azienda e invita il tuo personale — entrambi in un unico passaggio.",
       meldung: {
         keineRolle: "Nessun ruolo indicato.",
+        rolleZugewiesen: "Non puoi eliminare il ruolo, perché è ancora assegnato a una persona.",
         rolleBelegt: "Questo ruolo è già usato da un modello di turno. Rimuovilo prima da lì.",
         rolleGesperrt:
-          "Al momento i ruoli non possono essere rimossi — il database non consente ancora di eliminarli. È stato segnalato. Le tue assegnazioni di ruolo sono invariate.",
+          "Impossibile rimuovere il ruolo: non esiste più oppure non hai il permesso di modificarlo. Ricarica la pagina.",
         rolleEntfernenFehler: "Impossibile rimuovere il ruolo. Riprova.",
         rollenAnlegenEinladung:
           "Impossibile creare i ruoli — quindi non è stato invitato nessuno. Riprova.",
@@ -884,6 +892,10 @@ export const it: Dictionary = {
           "Impossibile salvare l'organico minimo, quindi il modello non è stato creato. Riprova.",
         keineVorlage: "Nessun modello indicato.",
         entfernenFehler: "Impossibile rimuovere il modello. Riprova.",
+        einTag: "Scegli esattamente un giorno della settimana.",
+        bearbeitenFehler: "Impossibile salvare le modifiche. Riprova.",
+        bearbeitenBedarfFehler: "Il turno è stato salvato, ma il personale minimo non del tutto. Riprova.",
+        nichtGefunden: "Questo modello non esiste più. Ricarica la pagina.",
       },
       titel: "Com'è la tua settimana",
       lead: "Per ogni giorno della settimana, i turni che hai — e per ogni turno, quante persone di quale ruolo devono esserci come minimo.",
@@ -894,7 +906,8 @@ export const it: Dictionary = {
         "Un modello per turno e giorno della settimana. I turni di notte oltre la mezzanotte vanno bene — inserisci semplicemente dalle 22:00 alle 06:00.",
       bezeichnung: "Nome",
       bezeichnungHinweis: "Ad esempio turno mattutino, turno serale o cucina tardi.",
-      wochentag: "Giorno della settimana",
+      wochentag: "Giorni della settimana",
+      wochentagHinweis: "Puoi scegliere più giorni, almeno uno. Ogni giorno riceve un proprio modello con gli stessi orari e lo stesso personale minimo.",
       beginn: "Inizio",
       ende: "Fine",
       mindestbesetzung: "Organico minimo",
@@ -910,6 +923,13 @@ export const it: Dictionary = {
       bisZeit: " alle {zeit}",
       folgetag: ", termina il giorno dopo",
       blockEntfernen: "Rimuovi {bezeichnung} di {tag}, {zeit}",
+      blockBearbeiten: "Modifica {bezeichnung} di {tag}, {zeit}",
+      wochentagEinzeln: "Giorno della settimana",
+      bearbeitenTitel: "Modifica turno",
+      bearbeitenText: "Le modifiche valgono per le pianificazioni future; i turni già creati restano invariati. Per altri giorni aggiungi un nuovo turno.",
+      speichern: "Salva modifiche",
+      speichernLaufend: "Salvataggio …",
+      abbrechen: "Annulla",
     },
     sperre: {
       metaTitel: "Periodo di prova scaduto",
@@ -1131,13 +1151,7 @@ export const it: Dictionary = {
     hinzufuegen: "Aggiungi",
     ausblenden: "Nascondi",
     entfernen: "Rimuovi",
-    entfernenGesperrtTitel: "Al momento il database non consente di eliminare i ruoli.",
-    entfernenGesperrt: "Rimozione bloccata",
     keineRolle: "Ancora nessun ruolo creato.",
-    gesperrtVor:
-      "La rimozione è disattivata perché al momento il database non consente di eliminare i ruoli — è stato segnalato. ",
-    gesperrtAusblenden: "Nascondi",
-    gesperrtNach: " funziona comunque: il ruolo non viene più assegnato ma mantiene il suo nome riservato.",
     ausgeblendet: "Nascosti",
     ausgeblendetText:
       "Questi ruoli non vengono più assegnati ma mantengono i loro nomi riservati — un nuovo ruolo non può usare lo stesso nome.",
@@ -1210,10 +1224,11 @@ export const it: Dictionary = {
     nameDoppeltFeld: "Questo nome esiste già.",
     rolleAnlegenFehler: "Impossibile creare il ruolo. Riprova.",
     keineRolleAngegeben: "Nessun ruolo indicato.",
+    rolleZugewiesen: "Non puoi eliminare il ruolo, perché è ancora assegnato a una persona.",
     rolleBelegt:
       "Questo ruolo è ancora collegato a un modello di turno o a turni pianificati. Rimuovilo prima da lì.",
     rolleGesperrt:
-      "Al momento i ruoli non possono essere rimossi — il database non consente ancora di eliminarli. È stato segnalato. Le tue assegnazioni di ruolo sono invariate.",
+      "Impossibile rimuovere il ruolo: non esiste più oppure non hai il permesso di modificarlo. Ricarica la pagina.",
     rolleEntfernenFehler: "Impossibile rimuovere il ruolo. Riprova.",
     nochmal: "Non ha funzionato. Riprova.",
     rolleWeg: "Questo ruolo non esiste più. Ricarica la pagina.",

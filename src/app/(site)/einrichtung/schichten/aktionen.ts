@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { holeChefBetriebId } from "@/lib/betrieb";
 import type { FormZustand } from "@/lib/formular";
-import { entferneVorlage, legeVorlageAn } from "@/lib/schichten-schreiben";
+import { bearbeiteVorlage, entferneVorlage, legeVorlageAn } from "@/lib/schichten-schreiben";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -38,6 +38,16 @@ export async function vorlageAnlegen(
 ): Promise<FormZustand> {
   const { supabase, betriebId } = await kontext();
   const ergebnis = await legeVorlageAn(supabase, betriebId, formData);
+  if (ergebnis.status === "erfolg") revalidatePath(PFAD);
+  return ergebnis;
+}
+
+export async function vorlageBearbeiten(
+  _vorher: FormZustand,
+  formData: FormData,
+): Promise<FormZustand> {
+  const { supabase, betriebId } = await kontext();
+  const ergebnis = await bearbeiteVorlage(supabase, betriebId, formData);
   if (ergebnis.status === "erfolg") revalidatePath(PFAD);
   return ergebnis;
 }

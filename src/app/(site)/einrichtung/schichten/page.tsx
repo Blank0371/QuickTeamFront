@@ -11,7 +11,7 @@ import { holeTexte } from "@/i18n/server";
 import { leseSprache } from "@/i18n/sprache";
 import { wochentageKurz, wochentageLang } from "@/lib/dashboard/kalender";
 
-import { vorlageAnlegen, vorlageEntfernen, zumAbschluss } from "./aktionen";
+import { vorlageAnlegen, vorlageBearbeiten, vorlageEntfernen, zumAbschluss } from "./aktionen";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { stepper } = await holeTexte();
@@ -74,6 +74,7 @@ export default async function SchichtenSeite() {
         tagKurz={tagKurz}
         tagLang={tagLang}
         anlegen={vorlageAnlegen}
+        bearbeiten={vorlageBearbeiten}
         entfernen={vorlageEntfernen}
       />
 

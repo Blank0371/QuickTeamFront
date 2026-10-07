@@ -2,9 +2,11 @@
 
 import { useActionState, useEffect, useState } from "react";
 
+import { ZahlStepper } from "@/components/formular/zahl-stepper";
 import type { Dictionary } from "@/i18n";
 import type { Locale } from "@/i18n/config";
-import type { ChefUrlaubsantrag, MeinUrlaub, UrlaubStatus } from "@/lib/dashboard/urlaub";
+import { fuelle } from "@/i18n/text";
+import { tageDiff, type ChefUrlaubsantrag, type MeinUrlaub, type UrlaubStatus } from "@/lib/dashboard/urlaub";
 import { leererZustand, type FormZustand } from "@/lib/formular";
 
 import { entscheiden } from "./aktionen";
@@ -31,6 +33,15 @@ function formatiereZeitraum(von: string, bis: string, locale: Locale): string {
   return von === bis
     ? formatiereDatum(von, locale)
     : `${formatiereDatum(von, locale)} – ${formatiereDatum(bis, locale)}`;
+}
+
+/** „14 Tage“ bzw. „14 Tage · 10 angerechnet“, wenn der Chef weniger eingetragen hat. */
+function tageText(u: Pick<MeinUrlaub, "von" | "bis" | "angerechneteTage">, texte: UrlaubTexte): string {
+  const kalendertage = tageDiff(u.von, u.bis);
+  const beantragt = fuelle(kalendertage === 1 ? texte.tagEins : texte.tageAnzahl, { n: kalendertage });
+  return u.angerechneteTage === null || u.angerechneteTage === kalendertage
+    ? beantragt
+    : `${beantragt} · ${fuelle(texte.angerechnetKurz, { n: u.angerechneteTage })}`;
 }
 
 const knopfBasis =
@@ -62,6 +73,7 @@ export function MeineUrlaubeListe({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-text">
                   {formatiereZeitraum(u.von, u.bis, locale)}
+                  <span className="text-muted"> · {tageText(u, texte)}</span>
                 </span>
                 <span className={statusPill}>{statusLabel(u.status, texte)}</span>
               </div>
@@ -187,6 +199,15 @@ function AntragZeile({
     if (zustand.status === "erfolg") setAblehnenModus(false);
   }, [zustand]);
 
+  const kalendertage = tageDiff(antrag.von, antrag.bis);
+  const feldId = `angerechnet-${antrag.id}`;
+  /* Alle Zeilen teilen sich einen Zustand — der Fehler gehört der Zeile, deren ID er trägt. */
+  const meinFehler = zustand.status === "fehler" && zustand.werte?.urlaub_id === antrag.id;
+  const feldFehlerText = meinFehler ? zustand.felder.angerechneteTage : undefined;
+  const meldung = meinFehler
+    ? (zustand.nachricht ?? Object.entries(zustand.felder).find(([k]) => k !== "angerechneteTage")?.[1] ?? null)
+    : null;
+
   return (
     <li className="border-t border-line pt-3 first:border-t-0 first:pt-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -195,7 +216,9 @@ function AntragZeile({
           <span className={statusPill}>{statusLabel(antrag.status, texte)}</span>
         ) : null}
       </div>
-      <p className="text-sm text-muted">{formatiereZeitraum(antrag.von, antrag.bis, locale)}</p>
+      <p className="text-sm text-muted">
+        {formatiereZeitraum(antrag.von, antrag.bis, locale)} · {tageText(antrag, texte)}
+      </p>
       {antrag.kommentar ? <p className="mt-1 text-sm text-muted">„{antrag.kommentar}“</p> : null}
       {antrag.begruendung ? (
         <p className="mt-1 text-sm text-text">
@@ -225,22 +248,64 @@ function AntragZeile({
               </button>
             </div>
           </form>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {antrag.status !== "denied" ? (
-              <button type="button" onClick={() => setAblehnenModus(true)} className={knopfStop}>
-                {entschieden ? texte.zuAbgelehnt : texte.ablehnen}
-              </button>
+        ) : antrag.status !== "approved" ? (
+          /*
+           * Genehmigen trägt die angerechneten Tage mit (2026-10-07).
+           * Vorbelegt mit allen Kalendertagen — der Chef senkt den Wert,
+           * wenn z. B. Wochenenden nicht zählen. Gesperrt für die Planung
+           * bleibt der ganze Zeitraum.
+           */
+          <form action={aktion} className="flex flex-col gap-3">
+            <input type="hidden" name="urlaub_id" value={antrag.id} />
+            <input type="hidden" name="status" value="approved" />
+            <div className="flex flex-wrap items-end justify-between gap-4 rounded-blk bg-surface-sunk p-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-text">
+                  {fuelle(texte.kalendertageBeantragt, { n: kalendertage })}
+                </p>
+                <label htmlFor={feldId} className="mt-2 block text-sm font-medium text-text">
+                  {texte.angerechnetLabel}
+                </label>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-muted">{texte.angerechnetHinweis}</p>
+              </div>
+              <ZahlStepper
+                id={feldId}
+                name="angerechnete_tage"
+                label={texte.angerechnetLabel}
+                defaultValue={antrag.angerechneteTage ?? kalendertage}
+                min={0}
+                max={kalendertage}
+                fehler={feldFehlerText}
+              />
+            </div>
+            {meldung ? (
+              <p role="alert" className="text-sm font-medium text-stop">
+                {meldung}
+              </p>
             ) : null}
-            {antrag.status !== "approved" ? (
-              <form action={aktion}>
-                <input type="hidden" name="urlaub_id" value={antrag.id} />
-                <input type="hidden" name="status" value="approved" />
-                <button type="submit" className={knopfSignal}>
-                  {entschieden ? texte.zuGenehmigt : texte.genehmigen}
+            <div className="flex flex-wrap gap-2">
+              {antrag.status !== "denied" ? (
+                <button type="button" onClick={() => setAblehnenModus(true)} className={knopfStop}>
+                  {entschieden ? texte.zuAbgelehnt : texte.ablehnen}
                 </button>
-              </form>
+              ) : null}
+              <button type="submit" className={knopfSignal}>
+                {entschieden ? texte.zuGenehmigt : texte.genehmigen}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {meldung ? (
+              <p role="alert" className="text-sm font-medium text-stop">
+                {meldung}
+              </p>
             ) : null}
+            <div>
+              <button type="button" onClick={() => setAblehnenModus(true)} className={knopfStop}>
+                {texte.zuAbgelehnt}
+              </button>
+            </div>
           </div>
         )}
       </div>

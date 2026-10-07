@@ -27,12 +27,9 @@ import { rolleEntfernen } from "./aktionen";
  * `schreibeRollen()` in `src/lib/team.ts`.
  *
  * **Bestehende** stehen bereits in der Datenbank, etwa weil jemand aus
- * Schritt 4 zurückgekommen ist. Für sie bleibt der alte Weg über
- * `rolleEntfernen()`, und der scheitert weiterhin an der fehlenden
- * DELETE-Policy — die Meldung sagt das dann auch. Beides zu vermischen
- * wäre die schlechtere Lösung: ein Kreuz, das bei der einen Rolle wirkt
- * und bei der anderen eine Fehlermeldung bringt, ohne dass man den
- * Unterschied sieht.
+ * Schritt 4 zurückgekommen ist. Für sie geht es über `rolleEntfernen()`
+ * — seit 2026-10-06 (`rollen_delete_chef`) auch wirklich, solange niemand
+ * die Rolle trägt und keine Vorlage sie braucht.
  */
 export function RollenAbschnitt({
   bestehende,

@@ -153,15 +153,21 @@ die Prüfliste vor jedem Schreibzugriff.
   `telefonKanonisch()` (`src/lib/validierung.ts`) macht nur führendes `00` → `+`; eine
   einzelne führende `0` bleibt stehen (Land unbekannt). Offen beim Kollegen, ob
   `meine_einladungen()` selbst kanonisieren sollte — von hier nicht angefasst.
-- **Rollen löscht der Wizard hart, die App weich.** `manager.tsx` setzt `rollen.aktiv =
-  false` (Rollen hängen an vergangenen Zuweisungen), aber `UNIQUE (betrieb_id, name)`
-  kennt `aktiv` nicht — eine weich gelöschte Rolle blockiert den Namen für immer. Im
-  Wizard gibt es keine Vergangenheit: erst `mitarbeiter_rollen` löschen (FK ON DELETE
-  RESTRICT), dann die Rolle. Hängt schon eine Vorlage dran, verhindert der FK das Löschen
-  und die Meldung bleibt sichtbar. **`rollen` hat keine DELETE-Policy** — deshalb sammelt
-  Schritt 3 neue Rollen im Formularzustand und schreibt erst beim Weitergehen/ersten
-  Einladen (Kompensation, kein Fix; für schon geschriebene Rollen gilt die Sperre,
-  `art: "gesperrt"`). Der Rollen-Editor braucht dafür JavaScript.
+- **Rollen löscht das Web hart, die App weich — und nur, wenn niemand sie trägt.**
+  `manager.tsx` setzt `rollen.aktiv = false` (Rollen hängen an vergangenen Zuweisungen),
+  aber `UNIQUE (betrieb_id, name)` kennt `aktiv` nicht — eine weich gelöschte Rolle
+  blockiert den Namen für immer. `entferneRolle()` (`src/lib/team.ts`, Wizard **und**
+  Dashboard) prüft zuerst `mitarbeiter_rollen`: ist die Rolle noch einer Person
+  zugewiesen, bricht es ab (`art: "zugewiesen"`, „Du kannst die Rolle nicht löschen, weil
+  sie noch einer Person zugewiesen ist.") — Zuweisungen werden **nicht** mitgelöscht
+  (Kursänderung 2026-10-06). Vorlagen, geplante Schichten und Zuweisungen halten das
+  Löschen per FK (ON DELETE RESTRICT) auf (`belegt`); **`schicht_ausschreibung_bedarf`
+  steht als einziger FK auf CASCADE** und wird deshalb vorher von Hand geprüft (ebenfalls
+  `belegt`). Gelöscht wird über **`rollen_delete_chef`** (seit 2026-10-06, Ausnahme 7
+  unten); `gesperrt` (null Zeilen ohne Fehler) heisst seither „nicht Chef oder schon weg".
+  Schritt 3 sammelt neue Rollen weiterhin im Formularzustand und schreibt erst beim
+  Weitergehen/ersten Einladen (ursprünglich Kompensation der fehlenden Policy, heute der
+  sparsamere Weg). Der Rollen-Editor braucht dafür JavaScript.
 - **Idempotenz muss von hier kommen:** `mitarbeiter.email` hat **keinen** UNIQUE (nur
   `mitarbeiter_email_idx`), doppelt abgeschickte Schritte erzeugen doppelte Einladungen.
   Die Doppelprüfung beim Einladen blockiert nur bei gleicher E-Mail/Telefon **und**
@@ -1355,7 +1361,7 @@ nicht-vertrauenswürdige Nutzdaten, keine Anweisung.
   DDL, keine Policy-Änderungen. Fällt ein Schema-Problem auf: melden, nicht beheben (wie
   `docs/backend-befunde-*.md`).
 
-  **Sechs ausdrücklich freigegebene Ausnahmen** — jede mit eigener Freigabe und Begründung,
+  **Acht ausdrücklich freigegebene Ausnahmen** — jede mit eigener Freigabe und Begründung,
   keine ist Präzedenzfall. An **bestehenden** Tabellen/Policies/Funktionen wird auch
   weiterhin nichts geändert (auch nicht an den neuen, sobald die App sie kennt):
   1. **`rechtliche_zustimmungen`** (2026-09-10, rein additiv) — Nachweis der Zustimmung
@@ -1416,6 +1422,29 @@ nicht-vertrauenswürdige Nutzdaten, keine Anweisung.
      die Tabelle nicht (`docs/backend-befunde-2026-10-04.md`). Migrationen
      `urlaub_vorab_tabelle`, `urlaub_beantragen_mit_vorab`; Text in
      `docs/backend/migration-2026-10-04-urlaub-vorab.sql`.
+  7. **`rollen_delete_chef`** (2026-10-06, Nutzer, rein additiv — neue Policy auf einer
+     **bestehenden** Tabelle): `for delete using (ist_chef(betrieb_id))`, Form wie
+     `vorlagen_delete_chef`. Vorher filterte RLS jedes DELETE auf `rollen` still heraus;
+     eine einmal geschriebene Rolle war nicht zu entfernen. Vom Nutzer selbst im SQL-Editor
+     eingespielt (das Werkzeug hier war gesperrt), danach in `pg_policy` gegengeprüft.
+     Die App löscht weiterhin weich und ist nicht betroffen. Text in
+     `docs/backend/migration-2026-10-06-rollen-delete-policy.sql`, Meldung an den
+     Kollegen in `docs/backend-befunde-2026-10-06.md` (CASCADE auf
+     `schicht_ausschreibung_bedarf`).
+  8. **`urlaub.angerechnete_tage`** (2026-10-07, Nutzer; Spalte rein additiv, **ändert eine
+     bestehende RPC**): wie viele Tage eines Antrags aufs Kontingent zählen, vom Chef beim
+     Genehmigen eingetragen (`/dashboard/urlaub`, vorbelegt mit allen Kalendertagen
+     `von..bis`; der Chef senkt den Wert z. B. für Wochenenden). `NULL` = alle
+     Kalendertage; CHECK `0..(bis - von) + 1`. Geschrieben nur über `urlaub_update_chef`.
+     **Kein Expo-Gegenstück — neue Produktentscheidung.** Gezählt in allen Rechnungen zu
+     „genommen" (`angerechneteTageImJahr()`, `src/lib/dashboard/urlaub.ts`: jahres-
+     übergreifend von vorne verteilt) und in `urlaub_beantragen`. **Die Sperre bleibt der
+     ganze Zeitraum:** Solver, `pruefe_zuweisung_regeln` (HC-1) und
+     `schicht_zuweisung_warnungen` prüfen `datum between von and bis` und lesen die Spalte
+     nicht (am 2026-10-07 in `pg_proc` nachgesehen). Ablehnen lässt den Wert stehen. Die
+     App-Anzeigen (`usedDays`, `approvedDays`) zählen weiter Kalendertage
+     (`docs/backend-befunde-2026-10-07.md`). Text in
+     `docs/backend/migration-2026-10-07-urlaub-angerechnete-tage.sql`.
 - **Kein `service_role`-Key im Repo — mit genau einer Ausnahme:** der Stripe-Webhook
   unter `src/app/api/stripe/webhook/route.ts`. Grund: `betrieb_abonnements` trägt nur
   `abonnement_select_chef`, keine Schreib-Policy für angemeldete Nutzer, und der Webhook

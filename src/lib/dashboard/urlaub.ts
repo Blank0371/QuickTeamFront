@@ -22,6 +22,8 @@ export type MeinUrlaub = {
   status: UrlaubStatus;
   kommentar: string | null;
   begruendung: string | null;
+  /** Vom Chef beim Genehmigen gesetzt; `null` = alle Kalendertage zählen. */
+  angerechneteTage: number | null;
 };
 
 export type ChefUrlaubsantrag = MeinUrlaub & {
@@ -41,6 +43,28 @@ export function tageImJahr(von: string, bis: string, jahr: number): number {
 }
 
 /**
+ * Wie viele Tage eines Antrags im Jahr `jahr` aufs Kontingent zählen
+ * (Nutzerentscheidung 2026-10-07). Ohne Eintrag des Chefs alle
+ * Kalendertage (`tageImJahr`). Mit Eintrag werden die angerechneten Tage
+ * **von vorne** verteilt: zuerst auf das Jahr von `von`, höchstens so
+ * viele, wie der Antrag dort Kalendertage hat, der Rest aufs Folgejahr —
+ * dieselbe Regel wie `urlaub_beantragen`.
+ *
+ * Reine Kontingent-Rechnung: gesperrt (Solver, HC-1) bleibt der ganze
+ * Zeitraum `von..bis`.
+ */
+export function angerechneteTageImJahr(
+  u: { von: string; bis: string; angerechneteTage: number | null },
+  jahr: number,
+): number {
+  const imJahr = tageImJahr(u.von, u.bis, jahr);
+  if (u.angerechneteTage === null) return imJahr;
+  const davor = u.von < `${jahr}-01-01` ? tageDiff(u.von, u.bis < `${jahr - 1}-12-31` ? u.bis : `${jahr - 1}-12-31`) : 0;
+  const schonVerteilt = Math.min(u.angerechneteTage, davor);
+  return Math.min(imJahr, Math.max(0, u.angerechneteTage - schonVerteilt));
+}
+
+/**
  * Verbrauchte Tage im laufenden Jahr für die Anspruchs-Anzeige — Spiegel
  * von `usedDays` in `scheduling.tsx`: `approved` **und** `requested`
  * zählen mit, und ein Zeitraum, der über den Jahreswechsel reicht, wird an
@@ -49,12 +73,12 @@ export function tageImJahr(von: string, bis: string, jahr: number): number {
  * Bei Genehmigungen zählt nur `approved`; die Jahresgrenzen sind gleich.
  */
 export function verbrauchteTage(
-  urlaube: readonly Pick<MeinUrlaub, "von" | "bis" | "status">[],
+  urlaube: readonly Pick<MeinUrlaub, "von" | "bis" | "status" | "angerechneteTage">[],
   jahr: number = new Date().getFullYear(),
 ): number {
   return urlaube
     .filter((u) => u.status === "approved" || u.status === "requested")
-    .reduce((summe, u) => summe + tageImJahr(u.von, u.bis, jahr), 0);
+    .reduce((summe, u) => summe + angerechneteTageImJahr(u, jahr), 0);
 }
 
 /**
@@ -64,7 +88,14 @@ export function verbrauchteTage(
  * einer Genehmigung.
  */
 export function genehmigteTageOhne(
-  antraege: readonly { id: string; mitarbeiterId: string; von: string; bis: string; status: UrlaubStatus }[],
+  antraege: readonly {
+    id: string;
+    mitarbeiterId: string;
+    von: string;
+    bis: string;
+    status: UrlaubStatus;
+    angerechneteTage: number | null;
+  }[],
   mitarbeiterId: string,
   ausschlussId?: string,
   jahr: number = new Date().getFullYear(),
@@ -76,7 +107,7 @@ export function genehmigteTageOhne(
         a.mitarbeiterId === mitarbeiterId &&
         a.status === "approved",
     )
-    .reduce((summe, a) => summe + tageImJahr(a.von, a.bis, jahr), 0);
+    .reduce((summe, a) => summe + angerechneteTageImJahr(a, jahr), 0);
 }
 
 /**
@@ -93,7 +124,7 @@ export function genehmigteTageOhne(
  */
 export function genommeneTage(
   vorab: number,
-  urlaube: readonly Pick<MeinUrlaub, "von" | "bis" | "status">[],
+  urlaube: readonly Pick<MeinUrlaub, "von" | "bis" | "status" | "angerechneteTage">[],
   jahr: number,
 ): number {
   return vorab + verbrauchteTage(urlaube, jahr);
@@ -193,7 +224,7 @@ export async function holeErfassteTage(
 ): Promise<Map<string, number> | null> {
   let abfrage = supabase
     .from("urlaub")
-    .select("mitarbeiter_id, von, bis, status")
+    .select("mitarbeiter_id, von, bis, status, angerechnete_tage")
     .eq("betrieb_id", betriebId)
     .in("status", ["approved", "requested"])
     .lte("von", `${jahr}-12-31`)
@@ -206,7 +237,11 @@ export async function holeErfassteTage(
   }
   const jePerson = new Map<string, number>();
   for (const z of data ?? []) {
-    jePerson.set(z.mitarbeiter_id, (jePerson.get(z.mitarbeiter_id) ?? 0) + tageImJahr(z.von, z.bis, jahr));
+    jePerson.set(
+      z.mitarbeiter_id,
+      (jePerson.get(z.mitarbeiter_id) ?? 0) +
+        angerechneteTageImJahr({ von: z.von, bis: z.bis, angerechneteTage: z.angerechnete_tage }, jahr),
+    );
   }
   return jePerson;
 }
@@ -217,7 +252,7 @@ export async function holeMeineUrlaube(
 ): Promise<MeinUrlaub[]> {
   const { data, error } = await supabase
     .from("urlaub")
-    .select("id, von, bis, status, kommentar, begruendung")
+    .select("id, von, bis, status, kommentar, begruendung, angerechnete_tage")
     .eq("mitarbeiter_id", mitarbeiterId)
     .order("von", { ascending: false });
 
@@ -225,7 +260,15 @@ export async function holeMeineUrlaube(
     console.error(`[dashboard/urlaub] meine urlaube: ${error.message}`);
     return [];
   }
-  return (data ?? []) as MeinUrlaub[];
+  return (data ?? []).map((z) => ({
+    id: z.id,
+    von: z.von,
+    bis: z.bis,
+    status: z.status as UrlaubStatus,
+    kommentar: z.kommentar,
+    begruendung: z.begruendung,
+    angerechneteTage: z.angerechnete_tage,
+  }));
 }
 
 export async function holeUrlaubsanspruch(
@@ -252,7 +295,7 @@ export async function holeChefUrlaubsantraege(
 ): Promise<ChefUrlaubsantrag[]> {
   const { data, error } = await supabase
     .from("urlaub")
-    .select("id, mitarbeiter_id, von, bis, status, kommentar, begruendung")
+    .select("id, mitarbeiter_id, von, bis, status, kommentar, begruendung, angerechnete_tage")
     .eq("betrieb_id", betriebId)
     .order("von", { ascending: false });
 
@@ -280,5 +323,6 @@ export async function holeChefUrlaubsantraege(
     status: z.status as UrlaubStatus,
     kommentar: z.kommentar,
     begruendung: z.begruendung,
+    angerechneteTage: z.angerechnete_tage,
   }));
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { jahrImBetrieb } from "@/lib/datum";
-import { genehmigteTageOhne, genommeneTage, tageDiff, tageImJahr, verbrauchteTage, vorabAusGesamt, vorabFuer } from "./urlaub";
+import { angerechneteTageImJahr, genehmigteTageOhne, genommeneTage, tageDiff, tageImJahr, verbrauchteTage, vorabAusGesamt, vorabFuer } from "./urlaub";
 
 test("Urlaub zählt Kalendertage auch über Sommerzeit hinweg", () => {
   const vorher = process.env.TZ;
@@ -20,7 +20,7 @@ test("Jahresübergreifender Urlaub belastet jedes Jahr nur mit seinen Tagen", ()
   assert.equal(tageImJahr("2026-12-30", "2027-01-03", 2026), 2);
   assert.equal(tageImJahr("2026-12-30", "2027-01-03", 2027), 3);
   assert.equal(tageImJahr("2026-12-30", "2027-01-03", 2028), 0);
-  const antrag = { id: "a", mitarbeiterId: "m", von: "2026-12-30", bis: "2027-01-03", status: "approved" as const, kommentar: null, begruendung: null };
+  const antrag = { id: "a", mitarbeiterId: "m", von: "2026-12-30", bis: "2027-01-03", status: "approved" as const, kommentar: null, begruendung: null, angerechneteTage: null };
   assert.equal(genehmigteTageOhne([antrag], "m", undefined, 2027), 3);
   assert.equal(genehmigteTageOhne([antrag], "m", "a", 2027), 0);
   assert.equal(genehmigteTageOhne([antrag], "andere", undefined, 2027), 0);
@@ -29,9 +29,9 @@ test("Jahresübergreifender Urlaub belastet jedes Jahr nur mit seinen Tagen", ()
 
 test("Genommen = Vorab + offene + genehmigte Anträge; Ablehnen nimmt heraus, Genehmigen nicht", () => {
   const urlaube = [
-    { von: "2026-03-02", bis: "2026-03-04", status: "requested" as const },
-    { von: "2026-05-04", bis: "2026-05-05", status: "approved" as const },
-    { von: "2026-07-01", bis: "2026-07-10", status: "denied" as const },
+    { von: "2026-03-02", bis: "2026-03-04", status: "requested" as const, angerechneteTage: null },
+    { von: "2026-05-04", bis: "2026-05-05", status: "approved" as const, angerechneteTage: null },
+    { von: "2026-07-01", bis: "2026-07-10", status: "denied" as const, angerechneteTage: null },
   ];
   assert.equal(genommeneTage(4, urlaube, 2026), 4 + 3 + 2);
   const abgelehnt = urlaube.map((u) => (u.status === "requested" ? { ...u, status: "denied" as const } : u));
@@ -60,4 +60,23 @@ test("Profil-Gesamtzahl wird zum Vorab-Wert, nie unter die erfassten Anträge", 
 test("Das neue Urlaubsjahr beginnt um Mitternacht Betriebszeit, nicht UTC", () => {
   assert.equal(jahrImBetrieb(new Date("2026-12-31T22:30:00Z")), 2026);
   assert.equal(jahrImBetrieb(new Date("2026-12-31T23:30:00Z")), 2027);
+});
+
+test("Angerechnete Tage ersetzen die Kalendertage im Kontingent", () => {
+  const zweiWochen = { von: "2026-10-12", bis: "2026-10-25", angerechneteTage: 10 };
+  assert.equal(angerechneteTageImJahr(zweiWochen, 2026), 10);
+  assert.equal(angerechneteTageImJahr({ ...zweiWochen, angerechneteTage: null }, 2026), 14);
+  assert.equal(angerechneteTageImJahr({ ...zweiWochen, angerechneteTage: 0 }, 2026), 0);
+  const urlaube = [{ ...zweiWochen, status: "approved" as const }];
+  assert.equal(genommeneTage(2, urlaube, 2026), 2 + 10);
+});
+
+test("Jahresübergreifend werden angerechnete Tage von vorne verteilt", () => {
+  // 28.12.–06.01.: 4 Tage 2026, 6 Tage 2027.
+  const antrag = { von: "2026-12-28", bis: "2027-01-06", angerechneteTage: 7 };
+  assert.equal(angerechneteTageImJahr(antrag, 2026), 4);
+  assert.equal(angerechneteTageImJahr(antrag, 2027), 3);
+  assert.equal(angerechneteTageImJahr({ ...antrag, angerechneteTage: 3 }, 2026), 3);
+  assert.equal(angerechneteTageImJahr({ ...antrag, angerechneteTage: 3 }, 2027), 0);
+  assert.equal(angerechneteTageImJahr(antrag, 2028), 0);
 });

@@ -799,6 +799,12 @@ const uhrzeitSchema = z
  * Der CHECK in der Datenbank prüft nur den Bereich 0..6 und fängt eine
  * Verwechslung mit der JS-Konvention nicht ab.
  *
+ * `wochentag` ist eine **Liste** (Mehrfachauswahl, seit 2026-10-06): je
+ * gewähltem Tag entsteht eine eigene Zeile in `schicht_vorlagen` — die
+ * Tabelle kennt nur einen Tag je Vorlage, wie die App. Mindestens ein
+ * Tag ist Pflicht; doppelte Werte fallen heraus, die Reihenfolge ist
+ * aufsteigend (Montag zuerst).
+ *
  * `chk_vorlage_zeiten_verschieden` verbietet ausschliesslich
  * `start = end`. Eine Nachtschicht über Mitternacht (22:00 bis 06:00) ist
  * also erlaubt und ausdrücklich gewollt — hier wird deshalb **nicht**
@@ -807,11 +813,16 @@ const uhrzeitSchema = z
 export const vorlagenSchema = z
   .object({
     bezeichnung: vorlagenBezeichnungSchema,
-    wochentag: z.coerce
-      .number()
-      .int(vm("v.wochentag.wahl"))
-      .min(0, vm("v.wochentag.wahl"))
-      .max(6, vm("v.wochentag.wahl")),
+    wochentag: z
+      .array(
+        z.coerce
+          .number()
+          .int(vm("v.wochentag.wahl"))
+          .min(0, vm("v.wochentag.wahl"))
+          .max(6, vm("v.wochentag.wahl")),
+      )
+      .min(1, vm("v.wochentag.wahl"))
+      .transform((tage) => [...new Set(tage)].sort((a, b) => a - b)),
     start_zeit: uhrzeitSchema,
     end_zeit: uhrzeitSchema,
   })
@@ -992,6 +1003,21 @@ export const urlaubEntscheidungSchema = z.object({
     .max(URLAUB_KOMMENTAR_LIMIT, vm("v.zeichen.max", { max: URLAUB_KOMMENTAR_LIMIT }))
     .transform((wert) => (wert.length > 0 ? wert : null))
     .nullable(),
+  /*
+   * Angerechnete Tage (Nutzerentscheidung 2026-10-07), nur beim
+   * Genehmigen. Leer heisst „nicht mitgeschickt" — dann bleibt der
+   * gespeicherte Wert stehen. Die Obergrenze (Kalendertage des Antrags)
+   * kennt nur die Aktion, die den Antrag liest; die Spalte prüft sie
+   * noch einmal (`chk_urlaub_angerechnete_tage`).
+   */
+  angerechneteTage: z.preprocess(
+    (wert) => (typeof wert === "string" && wert.trim() === "" ? undefined : wert),
+    z.coerce
+      .number({ error: vm("v.zahl.pflicht") })
+      .int(vm("v.tage.ganz"))
+      .min(0, vm("v.urlaubstage.negativ"))
+      .optional(),
+  ),
 });
 
 export type UrlaubEntscheidungEingabe = z.infer<typeof urlaubEntscheidungSchema>;

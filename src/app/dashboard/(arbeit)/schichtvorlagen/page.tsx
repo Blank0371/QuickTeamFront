@@ -11,7 +11,7 @@ import { betreteDashboard, istChef } from "@/lib/dashboard/zugang";
 import { holeVorlagen } from "@/lib/schichten";
 import { holeRollen } from "@/lib/team";
 
-import { vorlageAnlegen, vorlageEntfernen } from "./aktionen";
+import { vorlageAnlegen, vorlageBearbeiten, vorlageEntfernen } from "./aktionen";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { schichtvorlagen } = await holeTexte();
@@ -72,7 +72,8 @@ export default async function SchichtvorlagenSeite() {
               tagKurz={wochentageKurz(locale)}
               tagLang={wochentageLang(locale)}
               anlegen={vorlageAnlegen}
-              entfernen={vorlageEntfernen}
+              bearbeiten={vorlageBearbeiten}
+        entfernen={vorlageEntfernen}
             />
           )}
         </div>

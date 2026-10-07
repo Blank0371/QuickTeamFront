@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 
 import { alsUhrzeit, WOCHENTAGE, type Vorlage } from "@/lib/schichten";
 import type { Dictionary } from "@/i18n/de";
@@ -158,6 +158,8 @@ export function WochenRaster({
   vorlagen,
   rollenName,
   entfernenAktion,
+  beiBearbeiten,
+  bearbeitetId,
   texte,
   tagKurz,
   tagLang,
@@ -165,6 +167,10 @@ export function WochenRaster({
   vorlagen: readonly Vorlage[];
   rollenName: (id: string) => string;
   entfernenAktion: (formData: FormData) => void;
+  /** Öffnet die Vorlage im Formular über dem Raster. */
+  beiBearbeiten: (vorlage: Vorlage) => void;
+  /** Die gerade bearbeitete Vorlage — ihr Block wird hervorgehoben. */
+  bearbeitetId: string | null;
   texte: Dictionary["stepper"]["schichten"];
   tagKurz: readonly string[];
   tagLang: readonly string[];
@@ -246,6 +252,8 @@ export function WochenRaster({
                   tagName={tagLang[tag.wert] ?? ""}
                   rollenName={rollenName}
                   entfernenAktion={entfernenAktion}
+                  beiBearbeiten={beiBearbeiten}
+                  bearbeitet={platz.vorlage.id === bearbeitetId}
                   texte={texte}
                 />
               ))}
@@ -262,12 +270,16 @@ function Block({
   tagName,
   rollenName,
   entfernenAktion,
+  beiBearbeiten,
+  bearbeitet,
   texte,
 }: {
   platz: Platziert;
   tagName: string;
   rollenName: (id: string) => string;
   entfernenAktion: (formData: FormData) => void;
+  beiBearbeiten: (vorlage: Vorlage) => void;
+  bearbeitet: boolean;
   texte: Dictionary["stepper"]["schichten"];
 }) {
   const { vorlage, oben, hoehe, spur, spuren } = platz;
@@ -296,7 +308,11 @@ function Block({
         // Das ist kein Fehler, aber auch kein fertiger Zustand — der
         // gestrichelte Rand sagt „hier fehlt noch etwas", ohne Rot zu
         // verbrauchen, das Fehlern vorbehalten ist.
-        ohneBedarf ? "border-dashed border-line-strong" : "border-line"
+        bearbeitet
+          ? "border-signal"
+          : ohneBedarf
+            ? "border-dashed border-line-strong"
+            : "border-line"
       }`}
       style={{
         top: `${oben}px`,
@@ -374,28 +390,45 @@ function Block({
       )}
 
       {/*
-        Das Entfernen sitzt unten rechts im Block, nicht oben: oben
-        stünde es in derselben Zeile wie der Titel und nähme ihm in
-        einer 75-Pixel-Spalte den halben Platz. Unten ist bei fast jedem
-        Block Luft — ein Block ist so hoch wie seine Schicht lang.
+        Bearbeiten und Entfernen sitzen unten rechts im Block, nicht oben:
+        oben stünden sie in derselben Zeile wie der Titel und nähmen ihm
+        in einer schmalen Spalte den halben Platz. Unten ist bei fast
+        jedem Block Luft — ein Block ist so hoch wie seine Schicht lang.
 
-        36 Pixel Trefferfläche statt der 44, die hier sonst gelten. In
-        eine Spalte dieser Breite passen 44 nicht, ohne den Inhalt zu
-        verdrängen; WCAG 2.5.8 verlangt 24, das ist eingehalten.
+        Zwei Knöpfe nebeneinander brauchen Breite. Teilt sich der Tag auf
+        Spuren auf (`eng`), ist ein Block nur gut 50 Pixel breit; dort
+        sind die Knöpfe 24 Pixel gross — genau das, was WCAG 2.5.8
+        verlangt —, sonst 28.
       */}
-      <form action={entfernenAktion} className="absolute bottom-0 right-0">
-        <input type="hidden" name="vorlage_id" value={vorlage.id} />
+      <div className="absolute bottom-0 right-0 flex">
         <button
-          type="submit"
-          aria-label={texte.blockEntfernen
-            .replace("{bezeichnung}", vorlage.bezeichnung)
-            .replace("{tag}", tagName)
-            .replace("{zeit}", zeit)}
-          className="flex size-9 items-center justify-center rounded-blk text-muted transition-colors hover:text-stop focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-signal"
+          type="button"
+          onClick={() => beiBearbeiten(vorlage)}
+          aria-label={fuelleBlock(texte.blockBearbeiten, vorlage.bezeichnung, tagName, zeit)}
+          aria-pressed={bearbeitet}
+          className={`${KNOPF} ${eng ? "size-6" : "size-7"} hover:text-signal ${bearbeitet ? "text-signal" : ""}`}
         >
-          <X className="size-3.5" aria-hidden="true" />
+          <Pencil className="size-3.5" aria-hidden="true" />
         </button>
-      </form>
+        <form action={entfernenAktion}>
+          <input type="hidden" name="vorlage_id" value={vorlage.id} />
+          <button
+            type="submit"
+            aria-label={fuelleBlock(texte.blockEntfernen, vorlage.bezeichnung, tagName, zeit)}
+            className={`${KNOPF} ${eng ? "size-6" : "size-7"} hover:text-stop`}
+          >
+            <X className="size-3.5" aria-hidden="true" />
+          </button>
+        </form>
+      </div>
     </div>
   );
+}
+
+const KNOPF =
+  "flex items-center justify-center rounded-blk text-muted transition-colors " +
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-signal";
+
+function fuelleBlock(vorlage: string, bezeichnung: string, tag: string, zeit: string): string {
+  return vorlage.replace("{bezeichnung}", bezeichnung).replace("{tag}", tag).replace("{zeit}", zeit);
 }

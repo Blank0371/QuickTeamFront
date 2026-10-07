@@ -347,6 +347,13 @@ export const es: Dictionary = {
     anspruchUeberschritten:
       "Esto supera el derecho a vacaciones de {jahr}: quedan {rest} de {anspruch} días, esta solicitud necesita {beantragt}.",
     antragWegNeuLaden: "Esta solicitud ya no existe. Recarga la página.",
+    tagEins: "1 día",
+    tageAnzahl: "{n} días",
+    angerechnetKurz: "{n} computados",
+    kalendertageBeantragt: "Días solicitados: {n}",
+    angerechnetLabel: "De ellos, cuentan como vacaciones",
+    angerechnetHinweis: "No todos los días tienen que contar, p. ej. los fines de semana.",
+    angerechnetZuViel: "Como máximo {max}: son los días que abarca la solicitud.",
   },
   mitteilungen: {
     metaTitel: "Mensajes",
@@ -807,9 +814,10 @@ export const es: Dictionary = {
         "Crea los roles de tu negocio e invita a tu personal — ambas cosas en un paso.",
       meldung: {
         keineRolle: "No se indicó ningún rol.",
+        rolleZugewiesen: "No puedes eliminar el rol porque todavía está asignado a una persona.",
         rolleBelegt: "Este rol ya lo usa una plantilla de turno. Quítalo primero allí.",
         rolleGesperrt:
-          "Por ahora no se pueden eliminar roles — la base de datos todavía no lo permite. Ya se ha notificado. Tus asignaciones de roles no cambian.",
+          "No se pudo eliminar el rol: ya no existe o no tienes permiso para modificarlo. Recarga la página.",
         rolleEntfernenFehler: "No se pudo eliminar el rol. Inténtalo de nuevo.",
         rollenAnlegenEinladung:
           "No se pudieron crear los roles — así que tampoco se invitó a nadie. Inténtalo de nuevo.",
@@ -883,6 +891,10 @@ export const es: Dictionary = {
           "No se pudo guardar la dotación mínima, así que la plantilla no se creó. Inténtalo de nuevo.",
         keineVorlage: "No se indicó ninguna plantilla.",
         entfernenFehler: "No se pudo eliminar la plantilla. Inténtalo de nuevo.",
+        einTag: "Elige exactamente un día de la semana.",
+        bearbeitenFehler: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+        bearbeitenBedarfFehler: "El turno se guardó, pero la dotación mínima no del todo. Inténtalo de nuevo.",
+        nichtGefunden: "Esta plantilla ya no existe. Recarga la página.",
       },
       titel: "Cómo es tu semana",
       lead: "Para cada día de la semana, los turnos que tienes — y por turno, cuántas personas de qué rol deben estar como mínimo.",
@@ -893,7 +905,8 @@ export const es: Dictionary = {
         "Una plantilla por turno y día de la semana. Los turnos de noche que pasan de la medianoche están bien — introduce simplemente 22:00 a 06:00.",
       bezeichnung: "Nombre",
       bezeichnungHinweis: "Por ejemplo turno de mañana, turno de tarde o cocina noche.",
-      wochentag: "Día de la semana",
+      wochentag: "Días de la semana",
+      wochentagHinweis: "Puedes elegir varios días, al menos uno. Cada día recibe su propia plantilla con el mismo horario y la misma dotación mínima.",
       beginn: "Inicio",
       ende: "Fin",
       mindestbesetzung: "Dotación mínima",
@@ -909,6 +922,13 @@ export const es: Dictionary = {
       bisZeit: " a {zeit}",
       folgetag: ", termina al día siguiente",
       blockEntfernen: "Quitar {bezeichnung} el {tag}, {zeit}",
+      blockBearbeiten: "Editar {bezeichnung} el {tag}, {zeit}",
+      wochentagEinzeln: "Día de la semana",
+      bearbeitenTitel: "Editar turno",
+      bearbeitenText: "Los cambios se aplican a la planificación futura; los turnos ya creados se quedan como están. Para más días, añade un turno nuevo.",
+      speichern: "Guardar cambios",
+      speichernLaufend: "Guardando …",
+      abbrechen: "Cancelar",
     },
     sperre: {
       metaTitel: "Prueba terminada",
@@ -1130,13 +1150,7 @@ export const es: Dictionary = {
     hinzufuegen: "Añadir",
     ausblenden: "Ocultar",
     entfernen: "Quitar",
-    entfernenGesperrtTitel: "La base de datos no permite eliminar roles por ahora.",
-    entfernenGesperrt: "Eliminación bloqueada",
     keineRolle: "Aún no hay ningún rol.",
-    gesperrtVor:
-      "Eliminar está desactivado porque la base de datos no permite borrar roles por ahora — ya se ha notificado. ",
-    gesperrtAusblenden: "Ocultar",
-    gesperrtNach: " sigue funcionando: el rol ya no se asigna, pero conserva su nombre reservado.",
     ausgeblendet: "Ocultos",
     ausgeblendetText:
       "Estos roles ya no se asignan, pero conservan su nombre reservado — un rol nuevo no puede usar el mismo nombre.",
@@ -1209,10 +1223,11 @@ export const es: Dictionary = {
     nameDoppeltFeld: "Este nombre ya existe.",
     rolleAnlegenFehler: "No se pudo crear el rol. Inténtalo de nuevo.",
     keineRolleAngegeben: "No se indicó ningún rol.",
+    rolleZugewiesen: "No puedes eliminar el rol porque todavía está asignado a una persona.",
     rolleBelegt:
       "Este rol todavía está vinculado a una plantilla de turno o a turnos planificados. Quítalo primero allí.",
     rolleGesperrt:
-      "Por ahora no se pueden eliminar roles — la base de datos todavía no lo permite. Ya se ha notificado. Tus asignaciones de roles no cambian.",
+      "No se pudo eliminar el rol: ya no existe o no tienes permiso para modificarlo. Recarga la página.",
     rolleEntfernenFehler: "No se pudo eliminar el rol. Inténtalo de nuevo.",
     nochmal: "No ha funcionado. Inténtalo de nuevo.",
     rolleWeg: "Este rol ya no existe. Recarga la página.",

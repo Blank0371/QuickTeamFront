@@ -395,6 +395,13 @@ export const en: Dictionary = {
     anspruchUeberschritten:
       "This exceeds the leave entitlement for {jahr}: {rest} of {anspruch} days left, this request needs {beantragt}.",
     antragWegNeuLaden: "This request no longer exists. Reload the page.",
+    tagEins: "1 day",
+    tageAnzahl: "{n} days",
+    angerechnetKurz: "{n} counted",
+    kalendertageBeantragt: "Days requested: {n}",
+    angerechnetLabel: "Of these, count as vacation",
+    angerechnetHinweis: "Not every day has to count, e.g. weekends.",
+    angerechnetZuViel: "At most {max} — that's how many days the request covers.",
   },
   mitteilungen: {
     metaTitel: "Messages",
@@ -890,9 +897,10 @@ export const en: Dictionary = {
         "Create your business's roles and invite your staff — both in one step.",
       meldung: {
         keineRolle: "No role was specified.",
+        rolleZugewiesen: "You cannot delete the role, because it is still assigned to a person.",
         rolleBelegt: "This role is already used by a shift template. Remove it there first.",
         rolleGesperrt:
-          "Roles cannot be removed at the moment — the database does not allow deleting them yet. This has been reported. Your role assignments are unchanged.",
+          "The role could not be removed — it no longer exists, or you are not allowed to change it. Reload the page.",
         rolleEntfernenFehler: "The role could not be removed. Try again.",
         rollenAnlegenEinladung:
           "The roles could not be created — so nobody was invited either. Try again.",
@@ -966,6 +974,10 @@ export const en: Dictionary = {
           "The minimum staffing could not be saved, so the template was not created. Try again.",
         keineVorlage: "No template was specified.",
         entfernenFehler: "The template could not be removed. Try again.",
+        einTag: "Choose exactly one weekday.",
+        bearbeitenFehler: "The changes could not be saved. Try again.",
+        bearbeitenBedarfFehler: "The shift was saved, but the minimum staffing was not saved completely. Try again.",
+        nichtGefunden: "This template no longer exists. Reload the page.",
       },
       titel: "What does your week look like",
       lead: "For each weekday, the shifts you have — and per shift, how many people of which role must be present at minimum.",
@@ -976,7 +988,8 @@ export const en: Dictionary = {
         "One template per shift and weekday. Night shifts across midnight are fine — just enter 22:00 to 06:00.",
       bezeichnung: "Label",
       bezeichnungHinweis: "For example early shift, evening shift or kitchen late.",
-      wochentag: "Weekday",
+      wochentag: "Weekdays",
+      wochentagHinweis: "Pick one or more days. Each day gets its own template with the same times and minimum staffing.",
       beginn: "Start",
       ende: "End",
       mindestbesetzung: "Minimum staffing",
@@ -992,6 +1005,13 @@ export const en: Dictionary = {
       bisZeit: " to {zeit}",
       folgetag: ", ends the next day",
       blockEntfernen: "Remove {bezeichnung} on {tag}, {zeit}",
+      blockBearbeiten: "Edit {bezeichnung} on {tag}, {zeit}",
+      wochentagEinzeln: "Weekday",
+      bearbeitenTitel: "Edit shift",
+      bearbeitenText: "Changes apply to future planning; shifts that already exist stay as they are. For more days, add a new shift.",
+      speichern: "Save changes",
+      speichernLaufend: "Saving …",
+      abbrechen: "Cancel",
     },
     sperre: {
       metaTitel: "Trial expired",
@@ -1227,13 +1247,7 @@ export const en: Dictionary = {
     hinzufuegen: "Add",
     ausblenden: "Hide",
     entfernen: "Remove",
-    entfernenGesperrtTitel: "The database does not currently allow deleting roles.",
-    entfernenGesperrt: "Removal locked",
     keineRolle: "No role created yet.",
-    gesperrtVor:
-      "Removing is disabled because the database does not currently allow deleting roles — this has been reported. ",
-    gesperrtAusblenden: "Hide",
-    gesperrtNach: " still works: the role is no longer assigned but keeps its name reserved.",
     ausgeblendet: "Hidden",
     ausgeblendetText:
       "These roles are no longer assigned but keep their names reserved — a new role cannot use the same name.",
@@ -1306,10 +1320,11 @@ export const en: Dictionary = {
     nameDoppeltFeld: "This name already exists.",
     rolleAnlegenFehler: "The role could not be created. Try again.",
     keineRolleAngegeben: "No role was specified.",
+    rolleZugewiesen: "You cannot delete the role, because it is still assigned to a person.",
     rolleBelegt:
       "This role is still attached to a shift template or planned shifts. Remove it there first.",
     rolleGesperrt:
-      "Roles cannot be removed at the moment — the database does not allow deleting them yet. This has been reported. Your role assignments are unchanged.",
+      "The role could not be removed — it no longer exists, or you are not allowed to change it. Reload the page.",
     rolleEntfernenFehler: "The role could not be removed. Try again.",
     nochmal: "That didn't work. Try again.",
     rolleWeg: "This role no longer exists. Reload the page.",
@@ -1964,7 +1979,7 @@ export const en: Dictionary = {
 
     "v.uhrzeit.form": "Time as HH:MM, e.g. 17:00.",
     "v.uhrzeit.ungueltig": "Invalid time.",
-    "v.wochentag.wahl": "Choose a weekday.",
+    "v.wochentag.wahl": "Choose at least one weekday.",
     "v.zeiten.beginnEnde": "Start and end must not be the same.",
     "v.zeiten.startEnde": "Start and end must not be the same.",
 

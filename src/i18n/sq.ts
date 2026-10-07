@@ -347,6 +347,13 @@ export const sq: Dictionary = {
     anspruchUeberschritten:
       "Kjo e tejkalon të drejtën për pushime për {jahr}: mbeten {rest} nga {anspruch} ditë, kjo kërkesë kërkon {beantragt}.",
     antragWegNeuLaden: "Kjo kërkesë nuk ekziston më. Ringarko faqen.",
+    tagEins: "1 ditë",
+    tageAnzahl: "{n} ditë",
+    angerechnetKurz: "{n} të llogaritura",
+    kalendertageBeantragt: "Ditë të kërkuara: {n}",
+    angerechnetLabel: "Prej tyre llogariten si pushim",
+    angerechnetHinweis: "Jo çdo ditë duhet të llogaritet, p.sh. fundjavat.",
+    angerechnetZuViel: "Më së shumti {max} — kaq ditë përfshin kërkesa.",
   },
   mitteilungen: {
     metaTitel: "Mesazhe",
@@ -807,9 +814,10 @@ export const sq: Dictionary = {
         "Krijo rolet e biznesit tënd dhe fto stafin — të dyja në një hap.",
       meldung: {
         keineRolle: "Nuk u specifikua asnjë rol.",
+        rolleZugewiesen: "Nuk mund ta fshish rolin, sepse i është caktuar ende një personi.",
         rolleBelegt: "Ky rol përdoret tashmë nga një shabllon turni. Hiqe së pari atje.",
         rolleGesperrt:
-          "Rolet nuk mund të hiqen për momentin — baza e të dhënave nuk lejon ende fshirjen e tyre. Kjo është raportuar. Caktimet e roleve mbeten të pandryshuara.",
+          "Roli nuk u hoq dot — nuk ekziston më, ose nuk ke të drejtë ta ndryshosh. Ringarko faqen.",
         rolleEntfernenFehler: "Roli nuk u hoq dot. Provo sërish.",
         rollenAnlegenEinladung:
           "Rolet nuk u krijuan dot — prandaj nuk u ftua askush. Provo sërish.",
@@ -883,6 +891,10 @@ export const sq: Dictionary = {
           "Stafi minimal nuk u ruajt dot, prandaj shablloni nuk u krijua. Provo sërish.",
         keineVorlage: "Nuk u specifikua asnjë shabllon.",
         entfernenFehler: "Shablloni nuk u hoq dot. Provo sërish.",
+        einTag: "Zgjidh saktësisht një ditë të javës.",
+        bearbeitenFehler: "Ndryshimet nuk u ruajtën dot. Provo sërish.",
+        bearbeitenBedarfFehler: "Turni u ruajt, por stafi minimal jo plotësisht. Provo sërish.",
+        nichtGefunden: "Ky shabllon nuk ekziston më. Ringarko faqen.",
       },
       titel: "Si duket java jote",
       lead: "Për çdo ditë të javës, turnet që ke — dhe për çdo turn, sa persona të cilit rol duhet të jenë të pranishëm së paku.",
@@ -893,7 +905,8 @@ export const sq: Dictionary = {
         "Një shabllon për çdo turn dhe ditë të javës. Turnet e natës pas mesnatës janë në rregull — thjesht shkruaj 22:00 deri 06:00.",
       bezeichnung: "Emërtimi",
       bezeichnungHinweis: "Për shembull turni i mëngjesit, turni i mbrëmjes ose kuzhina vonë.",
-      wochentag: "Dita e javës",
+      wochentag: "Ditët e javës",
+      wochentagHinweis: "Mund të zgjidhen disa ditë, të paktën një. Për çdo ditë krijohet një shabllon më vete me të njëjtin orar dhe staf minimal.",
       beginn: "Fillimi",
       ende: "Mbarimi",
       mindestbesetzung: "Stafi minimal",
@@ -909,6 +922,13 @@ export const sq: Dictionary = {
       bisZeit: " deri {zeit}",
       folgetag: ", mbaron ditën tjetër",
       blockEntfernen: "Hiq {bezeichnung} të {tag}, {zeit}",
+      blockBearbeiten: "Ndrysho {bezeichnung} të {tag}, {zeit}",
+      wochentagEinzeln: "Dita e javës",
+      bearbeitenTitel: "Ndrysho turnin",
+      bearbeitenText: "Ndryshimet vlejnë për planifikimet e ardhshme; turnet ekzistuese mbeten siç janë. Për ditë të tjera krijo një turn të ri.",
+      speichern: "Ruaj ndryshimet",
+      speichernLaufend: "Po ruhet …",
+      abbrechen: "Anulo",
     },
     sperre: {
       metaTitel: "Periudha provë skadoi",
@@ -1131,13 +1151,7 @@ export const sq: Dictionary = {
     hinzufuegen: "Shto",
     ausblenden: "Fshih",
     entfernen: "Hiq",
-    entfernenGesperrtTitel: "Baza e të dhënave aktualisht nuk lejon fshirjen e roleve.",
-    entfernenGesperrt: "Heqja e bllokuar",
     keineRolle: "Ende asnjë rol i krijuar.",
-    gesperrtVor:
-      "Heqja është çaktivizuar sepse baza e të dhënave aktualisht nuk lejon fshirjen e roleve — kjo është raportuar. ",
-    gesperrtAusblenden: "Fshih",
-    gesperrtNach: " funksionon ende: roli nuk caktohet më, por e mban emrin të rezervuar.",
     ausgeblendet: "Të fshehura",
     ausgeblendetText:
       "Këto role nuk caktohen më, por i mbajnë emrat të rezervuar — një rol i ri nuk mund të përdorë të njëjtin emër.",
@@ -1210,10 +1224,11 @@ export const sq: Dictionary = {
     nameDoppeltFeld: "Ky emër ekziston tashmë.",
     rolleAnlegenFehler: "Roli nuk u krijua dot. Provo sërish.",
     keineRolleAngegeben: "Nuk u specifikua asnjë rol.",
+    rolleZugewiesen: "Nuk mund ta fshish rolin, sepse i është caktuar ende një personi.",
     rolleBelegt:
       "Ky rol është ende i lidhur me një shabllon turni ose me turne të planifikuara. Hiqe së pari atje.",
     rolleGesperrt:
-      "Rolet nuk mund të hiqen për momentin — baza e të dhënave nuk lejon ende fshirjen e tyre. Kjo është raportuar. Caktimet e roleve mbeten të pandryshuara.",
+      "Roli nuk u hoq dot — nuk ekziston më, ose nuk ke të drejtë ta ndryshosh. Ringarko faqen.",
     rolleEntfernenFehler: "Roli nuk u hoq dot. Provo sërish.",
     nochmal: "Nuk funksionoi. Provo sërish.",
     rolleWeg: "Ky rol nuk ekziston më. Ringarko faqen.",
