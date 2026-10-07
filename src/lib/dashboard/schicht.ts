@@ -186,13 +186,17 @@ export type ZuweisbarerMitarbeiter = {
  * `pausiert`/`inaktiv`) — dieser Zweig im Trigger feuert nie. Gemeldet,
  * nicht repariert; die Fehlermeldung dafür steht trotzdem bereit, falls
  * das App-Repo den Wert eines Tages korrigiert.
+ *
+ * **Die Leitung fehlt (seit 2026-10-07).** Chefs übernehmen keine
+ * Schichten — wie im Solver (`rolle_typ = 'mitarbeiter'`). Abweichung von
+ * `shift/[id].tsx`, das Chefs mitlistet; dort scheitern sie mangels Rolle.
  */
 export async function holeZuweisbareMitarbeiter(
   supabase: SupabaseServerClient,
   betriebId: string,
 ): Promise<ZuweisbarerMitarbeiter[]> {
   const [{ data: mitarbeiter }, { data: rollen }, { data: zuordnung }] = await Promise.all([
-    supabase.from("mitarbeiter").select("id, vorname, nachname").eq("betrieb_id", betriebId).in("status", ["aktiv", "eingeladen"]).is("anonymisiert_am", null).order("nachname"),
+    supabase.from("mitarbeiter").select("id, vorname, nachname").eq("betrieb_id", betriebId).eq("rolle_typ", "mitarbeiter").in("status", ["aktiv", "eingeladen"]).is("anonymisiert_am", null).order("nachname"),
     supabase.from("rollen").select("id, name").eq("betrieb_id", betriebId).eq("aktiv", true),
     supabase.from("mitarbeiter_rollen").select("mitarbeiter_id, rolle_id").eq("betrieb_id", betriebId),
   ]);

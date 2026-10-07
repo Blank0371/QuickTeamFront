@@ -18,6 +18,7 @@ import { holeTexte, holeValidierung } from "@/i18n/server";
 import { fuelle, loeseMeldung, type Textblock } from "@/i18n/text";
 import {
   anstellungSchema,
+  chefEinladungSchema,
   einladungSchema,
   monatsstundenAusWoche,
   rollenNameSchema,
@@ -54,6 +55,30 @@ async function alsChef() {
     eigeneId: position.mitarbeiterId,
     t: (await holeTexte()).teamVerwaltung,
   };
+}
+
+/**
+ * Ist diese Zeile Betriebsleitung?
+ *
+ * Seit 2026-10-07 trägt die Leitung weder Rollen noch Anstellungsdaten
+ * (Stunden, Urlaub) — sie wird nie eingeplant und soll nicht als Ersatz
+ * für Angestellte dienen. Die Oberfläche zeigt die Felder bei Chef-Zeilen
+ * nicht; diese Abfrage hält ein untergeschobenes Formular ab. `null`,
+ * wenn die Person nicht (mehr) im Betrieb ist.
+ */
+async function rolleTypVon(
+  supabase: Awaited<ReturnType<typeof alsChef>>["supabase"],
+  betriebId: string,
+  mitarbeiterId: string,
+): Promise<"chef" | "mitarbeiter" | null> {
+  const { data } = await supabase
+    .from("mitarbeiter")
+    .select("rolle_typ")
+    .eq("betrieb_id", betriebId)
+    .eq("id", mitarbeiterId)
+    .maybeSingle();
+  if (!data) return null;
+  return data.rolle_typ === "chef" ? "chef" : "mitarbeiter";
 }
 
 /* ------------------------------------------------------------------ */
@@ -257,6 +282,15 @@ export async function anstellungSpeichern(
 
   const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
   if (!mitarbeiterId) return fehler(t.niemand);
+
+  if ((await rolleTypVon(supabase, betriebId, mitarbeiterId)) === "chef") {
+    return {
+      status: "fehler",
+      nachricht: t.leitungOhneAnstellung,
+      felder: {},
+      werte: { mitarbeiter_id: mitarbeiterId },
+    };
+  }
 
   const validierung = await holeValidierung();
   const gelesen = anstellungAus(formData, validierung);
@@ -478,6 +512,156 @@ export async function mitarbeiterEinladen(
   return { status: "erfolg", nachricht: null, felder: {} };
 }
 
+/**
+ * Lädt eine weitere Person in die Betriebsleitung ein.
+ *
+ * Neue Produktentscheidung vom 2026-10-07, kein Expo-Gegenstück (die App
+ * legt gar keine `mitarbeiter`-Zeilen an, zeigt eine Chef-Einladung aber
+ * in `select.tsx` mit ihrem `rolle_typ` an und nimmt sie über
+ * `einladung_annehmen()` an). `mitarbeiter_insert_chef` prüft nur
+ * `ist_chef(betrieb_id)`, nicht den `rolle_typ` der neuen Zeile.
+ *
+ * Die Leitung ist keine Arbeitskraft: keine Rollen (also nie in einer
+ * Schicht, der Solver lädt ohnehin nur `rolle_typ = 'mitarbeiter'`),
+ * keine Sollstunden, **Urlaubsanspruch 0** — damit lehnt auch
+ * `urlaub_beantragen` einen Antrag über die App am Kontingent ab. Die
+ * Zahl der Chefs ist nicht begrenzt.
+ */
+export async function chefEinladen(
+  _vorher: FormZustand,
+  formData: FormData,
+): Promise<FormZustand> {
+  const { supabase, betriebId, chef, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
+
+  const roh = {
+    vorname: String(formData.get("vorname") ?? ""),
+    nachname: String(formData.get("nachname") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  };
+
+  const geprueft = chefEinladungSchema.safeParse(roh);
+  if (!geprueft.success) {
+    return {
+      status: "fehler",
+      nachricht: null,
+      felder: feldFehler(geprueft.error, await holeValidierung()),
+      werte: roh,
+    };
+  }
+  const daten = geprueft.data;
+
+  /*
+   * Idempotenz wie beim Einladen: `mitarbeiter.email` hat keinen UNIQUE.
+   * Beide Einladewege speichern die Adresse klein (Zod `toLowerCase`).
+   */
+  const { data: vorhanden, error: lesefehler } = await supabase
+    .from("mitarbeiter")
+    .select("id")
+    .eq("betrieb_id", betriebId)
+    .eq("rolle_typ", "chef")
+    .eq("email", daten.email)
+    .is("anonymisiert_am", null)
+    .limit(1);
+
+  if (lesefehler) {
+    console.error(`[dashboard/team] chefEinladen/lesen: ${lesefehler.message}`);
+    return { status: "fehler", nachricht: t.einladungFehler, felder: {}, werte: roh };
+  }
+  if ((vorhanden ?? []).length > 0) {
+    return {
+      status: "fehler",
+      nachricht: t.leitungDoppelt,
+      felder: { email: t.leitungDoppelt },
+      werte: roh,
+    };
+  }
+
+  const { error } = await supabase.from("mitarbeiter").insert({
+    betrieb_id: betriebId,
+    vorname: daten.vorname,
+    nachname: daten.nachname,
+    email: daten.email,
+    rolle_typ: "chef",
+    status: "eingeladen",
+    soll_stunden: null,
+    urlaubsanspruch_tage: 0,
+  });
+
+  if (error) {
+    console.error(`[dashboard/team] chefEinladen: ${error.message}`);
+    return { status: "fehler", nachricht: t.einladungFehler, felder: {}, werte: roh };
+  }
+
+  revalidatePath(PFAD);
+  return { status: "erfolg", nachricht: t.leitungEingeladen, felder: {} };
+}
+
+/**
+ * Bittet das QuickTeam-Team, eine Betriebsleitung zu entfernen.
+ *
+ * Status und Anonymisieren bleiben für Chef-Zeilen gesperrt
+ * (`darfStatusAendern()` — der Trigger gegen den letzten aktiven Chef ist
+ * nicht angehängt). Statt einer Selbstbedienung landet eine Anfrage in
+ * `bug_reports`, derselben Tabelle wie die Fehlermeldungen der App; ein
+ * QuickTeam-Entwickler entfernt die Person von Hand.
+ *
+ * `bug_reports` hat nur `text` (kein `betrieb_id`, keine Absenderspalte),
+ * deshalb trägt der Text alle IDs selbst. Er ist bewusst fest englisch —
+ * eine Arbeitsanweisung an die Entwickler, keine Oberfläche. Die IDs
+ * stammen aus der aktiven Position bzw. werden gegen den Betrieb geprüft,
+ * nie ungeprüft aus dem Formular übernommen.
+ *
+ * Kein `.select()` nach dem Insert: die Tabelle hat nur eine
+ * INSERT-Policy, ein RETURNING scheiterte an der fehlenden SELECT-Policy.
+ * Aus demselben Grund lässt sich eine doppelte Anfrage nicht erkennen.
+ */
+export async function chefEntfernungAnfragen(
+  _vorher: FormZustand,
+  formData: FormData,
+): Promise<FormZustand> {
+  const { supabase, betriebId, chef, eigeneId, t } = await alsChef();
+  if (!chef) return fehler(t.nurChef);
+
+  const mitarbeiterId = String(formData.get("mitarbeiter_id") ?? "");
+  if (!mitarbeiterId) return fehler(t.niemand);
+
+  const antwort = (nachricht: string, status: "erfolg" | "fehler" = "fehler"): FormZustand => ({
+    status,
+    nachricht,
+    felder: {},
+    werte: { mitarbeiter_id: mitarbeiterId },
+  });
+
+  if (mitarbeiterId === eigeneId) return antwort(t.entfernungSelbst);
+
+  const { data: person } = await supabase
+    .from("mitarbeiter")
+    .select("id, rolle_typ, status")
+    .eq("betrieb_id", betriebId)
+    .eq("id", mitarbeiterId)
+    .is("anonymisiert_am", null)
+    .maybeSingle();
+
+  if (!person) return antwort(t.nichtImBetrieb);
+  if (person.rolle_typ !== "chef") return antwort(t.entfernungNurLeitung);
+  /* Eine offene Einladung nimmt der Chef selbst zurück. */
+  if (person.status === "eingeladen") return antwort(t.entfernungEingeladen);
+
+  const text =
+    `Request removal of the chef "${person.id}" from the business "${betriebId}"` +
+    ` (requested by chef "${eigeneId}").`;
+
+  const { error } = await supabase.from("bug_reports").insert({ text });
+
+  if (error) {
+    console.error(`[dashboard/team] chefEntfernungAnfragen: ${error.message}`);
+    return antwort(t.entfernungFehler);
+  }
+
+  return antwort(t.entfernungGesendet, "erfolg");
+}
+
 /** Hakt eine Rolle bei einer Person an oder ab. */
 export async function rolleUmschalten(
   _vorher: FormZustand,
@@ -491,6 +675,14 @@ export async function rolleUmschalten(
   const anhaken = String(formData.get("anhaken") ?? "") === "true";
 
   if (!mitarbeiterId || !rolleId) return fehler(t.angabeFehlt);
+
+  /*
+   * Nur das Anhaken ist gesperrt: eine Rolle, die eine Leitung aus der
+   * Zeit vor 2026-10-07 noch trägt, lässt sich weiterhin abnehmen.
+   */
+  if (anhaken && (await rolleTypVon(supabase, betriebId, mitarbeiterId)) === "chef") {
+    return fehler(t.leitungOhneRolle);
+  }
 
   const { error } = anhaken
     ? await supabase

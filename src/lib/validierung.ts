@@ -573,6 +573,20 @@ export const einladungSchema = z
 
 export type Einladung = z.infer<typeof einladungSchema>;
 
+/**
+ * Weitere Betriebsleitung einladen (seit 2026-10-07).
+ *
+ * Anders als bei Angestellten ist die E-Mail Pflicht und das Telefon
+ * fehlt: `einladung_annehmen()` gleicht **nur** `lower(email)` gegen das
+ * JWT ab — eine Chef-Einladung allein über die Telefonnummer liesse sich
+ * nie annehmen.
+ */
+export const chefEinladungSchema = z.object({
+  vorname: feldSchemata.vorname,
+  nachname: feldSchemata.nachname,
+  email: feldSchemata.email,
+});
+
 /* ------------------------------------------------------------------ */
 /* Anstellungsdaten: Vertrag, Sollstunden, Urlaubsanspruch             */
 /* ------------------------------------------------------------------ */

@@ -482,6 +482,39 @@ Rolle, legt die Ausschreibungs-Benachrichtigung an). Zwei Fallen:
   UPDATE-Trigger aus ausser dem Audit-Log. Scheitert er, bleibt ein Entwurf stehen
   (`[kalender/neu] veroeffentlichen` im Protokoll).
 
+### Weitere Betriebsleitung (`/dashboard/team`)
+
+**Neue Produktentscheidung vom 2026-10-07 (auf Anweisung des Nutzers), kein
+Expo-Gegenstück.** Ein Chef lädt im Team-Bereich weitere Chefs ein (`chefEinladen()` in
+`team/aktionen.ts`); die Zahl ist nicht begrenzt. Damit die Leitung kein Ersatz für
+Angestellte wird, ist sie **keine Arbeitskraft**:
+
+- **E-Mail Pflicht, kein Telefon** (`chefEinladungSchema`): `einladung_annehmen()` gleicht
+  nur `lower(email)` gegen das JWT ab. Angenommen wird in der App über `select.tsx`, die
+  den `rolle_typ` der Einladung anzeigt. `mitarbeiter_insert_chef` prüft den `rolle_typ`
+  der neuen Zeile nicht.
+- **Keine Rollen:** die Oberfläche bietet bei Chef-Zeilen keine Rollen an,
+  `rolleUmschalten` lehnt das Anhaken ab (Abnehmen einer Altlast bleibt möglich — am
+  2026-10-07 trug genau eine Chef-Zeile eine Rolle; von hier nicht bereinigt).
+- **Keine Anstellungsdaten:** neue Chefs mit `soll_stunden = null`,
+  `urlaubsanspruch_tage = 0`; `anstellungSpeichern` lehnt Chef-Zeilen ab. Der Anspruch 0
+  lässt `urlaub_beantragen` einen App-Antrag am Kontingent scheitern (Bestands-Chefs
+  behalten ihre 25 — dort hält nur die Web-Oberfläche ab).
+- **Nie eingeplant:** `holeZuweisbareMitarbeiter()` filtert `rolle_typ = 'mitarbeiter'`
+  wie der Solver (Abweichung von `shift/[id].tsx`, das Chefs mitlistet).
+- **Urlaub:** ein Chef sieht auf `/dashboard/urlaub` nur die Anträge des Teams, kein
+  Formular, keine eigenen Anträge; `beantragen()` lehnt für Chefs ab.
+- Status und Anonymisieren bleiben für Chef-Zeilen gesperrt (`darfStatusAendern()`); eine
+  **offene** Chef-Einladung lässt sich zurücknehmen.
+- **Entfernen nur über das QuickTeam-Team:** bei einer angenommenen Chef-Zeile (nicht der
+  eigenen) schickt „Entfernung beantragen" (`chefEntfernungAnfragen()`) eine Zeile in
+  **`bug_reports`** — dieselbe Tabelle wie die Fehlermeldungen der App (`bug-report.tsx`),
+  nur `text`, keine `betrieb_id`. Fester englischer Text mit allen IDs:
+  `Request removal of the chef "<mitarbeiter_id>" from the business "<betrieb_id>"
+  (requested by chef "<mitarbeiter_id>").` Ein Entwickler entfernt die Person von Hand.
+  Die Tabelle hat nur eine INSERT-Policy (kein `.select()` nach dem Insert, keine
+  Doppelprüfung möglich — die Oberfläche blendet den Knopf nach dem Senden aus).
+
 ### Joseph — experimentell, noch nicht umgesetzt
 
 **Neue Produktentscheidung vom 2026-09-24 (auf Anweisung des Nutzers), kein

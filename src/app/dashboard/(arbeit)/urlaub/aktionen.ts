@@ -52,6 +52,9 @@ async function texte() {
 export async function beantragen(_vorher: FormZustand, formData: FormData): Promise<FormZustand> {
   const { supabase, position } = await betreteDashboard();
 
+  /* Die Leitung hat keinen Urlaub (seit 2026-10-07), nur die Freigabe. */
+  if (position.rolleTyp === "chef") return fehler((await texte()).leitungKeinUrlaub);
+
   const roh = {
     von: String(formData.get("von") ?? ""),
     bis: String(formData.get("bis") ?? ""),

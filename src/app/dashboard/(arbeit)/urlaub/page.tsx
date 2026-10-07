@@ -40,6 +40,10 @@ function isoTag(d: Date): string {
  * Wie bei Tausch und Notfall ist die Chef-Freigabe hier ein Sonderfall
  * innerhalb desselben Bereichs, kein eigener: „Tausch, Urlaub und Notfall
  * sind ihrem Wesen nach Mitarbeiter-Funktionen“ (`CLAUDE.md`).
+ *
+ * **Seit 2026-10-07 sieht die Leitung nur die Anträge des Teams** —
+ * kein eigenes Formular, keine eigenen Anträge, keine Resttage. Chefs
+ * haben keinen Urlaub; `beantragen()` lehnt für sie ebenfalls ab.
  */
 export default async function UrlaubSeite() {
   const { supabase, position } = await betreteDashboard();
@@ -47,11 +51,23 @@ export default async function UrlaubSeite() {
   const sprache = await leseSprache();
   const t = getDictionary(sprache).urlaub;
 
+  if (chef) {
+    const antraege = await holeChefUrlaubsantraege(supabase, position.betriebId);
+    return (
+      <Container className="py-8 sm:py-10">
+        <div className="w-full max-w-3xl">
+          <h1 className="text-2xl leading-tight sm:text-3xl">{t.titel}</h1>
+          <p className="mt-2 text-base leading-relaxed text-muted">{t.introChef}</p>
+          <ChefUrlaubsantraegeListe antraege={antraege} texte={t} locale={sprache} />
+        </div>
+      </Container>
+    );
+  }
+
   const jahr = jahrImBetrieb();
-  const [meineUrlaube, anspruch, chefAntraege, vorab] = await Promise.all([
+  const [meineUrlaube, anspruch, vorab] = await Promise.all([
     holeMeineUrlaube(supabase, position.mitarbeiterId),
     holeUrlaubsanspruch(supabase, position.mitarbeiterId),
-    chef ? holeChefUrlaubsantraege(supabase, position.betriebId) : Promise.resolve([]),
     holeVorab(supabase, position.betriebId, [jahr], position.mitarbeiterId),
   ]);
 
@@ -81,9 +97,6 @@ export default async function UrlaubSeite() {
         </div>
 
         <MeineUrlaubeListe urlaube={meineUrlaube} texte={t} locale={sprache} />
-        {chef ? (
-          <ChefUrlaubsantraegeListe antraege={chefAntraege} texte={t} locale={sprache} />
-        ) : null}
       </div>
     </Container>
   );

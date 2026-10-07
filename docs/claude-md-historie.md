@@ -15,6 +15,25 @@ und das *Vorher*.
 
 ---
 
+## 2026-10-07 — Weitere Betriebsleitung; Chefs ohne Rollen, Stunden und Urlaub
+
+**Vorher:** Ein Betrieb hatte genau den Chef, der ihn angelegt hatte — einen Weg, eine
+weitere Leitung hinzuzufügen, gab es weder hier noch in der App (die App legt gar keine
+`mitarbeiter`-Zeilen an). Chef-Zeilen bekamen im Team-Bereich dieselben Rollen- und
+Anstellungsfelder wie Angestellte, tauchten in der Personenauswahl für manuelle Zuweisungen
+auf, und `/dashboard/urlaub` zeigte einem Chef das eigene Antragsformular und die eigenen
+Anträge über der Freigabeliste. **Jetzt:** `/dashboard/team` lädt eine weitere
+Betriebsleitung ein (`chefEinladen()`, `rolle_typ = 'chef'`, E-Mail Pflicht, unbegrenzt
+viele). Die Leitung hat keine Rollen, keine Anstellungsdaten, keinen Urlaub und wird nie
+eingeplant; `/dashboard/urlaub` zeigt ihr nur die Anträge des Teams. **Begründung:**
+Anweisung des Nutzers — mehrere Chefs ohne Begrenzung, aber so, dass sie nicht als Ersatz
+für Angestellte taugen. Neue Produktentscheidung, kein Expo-Gegenstück.
+Entfernt wird eine Leitung nicht per Selbstbedienung (der Schutz des letzten aktiven Chefs
+fehlt in der DB), sondern über eine Anfrage in `bug_reports`, die ein QuickTeam-Entwickler
+von Hand erledigt — ebenfalls auf Anweisung des Nutzers.
+
+---
+
 ## 2026-10-07 — Einzelne Schicht: sofort veröffentlicht statt Entwurf
 
 **Vorher (erste Fassung desselben Tages, wie die Expo-App):** eine über
