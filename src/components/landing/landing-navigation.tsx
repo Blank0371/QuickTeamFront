@@ -86,7 +86,7 @@ export function LandingNavigation({
   texte,
 }: {
   authOffen: boolean;
-  /** Aktive Sprache für den Umschalter im Klappmenü. */
+  /** Aktive Sprache für den Umschalter (Leiste ab `lg`, sonst Klappmenü). */
   sprache: Locale;
   promoHref?: string;
   promoLabel?: string;
@@ -239,40 +239,44 @@ export function LandingNavigation({
           Die Promo-Registerkarte steht hier ausserhalb der
           Soft-Launch-Bedingung: sie fuehrt nicht in einen
           Vertragsabschluss.
+
+          Der Sprachumschalter steht immer da — auch wenn Soft-Launch und
+          Promo-Schalter alles andere ausblenden. Vorher hing der ganze
+          Block an `promoHref || authOffen`; in Produktion war beides aus,
+          und auf dem Desktop gab es keinen Weg, die Sprache zu wechseln.
         */}
-        {promoHref || authOffen ? (
-          <div className="hidden shrink-0 items-center gap-2 lg:flex">
-            {promoHref ? (
-              <Link
-                href={promoHref}
-                className="touch-manipulation rounded-blk px-3 py-2 text-sm font-medium transition-colors hover:text-[var(--qt-c-bone)]"
-                style={{ color: "color-mix(in oklab, var(--qt-c-bone) 62%, transparent)" }}
-              >
-                {promoLabel}
-              </Link>
-            ) : null}
-            {authOffen
-              ? AUTH_PUNKTE.map((punkt) => (
-              <Link
-                key={punkt.href}
-                href={punkt.href}
-                className="touch-manipulation rounded-blk px-3.5 py-2 text-sm font-semibold transition-colors"
-                style={
-                  punkt.stark
-                    ? { background: "var(--qt-c-bronze)", color: "var(--qt-c-carbon)" }
-                    : {
-                        border:
-                          "1px solid color-mix(in oklab, var(--qt-c-bone) 24%, transparent)",
-                        color: "var(--qt-c-bone)",
-                      }
-                }
-              >
-                {texte[punkt.label]}
-              </Link>
-                ))
-              : null}
-          </div>
-        ) : null}
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <SprachWahl aktiv={sprache} aufDunkel />
+          {promoHref ? (
+            <Link
+              href={promoHref}
+              className="touch-manipulation rounded-blk px-3 py-2 text-sm font-medium transition-colors hover:text-[var(--qt-c-bone)]"
+              style={{ color: "color-mix(in oklab, var(--qt-c-bone) 62%, transparent)" }}
+            >
+              {promoLabel}
+            </Link>
+          ) : null}
+          {authOffen
+            ? AUTH_PUNKTE.map((punkt) => (
+            <Link
+              key={punkt.href}
+              href={punkt.href}
+              className="touch-manipulation rounded-blk px-3.5 py-2 text-sm font-semibold transition-colors"
+              style={
+                punkt.stark
+                  ? { background: "var(--qt-c-bronze)", color: "var(--qt-c-carbon)" }
+                  : {
+                      border:
+                        "1px solid color-mix(in oklab, var(--qt-c-bone) 24%, transparent)",
+                      color: "var(--qt-c-bone)",
+                    }
+              }
+            >
+              {texte[punkt.label]}
+            </Link>
+              ))
+            : null}
+        </div>
 
         <button
           ref={knopfRef}
